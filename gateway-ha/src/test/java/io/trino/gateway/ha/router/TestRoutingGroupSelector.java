@@ -83,7 +83,7 @@ public class TestRoutingGroupSelector {
   }
 
   //Todo: The functionality of reading the file before every request needs to be smarter
-  @Test(enabled = false)
+  @Test
   public void testByRoutingRulesEngineFileChange() throws Exception {
     File file = File.createTempFile("routing_rules", ".yml");
 
