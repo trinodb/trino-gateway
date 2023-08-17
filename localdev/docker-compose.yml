@@ -1,0 +1,37 @@
+version: "3.3"
+services:
+  mysqldb:
+    environment:
+    - MYSQL_ROOT_PASSWORD=root123
+    - MYSQL_DATABASE=prestogateway
+    image: mysql:5.5
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      start_period: 20s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - target: /etc/mysql/gateway-ha-persistence.sql
+        source: ../gateway-ha/src/main/resources/gateway-ha-persistence.sql
+        type: bind
+      - target: /etc/mysql/add_backends.sql
+        source: ./add_backends.sql
+        type: bind
+  trino-1:
+    volumes:
+      - target: /usr/lib/trino/etc
+        source: ./trino-1/etc
+        type: bind
+    image: trinodb/trino:395
+    ports:
+      - "8081:8080"
+  trino-2:
+    volumes:
+      - target: /usr/lib/trino/etc
+        source: ./trino-2/etc
+        type: bind
+    image: trinodb/trino:395
+    ports:
+      - "8082:8080"

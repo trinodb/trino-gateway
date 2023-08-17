@@ -12,4 +12,5 @@ public class DataStoreConfiguration {
   private String user;
   private String password;
   private String driver;
+  private Integer queryHistoryHoursRetention = 4;
 }

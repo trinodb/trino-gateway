@@ -4,7 +4,6 @@ import static com.lyft.data.gateway.ha.router.ResourceGroupsManager.GlobalProper
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Cached;
 import org.javalite.activejdbc.annotations.IdName;

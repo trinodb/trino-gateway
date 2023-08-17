@@ -8,10 +8,38 @@ requestRouter:
   historySize: 1000
 
 dataStore:
-  jdbcUrl: jdbc:mysql://127.0.0.1:3306/prestogateway
+  jdbcUrl: jdbc:mysql://localhost:3306/prestogateway
   user: root
   password: root123
   driver: com.mysql.cj.jdbc.Driver
+  queryHistoryHoursRetention: 24
+
+backendState:
+  username: lb_query
+  password: <ask>
+  ssl: true
+
+authentication:
+  issuer: 
+  clientId: 
+  clientSecret: 
+  tokenEndpoint: 
+  authorizationEndpoint: 
+  jwkEndpoint: 
+  redirectUrl: 
+  scopes:
+    - email
+    - openid
+    - profile
+
+authorization:
+  admin: 
+  user: 
+  ldapHost: 
+  ldapPort: 
+  ldapBindDn: 
+  ldapSearch: 
+  ldapPassword: 
 
 server:
   applicationConnectors:

@@ -4,7 +4,6 @@ import static com.lyft.data.gateway.ha.router.QueryHistoryManager.QueryDetail;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Cached;
 import org.javalite.activejdbc.annotations.IdName;
@@ -37,12 +36,20 @@ public class QueryHistory extends Model {
   }
 
   public static void create(QueryHistory model, QueryDetail queryDetail) {
-    model.set(queryId, queryDetail.getQueryId());
+    //Checks
+    String id = queryDetail.getQueryId();
+    if (id == null || id.isEmpty()) {
+      return;
+    }
+
+    model.set(queryId, id);
     model.set(queryText, queryDetail.getQueryText());
     model.set(backendUrl, queryDetail.getBackendUrl());
     model.set(userName, queryDetail.getUser());
     model.set(source, queryDetail.getSource());
     model.set(created, queryDetail.getCaptureTime());
-    model.insert();
+    if (!queryDetail.getQueryId().isEmpty()) {
+      model.insert();
+    }
   }
 }

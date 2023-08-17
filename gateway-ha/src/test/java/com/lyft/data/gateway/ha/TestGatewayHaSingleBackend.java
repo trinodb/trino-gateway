@@ -27,7 +27,7 @@ public class TestGatewayHaSingleBackend {
 
     // seed database
     HaGatewayTestUtils.TestConfig testConfig =
-        HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort);
+        HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
     // Start Gateway
     String[] args = {"server", testConfig.getConfigFilePath()};
     HaGatewayLauncher.main(args);

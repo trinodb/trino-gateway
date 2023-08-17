@@ -10,20 +10,20 @@ import com.google.inject.Module;
 import io.dropwizard.Application;
 import io.dropwizard.Bundle;
 import io.dropwizard.Configuration;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.servlets.tasks.Task;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
-
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
@@ -61,7 +61,7 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
     final FilterBuilder filterBuilder = new FilterBuilder();
 
     if (basePackages.length == 0) {
-      basePackages = new String[] {};
+      basePackages = new String[]{};
     }
 
     logger.info("op=create auto_scan_packages={}", basePackages);
@@ -96,7 +96,7 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
    * #applicationAtRun}.
    *
    * @param configuration the parsed {@link Configuration} object
-   * @param environment the application's {@link Environment}
+   * @param environment   the application's {@link Environment}
    * @throws Exception if something goes wrong
    */
   @Override
@@ -113,10 +113,11 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
    * alternative to accessing {@link #run} .
    *
    * @param configuration the app configuration
-   * @param environment the Dropwizard {@link Environment}
-   * @param injector the Guice {@link Injector}
+   * @param environment   the Dropwizard {@link Environment}
+   * @param injector      the Guice {@link Injector}
    */
-  protected void applicationAtRun(T configuration, Environment environment, Injector injector) {}
+  protected void applicationAtRun(T configuration, Environment environment, Injector injector) {
+  }
 
   private Injector configureGuice(T configuration, Environment environment) throws Exception {
     appModules.add(new MetricRegistryModule(environment.metrics()));
@@ -129,6 +130,7 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
 
   private void registerWithInjector(T configuration, Environment environment, Injector injector) {
     logger.info("op=register_start configuration={}", configuration.toString());
+    registerAuthFilters(environment, injector);
     registerHealthChecks(environment, injector);
     registerProviders(environment, injector);
     registerTasks(environment, injector);
@@ -229,5 +231,13 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
           environment.jersey().register(injector.getInstance(c));
           logger.info("op=register type=resource item={}", c);
         });
+  }
+
+  private void registerAuthFilters(Environment environment, Injector injector) {
+    environment
+        .jersey()
+        .register(new AuthDynamicFeature((injector.getInstance(AuthFilter.class))));
+    logger.info("op=register type=auth filter item={}", AuthFilter.class);
+    environment.jersey().register(RolesAllowedDynamicFeature.class);
   }
 }

@@ -1,0 +1,12 @@
+ldapHost: 'exmple.com'
+ldapPort: 389
+useTls: true
+#ldapPort: 636
+useSsl: false
+ldapAdminBindDn: 'CN=AD Query,OU=accts,DC=dept1,DC=example,DC=com'
+ldapUserBaseDn: 'OU=accts,DC=dept1,DC=example,DC=com'
+ldapUserSearch: '(&(objectclass=user)(sAMAccountName=${USER}))'
+ldapGroupMemberAttribute: 'memberOf'
+ldapAdminPassword: 'passit'
+ldapTrustStorePath: '/etc/ssl/certs/java/cacerts'
+ldapTrustStorePassword: 'secret'

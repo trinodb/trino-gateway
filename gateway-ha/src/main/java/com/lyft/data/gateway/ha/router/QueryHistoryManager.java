@@ -1,14 +1,14 @@
 package com.lyft.data.gateway.ha.router;
 
 import java.util.List;
-
+import java.util.Optional;
 import lombok.Data;
 import lombok.ToString;
 
 public interface QueryHistoryManager {
   void submitQueryDetail(QueryDetail queryDetail);
 
-  List<QueryDetail> fetchQueryHistory();
+  List<QueryDetail> fetchQueryHistory(Optional<String> user);
 
   String getBackendForQueryId(String queryId);
 

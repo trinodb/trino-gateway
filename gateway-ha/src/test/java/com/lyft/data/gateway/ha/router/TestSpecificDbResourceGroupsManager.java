@@ -29,7 +29,7 @@ public class TestSpecificDbResourceGroupsManager extends TestResourceGroupsManag
     HaGatewayTestUtils.seedRequiredData(
             new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
     DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
-            "sa", "org.h2.Driver");
+            "sa", "org.h2.Driver", 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
   }

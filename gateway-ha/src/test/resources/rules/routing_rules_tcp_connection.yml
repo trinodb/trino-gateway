@@ -1,0 +1,6 @@
+---
+name: "tcp check"
+description: "Route based on if a tcp connection is working"
+condition: "request.getAttribute(\"connectionChecker\").tcpCheck(\"localhost\", 8888, 1000, 1, 0)"
+actions:
+  - "result.put(\"routingGroup\", \"cli\")"
