@@ -20,7 +20,8 @@
 </head>
 <body>
 <#include "header.ftl">
-<h2>!!Admin only!!</h2>
+<h2>!!Admin ONLY!!</h2>
+<h6 style="display: none" id="submitted_status"></h6>
 <div>
   <span>Override the Database (Optional): <span>
   <input id="databaseOverride" type="text"/>

@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 import java.util.Scanner;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,17 +27,9 @@ public class HaGatewayTestUtils {
   private static final OkHttpClient httpClient = new OkHttpClient();
   private static final Random RANDOM = new Random();
 
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class TestConfig {
-    private String configFilePath;
-    private String h2DbFilePath;
-  }
-
   public static void seedRequiredData(TestConfig testConfig) {
     String jdbcUrl = "jdbc:h2:" + testConfig.getH2DbFilePath();
-    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver");
+    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     connectionManager.open();
     Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence.sql"));
@@ -57,7 +48,8 @@ public class HaGatewayTestUtils {
                     .withStatus(200)));
   }
 
-  public static TestConfig buildGatewayConfigAndSeedDb(int routerPort) throws IOException {
+  public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
+      throws IOException {
     TestConfig testConfig = new TestConfig();
     File baseDir = new File(System.getProperty("java.io.tmpdir"));
     File tempH2DbDir = new File(baseDir, "h2db-" + RANDOM.nextInt() + System.currentTimeMillis());
@@ -65,7 +57,7 @@ public class HaGatewayTestUtils {
     testConfig.setH2DbFilePath(tempH2DbDir.getAbsolutePath());
 
     String configStr =
-        getResourceFileContent("test-config-template.yml")
+        getResourceFileContent(configFile)
             .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
             .replace("DB_FILE_PATH", tempH2DbDir.getAbsolutePath())
             .replace(
@@ -123,5 +115,13 @@ public class HaGatewayTestUtils {
             .build();
     Response response = httpClient.newCall(request).execute();
     Assert.assertTrue(response.isSuccessful());
+  }
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class TestConfig {
+    private String configFilePath;
+    private String h2DbFilePath;
   }
 }

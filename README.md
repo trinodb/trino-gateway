@@ -4,21 +4,25 @@ A load balancer / proxy / gateway for presto compute engine.
 
 How to setup a dev environment
 ------------------------------
-Step 1: setup mysql. Install docker and run the below command when setting up first time:
-```$xslt
-docker run -d -p 3306:3306  --name mysqldb -e MYSQL_ROOT_PASSWORD=root123 -e MYSQL_DATABASE=prestogateway -d mysql:5.7
+Step 1: setup mysql. Install docker with docker-compose and run the below command when setting up first time:
+#### Run the services - mysqldb, two instances of trino
+- This setup helps you develop and test any routing rules for the trino
+- Both trino services would have a single `system` catalog 
+- Add the catalog properties files in ` bin/localdev/coordinator/` for additional catalogs
 ```
-Next time onwards, run the following commands to start mysqldb
+cd localdev
+docker-compose up -d
+```
+#### Check the "Status' of the services by
+`docker-compose ps`
 
-```$xslt
-docker start mysqldb
-```
-Now open mysql console and install the presto-gateway tables:
-```$xslt
-mysql -uroot -proot123 -h127.0.0.1 -Dprestogateway
+#### Create the schema for the backends, once mysqldb becomes healthy
+`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dprestogateway < /etc/mysql/gateway-ha-persistence.sql"`
 
-```
-Once logged in to mysql console, please run [gateway-ha-persistence.sql](/gateway-ha/src/main/resources/gateway-ha-persistence.sql) to populate the tables.
+#### Add the backends
+`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dprestogateway < /etc/mysql/add_backends.sql"`
+- It would add 2 trino backend records which can be used for the development and testing
+
 
 ### Build and run
 
@@ -90,7 +94,6 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
     }'
 
 ```
-
 
 ### Get all backends behind the gateway
 ```$xslt
@@ -495,6 +498,70 @@ routingRules:
   rulesConfigPath: "src/test/resources/rules/routing_rules.yml" # replace with path to your rules config file
 ```
 
+### Authentication
+The authentication would happen on https protocol only. Add the `authentication:` section in the config file. The default authentication type is set using `defaultType: "form"`
+Following types of the authentications are supported. 
+#### odic
+It can be configured as below
+```
+  oauth:
+    issuer: 
+    clientId: 
+    clientSecret: 
+    tokenEndpoint: 
+    authorizationEndpoint: 
+    jwkEndpoint: 
+    redirectUrl: 
+    userIdField: 
+    scopes:
+      - s1
+      - s2
+      - s3
+```
+#### form
+The authentication happens with the pre-defined users from the configuration file.
+To define the preset user use the following section. 
+```
+presetUsers:
+  user1:
+    password: <password>
+    privileges: "lb_admin, lb_user"
+  user2:
+    password: <password>
+    privileges: "lb_api"
+```
+Provide a key pair ins RSA format
+```
+  form:
+    selfSignKeyPair:
+      privateKeyRSA: |
+      <PEM PRIVATE KEY>
+      publicKeyRSA: |
+      <PEM PUBLIC key>
+```
+
+### Authorization 
+The roles supported by trino load balancer
+- admin : Allows access to the Editor tab, which can be used to configure the backends
+
+- user : Allows access to the rest of the website
+
+- api : Allows access to to rest apis to configure the backends
+
+Users with attributes next to the role will be giving those privileges the users.
+User attributes from LDAP is supported or you can use the preset users defined in the yaml file.
+Authorization is supported via LDAP user attributes
+```
+authorization:
+  admin: 'lb_admin'
+  user: 'lb_user'
+  api: "lb_api"
+  ldapHost: 
+  ldapPort:
+  ldapBindDn: 
+  ldapSearch: 
+  ldapPassword: 
+```
 
 ## Contributing
 
@@ -512,5 +579,3 @@ References :sparkles:
     
 {{Your org here}}
     
-
-

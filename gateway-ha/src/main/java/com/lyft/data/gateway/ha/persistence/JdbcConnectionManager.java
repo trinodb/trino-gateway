@@ -51,7 +51,9 @@ public class JdbcConnectionManager {
           try {
             this.open();
             QueryHistory.delete(
-                "created < ?", System.currentTimeMillis() - TimeUnit.HOURS.toMillis(4));
+                "created < ?",
+                  System.currentTimeMillis() - TimeUnit.HOURS.toMillis(
+                        this.configuration.getQueryHistoryHoursRetention()));
           } finally {
             this.close();
           }

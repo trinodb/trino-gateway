@@ -3,6 +3,7 @@ package com.lyft.data.gateway.ha.router;
 import com.lyft.data.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface GatewayBackendManager {
   List<ProxyBackendConfiguration> getAllBackends();
@@ -12,6 +13,8 @@ public interface GatewayBackendManager {
   List<ProxyBackendConfiguration> getActiveAdhocBackends();
 
   List<ProxyBackendConfiguration> getActiveBackends(String routingGroup);
+
+  Optional<ProxyBackendConfiguration> getBackendByName(String name);
 
   ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend);
 

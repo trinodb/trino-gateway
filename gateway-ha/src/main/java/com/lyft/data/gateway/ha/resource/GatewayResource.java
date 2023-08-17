@@ -2,7 +2,7 @@ package com.lyft.data.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import com.lyft.data.gateway.ha.router.GatewayBackendManager;
-
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -15,11 +15,13 @@ import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RolesAllowed({"API"})
 @Path("/gateway")
 @Produces(MediaType.APPLICATION_JSON)
 public class GatewayResource {
 
-  @Inject private GatewayBackendManager gatewayBackendManager;
+  @Inject
+  private GatewayBackendManager gatewayBackendManager;
 
   @GET
   public Response ok(@Context Request request) {

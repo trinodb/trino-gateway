@@ -47,10 +47,11 @@
 <#if queryHistory?size != 0>
     <div><b>Query details [history size = ${queryHistory?size}]</b></div>
     <div>
-        <table id="queryHistory" class="display" style="width:100%">
+        <table id="queryHistory" class="display" style="width:100%; text-align: center">
             <thead>
             <tr>
                 <th>queryId</th>
+                <th>routedTo</th>
                 <th>user</th>
                 <th>source</th>
                 <th>queryText</th>
@@ -60,9 +61,14 @@
             <tbody>
             <#list queryHistory as q>
                 <tr>
-                    <td><a href="/ui/query.html?${q.queryId}"
+                    <td><a href="${q.backendUrl}/ui/query.html?${q.queryId}"
                            target="_blank">${q.queryId}</a></td>
-                    <td>  ${q.user}</td>
+                    <td> ${q.backendUrl} </td>
+                    <td>
+                        <#if q.user??>
+                            ${q.user}
+                        </#if>
+                    </td>
                     <td>
                         <#if q.source??>
                             ${q.source}

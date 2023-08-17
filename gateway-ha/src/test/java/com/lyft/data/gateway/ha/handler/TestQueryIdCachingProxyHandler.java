@@ -50,4 +50,25 @@ public class TestQueryIdCachingProxyHandler {
         backendServer, backendPort));
   }
 
+  @Test
+  public void testUserFromRequest() throws IOException {
+
+    HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
+
+    String authHeader = "Basic dGVzdDoxMjPCow==";
+    Mockito.when(req.getHeader(QueryIdCachingProxyHandler.AUTHORIZATION))
+            .thenReturn(authHeader);
+    Assert.assertEquals(QueryIdCachingProxyHandler.getQueryUser(req), "test");
+
+    String altUser = "alt_trino_user";
+    Mockito.when(req.getHeader(QueryIdCachingProxyHandler.ALTERNATE_USER_HEADER))
+            .thenReturn(altUser);
+    Assert.assertEquals(QueryIdCachingProxyHandler.getQueryUser(req), altUser);
+
+    String user = "trino_user";
+    Mockito.when(req.getHeader(QueryIdCachingProxyHandler.USER_HEADER))
+            .thenReturn(user);
+    Assert.assertEquals(QueryIdCachingProxyHandler.getQueryUser(req), user);
+
+  }
 }

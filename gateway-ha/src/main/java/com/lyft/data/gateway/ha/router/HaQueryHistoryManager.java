@@ -3,6 +3,7 @@ package com.lyft.data.gateway.ha.router;
 import com.lyft.data.gateway.ha.persistence.JdbcConnectionManager;
 import com.lyft.data.gateway.ha.persistence.dao.QueryHistory;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -25,10 +26,17 @@ public class HaQueryHistoryManager implements QueryHistoryManager {
   }
 
   @Override
-  public List<QueryDetail> fetchQueryHistory() {
+  public List<QueryDetail> fetchQueryHistory(Optional<String> user) {
     try {
       connectionManager.open();
-      return QueryHistory.upcast(QueryHistory.findAll().limit(2000).orderBy("created desc"));
+      String sql = "select * from query_history";
+      if (user.isPresent()) {
+        sql += " where user_name = '" + user.get() + "'";
+      }
+      return QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
+          sql,
+          "order by created desc",
+          "limit 2000")));
     } finally {
       connectionManager.close();
     }
