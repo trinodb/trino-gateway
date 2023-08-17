@@ -12,13 +12,12 @@ import org.jeasy.rules.core.DefaultRulesEngine;
 import org.jeasy.rules.mvel.MVELRuleFactory;
 import org.jeasy.rules.support.reader.YamlRuleDefinitionReader;
 
-/** RoutingGroupSelector provides a way to match an HTTP request to a Gateway routing group. */
+/**
+ * RoutingGroupSelector provides a way to match an HTTP request to a Gateway routing group.
+ */
 public interface RoutingGroupSelector {
   String ROUTING_GROUP_HEADER = "X-Trino-Routing-Group";
   String ALTERNATE_ROUTING_GROUP_HEADER = "X-Presto-Routing-Group";
-
-  @Slf4j
-  final class Logger {}
 
   /**
    * Routing group selector that relies on the X-Trino-Routing-Group or X-Presto-Routing-Group
@@ -26,7 +25,7 @@ public interface RoutingGroupSelector {
    */
   static RoutingGroupSelector byRoutingGroupHeader() {
     return request -> Optional.ofNullable(request.getHeader(ROUTING_GROUP_HEADER))
-            .orElse(request.getHeader(ALTERNATE_ROUTING_GROUP_HEADER));
+        .orElse(request.getHeader(ALTERNATE_ROUTING_GROUP_HEADER));
   }
 
   /**
@@ -34,26 +33,33 @@ public interface RoutingGroupSelector {
    * to determine the right routing group.
    */
   static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath) {
-    RulesEngine rulesEngine = new DefaultRulesEngine();
-    MVELRuleFactory ruleFactory = new MVELRuleFactory(new YamlRuleDefinitionReader());
+    try {
+      RulesEngine rulesEngine = new DefaultRulesEngine();
+      MVELRuleFactory ruleFactory = new MVELRuleFactory(new YamlRuleDefinitionReader());
+      ConnectionChecker connectionChecker = new ConnectionChecker();
+      Logger.log.info("reading rules from {}", rulesConfigPath);
+      Rules rules = ruleFactory.createRules(
+          new FileReader(rulesConfigPath));
 
-    return request -> {
-      try {
-        Rules rules = ruleFactory.createRules(
-            new FileReader(rulesConfigPath));
+      return request -> {
+        Logger.log.debug("Thread id {} : applying the routing rules",
+            Thread.currentThread().getId());
+        request.setAttribute("connectionChecker", connectionChecker);
         Facts facts = new Facts();
         HashMap<String, String> result = new HashMap<String, String>();
         facts.put("request", request);
         facts.put("result", result);
         rulesEngine.fire(rules, facts);
         return result.get("routingGroup");
-      } catch (Exception e) {
+      };
+    } catch (Exception e) {
+      return request -> {
         Logger.log.error("Error opening rules configuration file,"
             + " using routing group header as default.", e);
         return Optional.ofNullable(request.getHeader(ROUTING_GROUP_HEADER))
-          .orElse(request.getHeader(ALTERNATE_ROUTING_GROUP_HEADER));
-      }
-    };
+            .orElse(request.getHeader(ALTERNATE_ROUTING_GROUP_HEADER));
+      };
+    }
   }
 
   /**
@@ -61,4 +67,8 @@ public interface RoutingGroupSelector {
    * be determined return null.
    */
   String findRoutingGroup(HttpServletRequest request);
+
+  @Slf4j
+  final class Logger {
+  }
 }

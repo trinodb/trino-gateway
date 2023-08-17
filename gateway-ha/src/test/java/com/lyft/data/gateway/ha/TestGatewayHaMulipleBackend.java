@@ -20,9 +20,9 @@ public class TestGatewayHaMulipleBackend {
   final int backend1Port = 21000 + (int) (Math.random() * 1000);
   final int backend2Port = 21000 + (int) (Math.random() * 1000);
 
-  private WireMockServer adhocBackend =
+  private final WireMockServer adhocBackend =
       new WireMockServer(WireMockConfiguration.options().port(backend1Port));
-  private WireMockServer scheduledBackend =
+  private final WireMockServer scheduledBackend =
       new WireMockServer(WireMockConfiguration.options().port(backend2Port));
 
   @BeforeClass(alwaysRun = true)
@@ -32,7 +32,7 @@ public class TestGatewayHaMulipleBackend {
 
     // seed database
     HaGatewayTestUtils.TestConfig testConfig =
-        HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort);
+        HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
 
     // Start Gateway
     String[] args = {"server", testConfig.getConfigFilePath()};
@@ -41,7 +41,8 @@ public class TestGatewayHaMulipleBackend {
     HaGatewayTestUtils.setUpBackend(
         "presto1", "http://localhost:" + backend1Port, "externalUrl", true, "adhoc", routerPort);
     HaGatewayTestUtils.setUpBackend(
-        "presto2", "http://localhost:" + backend2Port, "externalUrl", true, "scheduled", routerPort);
+        "presto2", "http://localhost:" + backend2Port, "externalUrl", true, "scheduled",
+        routerPort);
   }
 
   @Test
@@ -81,11 +82,11 @@ public class TestGatewayHaMulipleBackend {
     // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
     // routing group
     Request request4 =
-            new Request.Builder()
-                    .url("http://localhost:" + routerPort + "/v1/statement")
-                    .post(requestBody)
-                    .addHeader("X-Trino-Routing-Group", "scheduled")
-                    .build();
+        new Request.Builder()
+            .url("http://localhost:" + routerPort + "/v1/statement")
+            .post(requestBody)
+            .addHeader("X-Trino-Routing-Group", "scheduled")
+            .build();
     Response response4 = httpClient.newCall(request4).execute();
     Assert.assertEquals(response4.body().string(), EXPECTED_RESPONSE2);
   }

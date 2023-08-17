@@ -15,6 +15,20 @@
         .dataTables_filter input {
             width: 500px
         }
+
+        .active_true {
+            background-color: green;
+        }
+
+        .active_false {
+            background-color: red;
+        }
+
+        #availableClusters {
+            width: 75%;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="assets/css/common.css"/>
     <link rel="stylesheet" type="text/css" href="assets/css/jquery.dataTables.min.css"/>
@@ -45,13 +59,18 @@
 </div>
 
 <div>
-    <h3>All active backends:</h3>
+    <h3>All backends:</h3>
     <table id="availableClusters" class="display">
         <thead>
         <tr>
-            <th>ClusterName</th>
-            <th>URL</th>
-            <th>RoutingGroup</th>
+            <th>Name</th>
+            <th>Url</th>
+            <th>Group</th>
+            <th>Active</th>
+            <#if backendStates?keys?size != 0>
+                <th>Queued<th>
+                <th>Running<th>
+            </#if>
         </tr>
         </thead>
         <tbody>
@@ -60,6 +79,11 @@
                 <td>  ${bc.name}</td>
                 <td><a href="${bc.externalUrl}/ui" target="_blank">${bc.externalUrl}</a></td>
                 <td> ${bc.routingGroup}</td>
+                <td class="active_${bc.active?c}"> ${bc.active?c} </td>
+                <#if backendStates?keys?size != 0 && backendStates[bc.name]??>
+                    <td>${backendStates[bc.name].state["QUEUED"]}<td>
+                    <td>${backendStates[bc.name].state["RUNNING"]}<td>
+                </#if>
             </tr>
         </#list>
         </tbody>

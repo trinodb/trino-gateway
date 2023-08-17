@@ -4,14 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
-
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
-
 import java.io.IOException;
 import java.util.List;
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -21,20 +20,21 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RolesAllowed({"USER"})
 @Path("/presto")
 @Produces(MediaType.APPLICATION_JSON)
 public class PrestoResource {
-  @Inject private ResourceGroupsManager resourceGroupsManager;
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  @Inject
+  private ResourceGroupsManager resourceGroupsManager;
 
   @POST
   @Path("/resourcegroup/create")
   public Response createResourceGroup(@QueryParam("useSchema")
-                                                String useSchema, String jsonPayload) {
+                                      String useSchema, String jsonPayload) {
     try {
       ResourceGroupsDetail resourceGroup =
           OBJECT_MAPPER.readValue(jsonPayload, ResourceGroupsDetail.class);
@@ -50,19 +50,19 @@ public class PrestoResource {
   @GET
   @Path("/resourcegroup/read")
   public Response readAllResourceGroups(@QueryParam("useSchema")
-                                                String useSchema) {
+                                        String useSchema) {
     return Response.ok(this.resourceGroupsManager.readAllResourceGroups(
-            useSchema)).build();
+        useSchema)).build();
   }
 
   @GET
   @Path("/resourcegroup/read/{resourceGroupId}")
   public Response readResourceGroup(@PathParam("resourceGroupId") String resourceGroupIdStr,
                                     @QueryParam("useSchema")
-                                            String useSchema) {
+                                    String useSchema) {
     if (Strings.isNullOrEmpty(resourceGroupIdStr)) { // if query not specified, return all
       return Response.ok(this.resourceGroupsManager.readAllResourceGroups(useSchema))
-              .build();
+          .build();
     }
     long resourceGroupId = Long.parseLong(resourceGroupIdStr);
     List<ResourceGroupsDetail> resourceGroup =
@@ -74,7 +74,7 @@ public class PrestoResource {
   @POST
   public Response updateResourceGroup(String jsonPayload,
                                       @QueryParam("useSchema")
-                                              String useSchema) {
+                                      String useSchema) {
     try {
       ResourceGroupsDetail resourceGroup =
           OBJECT_MAPPER.readValue(jsonPayload, ResourceGroupsDetail.class);
@@ -91,7 +91,7 @@ public class PrestoResource {
   @POST
   public Response deleteResourceGroup(@PathParam("resourceGroupId") String resourceGroupIdStr,
                                       @QueryParam("useSchema")
-                                              String useSchema) {
+                                      String useSchema) {
     if (Strings.isNullOrEmpty(resourceGroupIdStr)) { // if query not specified, return all
       throw new WebApplicationException("EntryType can not be null");
     }
@@ -107,7 +107,7 @@ public class PrestoResource {
     try {
       SelectorsDetail selector = OBJECT_MAPPER.readValue(jsonPayload, SelectorsDetail.class);
       SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(selector,
-              useSchema);
+          useSchema);
       return Response.ok(updatedSelector).build();
     } catch (IOException e) {
       log.error(e.getMessage(), e);
@@ -118,7 +118,7 @@ public class PrestoResource {
   @GET
   @Path("/selector/read")
   public Response readAllSelectors(@QueryParam("useSchema")
-                                             String useSchema) {
+                                   String useSchema) {
     return Response.ok(this.resourceGroupsManager.readAllSelectors(useSchema)).build();
   }
 
@@ -131,7 +131,7 @@ public class PrestoResource {
     }
     long resourceGroupId = Long.parseLong(resourceGroupIdStr);
     List<SelectorsDetail> selectors = this.resourceGroupsManager.readSelector(resourceGroupId,
-            useSchema);
+        useSchema);
     return Response.ok(selectors).build();
   }
 
@@ -157,8 +157,9 @@ public class PrestoResource {
 
   @Path("/selector/delete/")
   @POST
-  public Response deleteSelector(String jsonPayload, @QueryParam("useSchema")
-          String useSchema) {
+  public Response deleteSelector(String jsonPayload,
+                                 @QueryParam("useSchema")
+                                 String useSchema) {
     if (Strings.isNullOrEmpty(jsonPayload)) {
       throw new WebApplicationException("EntryType can not be null");
     }
@@ -175,7 +176,7 @@ public class PrestoResource {
   @Path("/globalproperty/create")
   public Response createGlobalProperty(String jsonPayload,
                                        @QueryParam("useSchema")
-                                               String useSchema) {
+                                       String useSchema) {
     try {
       GlobalPropertiesDetail globalProperty =
           OBJECT_MAPPER.readValue(jsonPayload, ResourceGroupsManager.GlobalPropertiesDetail.class);
@@ -191,19 +192,19 @@ public class PrestoResource {
   @GET
   @Path("/globalproperty/read")
   public Response readAllGlobalProperties(@QueryParam("useSchema")
-                                                    String useSchema) {
+                                          String useSchema) {
     return Response.ok(this.resourceGroupsManager.readAllGlobalProperties(useSchema))
-            .build();
+        .build();
   }
 
   @GET
   @Path("/globalproperty/read/{name}")
   public Response readGlobalProperty(@PathParam("name") String name,
                                      @QueryParam("useSchema")
-                                             String useSchema) {
+                                     String useSchema) {
     if (Strings.isNullOrEmpty(name)) {
       return Response.ok(this.resourceGroupsManager.readAllGlobalProperties(useSchema))
-              .build();
+          .build();
     }
     List<GlobalPropertiesDetail> globalProperty =
         this.resourceGroupsManager.readGlobalProperty(name, useSchema);
@@ -214,7 +215,7 @@ public class PrestoResource {
   @POST
   public Response updateGlobalProperty(String jsonPayload,
                                        @QueryParam("useSchema")
-                                               String useSchema) {
+                                       String useSchema) {
     try {
       GlobalPropertiesDetail globalProperty =
           OBJECT_MAPPER.readValue(jsonPayload, ResourceGroupsManager.GlobalPropertiesDetail.class);
@@ -231,7 +232,7 @@ public class PrestoResource {
   @POST
   public Response deleteGlobalProperty(@PathParam("name") String name,
                                        @QueryParam("useSchema")
-                                               String useSchema) {
+                                       String useSchema) {
     resourceGroupsManager.deleteGlobalProperty(name, useSchema);
     return Response.ok().build();
   }

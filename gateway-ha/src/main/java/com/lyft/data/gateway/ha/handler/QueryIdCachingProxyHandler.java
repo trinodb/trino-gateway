@@ -2,6 +2,7 @@ package com.lyft.data.gateway.ha.handler;
 
 import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.io.CharStreams;
 import com.lyft.data.gateway.ha.router.QueryHistoryManager;
@@ -9,22 +10,20 @@ import com.lyft.data.gateway.ha.router.RoutingGroupSelector;
 import com.lyft.data.gateway.ha.router.RoutingManager;
 import com.lyft.data.proxyserver.ProxyHandler;
 import com.lyft.data.proxyserver.wrapper.MultiReadHttpServletRequest;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Enumeration;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.client.api.Request;
-
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Callback;
 
@@ -37,6 +36,8 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
   public static final String UI_API_STATS_PATH = "/ui/api/stats";
   public static final String UI_API_QUEUED_LIST_PATH = "/ui/api/query?state=QUEUED";
   public static final String PRESTO_UI_PATH = "/ui";
+  public static final String OAUTH_PATH = "/oauth2";
+  public static final String AUTHORIZATION = "Authorization";
   public static final String USER_HEADER = "X-Trino-User";
   public static final String ALTERNATE_USER_HEADER = "X-Presto-User";
   public static final String SOURCE_HEADER = "X-Trino-Source";
@@ -69,6 +70,130 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
     this.serverApplicationPort = serverApplicationPort;
   }
 
+  protected static String extractQueryIdIfPresent(String path, String queryParams) {
+    if (path == null) {
+      return null;
+    }
+    String queryId = null;
+
+    log.debug("trying to extract query id from  path [{}] or queryString [{}]", path, queryParams);
+    if (path.startsWith(V1_STATEMENT_PATH) || path.startsWith(V1_QUERY_PATH)) {
+      String[] tokens = path.split("/");
+      if (tokens.length >= 4) {
+        if (path.contains("queued")
+            || path.contains("scheduled")
+            || path.contains("executing")
+            || path.contains("partialCancel")) {
+          queryId = tokens[4];
+        } else {
+          queryId = tokens[3];
+        }
+      }
+    } else if (path.startsWith(PRESTO_UI_PATH)) {
+      Matcher matcher = QUERY_ID_PATTERN.matcher(path);
+      if (matcher.matches()) {
+        queryId = matcher.group(1);
+      }
+    }
+    log.debug("query id in url [{}]", queryId);
+    return queryId;
+  }
+
+  protected String extractQueryIdIfPresent(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    String queryParams = request.getQueryString();
+    try {
+      String queryText = CharStreams.toString(request.getReader());
+      if (!Strings.isNullOrEmpty(queryText)
+          && queryText.toLowerCase().contains("system.runtime.kill_query")) {
+        // extract and return the queryId
+        String[] parts = queryText.split(",");
+        for (String part : parts) {
+          if (part.contains("query_id")) {
+            Matcher m = EXTRACT_BETWEEN_SINGLE_QUOTES.matcher(part);
+            if (m.find()) {
+              String queryQuoted = m.group();
+              if (!Strings.isNullOrEmpty(queryQuoted) && queryQuoted.length() > 0) {
+                return queryQuoted.substring(1, queryQuoted.length() - 1);
+              }
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error extracting query payload from request", e);
+    }
+
+    return extractQueryIdIfPresent(path, queryParams);
+  }
+
+
+  static void setForwardedHostHeaderOnProxyRequest(HttpServletRequest request,
+                                                   Request proxyRequest) {
+    if (request.getHeader(PROXY_TARGET_HEADER) != null) {
+      try {
+        URI backendUri = new URI(request.getHeader(PROXY_TARGET_HEADER));
+        StringBuilder hostName = new StringBuilder();
+        hostName.append(backendUri.getHost());
+        if (backendUri.getPort() != -1) {
+          hostName.append(":").append(backendUri.getPort());
+        }
+        String overrideHostName = hostName.toString();
+        log.debug("Incoming Request Host header : [{}], proxy request host header : [{}]",
+            request.getHeader(HOST_HEADER), overrideHostName);
+
+        proxyRequest.header(HOST_HEADER, overrideHostName);
+      } catch (URISyntaxException e) {
+        log.warn(e.toString());
+      }
+    } else {
+      log.warn("Proxy Target not set on request, unable to decipher HOST header");
+    }
+  }
+
+  static String getQueryUser(HttpServletRequest request) {
+    String trinoUser = request.getHeader(USER_HEADER);
+
+    if (!Strings.isNullOrEmpty(trinoUser)) {
+      log.info("user from %s", USER_HEADER);
+      return trinoUser;
+    }
+
+    trinoUser = request.getHeader(ALTERNATE_USER_HEADER);
+    if (!Strings.isNullOrEmpty(trinoUser)) {
+      log.info("user from %s", ALTERNATE_USER_HEADER);
+      return trinoUser;
+    }
+
+    log.info("user from basic auth");
+    String user = "";
+    String header = request.getHeader(AUTHORIZATION);
+    if (header == null) {
+      log.error("didn't find any basic auth header");
+      return user;
+    }
+
+    int space = header.indexOf(' ');
+    if ((space < 0) || !header.substring(0, space).equalsIgnoreCase("basic")) {
+      log.error("basic auth format is incorrect");
+      return user;
+    }
+
+    String headerInfo = header.substring(space + 1).trim();
+    if (Strings.isNullOrEmpty(headerInfo)) {
+      log.error("The encoded value of basic auth doesn't exist");
+      return user;
+    }
+
+    String info = new String(Base64.getDecoder().decode(headerInfo));
+    List<String> parts = Splitter.on(':').limit(2).splitToList(info);
+    if (parts.size() < 1) {
+      log.error("no user inside the basic auth text");
+      return user;
+    }
+    return parts.get(0);
+  }
+
   @Override
   public void preConnectionHook(HttpServletRequest request, Request proxyRequest) {
     if (request.getMethod().equals(HttpMethod.POST)
@@ -97,7 +222,8 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
         || path.startsWith(V1_QUERY_PATH)
         || path.startsWith(PRESTO_UI_PATH)
         || path.startsWith(V1_INFO_PATH)
-        || path.startsWith(UI_API_STATS_PATH);
+        || path.startsWith(UI_API_STATS_PATH)
+        || path.startsWith(OAUTH_PATH);
   }
 
   public boolean isAuthEnabled() {
@@ -123,7 +249,7 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
       } else {
         String routingGroup = routingGroupSelector.findRoutingGroup(request);
         String user = Optional.ofNullable(request.getHeader(USER_HEADER))
-                .orElse(request.getHeader(ALTERNATE_USER_HEADER));
+            .orElse(request.getHeader(ALTERNATE_USER_HEADER));
         if (!Strings.isNullOrEmpty(routingGroup)) {
           // This falls back on adhoc backend if there are no cluster found for the routing group.
           backendAddress = routingManager.provideBackendForRoutingGroup(routingGroup, user);
@@ -157,63 +283,6 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
 
     log.info("Rerouting [{}]--> [{}]", originalLocation, targetLocation);
     return targetLocation;
-  }
-
-  protected String extractQueryIdIfPresent(HttpServletRequest request) {
-    String path = request.getRequestURI();
-    String queryParams = request.getQueryString();
-    try {
-      String queryText = CharStreams.toString(request.getReader());
-      if (!Strings.isNullOrEmpty(queryText)
-          && queryText.toLowerCase().contains("system.runtime.kill_query")) {
-        // extract and return the queryId
-        String[] parts = queryText.split(",");
-        for (String part : parts) {
-          if (part.contains("query_id")) {
-            Matcher m = EXTRACT_BETWEEN_SINGLE_QUOTES.matcher(part);
-            if (m.find()) {
-              String queryQuoted = m.group();
-              if (!Strings.isNullOrEmpty(queryQuoted) && queryQuoted.length() > 0) {
-                return queryQuoted.substring(1, queryQuoted.length() - 1);
-              }
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.error("Error extracting query payload from request", e);
-    }
-
-    return extractQueryIdIfPresent(path, queryParams);
-  }
-
-  protected static String extractQueryIdIfPresent(String path, String queryParams) {
-    if (path == null) {
-      return null;
-    }
-    String queryId = null;
-
-    log.debug("trying to extract query id from  path [{}] or queryString [{}]", path, queryParams);
-    if (path.startsWith(V1_STATEMENT_PATH) || path.startsWith(V1_QUERY_PATH)) {
-      String[] tokens = path.split("/");
-      if (tokens.length >= 4) {
-        if (path.contains("queued")
-            || path.contains("scheduled")
-            || path.contains("executing")
-            || path.contains("partialCancel")) {
-          queryId = tokens[4];
-        } else {
-          queryId = tokens[3];
-        }
-      }
-    } else if (path.startsWith(PRESTO_UI_PATH)) {
-      Matcher matcher = QUERY_ID_PATTERN.matcher(path);
-      if (matcher.matches()) {
-        queryId = matcher.group(1);
-      }
-    }
-    log.debug("query id in url [{}]", queryId);
-    return queryId;
   }
 
   protected void postConnectionHook(
@@ -271,38 +340,14 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
     super.postConnectionHook(request, response, buffer, offset, length, callback);
   }
 
-  static void setForwardedHostHeaderOnProxyRequest(HttpServletRequest request,
-                                                   Request proxyRequest) {
-    if (request.getHeader(PROXY_TARGET_HEADER) != null) {
-      try {
-        URI backendUri = new URI(request.getHeader(PROXY_TARGET_HEADER));
-        StringBuilder hostName = new StringBuilder();
-        hostName.append(backendUri.getHost());
-        if (backendUri.getPort() != -1) {
-          hostName.append(":").append(backendUri.getPort());
-        }
-        String overrideHostName = hostName.toString();
-        log.debug("Incoming Request Host header : [{}], proxy request host header : [{}]",
-            request.getHeader(HOST_HEADER), overrideHostName);
-
-        proxyRequest.header(HOST_HEADER, overrideHostName);
-      } catch (URISyntaxException e) {
-        log.warn(e.toString());
-      }
-    } else {
-      log.warn("Proxy Target not set on request, unable to decipher HOST header");
-    }
-  }
-
   private QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(HttpServletRequest request)
       throws IOException {
     QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
     queryDetail.setBackendUrl(request.getHeader(PROXY_TARGET_HEADER));
     queryDetail.setCaptureTime(System.currentTimeMillis());
-    queryDetail.setUser(Optional.ofNullable(request.getHeader(USER_HEADER))
-            .orElse(request.getHeader(ALTERNATE_USER_HEADER)));
+    queryDetail.setUser(getQueryUser(request));
     queryDetail.setSource(Optional.ofNullable(request.getHeader(SOURCE_HEADER))
-            .orElse(request.getHeader(ALTERNATE_SOURCE_HEADER)));
+        .orElse(request.getHeader(ALTERNATE_SOURCE_HEADER)));
     String queryText = CharStreams.toString(request.getReader());
     queryDetail.setQueryText(
         queryText.length() > QUERY_TEXT_LENGTH_FOR_HISTORY

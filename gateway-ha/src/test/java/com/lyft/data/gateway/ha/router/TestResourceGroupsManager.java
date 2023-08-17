@@ -10,7 +10,6 @@ import com.lyft.data.gateway.ha.config.DataStoreConfiguration;
 import com.lyft.data.gateway.ha.persistence.JdbcConnectionManager;
 import java.io.File;
 import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -30,7 +29,7 @@ public class TestResourceGroupsManager {
     String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
     HaGatewayTestUtils.seedRequiredData(
         new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
-    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver");
+    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     resourceGroupManager = new HaResourceGroupsManager(connectionManager);
   }
@@ -47,7 +46,7 @@ public class TestResourceGroupsManager {
     resourceGroup.setSoftMemoryLimit("80%");
 
     ResourceGroupsDetail newResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
-            null);
+        null);
 
     Assert.assertEquals(newResourceGroup, resourceGroup);
   }
@@ -255,7 +254,7 @@ public class TestResourceGroupsManager {
   @Test(dependsOnMethods = {"testCreateGlobalProperties"})
   public void testReadGlobalProperties() {
     List<GlobalPropertiesDetail> globalProperties = resourceGroupManager.readAllGlobalProperties(
-            null);
+        null);
 
     Assert.assertEquals(globalProperties.size(), 1);
     Assert.assertEquals(globalProperties.get(0).getName(), "cpu_quota_period");
@@ -271,7 +270,7 @@ public class TestResourceGroupsManager {
     GlobalPropertiesDetail updated =
         resourceGroupManager.updateGlobalProperty(globalPropertiesDetail, null);
     List<GlobalPropertiesDetail> globalProperties = resourceGroupManager.readAllGlobalProperties(
-            null);
+        null);
 
     Assert.assertEquals(globalProperties.size(), 1);
     Assert.assertEquals(updated, globalProperties.get(0));
@@ -323,5 +322,6 @@ public class TestResourceGroupsManager {
   }
 
   @AfterClass(alwaysRun = true)
-  public void cleanUp() {}
+  public void cleanUp() {
+  }
 }

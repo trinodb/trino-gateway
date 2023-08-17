@@ -1,12 +1,9 @@
 package com.lyft.data.proxyserver;
 
 import java.util.concurrent.TimeUnit;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
@@ -49,7 +46,9 @@ public class ProxyServletImpl extends ProxyServlet.Transparent {
     return httpClient;
   }
 
-  /** Customize the headers of forwarding proxy requests. */
+  /**
+   * Customize the headers of forwarding proxy requests.
+   */
   @Override
   protected void addProxyHeaders(HttpServletRequest request, Request proxyRequest) {
     super.addProxyHeaders(request, proxyRequest);
