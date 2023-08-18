@@ -1,3 +1,8 @@
-target/**
-**/target/**
-.idea/**
+.editorconfig
+.idea
+**/target/*
+.DS_Store
+*.iml
+
+.vscode/
+localdev/etc

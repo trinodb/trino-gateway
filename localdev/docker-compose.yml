@@ -3,7 +3,7 @@ services:
   mysqldb:
     environment:
     - MYSQL_ROOT_PASSWORD=root123
-    - MYSQL_DATABASE=prestogateway
+    - MYSQL_DATABASE=trinogateway
     image: mysql:5.5
     ports:
       - "3306:3306"
@@ -19,19 +19,33 @@ services:
       - target: /etc/mysql/add_backends.sql
         source: ./add_backends.sql
         type: bind
-  trino-1:
+  postgres:
+    image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres}
+    restart: always
+    environment:
+      - PGPORT=5432
+      - POSTGRES_PASSWORD=P0stG&es
+      - POSTGRES_DB=trino_gateway_db
+      - POSTGRES_USER=trino_gateway_db_admin
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     volumes:
-      - target: /usr/lib/trino/etc
-        source: ./trino-1/etc
+      - target: /etc/postgresql/gateway-ha-persistence-postgres.sql
+        source: ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql
         type: bind
+      - target: /etc/postgresql/add_backends_postgres.sql
+        source: ./add_backends_postgres.sql
+        type: bind
+  trino-1:
     image: trinodb/trino:395
     ports:
       - "8081:8080"
   trino-2:
-    volumes:
-      - target: /usr/lib/trino/etc
-        source: ./trino-2/etc
-        type: bind
     image: trinodb/trino:395
     ports:
       - "8082:8080"
