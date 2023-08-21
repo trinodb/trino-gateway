@@ -8,10 +8,10 @@ requestRouter:
   historySize: 1000
 
 dataStore:
-  jdbcUrl: jdbc:mysql://localhost:3306/trinogateway
-  user: root
-  password: root123
-  driver: com.mysql.cj.jdbc.Driver
+  jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db
+  user: trino_gateway_db_admin
+  password: P0stG&es
+  driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
 
 backendState:

@@ -1,6 +1,6 @@
-# presto-gateway
+# trino-gateway
 
-A load balancer / proxy / gateway for presto compute engine.
+A load balancer / proxy / gateway for trino compute engine.
 
 How to setup a dev environment
 ------------------------------
@@ -17,18 +17,25 @@ docker-compose up -d
 `docker-compose ps`
 
 #### Create the schema for the backends, once mysqldb becomes healthy
-`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dprestogateway < /etc/mysql/gateway-ha-persistence.sql"`
+`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dtrinogateway < /etc/mysql/gateway-ha-persistence.sql"`
 
-#### Add the backends
-`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dprestogateway < /etc/mysql/add_backends.sql"`
-- It would add 2 trino backend records which can be used for the development and testing
+#### Add the backends for mysqldb
+`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dtrinogateway < /etc/mysql/add_backends.sql"`
+
+#### Create the schema for the backends, once postgres becomes healthy
+`docker-compose exec postgres sh -c 'PGPASSWORD="P0stG&es" psql -h localhost -p 5432 -U trino_gateway_db_admin -d trino_gateway_db -f /etc/postgresql/gateway-ha-persistence-postgres.sql'`
+
+#### Add the backends for postgres
+`docker-compose exec postgres sh -c 'PGPASSWORD="P0stG&es" psql -h localhost -p 5432 -U trino_gateway_db_admin -d trino_gateway_db -f /etc/postgresql/add_backends_postgres.sql'`
+
+It would add 2 trino backend records which can be used for the development and testing
 
 
 ### Build and run
 
 Please note these steps have been verified with JDK 8 and 11. Higher versions of Java might run into unexpected issues. 
 
-run `mvn clean install` to build `presto-gateway`
+run `mvn clean install` to build `trino-gateway`
 
 Edit the [config file](/gateway-ha/gateway-ha-config.yml) and update the mysql db information.
 
@@ -49,11 +56,9 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
     DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
     include jdk.disabled.namedCurves
 ```
-Remove `TLSv1, TLSv1.1` and redo the above steps to build and run `presto-gateway`.
+Remove `TLSv1, TLSv1.1` and redo the above steps to build and run `trino-gateway`.
 
-Now you can access load balanced presto at localhost:8080 port. We will refer to this as `prestogateway.lyft.com`
-
-If you see test failures while building `presto-gateway` or in an IDE, please  run `mvn process-classes` to instrument javalite models
+If you see test failures while building `trino-gateway` or in an IDE, please  run `mvn process-classes` to instrument javalite models
 which are used by the tests . Ref [javalite-examples](https://github.com/javalite/javalite-examples/tree/master/simple-example#instrumentation) for more details.
 
 ## Gateway API
@@ -61,38 +66,21 @@ which are used by the tests . Ref [javalite-examples](https://github.com/javalit
 ### Add or update a backend
 ```$xslt
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "presto1", \
-        "proxyTo": "http://presto1.lyft.com",\
+ -d '{  "name": "trino-3", \
+        "proxyTo": "http://localhost:8083",\
         "active": true, \
         "routingGroup": "adhoc" \
     }'
-
-curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "presto2", \
-        "proxyTo": "http://presto2.lyft.com",\
-        "active": true, \
-        "routingGroup": "adhoc" \
-    }'
-
 ```
 If the backend URL is different from the `proxyTo` URL (for example if they are internal vs. external hostnames). You can use the optional `externalUrl` field to override the link in the Active Backends page.
 ```$xslt
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "presto1", \ 
-        "proxyTo": "http://presto1.lyft.com",\
+ -d '{  "name": "trino-3", \ 
+        "proxyTo": "http://localhost:8083",\
         "active": true, \
         "routingGroup": "adhoc" \
-        "externalUrl": "http://presto1-external.lyft.com",\
+        "externalUrl": "http://localhost:8084",\
     }'
-
-curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "presto2", \ 
-        "proxyTo": "http://presto2.lyft.com",\
-        "active": true, \
-        "routingGroup": "adhoc" \
-        "externalUrl": "http://presto2-external.lyft.com",\
-    }'
-
 ```
 
 ### Get all backends behind the gateway
@@ -100,16 +88,25 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
 curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
 [
     {
+        "name": "trino-1",
+        "proxyTo": "http://localhost:8081",
         "active": true,
-        "name": "presto1",
-        "proxyTo": "http://presto1.lyft.com",
-        "routingGroup": "adhoc"
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8081"
     },
     {
+        "name": "trino-2",
+        "proxyTo": "http://localhost:8082",
         "active": true,
-        "name": "presto2",
-        "proxyTo": "http://presto2.lyft.com",
-        "routingGroup": "adhoc"
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8082"
+    },
+    {
+        "name": "trino-3",
+        "proxyTo": "http://localhost:8083",
+        "active": true,
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8084"
     }
 ]
 ```
@@ -117,49 +114,52 @@ curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
 ### Delete a backend from the gateway
 
 ```$xslt
-curl -X POST -d "presto3" http://localhost:8080/gateway/backend/modify/delete
+curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
 ```
 
 ### Deactivate a backend
 ```$xslt
-curl -X POST http://localhost:8080/gateway/backend/deactivate/presto2
+curl -X POST http://localhost:8080/gateway/backend/deactivate/trino2
 ```
 
 ### Get all active backend behind the Gateway
 
-`curl -X GET http://localhost:8080/gateway/backend/active | python -m json.tool`
+`curl -X GET http://localhost:8080/gateway/backend/active`
 ```
-    [{
+[
+    {
+        "name": "trino-1",
+        "proxyTo": "http://localhost:8081",
         "active": true,
-        "name": "presto1",
-        "proxyTo": "http://presto1.lyft.com",
-        "routingGroup": "adhoc"
-    }]
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8081"
+    }
+]
 ```
 
 ### Activate a backend
-`curl -X POST http://localhost:8080/gateway/backend/activate/presto2`
+`curl -X POST http://localhost:8080/gateway/backend/activate/trino2`
 
 
 ### Query History UI - check query plans etc.
-PrestoGateway records history of recent queries and displays links to check query details page in respective presto cluster.
-![prestogateway.lyft.com](/docs/assets/prestogateway_query_history.png)
+trinoGateway records history of recent queries and displays links to check query details page in respective trino cluster.
+![trino.gateway.io](/docs/assets/trinogateway_query_history.png)
 
 ### Gateway Admin UI - add and modify backend information
 The Gateway admin page is used to configure the gateway to multiple backends. Existing backend information can also be modified using the same.
-![prestogateway.lyft.com/entity](/docs/assets/prestogateway_ha_admin.png)
+![trino.gateway.io/entity](/docs/assets/trinogateway_ha_admin.png)
 
 ## Resource Groups API
 
-For resource group and selector apis, we can now specify a query parameter with the request supporting multiple presto databases for different presto backends. This allows a user to configure a db for every presto backend with their own resource groups and selector tables. To use this, just specify the query parameter ?useSchema=<schemaname> to the request. Example, to list all resource groups,
+For resource group and selector apis, we can now specify a query parameter with the request supporting multiple trino databases for different trino backends. This allows a user to configure a db for every trino backend with their own resource groups and selector tables. To use this, just specify the query parameter ?useSchema=<schemaname> to the request. Example, to list all resource groups,
  ```$xslt
-curl -X GET http://localhost:8080/presto/resourcegroup/read/{INSERT_ID_HERE}?useSchema=newdatabasename
+curl -X GET http://localhost:8080/trino/resourcegroup/read/{INSERT_ID_HERE}?useSchema=newdatabasename
 ```
  
 ### Add a resource group
 To add a single resource group, specify all relevant fields in the body. Resource group id should not be specified since the database should autoincrement it.
 ```$xslt
-curl -X POST http://localhost:8080/presto/resourcegroup/create \
+curl -X POST http://localhost:8080/trino/resourcegroup/create \
  -d '{  
         "name": "resourcegroup1", \
         "softMemoryLimit": "100%", \
@@ -179,13 +179,13 @@ curl -X POST http://localhost:8080/presto/resourcegroup/create \
 ### Get existing resource group(s)
 If no resourceGroupId (type long) is specified, then all existing resource groups are fetched. 
 ```$xslt
-curl -X GET http://localhost:8080/presto/resourcegroup/read/{INSERT_ID_HERE}
+curl -X GET http://localhost:8080/trino/resourcegroup/read/{INSERT_ID_HERE}
 ```
 
 ### Update a resource group
 Specify all columns in the body, which will overwrite properties for the resource group with that specific resourceGroupId.
 ```$xslt
-curl -X POST http://localhost:8080/presto/resourcegroup/update \
+curl -X POST http://localhost:8080/trino/resourcegroup/update \
  -d '{  "resourceGroupId": 1, \
         "name": "resourcegroup_updated", \
         "softMemoryLimit": "80%", \
@@ -205,13 +205,13 @@ curl -X POST http://localhost:8080/presto/resourcegroup/update \
 ### Delete a resource group
 To delete a resource group, specify the corresponding resourceGroupId (type long).
 ```$xslt
-curl -X POST http://localhost:8080/presto/resourcegroup/delete/{INSERT_ID_HERE}
+curl -X POST http://localhost:8080/trino/resourcegroup/delete/{INSERT_ID_HERE}
 ```
 
 ### Add a selector
 To add a single selector, specify all relevant fields in the body. Resource group id should not be specified since the database should autoincrement it.
 ```$xslt
-curl -X POST http://localhost:8080/presto/selector/create \
+curl -X POST http://localhost:8080/trino/selector/create \
  -d '{  
         "priority": 1, \
         "userRegex": "selector1", \
@@ -223,13 +223,13 @@ curl -X POST http://localhost:8080/presto/selector/create \
 ### Get existing selectors(s)
 If no resourceGroupId (type long) is specified, then all existing selectors are fetched. 
 ```$xslt
-curl -X GET http://localhost:8080/presto/selector/read/{INSERT_ID_HERE}
+curl -X GET http://localhost:8080/trino/selector/read/{INSERT_ID_HERE}
 ```
 
 ### Update a selector
 To update a selector, the existing selector must be specified with all relevant fields under "current". The updated version of that selector is specified under "update", with all relevant fields included. If the selector under "current" does not exist, a new selector will be created with the details under "update". Both "current" and "update" must be included to update a selector. 
 ```$xslt
-curl -X POST http://localhost:8080/presto/selector/update \
+curl -X POST http://localhost:8080/trino/selector/update \
  -d '{  "current": {
             "resourceGroupId": 1, \
             "priority": 1, \
@@ -250,7 +250,7 @@ curl -X POST http://localhost:8080/presto/selector/update \
 ### Delete a selector
 To delete a selector, specify all relevant fields in the body.
 ```$xslt
-curl -X POST http://localhost:8080/presto/selector/delete \
+curl -X POST http://localhost:8080/trino/selector/delete \
  -d '{  "resourceGroupId": 1, \
         "priority": 2, \
         "userRegex": "selector1_updated", \
@@ -262,7 +262,7 @@ curl -X POST http://localhost:8080/presto/selector/delete \
 ### Add a global property
 To add a single global property, specify all relevant fields in the body.
 ```$xslt
-curl -X POST http://localhost:8080/presto/globalproperty/create \
+curl -X POST http://localhost:8080/trino/globalproperty/create \
  -d '{
         "name": "cpu_quota_period", \
         "value": "1h" \
@@ -272,13 +272,13 @@ curl -X POST http://localhost:8080/presto/globalproperty/create \
 ### Get existing global properties
 If no name (type String) is specified, then all existing global properties are fetched. 
 ```$xslt
-curl -X GET http://localhost:8080/presto/globalproperty/read/{INSERT_NAME_HERE}
+curl -X GET http://localhost:8080/trino/globalproperty/read/{INSERT_NAME_HERE}
 ```
 
 ### Update a global property
 Specify all columns in the body, which will overwrite properties for the global property with that specific name.
 ```$xslt
-curl -X POST http://localhost:8080/presto/globalproperty/update \
+curl -X POST http://localhost:8080/trino/globalproperty/update \
  -d '{
         "name": "cpu_quota_period", \
         "value": "2h" \
@@ -288,26 +288,26 @@ curl -X POST http://localhost:8080/presto/globalproperty/update \
 ### Delete a global property
 To delete a global property, specify the corresponding name (type String).
 ```$xslt
-curl -X POST http://localhost:8080/presto/globalproperty/delete/{INSERT_NAME_HERE}
+curl -X POST http://localhost:8080/trino/globalproperty/delete/{INSERT_NAME_HERE}
 ```
 
 ## Graceful shutdown
-Presto gateway supports graceful shutdown of Presto clusters. Even when a cluster is deactivated, any submitted query states can still be retrieved based on the Query ID.
+trino gateway supports graceful shutdown of trino clusters. Even when a cluster is deactivated, any submitted query states can still be retrieved based on the Query ID.
 
-To graceful shutdown a Presto cluster without query losses, the steps are:
+To graceful shutdown a trino cluster without query losses, the steps are:
 1. Set the backend to deactivate state, this prevents any new incoming queries from getting assigned to the backend.
-2. Poll the Presto backend coorinator URL until the queued query count and the running query count both hit 0.
-3. Terminate the Presto Coordinator & Worker Java process.
+2. Poll the trino backend coorinator URL until the queued query count and the running query count both hit 0.
+3. Terminate the trino Coordinator & Worker Java process.
 
 
 To gracefully shutdown a single worker process, see [this](https://trino.io/docs/current/admin/graceful-shutdown.html) for the operations.
 
 ## Routing Rules Engine
-By default, presto-gateway reads the `X-Trino-Routing-Group` request header to route requests.
+By default, trino-gateway reads the `X-Trino-Routing-Group` request header to route requests.
 If this header is not specified, requests are sent to default routing group (adhoc).
 
 The routing rules engine feature enables you to write custom logic to route requests based on the request info such as any of the [request headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers).
-Routing rules are separated from presto-gateway application code to a configuration file, allowing for dynamic rule changes.
+Routing rules are separated from trino-gateway application code to a configuration file, allowing for dynamic rule changes.
 
 ### Defining your routing rules
 To express and fire routing rules, we use the [easy-rules](https://github.com/j-easy/easy-rules) engine. These rules should be stored in a YAML file.
@@ -565,13 +565,13 @@ authorization:
 
 ## Contributing
 
-Want to help build Presto Gateway? Check out our [contributing documentation](CONTRIBUTING.md)
+Want to help build trino Gateway? Check out our [contributing documentation](CONTRIBUTING.md)
 
 References :sparkles:
 --------------------
-[Lyft](https://eng.lyft.com/presto-infrastructure-at-lyft-b10adb9db01)
+[Lyft](https://eng.lyft.com/trino-infrastructure-at-lyft-b10adb9db01)
 
-[Pinterest](https://medium.com/pinterest-engineering/presto-at-pinterest-a8bda7515e52)
+[Pinterest](https://medium.com/pinterest-engineering/trino-at-pinterest-a8bda7515e52)
     
 [Zomato](https://www.zomato.com/blog/powering-data-analytics-with-trino)
 
