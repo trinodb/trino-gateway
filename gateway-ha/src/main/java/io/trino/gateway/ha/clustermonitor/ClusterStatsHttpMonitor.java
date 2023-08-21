@@ -9,13 +9,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -99,8 +98,9 @@ public class ClusterStatsHttpMonitor implements ClusterStatsMonitor {
         .post(formBody)
         .build();
 
-    try {
-      Response res = client.newCall(loginRequest).execute();
+    Call call = client.newCall(loginRequest);
+
+    try (Response res = call.execute()) {
       log.info("login request received response code {}", res.code());
       return client;
     } catch (IOException e) {
@@ -118,10 +118,14 @@ public class ClusterStatsHttpMonitor implements ClusterStatsMonitor {
     }
 
     String targetUrl = backend.getProxyTo() + path;
+    Request request = new Request.Builder()
+        .url(HttpUrl.parse(targetUrl))
+        .get()
+        .build();
 
-    try {
-      Request request = new Request.Builder().url(targetUrl).get().build();
-      Response res = client.newCall(request).execute();
+    Call call = client.newCall(request);
+
+    try (Response res = call.execute()) {
       switch (res.code()) {
         case HttpStatus.SC_OK:
           return res.body().string();
@@ -130,8 +134,7 @@ public class ClusterStatsHttpMonitor implements ClusterStatsMonitor {
           log.debug("username: {}, targetUrl: {}, cookieStore: {}",
               backendStateConfiguration.getUsername(),
               targetUrl,
-              client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl))
-          );
+              client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl)));
           return null;
         default:
           return null;
