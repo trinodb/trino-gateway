@@ -4,11 +4,11 @@ routingRules:
 
 requestRouter:
   port: 8080
-  name: prestoRouter
+  name: trinoRouter
   historySize: 1000
 
 dataStore:
-  jdbcUrl: jdbc:mysql://localhost:3306/prestogateway
+  jdbcUrl: jdbc:mysql://localhost:3306/trinogateway
   user: root
   password: root123
   driver: com.mysql.cj.jdbc.Driver
@@ -34,13 +34,13 @@ monitor:
   connectionTimeout: 15
 
 modules:
-  - com.lyft.data.gateway.ha.module.HaGatewayProviderModule
-  - com.lyft.data.gateway.ha.module.ClusterStateListenerModule
-  - com.lyft.data.gateway.ha.module.ClusterStatsMonitorModule
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
-  - com.lyft.data.gateway.ha.GatewayManagedApp
-  - com.lyft.data.gateway.ha.clustermonitor.ActiveClusterMonitor
+  - io.trino.gateway.ha.GatewayManagedApp
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
 
 # Logging settings.
 logging:
@@ -49,7 +49,7 @@ logging:
 
   # Logger-specific levels.
   loggers:
-    com.lyft: DEBUG
+    io.trino: DEBUG
 
   appenders:
     - type: console
