@@ -5,13 +5,13 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.lyft.data.gateway.ha.config.ProxyBackendConfiguration;
 import com.lyft.data.proxyserver.ProxyServerConfiguration;
-
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +21,8 @@ import javax.ws.rs.HttpMethod;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * This class performs health check, stats counts for each backend and provides a backend given
+ * This class performs health check, stats counts for each backend and provides
+ * a backend given
  * request object. Default implementation comes here.
  */
 @Slf4j
@@ -30,20 +31,22 @@ public abstract class RoutingManager {
   private final LoadingCache<String, String> queryIdBackendCache;
   private ExecutorService executorService = Executors.newFixedThreadPool(5);
   private GatewayBackendManager gatewayBackendManager;
+  private ConcurrentHashMap<String, Boolean> backendToHealth;
 
   public RoutingManager(GatewayBackendManager gatewayBackendManager) {
     this.gatewayBackendManager = gatewayBackendManager;
-    queryIdBackendCache =
-        CacheBuilder.newBuilder()
-            .maximumSize(10000)
-            .expireAfterAccess(30, TimeUnit.MINUTES)
-            .build(
-                new CacheLoader<String, String>() {
-                  @Override
-                  public String load(String queryId) {
-                    return findBackendForUnknownQueryId(queryId);
-                  }
-                });
+    queryIdBackendCache = CacheBuilder.newBuilder()
+        .maximumSize(10000)
+        .expireAfterAccess(30, TimeUnit.MINUTES)
+        .build(
+            new CacheLoader<String, String>() {
+              @Override
+              public String load(String queryId) {
+                return findBackendForUnknownQueryId(queryId);
+              }
+            });
+
+    this.backendToHealth = new ConcurrentHashMap<String, Boolean>();
   }
 
   protected GatewayBackendManager getGatewayBackendManager() {
@@ -57,12 +60,14 @@ public abstract class RoutingManager {
   /**
    * Performs routing to an adhoc backend.
    *
-   * <p>d.
+   * <p>
+   * d.
    *
    * @return
    */
   public String provideAdhocBackend(String user) {
     List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
+    backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
     if (backends.size() == 0) {
       throw new IllegalStateException("Number of active backends found zero");
     }
@@ -71,14 +76,15 @@ public abstract class RoutingManager {
   }
 
   /**
-   * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
+   * Performs routing to a given cluster group. This falls back to an adhoc
+   * backend, if no scheduled
    * backend is found.
    *
    * @return
    */
   public String provideBackendForRoutingGroup(String routingGroup, String user) {
-    List<ProxyBackendConfiguration> backends =
-        gatewayBackendManager.getActiveBackends(routingGroup);
+    List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup);
+    backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
     if (backends.isEmpty()) {
       return provideAdhocBackend(user);
     }
@@ -87,7 +93,8 @@ public abstract class RoutingManager {
   }
 
   /**
-   * Performs cache look up, if a backend not found, it checks with all backends and tries to find
+   * Performs cache look up, if a backend not found, it checks with all backends
+   * and tries to find
    * out which backend has info about given query id.
    *
    * @param queryId
@@ -103,8 +110,14 @@ public abstract class RoutingManager {
     return backendAddress;
   }
 
+  public void upateBackEndHealth(String backendId, Boolean value) {
+    log.info("backend {} isHealthy {}", backendId, value);
+    backendToHealth.put(backendId, value);
+  }
+
   /**
-   * This tries to find out which backend may have info about given query id. If not found returns
+   * This tries to find out which backend may have info about given query id. If
+   * not found returns
    * the first healthy backend.
    *
    * @param queryId
@@ -118,16 +131,15 @@ public abstract class RoutingManager {
       for (ProxyServerConfiguration backend : backends) {
         String target = backend.getProxyTo() + "/v1/query/" + queryId;
 
-        Future<Integer> call =
-            executorService.submit(
-                () -> {
-                  URL url = new URL(target);
-                  HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                  conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(5));
-                  conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
-                  conn.setRequestMethod(HttpMethod.HEAD);
-                  return conn.getResponseCode();
-                });
+        Future<Integer> call = executorService.submit(
+            () -> {
+              URL url = new URL(target);
+              HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+              conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(5));
+              conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
+              conn.setRequestMethod(HttpMethod.HEAD);
+              return conn.getResponseCode();
+            });
         responseCodes.put(backend.getProxyTo(), call);
       }
       for (Map.Entry<String, Future<Integer>> entry : responseCodes.entrySet()) {
@@ -146,4 +158,19 @@ public abstract class RoutingManager {
     // Fallback on first active backend if queryId mapping not found.
     return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
   }
+
+  // Predicate helper function to remove the backends from the list
+  // We are returning the unhealthy (not healthy)
+  private boolean isBackendNotHealthy(String backendId) {
+    if (backendToHealth.isEmpty()) {
+      log.error("backends can not be empty");
+      return true;
+    }
+    Boolean isHealthy = backendToHealth.get(backendId);
+    if (isHealthy == null) {
+      return true;
+    }
+    return !isHealthy;
+  }
+
 }

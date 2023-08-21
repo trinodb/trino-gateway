@@ -9,6 +9,7 @@ import com.lyft.data.gateway.ha.router.GatewayBackendManager;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import com.lyft.data.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+import com.lyft.data.gateway.ha.router.RoutingManager;
 import io.dropwizard.views.View;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -31,7 +32,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RolesAllowed({"ADMIN"})
+@RolesAllowed({ "ADMIN" })
 @Path("entity")
 public class EntityEditorResource {
 
@@ -40,6 +41,9 @@ public class EntityEditorResource {
   private GatewayBackendManager gatewayBackendManager;
   @Inject
   private ResourceGroupsManager resourceGroupsManager;
+
+  @Inject
+  private RoutingManager routingManager;
 
   @GET
   @Produces(MediaType.TEXT_HTML)
@@ -56,8 +60,8 @@ public class EntityEditorResource {
 
   @POST
   public Response updateEntity(@QueryParam("entityType") String entityTypeStr,
-                               @QueryParam("useSchema") String database,
-                               String jsonPayload) {
+      @QueryParam("useSchema") String database,
+      String jsonPayload) {
     if (Strings.isNullOrEmpty(entityTypeStr)) {
       throw new WebApplicationException("EntryType can not be null");
     }
@@ -65,10 +69,11 @@ public class EntityEditorResource {
     try {
       switch (entityType) {
         case GATEWAY_BACKEND:
-          //TODO: make the gateway backend database sensitive
-          ProxyBackendConfiguration backend =
-              OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
+          // TODO: make the gateway backend database sensitive
+          ProxyBackendConfiguration backend = OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
           gatewayBackendManager.updateBackend(backend);
+          log.info("Setting up the backend {} with healthy state", backend.getName());
+          routingManager.upateBackEndHealth(backend.getName(), true);
           break;
         case RESOURCE_GROUP:
           ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
@@ -78,8 +83,8 @@ public class EntityEditorResource {
         case SELECTOR:
           SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
               SelectorsDetail.class);
-          List<SelectorsDetail> oldSelectorDetails =
-              resourceGroupsManager.readSelector(selectorDetails.getResourceGroupId(), database);
+          List<SelectorsDetail> oldSelectorDetails = resourceGroupsManager
+              .readSelector(selectorDetails.getResourceGroupId(), database);
           if (oldSelectorDetails.size() >= 1) {
             resourceGroupsManager.updateSelector(oldSelectorDetails.get(0),
                 selectorDetails, database);
@@ -100,7 +105,7 @@ public class EntityEditorResource {
   @Path("/{entityType}")
   @Produces(MediaType.APPLICATION_JSON)
   public Response getAllEntitiesForType(@PathParam("entityType") String entityTypeStr,
-                                        @QueryParam("useSchema") String database) {
+      @QueryParam("useSchema") String database) {
     EntityType entityType = EntityType.valueOf(entityTypeStr);
 
     switch (entityType) {
