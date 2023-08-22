@@ -66,8 +66,7 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
     resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
     gatewayBackendManager = new HaGatewayManager(connectionManager);
     queryHistoryManager = new HaQueryHistoryManager(connectionManager);
-    routingManager =
-        new HaRoutingManager(gatewayBackendManager, (HaQueryHistoryManager) queryHistoryManager);
+    routingManager = new HaRoutingManager(gatewayBackendManager, (HaQueryHistoryManager) queryHistoryManager);
 
     Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
     AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
@@ -79,7 +78,6 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
         presetUsers);
     authenticationFilter = getAuthFilter(configuration);
     backendStateConnectionManager = new BackendStateManager(configuration.getBackendState());
-
   }
 
   private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration) {
@@ -102,7 +100,7 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
   }
 
   private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config,
-                                                     Authorizer<LbPrincipal> authorizer) {
+      Authorizer<LbPrincipal> authorizer) {
     List<AuthFilter> authFilters = new ArrayList<>();
     String defaultType = config.getDefaultType();
     if (oauthManager != null) {
@@ -138,10 +136,9 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
   }
 
   protected ProxyHandler getProxyHandler() {
-    Meter requestMeter =
-        getEnvironment()
-            .metrics()
-            .meter(getConfiguration().getRequestRouter().getName() + ".requests");
+    Meter requestMeter = getEnvironment()
+        .metrics()
+        .meter(getConfiguration().getRequestRouter().getName() + ".requests");
 
     // By default, use routing group header to route
     RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
@@ -164,8 +161,8 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
 
     AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
     Authorizer<LbPrincipal> authorizer = (authorizationConfig != null)
-        ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
-
+        ? new LbAuthorizer(authorizationConfig)
+        : new NoopAuthorizer();
 
     AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
 
