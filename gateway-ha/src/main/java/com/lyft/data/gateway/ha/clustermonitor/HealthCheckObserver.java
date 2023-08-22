@@ -14,6 +14,7 @@ public class HealthCheckObserver implements PrestoClusterStatsObserver {
   public void observe(java.util.List<ClusterStats> clustersStats) {
     for (ClusterStats clusterStats : clustersStats) {
       routingManager.upateBackEndHealth(clusterStats.getClusterId(), clusterStats.isHealthy());
+      routingManager.updateBackEndHealthDB(clusterStats);
     }
   }
 
