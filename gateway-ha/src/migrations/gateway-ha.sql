@@ -1,4 +1,4 @@
-CREATE DATABASE prestogateway;
+CREATE DATABASE trinogateway;
 
 CREATE TABLE IF NOT EXISTS gateway_backend (
 name VARCHAR(256) PRIMARY KEY,

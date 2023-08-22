@@ -6,8 +6,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.lyft.data</groupId>
-        <artifactId>prestogateway-parent</artifactId>
+        <groupId>io.trino.gateway</groupId>
+        <artifactId>trinogateway-parent</artifactId>
         <version>1.9.5</version>
         <relativePath>../</relativePath>
     </parent>
@@ -16,8 +16,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.9</maven.compiler.source>
+        <maven.compiler.target>1.9</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>

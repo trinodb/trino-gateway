@@ -1,6 +1,5 @@
--- Schema inlined in presto in:
---    presto-resource-group-managers/src/main/java/io/prestosql/plugin
---      /resourcegropus/db/ResourceGroupsDao.java
+-- Schema inlined in trino in:
+-- io/trino/gateway/ha/persistence/dao/ResourceGroups.java
 CREATE TABLE IF NOT EXISTS resource_groups (
     resource_group_id BIGINT NOT NULL AUTO_INCREMENT,
     name VARCHAR(250) NOT NULL UNIQUE,

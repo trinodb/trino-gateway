@@ -1,1 +1,1 @@
-com.lyft.data.baseapp.LogFilterFactory
+io.trino.gateway.baseapp.LogFilterFactory
