@@ -1,4 +1,4 @@
-<#-- @ftlvariable name="" type="com.lyft.data.gateway.resource.GatewayViewResource$GatewayView" -->
+<#-- @ftlvariable name="" type="io.trino.gateway.ha.resource.GatewayViewResource$GatewayView" -->
 <#setting datetime_format = "MM/dd/yyyy hh:mm:ss a '('zzz')'">
     <html>
 <head>

@@ -5,15 +5,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.lyft.data</groupId>
-    <artifactId>prestogateway-parent</artifactId>
-    <name>prestogateway-parent</name>
+    <groupId>io.trino.gateway</groupId>
+    <artifactId>trinogateway-parent</artifactId>
+    <name>trinogateway-parent</name>
     <packaging>pom</packaging>
     <version>1.9.5</version>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.9</maven.compiler.source>
+        <maven.compiler.target>1.9</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -25,12 +25,22 @@
 
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <puppycrawl.tools.checkstyle.version>7.7</puppycrawl.tools.checkstyle.version>
-        <checkstyle.violation.ignore>NonEmptyAtclauseDescription,JavadocMethod
+        <checkstyle.violation.ignore>NonEmptyAtclauseDescription,JavadocMethod,AbbreviationAsWordInName,MemberName
         </checkstyle.violation.ignore>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.trino.gateway</groupId>
+                <artifactId>baseapp</artifactId>
+                <version>1.9.5</version>
+            </dependency>
+            <dependency>
+                <groupId>io.trino.gateway</groupId>
+                <artifactId>proxyserver</artifactId>
+                <version>1.9.5</version>
+            </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
