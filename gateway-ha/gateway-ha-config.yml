@@ -16,30 +16,10 @@ dataStore:
 
 backendState:
   username: lb_query
-  password: <ask>
-  ssl: true
+  ssl: false
 
-authentication:
-  issuer: 
-  clientId: 
-  clientSecret: 
-  tokenEndpoint: 
-  authorizationEndpoint: 
-  jwkEndpoint: 
-  redirectUrl: 
-  scopes:
-    - email
-    - openid
-    - profile
-
-authorization:
-  admin: 
-  user: 
-  ldapHost: 
-  ldapPort: 
-  ldapBindDn: 
-  ldapSearch: 
-  ldapPassword: 
+clusterStatsConfiguration:
+  useApi: true
 
 server:
   applicationConnectors:
@@ -49,13 +29,6 @@ server:
     - type: http
       port: 8091
 
-notifier:
-  smtpHost: localhost
-  smtpPort: 587
-  sender: presto-gw-monitor-noreply@lyft.com
-  recipients:
-    - prestodev@yourorg.com
-
 # This can be adjusted based on the coordinator state
 monitor:
   connectionTimeout: 15
@@ -63,6 +36,7 @@ monitor:
 modules:
   - com.lyft.data.gateway.ha.module.HaGatewayProviderModule
   - com.lyft.data.gateway.ha.module.ClusterStateListenerModule
+  - com.lyft.data.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
   - com.lyft.data.gateway.ha.GatewayManagedApp
@@ -79,9 +53,5 @@ logging:
 
   appenders:
     - type: console
-    - type: file
-      currentLogFilename: /var/log/prestoproxy/prestoproxy-java.log
-      archivedLogFilenamePattern: /var/log/prestoproxy/prestoproxy-java-%d{yyyy-MM-dd}-%i.log.gz
-      archivedFileCount: 7
-      timeZone: UTC
-      maxFileSize: 100MB
+      filterFactories:
+        - type: Log-filter-factory

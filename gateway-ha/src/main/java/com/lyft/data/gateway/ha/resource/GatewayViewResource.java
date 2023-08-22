@@ -7,6 +7,7 @@ import com.lyft.data.gateway.ha.router.GatewayBackendManager;
 import com.lyft.data.gateway.ha.router.QueryHistoryManager;
 import com.lyft.data.gateway.ha.security.LbPrincipal;
 import io.dropwizard.views.View;
+
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.SecurityContext;
 import lombok.Data;
 
-@RolesAllowed({"USER"})
+@RolesAllowed({ "USER" })
 @Path("/")
 public class GatewayViewResource {
   private static final long START_TIME = System.currentTimeMillis();
@@ -69,14 +70,13 @@ public class GatewayViewResource {
     gatewayView.setBackendConfigurations(
         gatewayBackendManager.getAllBackends());
 
-    // Get state (queued,running queries) for all backends
-    gatewayView.setBackendStates(
-        gatewayBackendManager.getAllBackends().stream()
-            .map(backendStateManager::getBackendState)
-            .filter(Optional::isPresent)
-            .collect(Collectors
-                .toMap(s -> s.get().getName(), Optional::get))
-    );
+    Map<String, BackendStateManager.BackendState> backendStates = gatewayBackendManager
+        .getAllBackends()
+        .stream()
+        .map(backendStateManager::getBackendState)
+        .collect(Collectors.toMap(s -> s.getName(), s -> s));
+
+    gatewayView.setBackendStates(backendStates);
 
     Optional<String> userName = getUserNameForQueryHistory(securityContext);
     gatewayView.setQueryHistory(queryHistoryManager.fetchQueryHistory(userName));
@@ -87,8 +87,7 @@ public class GatewayViewResource {
   @GET
   @Path("api/queryHistory")
   @Produces(MediaType.APPLICATION_JSON)
-  public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext
-                                                                   securityContext) {
+  public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext securityContext) {
     Optional<String> userName = getUserNameForQueryHistory(securityContext);
     return queryHistoryManager.fetchQueryHistory(userName);
   }
@@ -103,8 +102,7 @@ public class GatewayViewResource {
   @GET
   @Path("api/queryHistoryDistribution")
   @Produces(MediaType.APPLICATION_JSON)
-  public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext
-                                                              securityContext) {
+  public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext securityContext) {
     Map<String, String> urlToNameMap = new HashMap<>();
     gatewayBackendManager
         .getAllBackends()

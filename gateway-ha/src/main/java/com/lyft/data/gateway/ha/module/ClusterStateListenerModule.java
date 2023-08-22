@@ -3,11 +3,13 @@ package com.lyft.data.gateway.ha.module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.lyft.data.baseapp.AppModule;
+import com.lyft.data.gateway.ha.clustermonitor.ClusterStatsObserver;
 import com.lyft.data.gateway.ha.clustermonitor.HealthCheckObserver;
 import com.lyft.data.gateway.ha.clustermonitor.PrestoClusterStatsObserver;
 import com.lyft.data.gateway.ha.config.HaGatewayConfiguration;
 import com.lyft.data.gateway.ha.config.MonitorConfiguration;
 import com.lyft.data.gateway.ha.config.NotifierConfiguration;
+import com.lyft.data.gateway.ha.router.BackendStateManager;
 import com.lyft.data.gateway.ha.router.RoutingManager;
 import io.dropwizard.setup.Environment;
 import java.util.ArrayList;
@@ -30,10 +32,12 @@ public class ClusterStateListenerModule extends AppModule<HaGatewayConfiguration
    */
   @Provides
   @Singleton
-  public List<PrestoClusterStatsObserver> getClusterStatsObservers(RoutingManager mgr) {
+  public List<PrestoClusterStatsObserver> getClusterStatsObservers(RoutingManager mgr,
+      BackendStateManager backendStateManager) {
     observers = new ArrayList<>();
     NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
     observers.add(new HealthCheckObserver(mgr));
+    observers.add(new ClusterStatsObserver(backendStateManager));
 
     return observers;
   }
