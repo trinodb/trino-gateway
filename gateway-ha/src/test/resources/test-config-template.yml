@@ -1,6 +1,6 @@
 requestRouter:
   port: REQUEST_ROUTER_PORT
-  name: testPrestoRouter
+  name: testTrinoRouter
   historySize: 1000
 
 server:
@@ -18,7 +18,7 @@ dataStore:
   driver: org.h2.Driver
 
 modules:
-  - com.lyft.data.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
 
 managedApps:
-  - com.lyft.data.gateway.ha.GatewayManagedApp
+  - io.trino.gateway.ha.GatewayManagedApp
