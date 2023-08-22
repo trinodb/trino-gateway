@@ -9,6 +9,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.lyft.data.gateway.ha.config.MonitorConfiguration;
 import com.lyft.data.gateway.ha.config.ProxyBackendConfiguration;
+import com.lyft.data.gateway.ha.router.BackendStateManager;
 import com.lyft.data.gateway.ha.router.GatewayBackendManager;
 import io.dropwizard.lifecycle.Managed;
 import java.io.BufferedReader;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -39,6 +41,7 @@ public class ActiveClusterMonitor implements Managed {
 
   private final List<PrestoClusterStatsObserver> clusterStatsObservers;
   private final GatewayBackendManager gatewayBackendManager;
+  private final BackendStateManager backendStateManager;
   private final int connectionTimeout;
   private final int taskDelayMin;
 
@@ -51,11 +54,13 @@ public class ActiveClusterMonitor implements Managed {
   public ActiveClusterMonitor(
       List<PrestoClusterStatsObserver> clusterStatsObservers,
       GatewayBackendManager gatewayBackendManager,
-      MonitorConfiguration monitorConfiguration) {
+      MonitorConfiguration monitorConfiguration,
+      BackendStateManager backendStateManager) {
     this.clusterStatsObservers = clusterStatsObservers;
     this.gatewayBackendManager = gatewayBackendManager;
     this.connectionTimeout = monitorConfiguration.getConnectionTimeout();
     this.taskDelayMin = monitorConfiguration.getTaskDelayMin();
+    this.backendStateManager = backendStateManager;
     log.info("Running cluster monitor with connection timeout of {} and task delay of {}",
         connectionTimeout, taskDelayMin);
   }
@@ -68,12 +73,10 @@ public class ActiveClusterMonitor implements Managed {
         () -> {
           while (monitorActive) {
             try {
-              List<ProxyBackendConfiguration> activeClusters =
-                  gatewayBackendManager.getAllActiveBackends();
+              List<ProxyBackendConfiguration> activeClusters = gatewayBackendManager.getAllActiveBackends();
               List<Future<ClusterStats>> futures = new ArrayList<>();
               for (ProxyBackendConfiguration backend : activeClusters) {
-                Future<ClusterStats> call =
-                    executorService.submit(() -> getPrestoClusterStats(backend));
+                Future<ClusterStats> call = executorService.submit(() -> getPrestoClusterHealth(backend));
                 futures.add(call);
               }
               List<ClusterStats> stats = new ArrayList<>();
@@ -111,8 +114,7 @@ public class ActiveClusterMonitor implements Managed {
       conn.connect();
       int responseCode = conn.getResponseCode();
       if (responseCode == HttpStatus.SC_OK) {
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader((InputStream) conn.getContent()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader((InputStream) conn.getContent()));
         StringBuilder sb = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -133,6 +135,19 @@ public class ActiveClusterMonitor implements Managed {
     return null;
   }
 
+  private ClusterStats getPrestoClusterHealth(ProxyBackendConfiguration backend) {
+    ClusterStats clusterStats = new ClusterStats();
+    clusterStats.setClusterId(backend.getName());
+
+    Optional<BackendStateManager.BackendState> backendState = backendStateManager.getBackendState(backend);
+
+    if (backendState.isPresent()) {
+      log.debug("backend state is {}", backendState.get());
+      clusterStats.setHealthy(true);
+    }
+    return clusterStats;
+  }
+
   private ClusterStats getPrestoClusterStats(ProxyBackendConfiguration backend) {
     ClusterStats clusterStats = new ClusterStats();
     clusterStats.setClusterId(backend.getName());
@@ -142,7 +157,7 @@ public class ActiveClusterMonitor implements Managed {
     String response = queryCluster(target);
     if (Strings.isNullOrEmpty(response)) {
       log.error("Received null/empty response for {}", target);
-      return  clusterStats;
+      return clusterStats;
     }
     clusterStats.setHealthy(true);
     try {
@@ -171,7 +186,8 @@ public class ActiveClusterMonitor implements Managed {
     }
     try {
       List<Map<String, Object>> queries = OBJECT_MAPPER.readValue(response,
-            new TypeReference<List<Map<String, Object>>>(){});
+          new TypeReference<List<Map<String, Object>>>() {
+          });
 
       for (Map<String, Object> q : queries) {
         String user = (String) q.get(SESSION_USER);
