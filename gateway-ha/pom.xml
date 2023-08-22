@@ -17,8 +17,8 @@
     <name>gateway-ha</name>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.9</maven.compiler.source>
+        <maven.compiler.target>1.9</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jetty.version>9.4.48.v20220622</jetty.version>
@@ -31,7 +31,7 @@
         <activejdbc.version>2.3</activejdbc.version>
         <mysqlconnector.version>8.0.17</mysqlconnector.version>
         <environments>development</environments>
-        <app.main.class>com.lyft.data.gateway.ha.HaGatewayLauncher</app.main.class>
+        <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
     </properties>
 
     <dependencies>
@@ -146,6 +146,11 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.17</version>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.6.0</version>
+        </dependency>
         <!-- Test deps -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -252,6 +257,14 @@
                         <version>${mysqlconnector.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>
