@@ -34,6 +34,7 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
   public static final String V1_QUERY_PATH = "/v1/query";
   public static final String V1_INFO_PATH = "/v1/info";
   public static final String UI_API_STATS_PATH = "/ui/api/stats";
+  public static final String UI_LOGIN_PATH = "/ui/login";
   public static final String UI_API_QUEUED_LIST_PATH = "/ui/api/query?state=QUEUED";
   public static final String PRESTO_UI_PATH = "/ui";
   public static final String OAUTH_PATH = "/oauth2";
@@ -127,9 +128,8 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
     return extractQueryIdIfPresent(path, queryParams);
   }
 
-
   static void setForwardedHostHeaderOnProxyRequest(HttpServletRequest request,
-                                                   Request proxyRequest) {
+      Request proxyRequest) {
     if (request.getHeader(PROXY_TARGET_HEADER) != null) {
       try {
         URI backendUri = new URI(request.getHeader(PROXY_TARGET_HEADER));
@@ -251,7 +251,8 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
         String user = Optional.ofNullable(request.getHeader(USER_HEADER))
             .orElse(request.getHeader(ALTERNATE_USER_HEADER));
         if (!Strings.isNullOrEmpty(routingGroup)) {
-          // This falls back on adhoc backend if there are no cluster found for the routing group.
+          // This falls back on adhoc backend if there are no cluster found for the
+          // routing group.
           backendAddress = routingManager.provideBackendForRoutingGroup(routingGroup, user);
         } else {
           backendAddress = routingManager.provideAdhocBackend(user);
@@ -262,24 +263,23 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
     }
     if (isAuthEnabled() && request.getHeader("Authorization") != null) {
       if (!handleAuthRequest(request)) {
-        // This implies the AuthRequest was not authenticated, hence we error out from here.
+        // This implies the AuthRequest was not authenticated, hence we error out from
+        // here.
         log.info("Could not authenticate Request: " + request.toString());
         return null;
       }
     }
-    String targetLocation =
-        backendAddress
-            + request.getRequestURI()
-            + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+    String targetLocation = backendAddress
+        + request.getRequestURI()
+        + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
 
-    String originalLocation =
-        request.getScheme()
-            + "://"
-            + request.getRemoteHost()
-            + ":"
-            + request.getServerPort()
-            + request.getRequestURI()
-            + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+    String originalLocation = request.getScheme()
+        + "://"
+        + request.getRemoteHost()
+        + ":"
+        + request.getServerPort()
+        + request.getRequestURI()
+        + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
 
     log.info("Rerouting [{}]--> [{}]", originalLocation, targetLocation);
     return targetLocation;

@@ -3,6 +3,7 @@ package com.lyft.data.gateway.ha.router;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.lyft.data.gateway.ha.clustermonitor.ClusterStats;
 import com.lyft.data.gateway.ha.config.ProxyBackendConfiguration;
 import com.lyft.data.proxyserver.ProxyServerConfiguration;
 import java.net.HttpURLConnection;
@@ -113,6 +114,15 @@ public abstract class RoutingManager {
   public void upateBackEndHealth(String backendId, Boolean value) {
     log.info("backend {} isHealthy {}", backendId, value);
     backendToHealth.put(backendId, value);
+  }
+
+  public void updateBackEndHealthDB(ClusterStats stats) {
+    String name = stats.getClusterId();
+    if (stats.isHealthy()) {
+      gatewayBackendManager.activateBackend(name);
+    } else {
+      gatewayBackendManager.deactivateBackend(name);
+    }
   }
 
   /**

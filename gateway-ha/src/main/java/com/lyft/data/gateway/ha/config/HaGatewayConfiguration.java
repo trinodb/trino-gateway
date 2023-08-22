@@ -18,4 +18,5 @@ public class HaGatewayConfiguration extends AppConfiguration {
   private AuthorizationConfiguration authorization;
   private Map<String, UserConfiguration> presetUsers = new HashMap();
   private BackendStateConfiguration backendState;
+  private ClusterStatsConfiguration clusterStatsConfiguration;
 }

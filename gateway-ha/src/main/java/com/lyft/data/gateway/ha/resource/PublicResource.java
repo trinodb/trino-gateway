@@ -13,7 +13,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
-
 @Slf4j
 @Path("/api/public")
 @Produces(MediaType.APPLICATION_JSON)
@@ -49,7 +48,7 @@ public class PublicResource {
       BackendStateManager.BackendState state = gatewayBackendManager
           .getBackendByName(name)
           .map(backendStateManager::getBackendState)
-          .get().get();
+          .get();
       return Response.ok(state.getState()).build();
     } catch (NoSuchElementException e) {
       return Response.status(404).build();
