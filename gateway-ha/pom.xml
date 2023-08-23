@@ -17,8 +17,6 @@
     <name>gateway-ha</name>
 
     <properties>
-        <maven.compiler.source>1.9</maven.compiler.source>
-        <maven.compiler.target>1.9</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jetty.version>9.4.48.v20220622</jetty.version>
@@ -258,12 +256,13 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <argLine>--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>
