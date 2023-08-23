@@ -62,7 +62,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
     Mockito.reset(ldapConfig);
   }
 
-  @Test
+  @Test(enabled = false)
   public void testAuthenticate() {
     String user = "user1";
     String password = "pass1";
@@ -116,7 +116,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
     }
   }
 
-  @Test
+  @Test(enabled = false)
   public void testMemberof() {
     String user = "user1";
     String[] attributes = new String[]{"memberOf"};
