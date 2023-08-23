@@ -280,7 +280,9 @@ if [ -n "$wrapperSha256Sum" ]; then
   fi
 fi
 
-MAVEN_OPTS="$(concat_lines "$MAVEN_PROJECTBASEDIR/.mvn/jvm.config") $MAVEN_OPTS"
+#This option is required by the javalite db-migrator-maven-plugin, which does not support adding VM options in its config
+REQUIRED_BUILD_OPTIONS='--add-opens=java.base/java.net=ALL-UNNAMED'
+MAVEN_OPTS="$(concat_lines "$MAVEN_PROJECTBASEDIR/.mvn/jvm.config") $REQUIRED_BUILD_OPTIONS $MAVEN_OPTS"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
