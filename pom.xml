@@ -9,7 +9,7 @@
     <artifactId>trinogateway-parent</artifactId>
     <name>trinogateway-parent</name>
     <packaging>pom</packaging>
-    <version>1.9.5</version>
+    <version>3-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
