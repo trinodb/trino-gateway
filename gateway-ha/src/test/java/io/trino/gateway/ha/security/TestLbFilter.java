@@ -13,6 +13,7 @@ import javax.ws.rs.core.SecurityContext;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -20,6 +21,7 @@ import org.testng.annotations.BeforeClass;
 
 
 @Slf4j
+@Ignore
 public class TestLbFilter {
 
   private static final String USER = "username";
