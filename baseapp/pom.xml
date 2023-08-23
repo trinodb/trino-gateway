@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.trino.gateway</groupId>
         <artifactId>trinogateway-parent</artifactId>
-        <version>1.9.5</version>
+        <version>3-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
@@ -89,4 +89,3 @@
     </build>
 
 </project>
-
