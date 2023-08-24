@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.security;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
@@ -8,17 +10,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @Slf4j
-public class LbLdapClientTest extends junit.framework.TestCase {
+@ExtendWith(MockitoExtension.class)
+public class LbLdapClientTest {
   class DummyPasswordWarning implements org.apache.directory.ldap.client.template.PasswordWarning {
     @Override
     public int getTimeBeforeExpiration() {
@@ -40,29 +44,30 @@ public class LbLdapClientTest extends junit.framework.TestCase {
   LdapConnectionTemplate ldapConnectionTemplate;
 
   @Spy
-  LdapConfiguration ldapConfig;
+  LdapConfiguration ldapConfig =
+      LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml");
   @InjectMocks
-  LbLdapClient lbLdapClient;
+  LbLdapClient lbLdapClient =
+          new LbLdapClient(LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml"));
 
   LbLdapClientTest() {
 
   }
 
-  @BeforeMethod
+  @BeforeEach
   public void initMocks() {
     log.info("initializing test");
-    ldapConfig = LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml");
     org.mockito.MockitoAnnotations.initMocks(this);
   }
 
-  @AfterMethod
+  @AfterEach
   public void resetMocks() {
     log.info("resetting mocks");
     Mockito.reset(ldapConnectionTemplate);
     Mockito.reset(ldapConfig);
   }
 
-  @Test(enabled = false)
+  @Test
   public void testAuthenticate() {
     String user = "user1";
     String password = "pass1";
@@ -78,7 +83,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
           .thenReturn(null);
 
       //Success case
-      Assert.assertTrue(lbLdapClient.authenticate(user, password));
+      assertTrue(lbLdapClient.authenticate(user, password));
 
       Mockito
           .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
@@ -88,7 +93,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
           .thenReturn(new LbLdapClientTest.DummyPasswordWarning());
 
       //Warning case
-      Assert.assertTrue(lbLdapClient.authenticate(user, password));
+      assertTrue(lbLdapClient.authenticate(user, password));
 
 
       Mockito
@@ -99,7 +104,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
           .thenThrow(PasswordException.class);
 
       //failure case
-      Assert.assertFalse(lbLdapClient.authenticate(user, password));
+      assertFalse(lbLdapClient.authenticate(user, password));
 
       Mockito
           .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
@@ -112,11 +117,11 @@ public class LbLdapClientTest extends junit.framework.TestCase {
     } catch (PasswordException ex) {
       log.error("This should not fail");
       //Force the test to fail
-      Assert.assertFalse(false);
+      assertFalse(false);
     }
   }
 
-  @Test(enabled = false)
+  @Test
   public void testMemberof() {
     String user = "user1";
     String[] attributes = new String[]{"memberOf"};
@@ -137,7 +142,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
     String ret = lbLdapClient.getMemberOf(user);
 
     log.info("ret is {}", ret);
-    Assert.assertTrue(ret.equals("Admin,User"));
+    assertTrue(ret.equals("Admin,User"));
 
     org.mockito.Mockito
         .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
@@ -148,7 +153,7 @@ public class LbLdapClientTest extends junit.framework.TestCase {
         .thenReturn(null);
 
     //failure case
-    Assert.assertFalse(lbLdapClient.getMemberOf(user).equals("Admin,User"));
+    assertFalse(lbLdapClient.getMemberOf(user).equals("Admin,User"));
 
   }
 }
