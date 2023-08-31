@@ -34,12 +34,12 @@
             <dependency>
                 <groupId>io.trino.gateway</groupId>
                 <artifactId>baseapp</artifactId>
-                <version>1.9.5</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.trino.gateway</groupId>
                 <artifactId>proxyserver</artifactId>
-                <version>1.9.5</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
