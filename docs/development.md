@@ -67,8 +67,12 @@ db information.
 
 ```
 cd gateway-ha/target/
-java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
+java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
 ```
+
+If you encounter `module java.base does not "opens java.lang" to unnamed module` error, 
+this may be due to newer version of java.
+Do check opts at [jvm.config](../.mvn/jvm.config) when running java command.
 
 If you encounter a `Failed to connect to JDBC URL` error, this may be due to
 newer versions of java disabling certain algorithms when using SSL/TLS, in
