@@ -57,10 +57,11 @@ testing
 
 ### Build and run
 
-Please note these steps have been verified with JDK 8 and 11. Higher versions of
-Java might run into unexpected issues.
+This project requires Java 17. Note that higher version of Java have not been
+verified and may run into unexpected issues.
 
-run `mvn clean install` to build `trino-gateway`
+Run `./mvnw clean install` to build `trino-gateway`. VM options required for
+compilation and testing are specified in `.mvn/jvm.config`.
 
 Edit the [config file](/gateway-ha/gateway-ha-config.yml) and update the mysql
 db information.
@@ -70,17 +71,20 @@ cd gateway-ha/target/
 java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
 ```
 
-If you encounter a `Failed to connect to JDBC URL` error, this may be due to
-newer versions of java disabling certain algorithms when using SSL/TLS, in
-particular `TLSv1` and `TLSv1.1`. This will cause `Bad handshake` errors when
-connecting to the MySQL server. To enable `TLSv1` and `TLSv1.1` open the
-following file in any editor (`sudo` access needed):
+If you encounter a `Failed to connect to JDBC URL` error with the MySQL backend,
+this may be due to newer versions of Java disabling certain algorithms when
+using SSL/TLS, in particular `TLSv1` and `TLSv1.1`. This causes `Bad handshake`
+errors when connecting to the MySQL server. You can avoid this by enabling
+`TLSv1` and `TLSv1.1` in your JDK, or by adding `sslMode=DISABLED` to your
+connection string.
+
+To enable TLS1 and 1.1, in
 
 ```
-/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/jre/lib/security/java.security
+${JAVA_HOME}/jre/lib/security/java.security
 ```
 
-Search for `jdk.tls.disabledAlgorithms`, it should look something like this:
+search for `jdk.tls.disabledAlgorithms`, it should look something like this:
 
 ```
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
@@ -88,11 +92,12 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
     include jdk.disabled.namedCurves
 ```
 
-Remove `TLSv1, TLSv1.1` and redo the above steps to build and run `trino-gateway`.
+Remove `TLSv1, TLSv1.1` and redo the above steps to build and run
+`trino-gateway`.
 
 If you see test failures while building `trino-gateway` or in an IDE, please run
-`mvn process-classes` to instrument javalite models which are used by the tests
-. Ref
+`mvn process-classes` to instrument javalite models which are used by the tests.
+Refer to the
 [javalite-examples](https://github.com/javalite/javalite-examples/tree/master/simple-example#instrumentation)
 for more details.
 
