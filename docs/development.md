@@ -57,8 +57,7 @@ testing
 
 ### Build and run
 
-Please note these steps have been verified with JDK 8 and 11. Higher versions of
-Java might run into unexpected issues.
+Please note these steps have been verified with JDK 17.
 
 run `mvn clean install` to build `trino-gateway`
 
