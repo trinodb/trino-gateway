@@ -22,11 +22,13 @@ The authentication would happen on https protocol only. Add the
 set using `defaultType: "form"` Following types of the authentications are
 supported.
 
-### odic
+### OAuth/OpenIDConnect
 
 It can be configured as below
 
 ```
+authentication:
+  defaultType: "oauth"
   oauth:
     issuer:
     clientId:
@@ -42,7 +44,7 @@ It can be configured as below
       - s3
 ```
 
-### form
+### Form/Basic Auth
 
 The authentication happens with the pre-defined users from the configuration
 file. To define the preset user use the following section.
@@ -57,16 +59,26 @@ presetUsers:
     privileges: "lb_api"
 ```
 
-Provide a key pair ins RSA format
+Also provide a random key pair in RSA format.
 
 ```
+authentication:
+  defaultType: "form"
   form:
     selfSignKeyPair:
-      privateKeyRSA: |
-      <PEM PRIVATE KEY>
-      publicKeyRSA: |
-      <PEM PUBLIC key>
+      privateKeyRsa: <private_key_path>
+      publicKeyRsa: <public_key_path>
 ```
+
+### Form/LDAP
+
+```
+authentication:
+  defaultType: "form"
+  form:
+    ldapConfigPath: <ldap_config_path>
+```
+
 
 ## Authorization
 
