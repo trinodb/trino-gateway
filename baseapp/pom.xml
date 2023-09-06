@@ -6,21 +6,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.trino.gateway</groupId>
-        <artifactId>trinogateway-parent</artifactId>
+        <artifactId>trino-gateway-parent</artifactId>
         <version>3-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
     <artifactId>baseapp</artifactId>
     <packaging>jar</packaging>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dropwizard.version>1.3.29</dropwizard.version>
-        <guice.version>4.1.0</guice.version>
-        <reflections.version>0.9.10</reflections.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -37,6 +29,10 @@
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <version>${guice.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.reflections</groupId>
@@ -84,6 +80,13 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <failIfNoTests>false</failIfNoTests>
+                </configuration>
             </plugin>
         </plugins>
     </build>
