@@ -96,35 +96,43 @@ authentication:
 
 ### Form/LDAP
 
+LDAP requires both random key pair and config path for LDAP
+
 ```
 authentication:
   defaultType: "form"
   form:
     ldapConfigPath: <ldap_config_path>
+    selfSignKeyPair:
+      privateKeyRsa: <private_key_path>
+      publicKeyRsa: <public_key_path>
 ```
 
 
 ## Authorization
 
-Trino Gateway supports the following roles:
+Trino Gateway supports the following roles in regex string format:
 
 - admin : Allows access to the Editor tab, which can be used to configure the
   backends
 
 - user : Allows access to the rest of the website
 
-- api : Allows access to to rest apis to configure the backends
+- api : Allows access to rest apis to configure the backends
 
 Users with attributes next to the role will be giving those privileges the
-users. User attributes from LDAP is supported or you can use the preset users
-defined in the yaml file. Authorization is supported via LDAP user attributes
+users. You can use the preset users defined in the yaml file. 
+LDAP Authorization is also supported by adding user attribute configs in file.
+
+- Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for config details
 
 ```
+# Roles should be in regex format
 authorization:
   admin: 'lb_admin'
   user: 'lb_user'
-  api: "lb_api"
-  ldapConfigPath: "<ldap_config_path>"
+  api: 'lb_api'
+  ldapConfigPath: '<ldap_config_path>'
 ```
 
 The LDAP config file should have the following contents:
