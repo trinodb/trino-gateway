@@ -17,25 +17,26 @@ public class LbAuthorizer implements Authorizer<LbPrincipal> {
   public boolean authorize(LbPrincipal principal, String role) {
     switch (role) {
       case "ADMIN":
-        log.info("User {} identified as ADMIN", principal.getName());
+        log.info("User '{}' with memberOf({}) was identified as ADMIN({})",
+                principal.getName(), principal.getMemberOf(), configuration.getAdmin());
         return principal.getMemberOf()
-            .filter(m -> m.contains(configuration.getAdmin()))
+            .filter(m -> m.matches(configuration.getAdmin()))
             .isPresent();
       case "USER":
-        log.info("User {} identified as USER", principal.getName());
+        log.info("User '{}' with memberOf({}) identified as USER({})",
+                principal.getName(), principal.getMemberOf(), configuration.getUser());
         return principal.getMemberOf()
-            .filter(m -> m.contains(configuration.getUser()))
+            .filter(m -> m.matches(configuration.getUser()))
             .isPresent();
       case "API":
-        log.info("User {} identified as USER", principal.getName());
+        log.info("User '{}' with memberOf({}) identified as API({})",
+                principal.getName(), principal.getMemberOf(), configuration.getApi());
         return principal.getMemberOf()
-            .filter(m -> m.contains(configuration.getApi()))
+            .filter(m -> m.matches(configuration.getApi()))
             .isPresent();
       default:
-        log.warn("User {} is neither member of {} or of {} based on ldap search",
-            principal.getName(),
-            configuration.getAdmin(),
-            configuration.getUser());
+        log.warn("User '{}' with role {} has no regex match based on ldap search",
+            principal.getName(), role);
         return false;
 
     }
