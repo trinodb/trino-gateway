@@ -3,9 +3,12 @@ package io.trino.gateway.ha.security;
 import io.trino.gateway.ha.config.LdapConfiguration;
 
 import java.util.List;
+import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.directory.api.ldap.model.entry.Attribute;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.message.SearchScope;
@@ -33,7 +36,7 @@ public class LbLdapClient {
     }
   }
 
-  public static class UserEntryMapper implements EntryMapper<UserRecord> {
+  public static class UserEntryMapper implements EntryMapper<Optional<UserRecord>> {
     String memberOf;
 
     public UserEntryMapper(String memberOfAttr) {
@@ -41,8 +44,11 @@ public class LbLdapClient {
     }
 
     @Override
-    public UserRecord map(Entry entry) throws LdapException {
-      return new UserRecord(entry.get(memberOf).toString());
+    public Optional<UserRecord> map(Entry entry) throws LdapException {
+      Attribute attribute = entry.get(memberOf);
+      return ObjectUtils.isEmpty(attribute)
+              ? Optional.empty()
+              : Optional.of(new UserRecord(attribute.getString()));
     }
   }
 
@@ -109,15 +115,18 @@ public class LbLdapClient {
     String filter = config.getLdapUserSearch().replace("${USER}", user);
 
     String[] attributes = new String[]{config.getLdapGroupMemberAttribute()};
-    List<UserRecord> list = ldapConnectionTemplate.search(config.getLdapUserBaseDn(),
+    List<Optional<UserRecord>> userRecords = ldapConnectionTemplate.search(config.getLdapUserBaseDn(),
         filter,
         SearchScope.SUBTREE,
         attributes,
         userRecordEntryMapper);
 
     String memberOf = "";
-    if (list != null && !list.isEmpty()) {
-      memberOf = list.listIterator().next().getMemberOf();
+    if (userRecords != null && !userRecords.isEmpty()) {
+      Optional<UserRecord> userRecord = userRecords.listIterator().next();
+      if (userRecord.isPresent()) {
+        memberOf = userRecord.get().getMemberOf();
+      }
       log.debug("Member of {}", memberOf);
     }
     return memberOf;
