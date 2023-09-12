@@ -98,5 +98,5 @@ for more details.
 
 ## Contributing
 
-Want to help build trino Gateway? Check out our [contributing
-documentation](CONTRIBUTING.md)
+Want to help build Trino Gateway? Check out our [contributing
+documentation](../.github/CONTRIBUTING.md)
