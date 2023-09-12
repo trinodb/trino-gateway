@@ -67,7 +67,7 @@ db information.
 
 ```
 cd gateway-ha/target/
-java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
+java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
 ```
 
 If you encounter a `Failed to connect to JDBC URL` error, this may be due to
