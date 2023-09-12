@@ -13,3 +13,4 @@ Find out more details from our documentation:
 * [Resource groups API](./docs/resource-groups-api.md)
 * [Routing rules](./docs/routing-rules.md)
 * [References](./docs/references.md)
+* [Contributing](./.github/CONTRIBUTING.md)
