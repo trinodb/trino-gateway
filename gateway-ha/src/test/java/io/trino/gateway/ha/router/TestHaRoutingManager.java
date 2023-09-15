@@ -29,6 +29,7 @@ public class TestHaRoutingManager
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
+    CookieCacheManager cookieCacheManager;
 
     @BeforeAll
     public void setUp()
@@ -36,7 +37,8 @@ public class TestHaRoutingManager
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
-        haRoutingManager = new HaRoutingManager(backendManager, historyManager);
+        cookieCacheManager = new CookieCacheManager(connectionManager);
+        haRoutingManager = new HaRoutingManager(backendManager, historyManager, cookieCacheManager);
     }
 
     @Test

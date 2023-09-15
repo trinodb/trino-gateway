@@ -17,8 +17,10 @@ import io.trino.gateway.baseapp.AppConfiguration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class HaGatewayConfiguration
         extends AppConfiguration
@@ -35,6 +37,8 @@ public class HaGatewayConfiguration
     private BackendStateConfiguration backendState;
     private ClusterStatsConfiguration clusterStatsConfiguration;
     private List<String> extraWhitelistPaths = new ArrayList<>();
+    private Set<String> cookiePaths = new HashSet<>();
+    private Set<String> removeCookiePaths = new HashSet<>();
 
     public HaGatewayConfiguration() {}
 
@@ -156,5 +160,25 @@ public class HaGatewayConfiguration
     public void setExtraWhitelistPaths(List<String> extraWhitelistPaths)
     {
         this.extraWhitelistPaths = extraWhitelistPaths;
+    }
+
+    public Set<String> getCookiePaths()
+    {
+        return cookiePaths;
+    }
+
+    public void setCookiePaths(Set<String> cookiePaths)
+    {
+        this.cookiePaths = cookiePaths;
+    }
+
+    public Set<String> getRemoveCookiePaths()
+    {
+        return removeCookiePaths;
+    }
+
+    public void setRemoveCookiePaths(Set<String> removeCookiePaths)
+    {
+        this.removeCookiePaths = removeCookiePaths;
     }
 }

@@ -58,7 +58,8 @@ public class TestTrinoQueueLengthRoutingTable
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
-        routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager);
+        CookieCacheManager cookieCacheManager = new CookieCacheManager(connectionManager);
+        routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager, cookieCacheManager);
 
         for (String grp : mockRoutingGroups) {
             addMockBackends(grp, NUM_BACKENDS);

@@ -20,14 +20,16 @@ public class DataStoreConfiguration
     private String password;
     private String driver;
     private Integer queryHistoryHoursRetention = 4;
+    private int cookieHoursRetention = 24;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention)
+    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention, int cookieHoursRetention)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
         this.password = password;
         this.driver = driver;
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
+        this.cookieHoursRetention = cookieHoursRetention;
     }
 
     public DataStoreConfiguration() {}
@@ -80,5 +82,15 @@ public class DataStoreConfiguration
     public void setQueryHistoryHoursRetention(Integer queryHistoryHoursRetention)
     {
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
+    }
+
+    public int getCookieHoursRetention()
+    {
+        return cookieHoursRetention;
+    }
+
+    public void setCookieHoursRetention(Integer cookieHoursRetention)
+    {
+        this.cookieHoursRetention = cookieHoursRetention;
     }
 }
