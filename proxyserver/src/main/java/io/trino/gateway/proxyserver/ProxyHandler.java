@@ -9,7 +9,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.eclipse.jetty.client.api.Request;
@@ -23,6 +29,11 @@ public class ProxyHandler {
   protected String rewriteTarget(HttpServletRequest request) {
     // Dont override this unless absolutely needed.
     return null;
+  }
+
+  protected String rewriteTarget(HttpServletRequest request, int requestId) {
+    // Do not override this unless absolutely needed.
+    return rewriteTarget(request);
   }
 
   /**
@@ -58,6 +69,17 @@ public class ProxyHandler {
     } catch (Throwable var9) {
       callback.failed(var9);
     }
+  }
+
+  protected void postConnectionHook(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          byte[] buffer,
+          int offset,
+          int length,
+          Callback callback,
+          int requestId) {
+    postConnectionHook(request, response, buffer, offset, length, callback);
   }
 
   protected void debugLogHeaders(HttpServletRequest request) {
@@ -117,5 +139,13 @@ public class ProxyHandler {
   protected boolean isCompressed(final byte[] compressed) {
     return (compressed[0] == (byte) (GZIPInputStream.GZIP_MAGIC))
         && (compressed[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8));
+  }
+
+  public boolean isKnownSessionId(String sessionId) {
+    return false;
+  }
+
+  public Optional<Cookie> deleteCookie(HttpServletRequest clientRequest) {
+    return Optional.empty();
   }
 }

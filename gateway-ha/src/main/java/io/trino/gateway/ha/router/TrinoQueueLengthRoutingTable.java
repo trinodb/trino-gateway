@@ -48,8 +48,9 @@ public class TrinoQueueLengthRoutingTable extends HaRoutingManager {
    * Trino cluster queue length and falls back to Running Count if queue length are equal.
    */
   public TrinoQueueLengthRoutingTable(GatewayBackendManager gatewayBackendManager,
-                                      QueryHistoryManager queryHistoryManager) {
-    super(gatewayBackendManager, queryHistoryManager);
+                                      QueryHistoryManager queryHistoryManager,
+                                      CookieCacheManager cookieCacheManager) {
+    super(gatewayBackendManager, queryHistoryManager, cookieCacheManager);
     routingGroupWeightSum = new ConcurrentHashMap<String, Integer>();
     clusterQueueLengthMap = new ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>>();
     weightedDistributionRouting = new HashMap<String, TreeMap<Integer, String>>();

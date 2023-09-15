@@ -25,3 +25,7 @@ managedApps:
 
 extraWhitelistPaths:
   - "/v1/custom"
+
+cookiePaths:
+  - "/oauth2"
+  - "/oauth2/callback"

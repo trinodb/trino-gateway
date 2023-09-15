@@ -46,12 +46,15 @@ public class TestTrinoQueueLengthRoutingTable {
     String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
     HaGatewayTestUtils.seedRequiredData(
         new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
-    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
+    DataStoreConfiguration db =
+            new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     backendManager = new HaGatewayManager(connectionManager);
     historyManager = new HaQueryHistoryManager(connectionManager) {
     };
-    routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager);
+    CookieCacheManager cookieCacheManager = new CookieCacheManager(connectionManager);
+    routingTable =
+            new TrinoQueueLengthRoutingTable(backendManager, historyManager, cookieCacheManager);
 
     for (String grp : mockRoutingGroups) {
       addMockBackends(grp, NUM_BACKENDS, 0);

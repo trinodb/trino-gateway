@@ -76,3 +76,9 @@ CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     PRIMARY KEY (environment, source, query_type),
     UNIQUE (source, environment, query_type, resource_group_id)
 );
+
+CREATE TABLE IF NOT EXISTS cookie_backend_lookup (
+    cookie VARCHAR(256) NOT NULL PRIMARY KEY,
+    backend VARCHAR(256),
+    created_timestamp BIGINT
+);

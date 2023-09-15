@@ -33,7 +33,8 @@ public class HaGatewayTestUtils {
 
   public static void seedRequiredData(TestConfig testConfig) {
     String jdbcUrl = "jdbc:h2:" + testConfig.getH2DbFilePath();
-    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
+    DataStoreConfiguration db =
+            new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     connectionManager.open();
     Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence.sql"));
@@ -50,6 +51,17 @@ public class HaGatewayTestUtils {
                     .withBody(expectedResonse)
                     .withHeader("Content-Encoding", "plain")
                     .withStatus(200)));
+  }
+
+  public static void addEndpoint(
+          WireMockServer backend, String endPoint, String expectedResonse) {
+    backend.stubFor(
+            WireMock.post(endPoint)
+                    .willReturn(
+                            WireMock.aResponse()
+                                    .withBody(expectedResonse)
+                                    .withHeader("Content-Encoding", "plain")
+                                    .withStatus(200)));
   }
 
   public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)

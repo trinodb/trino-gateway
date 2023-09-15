@@ -5,7 +5,10 @@ import io.trino.gateway.baseapp.AppConfiguration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -23,4 +26,6 @@ public class HaGatewayConfiguration extends AppConfiguration {
   private BackendStateConfiguration backendState;
   private ClusterStatsConfiguration clusterStatsConfiguration;
   private List<String> extraWhitelistPaths = new ArrayList<>();
+  private Set<String> cookiePaths = new HashSet<>();
+  private Set<String> logoutCookiePaths = new HashSet<>();
 }

@@ -1,6 +1,7 @@
 package io.trino.gateway.ha.persistence;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.dao.CookieBackend;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
 
 import java.util.concurrent.Executors;
@@ -60,6 +61,23 @@ public class JdbcConnectionManager {
           }
         },
         1,
+        120,
+        TimeUnit.MINUTES);
+
+    executorService.scheduleWithFixedDelay(
+        () -> {
+          log.info("Performing cookie cleanup task");
+          try {
+            this.open();
+            CookieBackend.delete(
+                     CookieBackend.createdTimestamp + " < ?",
+                    System.currentTimeMillis() - TimeUnit.HOURS.toMillis(
+                            this.configuration.getCookieHoursRetention()));
+          } finally {
+            this.close();
+          }
+        },
+        2,
         120,
         TimeUnit.MINUTES);
   }

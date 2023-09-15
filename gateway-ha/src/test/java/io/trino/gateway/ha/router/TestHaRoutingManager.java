@@ -18,6 +18,7 @@ public class TestHaRoutingManager {
   RoutingManager haRoutingManager;
   GatewayBackendManager backendManager;
   QueryHistoryManager historyManager;
+  CookieCacheManager cookieCacheManager;
 
   @BeforeAll
   public void setUp() {
@@ -27,11 +28,13 @@ public class TestHaRoutingManager {
     String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
     HaGatewayTestUtils.seedRequiredData(
         new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
-    DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
+    DataStoreConfiguration db =
+            new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, 4);
     JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
     backendManager = new HaGatewayManager(connectionManager);
     historyManager = new HaQueryHistoryManager(connectionManager);
-    haRoutingManager = new HaRoutingManager(backendManager, historyManager);
+    cookieCacheManager = new CookieCacheManager(connectionManager);
+    haRoutingManager = new HaRoutingManager(backendManager, historyManager, cookieCacheManager);
 
   }
 
