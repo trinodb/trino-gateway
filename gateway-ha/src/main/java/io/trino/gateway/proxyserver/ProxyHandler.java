@@ -13,7 +13,9 @@
  */
 package io.trino.gateway.proxyserver;
 
+import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
@@ -27,6 +29,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /* Order of control => rewriteTarget, preConnectionHook, postConnectionHook. */
@@ -113,5 +116,10 @@ public class ProxyHandler
     {
         return (compressed[0] == (byte) GZIPInputStream.GZIP_MAGIC)
                 && (compressed[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8));
+    }
+
+    public List<Cookie> generateDeleteCookieList(HttpServletRequest clientRequest)
+    {
+        return ImmutableList.of();
     }
 }

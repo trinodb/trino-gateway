@@ -27,7 +27,9 @@ import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
@@ -86,6 +88,12 @@ public class HaGatewayProviderModule
         authenticationFilter = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
         extraWhitelistPaths = configuration.getExtraWhitelistPaths();
+
+        GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
+        gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
+
+        OAuth2GatewayCookieConfigurationPropertiesProvider oAuth2GatewayCookieConfigurationPropertiesProvider = OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance();
+        oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
