@@ -26,5 +26,13 @@ managedApps:
 extraWhitelistPaths:
   - "/v1/custom"
 
+gatewayCookieConfiguration:
+  enabled: true
+  cookieSigningSecret: "kjlhbfrewbyuo452cds3dc1234ancdsjh"
+
+oauth2GatewayCookieConfiguration:
+  deletePaths:
+    - "/custom/logout"
+
 logging:
   type: external

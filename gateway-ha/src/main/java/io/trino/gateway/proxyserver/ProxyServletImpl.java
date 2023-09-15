@@ -98,6 +98,16 @@ public class ProxyServletImpl
         return target;
     }
 
+    @Override
+    protected void onServerResponseHeaders(
+            HttpServletRequest clientRequest,
+            HttpServletResponse proxyResponse,
+            Response serverResponse)
+    {
+        this.proxyHandler.generateDeleteCookieList(clientRequest).forEach(proxyResponse::addCookie);
+        super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+    }
+
     /**
      * Customize the response returned from remote server.
      */

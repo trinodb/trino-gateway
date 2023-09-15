@@ -19,8 +19,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 
@@ -28,6 +30,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -64,6 +67,23 @@ public class HaGatewayTestUtils
                 .setBody(expectedResonse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
+    }
+
+    public static void setPathSpecificResponses(
+            MockWebServer backend, Map<String, String> pathResponseMap)
+    {
+        Dispatcher dispatcher = new Dispatcher()
+        {
+            @Override
+            public MockResponse dispatch(RecordedRequest request)
+            {
+                if (pathResponseMap.containsKey(request.getPath())) {
+                    return new MockResponse().setResponseCode(200).setBody(pathResponseMap.get(request.getPath()));
+                }
+                return new MockResponse().setResponseCode(404);
+            }
+        };
+        backend.setDispatcher(dispatcher);
     }
 
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)

@@ -14,20 +14,29 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.GatewayCookie;
+import io.trino.gateway.ha.router.OAuth2GatewayCookie;
+import okhttp3.Cookie;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
+
+import java.io.IOException;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,6 +48,11 @@ public class TestGatewayHaMultipleBackend
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
+
+    public static String oauthInitiatePath = OAuth2GatewayCookie.OAUTH2_PATH;
+    public static String oauthCallbackPath = oauthInitiatePath + "/callback";
+    public static String oauthInitialResponse = "abc";
+    public static String oauthCallbackResponse = "xyz";
 
     final int routerPort = 20000 + (int) (Math.random() * 1000);
     final int customBackendPort = 21000 + (int) (Math.random() * 1000);
@@ -59,7 +73,11 @@ public class TestGatewayHaMultipleBackend
         int backend1Port = adhocTrino.getMappedPort(8080);
         int backend2Port = scheduledTrino.getMappedPort(8080);
 
-        HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, CUSTOM_RESPONSE);
+        HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, "default custom response");
+        HaGatewayTestUtils.setPathSpecificResponses(customBackend, ImmutableMap.of(
+                oauthInitiatePath, oauthInitialResponse,
+                oauthCallbackPath, oauthCallbackResponse,
+                CUSTOM_PATH, CUSTOM_RESPONSE));
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
@@ -93,9 +111,6 @@ public class TestGatewayHaMultipleBackend
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
         assertThat(response1.body().string()).isEqualTo(CUSTOM_RESPONSE);
-        RecordedRequest recordedRequest = customBackend.takeRequest();
-        assertThat(recordedRequest.getMethod()).isEqualTo("POST");
-        assertThat(recordedRequest.getPath()).isEqualTo(CUSTOM_PATH);
 
         Request request2 =
                 new Request.Builder()
@@ -160,6 +175,101 @@ public class TestGatewayHaMultipleBackend
         assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[1].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[2].getExternalUrl()).isEqualTo("externalUrl");
+    }
+
+    @Test
+    public void testCookieBasedRouting()
+            throws IOException
+    {
+        // This simulates the Trino oauth handshake
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .build();
+        String oauthInitiateBody = "anything";
+        RequestBody requestBody =
+                RequestBody.create(
+                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+
+        Request initiateRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthInitiatePath)
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "custom")
+                        .build();
+        Response initiateResponse = httpClient.newCall(initiateRequest).execute();
+        assertThat(initiateResponse.header("set-cookie")).isNotEmpty();
+
+        Request callbackRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthCallbackPath)
+                        .post(requestBody)
+                        .addHeader("Cookie", initiateResponse.header("set-cookie"))
+                        .build();
+        Response callbackResponse = httpClient.newCall(callbackRequest).execute();
+        assertThat(callbackResponse.body().string()).isEqualTo(oauthCallbackResponse);
+
+        Request logoutRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/custom/logout")
+                        .post(requestBody)
+                        .addHeader("Cookie", initiateResponse.header("set-cookie"))
+                        .build();
+        Response logoutResponse = httpClient.newCall(logoutRequest).execute();
+
+        List<Cookie> cookies = Cookie.parseAll(logoutResponse.request().url(), logoutResponse.headers());
+        Optional<Cookie> cookie = cookies.stream().filter(c -> c.name().equals(OAuth2GatewayCookie.NAME)).findAny();
+        assertThat(cookie).isNotEmpty();
+        assertThat(cookie.orElseThrow().value()).isEqualTo("delete");
+        // expires-at has been deprecated in favor of max-age. However, okhttp3 does not expose a max-age property,
+        // but instead sets expires-at to Long.MIN_VALUE when max-age is set to 0
+        // https://github.com/square/okhttp/blob/577d621585f7525d3e98a9161bc26d2965686538/okhttp/src/main/kotlin/okhttp3/Cookie.kt#L673
+        assertThat(cookie.orElseThrow().expiresAt()).isEqualTo(Long.MIN_VALUE);
+    }
+
+    @Test
+    public void testCookieSigning()
+            throws IOException
+    {
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .build();
+        String oauthInitiateBody = "anything";
+        RequestBody requestBody =
+                RequestBody.create(
+                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+
+        Request initiateRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthInitiatePath)
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "custom")
+                        .build();
+        Response initiateResponse = httpClient.newCall(initiateRequest).execute();
+        String cookieHeader = initiateResponse.header("set-cookie");
+        assertThat(cookieHeader).isNotEmpty();
+        List<Cookie> cookies = Cookie.parseAll(initiateResponse.request().url(), initiateResponse.headers());
+        Optional<Cookie> cookie = cookies.stream().filter(c -> c.name().equals(OAuth2GatewayCookie.NAME)).findAny();
+        assertThat(cookie).isNotEmpty();
+
+        GatewayCookie gatewayCookie = GatewayCookie.CODEC.fromJson(Base64.getUrlDecoder().decode(cookie.orElseThrow().value()));
+        assertThat(gatewayCookie.getSignature()).isNotEmpty();
+
+        // Tamper with values. This will cause the cookie to be ignored because its values will not match the signature,
+        // causing the request will be routed to the adhoc backend
+        gatewayCookie.setTs(gatewayCookie.getTs() + 1000);
+        jakarta.servlet.http.Cookie tamperedCookie = gatewayCookie.toCookie();
+        Request callbackRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthCallbackPath)
+                        .post(requestBody)
+                        .addHeader("Cookie", String.format("%s=%s", tamperedCookie.getName(), tamperedCookie.getValue()))
+                        .build();
+        Response callbackResponse = httpClient.newCall(callbackRequest).execute();
+        assertThat(callbackResponse.code()).isEqualTo(500);
     }
 
     @AfterAll

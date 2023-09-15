@@ -35,6 +35,8 @@ public class HaGatewayConfiguration
     private BackendStateConfiguration backendState;
     private ClusterStatsConfiguration clusterStatsConfiguration;
     private List<String> extraWhitelistPaths = new ArrayList<>();
+    private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
+    private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
 
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
@@ -162,6 +164,26 @@ public class HaGatewayConfiguration
     public void setExtraWhitelistPaths(List<String> extraWhitelistPaths)
     {
         this.extraWhitelistPaths = extraWhitelistPaths;
+    }
+
+    public OAuth2GatewayCookieConfiguration getOauth2GatewayCookieConfiguration()
+    {
+        return oauth2GatewayCookieConfiguration;
+    }
+
+    public void setOauth2GatewayCookieConfiguration(OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration)
+    {
+        this.oauth2GatewayCookieConfiguration = oauth2GatewayCookieConfiguration;
+    }
+
+    public GatewayCookieConfiguration getGatewayCookieConfiguration()
+    {
+        return gatewayCookieConfiguration;
+    }
+
+    public void setGatewayCookieConfiguration(GatewayCookieConfiguration gatewayCookieConfiguration)
+    {
+        this.gatewayCookieConfiguration = gatewayCookieConfiguration;
     }
 
     public List<String> getModules()
