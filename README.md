@@ -1,4 +1,4 @@
-# trino-gateway
+# Trino Gateway
 
 A load balancer, proxy server, and configurable routing gateway for multiple
 [Trino](https://trino.io) clusters.

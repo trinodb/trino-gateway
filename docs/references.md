@@ -1,4 +1,4 @@
-**trino-gateway documentation**
+**Trino Gateway documentation**
 
 <table>
   <tr>
