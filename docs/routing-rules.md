@@ -10,6 +10,7 @@
     <td><a href="resource-groups-api.md">Resource groups API</a></td>
     <td><b><a href="routing-rules.md">Routing rules</a></b></td>
     <td><a href="references.md">References</a></td>
+    <td><a href="release-notes.md">Release notes</a></td>
   </tr>
 </table>
 
