@@ -1,4 +1,4 @@
-**trino-gateway documentation**
+**Trino Gateway documentation**
 
 <table>
   <tr>
@@ -17,14 +17,14 @@
 
 Trino Gateway includes a routing rules engine.
 
-By default, trino-gateway reads the `X-Trino-Routing-Group` request header to
+By default, Trino Gateway reads the `X-Trino-Routing-Group` request header to
 route requests. If this header is not specified, requests are sent to default
 routing group (adhoc).
 
 The routing rules engine feature enables you to write custom logic to route
 requests based on the request info such as any of the [request
 headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers).
-Routing rules are separated from trino-gateway application code to a
+Routing rules are separated from Trino Gateway application code to a
 configuration file, allowing for dynamic rule changes.
 
 ### Defining your routing rules

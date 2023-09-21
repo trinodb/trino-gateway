@@ -1,4 +1,4 @@
-**trino-gateway documentation**
+**Trino Gateway documentation**
 
 <table>
   <tr>
@@ -40,7 +40,7 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
     }'
 ```
 
-## Get all backends behind the gateway
+## Get all backends
 
 ```$xslt
 curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
@@ -69,7 +69,7 @@ curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
 ]
 ```
 
-## Delete a backend from the gateway
+## Delete a backend
 
 ```$xslt
 curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
@@ -81,7 +81,7 @@ curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
 curl -X POST http://localhost:8080/gateway/backend/deactivate/trino2
 ```
 
-## Get all active backend behind the Gateway
+## Get all active backends
 
 `curl -X GET http://localhost:8080/gateway/backend/active`
 

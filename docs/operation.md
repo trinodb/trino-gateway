@@ -1,4 +1,4 @@
-**trino-gateway documentation**
+**Trino Gateway documentation**
 
 <table>
   <tr>
@@ -20,13 +20,13 @@ clusters.
 
 ## Query History UI - check query plans etc.
 
-trinoGateway records history of recent queries and displays links to check query
+Trino Gateway records history of recent queries and displays links to check query
 details page in respective trino cluster.
 ![trino.gateway.io](/docs/assets/trinogateway_query_history.png)
 
-## Gateway Admin UI - add and modify backend information
+## Admin UI - add and modify backend information
 
-The Gateway admin page is used to configure the gateway to multiple backends.
+The admin page is used to configure the gateway to multiple backends.
 Existing backend information can also be modified using the same.
 
 ![trino.gateway.io/entity](/docs/assets/trinogateway_ha_admin.png)
@@ -34,7 +34,7 @@ Existing backend information can also be modified using the same.
 
 ## Graceful shutdown
 
-trino gateway supports graceful shutdown of trino clusters. Even when a cluster
+Trino Gateway supports graceful shutdown of trino clusters. Even when a cluster
 is deactivated, any submitted query states can still be retrieved based on the
 Query ID.
 
