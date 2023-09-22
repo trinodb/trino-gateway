@@ -1,14 +1,15 @@
-version: "3.3"
+version: "3.4"
 services:
   mysqldb:
     environment:
       - MYSQL_ROOT_PASSWORD=root123
       - MYSQL_DATABASE=trinogateway
-    image: mysql:5.5
+    image: mysql:5.7
+    platform: linux/amd64
     ports:
       - "3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot123"]
       start_period: 20s
       timeout: 5s
       retries: 5
@@ -26,7 +27,9 @@ services:
       - PGPORT=5432
       - POSTGRES_PASSWORD=P0stG&es
       - POSTGRES_DB=trino_gateway_db
+      - PGDATABASE=trino_gateway_db
       - POSTGRES_USER=trino_gateway_db_admin
+      - PGUSER=trino_gateway_db_admin
     ports:
       - "5432:5432"
     healthcheck:
