@@ -248,7 +248,7 @@ actions:
   - "if (request.getHeader(\"X-Trino-Client-Tags\") contains \"label=foo\") {
       result.put(\"routingGroup\", \"etl-foo\")
     }
-    else "if (request.getHeader(\"X-Trino-Client-Tags\") contains \"label=bar\") {
+    else if (request.getHeader(\"X-Trino-Client-Tags\") contains \"label=bar\") {
       result.put(\"routingGroup\", \"etl-bar\")
     }
     else {
@@ -268,3 +268,5 @@ routingRules:
   rulesConfigPath: "src/test/resources/rules/routing_rules.yml" # replace with path to your rules config file
 ```
 
+If there is error opening routing rules configuration file, then request is routed
+using routing group header `X-Trino-Routing-Group` as default.
