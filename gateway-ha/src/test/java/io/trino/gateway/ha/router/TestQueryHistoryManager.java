@@ -1,20 +1,24 @@
 package io.trino.gateway.ha.router;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-@Test
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestQueryHistoryManager {
   private QueryHistoryManager queryHistoryManager;
 
-  @BeforeClass(alwaysRun = true)
+  @BeforeAll
   public void setUp() {
     File baseDir = new File(System.getProperty("java.io.tmpdir"));
     File tempH2DbDir = new File(baseDir, "h2db-" + System.currentTimeMillis());
@@ -29,10 +33,11 @@ public class TestQueryHistoryManager {
   }
 
 
+  @Test
   public void testSubmitAndFetchQueryHistory() {
     List<QueryHistoryManager.QueryDetail> queryDetails =
         queryHistoryManager.fetchQueryHistory(Optional.empty());
-    Assert.assertEquals(queryDetails.size(), 0);
+    assertEquals(0, queryDetails.size());
     QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
     queryDetail.setBackendUrl("http://localhost:9999");
     queryDetail.setSource("sqlWorkbench");
@@ -51,13 +56,13 @@ public class TestQueryHistoryManager {
     queryHistoryManager.submitQueryDetail(queryDetail);
 
     queryDetails = queryHistoryManager.fetchQueryHistory(Optional.empty());
-    Assert.assertTrue(queryDetails.get(0).getCaptureTime() > queryDetails.get(1).getCaptureTime());
+    assertTrue(queryDetails.get(0).getCaptureTime() > queryDetails.get(1).getCaptureTime());
     // All queries when user is empty
-    Assert.assertEquals(queryDetails.size(), 3);
+    assertEquals(3, queryDetails.size());
 
     queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of("other-user"));
     // Only 1 query when user is 'other-user'
-    Assert.assertEquals(queryDetails.size(), 1);
+    assertEquals(1, queryDetails.size());
 
   }
 }
