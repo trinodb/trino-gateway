@@ -1,21 +1,28 @@
 package io.trino.gateway.ha.router;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import java.io.File;
 import java.util.List;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.TestMethodOrder;
 
-@Test
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestHaGatewayManager {
   private HaGatewayManager haGatewayManager;
 
-  @BeforeClass(alwaysRun = true)
+  @BeforeAll
   public void setUp() {
     File baseDir = new File(System.getProperty("java.io.tmpdir"));
     File tempH2DbDir = new File(baseDir, "h2db-" + System.currentTimeMillis());
@@ -28,6 +35,8 @@ public class TestHaGatewayManager {
     haGatewayManager = new HaGatewayManager(connectionManager);
   }
 
+  @Test
+  @Order(1)
   public void testAddBackend() {
     ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
     backend.setActive(true);
@@ -36,25 +45,27 @@ public class TestHaGatewayManager {
     backend.setProxyTo("adhoc1.trino.gateway.io");
     backend.setExternalUrl("adhoc1.trino.gateway.io");
     ProxyBackendConfiguration updated = haGatewayManager.addBackend(backend);
-    Assert.assertEquals(updated, backend);
+    assertEquals(backend, updated);
   }
 
-  @Test(dependsOnMethods = {"testAddBackend"})
+  @Test
+  @Order(2)
   public void testGetBackends() {
     List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-    Assert.assertEquals(backends.size(), 1);
+    assertEquals(1, backends.size());
 
     backends = haGatewayManager.getActiveBackends("adhoc");
-    Assert.assertEquals(backends.size(), 1);
+    assertEquals(1, backends.size());
 
     backends = haGatewayManager.getActiveBackends("unknown");
-    Assert.assertEquals(backends.size(), 0);
+    assertEquals(0, backends.size());
 
     backends = haGatewayManager.getActiveAdhocBackends();
-    Assert.assertEquals(backends.size(), 1);
+    assertEquals(1, backends.size());
   }
 
-  @Test(dependsOnMethods = {"testGetBackends"})
+  @Test
+  @Order(3)
   public void testUpdateBackend() {
     ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
     backend.setActive(false);
@@ -64,7 +75,7 @@ public class TestHaGatewayManager {
     backend.setExternalUrl("adhoc1.trino.gateway.io");
     haGatewayManager.updateBackend(backend);
     List<ProxyBackendConfiguration> backends = haGatewayManager.getActiveBackends("adhoc");
-    Assert.assertEquals(backends.size(), 1);
+    assertEquals(1, backends.size());
 
     backend.setActive(false);
     backend.setRoutingGroup("etl");
@@ -73,23 +84,24 @@ public class TestHaGatewayManager {
     backend.setExternalUrl("adhoc2.trino.gateway.io");
     haGatewayManager.updateBackend(backend);
     backends = haGatewayManager.getActiveBackends("adhoc");
-    Assert.assertEquals(backends.size(), 0);
+    assertEquals(0, backends.size());
     backends = haGatewayManager.getAllBackends();
-    Assert.assertEquals(backends.size(), 2);
-    Assert.assertEquals(backends.get(1).getRoutingGroup(), "etl");
+    assertEquals(2, backends.size());
+    assertEquals("etl", backends.get(1).getRoutingGroup());
   }
 
-  @Test(dependsOnMethods = {"testUpdateBackend"})
+  @Test
+  @Order(4)
   public void testDeleteBackend() {
     List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-    Assert.assertEquals(backends.size(), 2);
-    Assert.assertEquals(backends.get(1).getRoutingGroup(), "etl");
+    assertEquals(2, backends.size());
+    assertEquals("etl", backends.get(1).getRoutingGroup());
     haGatewayManager.deleteBackend(backends.get(0).getName());
     backends = haGatewayManager.getAllBackends();
-    Assert.assertEquals(backends.size(), 1);
+    assertEquals(1, backends.size());
   }
 
-  @AfterClass(alwaysRun = true)
+  @AfterAll
   public void cleanUp() {
   }
 }
