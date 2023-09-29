@@ -2,6 +2,9 @@ package io.trino.gateway.ha.security;
 
 import static io.trino.gateway.ha.security.SessionCookie.OAUTH_ID_TOKEN;
 import static io.trino.gateway.ha.security.SessionCookie.logOut;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
@@ -17,11 +20,13 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 @Slf4j
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestLbAuthenticator {
 
   private static final String USER = "username";
@@ -60,13 +65,12 @@ public class TestLbAuthenticator {
 
     LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-    Assert.assertTrue(lbAuth.authenticate(ID_TOKEN).isPresent());
-    Assert.assertEquals(lbAuth.authenticate(ID_TOKEN).get(), principal);
+    assertTrue(lbAuth.authenticate(ID_TOKEN).isPresent());
+    assertEquals(principal, lbAuth.authenticate(ID_TOKEN).get());
   }
 
   @Test
   public void testAuthenticatorMissingClaim() throws Exception {
-
     Claim claim = Mockito.mock(Claim.class);
     AuthorizationManager authorization = Mockito.mock(AuthorizationManager.class);
     LbOAuthManager authentication = Mockito.mock(LbOAuthManager.class);
@@ -79,7 +83,7 @@ public class TestLbAuthenticator {
 
     LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-    Assert.assertFalse(lbAuth.authenticate(ID_TOKEN).isPresent());
+    assertFalse(lbAuth.authenticate(ID_TOKEN).isPresent());
   }
 
   @Test
@@ -92,11 +96,11 @@ public class TestLbAuthenticator {
     };
     LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers);
 
-    Assert.assertTrue(authentication
+    assertTrue(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
-    Assert.assertFalse(authentication
+    assertFalse(authentication
         .authenticate(new BasicCredentials("user2", "pass1")));
-    Assert.assertFalse(authentication
+    assertFalse(authentication
         .authenticate(new BasicCredentials("not-in-map-user", "pass1")));
 
   }
@@ -104,14 +108,14 @@ public class TestLbAuthenticator {
   @Test
   public void testNoLdapNoPresetUsers() throws Exception {
     LbFormAuthManager authentication = new LbFormAuthManager(null, null);
-    Assert.assertFalse(authentication
+    assertFalse(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
   }
 
   @Test
   public void testWrongLdapConfig() throws Exception {
     LbFormAuthManager authentication = new LbFormAuthManager(null, null);
-    Assert.assertFalse(authentication
+    assertFalse(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
   }
 
@@ -120,7 +124,7 @@ public class TestLbAuthenticator {
     Response response = logOut();
     NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
     log.info("value {}", cookie.getValue());
-    Assert.assertTrue(cookie.getValue().equals("logout"));
+    assertTrue(cookie.getValue().equals("logout"));
   }
 
   @Test
@@ -143,7 +147,7 @@ public class TestLbAuthenticator {
     Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
     NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
     String value = cookie.getValue();
-    Assert.assertTrue(value != null && value.length() > 0);
+    assertTrue(value != null && value.length() > 0);
     log.info(cookie.getValue());
     JWT.decode(value);
   }

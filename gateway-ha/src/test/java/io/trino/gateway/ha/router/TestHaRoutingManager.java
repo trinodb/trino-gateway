@@ -7,17 +7,19 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import java.io.File;
 
 import lombok.extern.slf4j.Slf4j;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
-@Test
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestHaRoutingManager {
   RoutingManager haRoutingManager;
   GatewayBackendManager backendManager;
   QueryHistoryManager historyManager;
 
-  @BeforeClass(alwaysRun = true)
+  @BeforeAll
   public void setUp() {
     File baseDir = new File(System.getProperty("java.io.tmpdir"));
     File tempH2DbDir = new File(baseDir, "h2db-" + System.currentTimeMillis());

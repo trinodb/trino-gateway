@@ -1,6 +1,9 @@
 package io.trino.gateway.ha.router;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
@@ -9,16 +12,17 @@ import java.io.File;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
-import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @Slf4j
-@Test
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestSpecificDbResourceGroupsManager extends TestResourceGroupsManager {
   private String specificDb;
 
-  @BeforeClass(alwaysRun = true)
+  @BeforeAll
   @Override
   public void setUp() {
     specificDb = "h2db-" + System.currentTimeMillis();
@@ -48,19 +52,23 @@ public class TestSpecificDbResourceGroupsManager extends TestResourceGroupsManag
             specificDb);
   }
 
-  @Test(expectedExceptions = Exception.class)
+  @Test
   public void testReadSpecificDbResourceGroupCauseException() {
-    List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups("abcd");
+    assertThrows(Exception.class, () -> {
+      List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups("abcd");
+    });
   }
 
+  @Test
   public void testReadSpecificDbResourceGroup() {
     this.createResourceGroup();
     List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
             .readAllResourceGroups(specificDb);
-    Assert.assertNotNull(resourceGroups);
+    assertNotNull(resourceGroups);
     resourceGroupManager.deleteResourceGroup(1,specificDb);
   }
 
+  @Test
   public void testReadSpecificDbSelector() {
     this.createResourceGroup();
     ResourceGroupsManager.SelectorsDetail selector = new ResourceGroupsManager.SelectorsDetail();
@@ -75,7 +83,7 @@ public class TestSpecificDbResourceGroupsManager extends TestResourceGroupsManag
     ResourceGroupsManager.SelectorsDetail newSelector = resourceGroupManager
             .createSelector(selector, specificDb);
 
-    Assert.assertEquals(newSelector, selector);
+    assertEquals(selector, newSelector);
     resourceGroupManager
             .deleteSelector(selector, specificDb);
     resourceGroupManager.deleteResourceGroup(1,specificDb);

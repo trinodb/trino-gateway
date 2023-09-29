@@ -1,5 +1,7 @@
 package io.trino.gateway.ha;
 
+import static org.junit.Assert.assertEquals;
+
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import okhttp3.MediaType;
@@ -7,11 +9,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+@TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaMultipleBackend {
   public static final String EXPECTED_RESPONSE1 = "{\"id\":\"testId1\"}";
   public static final String EXPECTED_RESPONSE2 = "{\"id\":\"testId2\"}";
@@ -25,7 +29,7 @@ public class TestGatewayHaMultipleBackend {
   private final WireMockServer scheduledBackend =
       new WireMockServer(WireMockConfiguration.options().port(backend2Port));
 
-  @BeforeClass(alwaysRun = true)
+  @BeforeAll
   public void setup() throws Exception {
     HaGatewayTestUtils.prepareMockBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE1);
     HaGatewayTestUtils.prepareMockBackend(scheduledBackend, "/v1/statement", EXPECTED_RESPONSE2);
@@ -57,7 +61,7 @@ public class TestGatewayHaMultipleBackend {
             .post(requestBody)
             .build();
     Response response1 = httpClient.newCall(request1).execute();
-    Assert.assertEquals(response1.body().string(), EXPECTED_RESPONSE1);
+    assertEquals(EXPECTED_RESPONSE1, response1.body().string());
 
     // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
     // routing group
@@ -68,10 +72,10 @@ public class TestGatewayHaMultipleBackend {
             .addHeader("X-Trino-Routing-Group", "scheduled")
             .build();
     Response response4 = httpClient.newCall(request4).execute();
-    Assert.assertEquals(response4.body().string(), EXPECTED_RESPONSE2);
+    assertEquals(EXPECTED_RESPONSE2, response4.body().string());
   }
 
-  @AfterClass(alwaysRun = true)
+  @AfterAll
   public void cleanup() {
     adhocBackend.stop();
     scheduledBackend.stop();
