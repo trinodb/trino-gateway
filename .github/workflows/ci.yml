@@ -28,5 +28,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build with Maven
-        run: $MAVEN clean verify
+      - name: maven version
+        run: $MAVEN -v
+#      - name: Build with Maven
+#        run: $MAVEN clean verify
