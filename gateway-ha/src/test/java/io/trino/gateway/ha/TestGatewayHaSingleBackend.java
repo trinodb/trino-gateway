@@ -46,7 +46,7 @@ public class TestGatewayHaSingleBackend {
             .post(requestBody)
             .build();
     Response response = httpClient.newCall(request).execute();
-    Assert.assertEquals(response.body().string(), EXPECTED_RESPONSE);
+    Assert.assertEquals(EXPECTED_RESPONSE, response.body().string());
   }
 
   @AfterClass(alwaysRun = true)
