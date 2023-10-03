@@ -12,7 +12,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public class TestGatewayHaMulipleBackend {
+public class TestGatewayHaMultipleBackend {
   public static final String EXPECTED_RESPONSE1 = "{\"id\":\"testId1\"}";
   public static final String EXPECTED_RESPONSE2 = "{\"id\":\"testId2\"}";
 
