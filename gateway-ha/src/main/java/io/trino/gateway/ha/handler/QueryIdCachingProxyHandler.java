@@ -55,18 +55,20 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
 
   private final Meter requestMeter;
   private final int serverApplicationPort;
+  private final List<String> extraWhitelistPaths;
 
   public QueryIdCachingProxyHandler(
       QueryHistoryManager queryHistoryManager,
       RoutingManager routingManager,
       RoutingGroupSelector routingGroupSelector,
       int serverApplicationPort,
-      Meter requestMeter) {
+      Meter requestMeter, List<String> extraWhitelistPaths) {
     this.requestMeter = requestMeter;
     this.routingManager = routingManager;
     this.routingGroupSelector = routingGroupSelector;
     this.queryHistoryManager = queryHistoryManager;
     this.serverApplicationPort = serverApplicationPort;
+    this.extraWhitelistPaths = extraWhitelistPaths;
   }
 
   protected static String extractQueryIdIfPresent(String path, String queryParams) {
@@ -217,7 +219,8 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
         || path.startsWith(V1_INFO_PATH)
         || path.startsWith(V1_NODE_PATH)
         || path.startsWith(UI_API_STATS_PATH)
-        || path.startsWith(OAUTH_PATH);
+        || path.startsWith(OAUTH_PATH)
+        || extraWhitelistPaths.stream().anyMatch(s -> path.startsWith(s));
   }
 
   public boolean isAuthEnabled() {

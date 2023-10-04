@@ -2,6 +2,7 @@
 
 <table>
   <tr>
+    <td><a href="configuration.md">Configuration</a></td>
     <td><b><a href="design.md">Design</a></b></td>
     <td><a href="development.md">Development</a></td>
     <td><b><a href="security.md">Security</a></b></td>

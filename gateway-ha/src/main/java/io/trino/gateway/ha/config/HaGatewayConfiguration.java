@@ -1,7 +1,10 @@
 package io.trino.gateway.ha.config;
 
 import io.trino.gateway.baseapp.AppConfiguration;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,4 +22,5 @@ public class HaGatewayConfiguration extends AppConfiguration {
   private Map<String, UserConfiguration> presetUsers = new HashMap();
   private BackendStateConfiguration backendState;
   private ClusterStatsConfiguration clusterStatsConfiguration;
+  private List<String> extraWhitelistPaths = new ArrayList<>();
 }

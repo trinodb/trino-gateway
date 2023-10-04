@@ -19,20 +19,27 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 public class TestGatewayHaMultipleBackend {
   public static final String EXPECTED_RESPONSE1 = "{\"id\":\"testId1\"}";
   public static final String EXPECTED_RESPONSE2 = "{\"id\":\"testId2\"}";
+  public static final String CUSTOM_RESPONSE = "123";
+  public static final String CUSTOM_PATH = "/v1/custom/extra";
 
   final int routerPort = 20000 + (int) (Math.random() * 1000);
   final int backend1Port = 21000 + (int) (Math.random() * 1000);
   final int backend2Port = 21000 + (int) (Math.random() * 1000);
+  final int customBackendPort = 21000 + (int) (Math.random() * 1000);
 
   private final WireMockServer adhocBackend =
       new WireMockServer(WireMockConfiguration.options().port(backend1Port));
   private final WireMockServer scheduledBackend =
       new WireMockServer(WireMockConfiguration.options().port(backend2Port));
 
+  private final WireMockServer customBackend =
+          new WireMockServer(WireMockConfiguration.options().port(customBackendPort));
+
   @BeforeAll
   public void setup() throws Exception {
     HaGatewayTestUtils.prepareMockBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE1);
     HaGatewayTestUtils.prepareMockBackend(scheduledBackend, "/v1/statement", EXPECTED_RESPONSE2);
+    HaGatewayTestUtils.prepareMockBackend(customBackend, CUSTOM_PATH, CUSTOM_RESPONSE);
 
     // seed database
     HaGatewayTestUtils.TestConfig testConfig =
@@ -47,6 +54,34 @@ public class TestGatewayHaMultipleBackend {
     HaGatewayTestUtils.setUpBackend(
         "trino2", "http://localhost:" + backend2Port, "externalUrl", true, "scheduled",
         routerPort);
+    HaGatewayTestUtils.setUpBackend(
+            "custom", "http://localhost:" + customBackendPort, "externalUrl", true, "custom",
+            routerPort);
+
+  }
+
+  @Test
+  public void testCustomPath() throws Exception {
+    OkHttpClient httpClient = new OkHttpClient();
+    RequestBody requestBody =
+            RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "abc");
+    Request request1 =
+            new Request.Builder()
+                    .url("http://localhost:" + routerPort + CUSTOM_PATH)
+                    .post(requestBody)
+                    .addHeader("X-Trino-Routing-Group", "custom")
+                    .build();
+    Response response1 = httpClient.newCall(request1).execute();
+    assertEquals(response1.body().string(), CUSTOM_RESPONSE);
+
+    Request request2 =
+            new Request.Builder()
+                    .url("http://localhost:" + routerPort + "/invalid")
+                    .post(requestBody)
+                    .addHeader("X-Trino-Routing-Group", "custom")
+                    .build();
+    Response response2 = httpClient.newCall(request2).execute();
+    assertEquals(response2.code(), 404);
   }
 
   @Test
