@@ -29,7 +29,7 @@ Trino Gateway has three main components:
 ![ProxyServer Class Diagram](assets/ProxyServer-classes.png)
 
 3. Gateway - This component acts as container for proxy-server and plugs in
-   ProxyHanders to provide proxy, routing and load balancing functionalities. It
+   ProxyHandlers to provide proxy, routing and load balancing functionalities. It
    also exposes few end points and UI to activate, deactivate backends and view
    query history for recently submitted queries.
 
