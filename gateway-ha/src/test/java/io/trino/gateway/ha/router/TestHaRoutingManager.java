@@ -49,7 +49,7 @@ public class TestHaRoutingManager {
       proxyBackend.setProxyTo(backend + ".trino.example.com");
       proxyBackend.setExternalUrl("trino.example.com");
       backendManager.addBackend(proxyBackend);
-      //set backend as healthyti start with
+      //set backend as healthy start with
       haRoutingManager.upateBackEndHealth(backend, true);
     }
 

@@ -62,7 +62,7 @@ public class ClusterStatsJdbcMonitor implements ClusterStatsMonitor {
       jdbcUrl = String
           .format("jdbc:trino://%s:%s/system",
               parsedUrl.getHost(),
-              parsedUrl.getPort() == -1 ? 80 : parsedUrl.getPort()
+              parsedUrl.getPort() == -1 ? parsedUrl.getDefaultPort() : parsedUrl.getPort()
           );
     } catch (MalformedURLException e) {
       log.error("could not parse backend url {} ", url);
