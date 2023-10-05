@@ -59,10 +59,15 @@ public class ClusterStatsJdbcMonitor implements ClusterStatsMonitor {
     }
     try {
       URL parsedUrl = new URL(url);
+      int urlPort;
+      if (parsedUrl.getPort() != -1) {
+        urlPort = parsedUrl.getPort();
+      } else {
+        urlPort = "https".equals(parsedUrl.getProtocol()) ? 443 : 80;
+      }
       jdbcUrl = String
           .format("jdbc:trino://%s:%s/system",
-              parsedUrl.getHost(),
-              parsedUrl.getPort() == -1 ? 80 : parsedUrl.getPort()
+              parsedUrl.getHost(), urlPort
           );
     } catch (MalformedURLException e) {
       log.error("could not parse backend url {} ", url);
