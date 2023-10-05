@@ -69,6 +69,7 @@
         <dep.testng.version>6.10</dep.testng.version>
         <dep.trino.version>387</dep.trino.version>
         <dep.wiremock.version>3.0.1</dep.wiremock.version>
+        <dep.apache.commons.version>3.13.0</dep.apache.commons.version>
 
     </properties>
 
@@ -114,6 +115,12 @@
                 <artifactId>testng</artifactId>
                 <version>${dep.testng.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${dep.apache.commons.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
