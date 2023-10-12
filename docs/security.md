@@ -16,6 +16,11 @@
 
 # Security
 
+Trino Gateway has its own security with its own authentication and authorization.
+These features are used only to authenticate and authorize its user interface and
+the APIs. All Trino-related requests are passed through to the Trino cluster
+without any authentication or authorization check in Trino Gateway.
+
 ## Authentication
 
 The authentication would happen on https protocol only. Add the
@@ -45,7 +50,25 @@ authentication:
       - s3
 ```
 
-### Form/Basic Auth
+### Note
+
+- For OAuth Trino Gateway uses `oidc/callback` where as Trino uses `oauth2` path
+- Trino Gateway should have its own client id
+- All the Trino backend clusters should have a single client id.
+- Trino Gateway needs to pass thorugh the Trino Oauth2 requests only to one of the clusters.
+- One way to handle it is to set a special rule like below:
+```
+  ---
+  name: "Oauth requests"
+  description: "Oauth requests need to go to a single backed"
+  condition: "request.getRequestURI.startsWith(\"/oauth2\")"
+  actions:
+    - "result.put(\"routingGroup\", \"oauth2-handler\")"
+```
+- That also means you need to have a cluster with that routing group.
+- It's ok to replicate an existing cluster backend record with a different name for that purpose.
+
+### Form/Basic authentication
 
 The authentication happens with the pre-defined users from the configuration
 file. To define the preset user use the following section.
@@ -83,7 +106,7 @@ authentication:
 
 ## Authorization
 
-The roles supported by trino load balancer
+Trino Gateway supports the following roles:
 
 - admin : Allows access to the Editor tab, which can be used to configure the
   backends
@@ -101,12 +124,21 @@ authorization:
   admin: 'lb_admin'
   user: 'lb_user'
   api: "lb_api"
-  ldapHost:
-  ldapPort:
-  ldapBindDn:
-  ldapSearch:
-  ldapPassword:
+  ldapConfigPath: "<ldap_config_path>"
 ```
 
+The LDAP config file should have the following contents:
 
-
+```
+  ldapHost: '<ldap sever>'
+  ldapPort: <port>
+  useTls: <true/false>
+  useSsl: <true/false>
+  ldapAdminBindDn: <>
+  ldapUserBaseDn: <>
+  ldapUserSearch: <>
+  ldapGroupMemberAttribute: <>
+  ldapAdminPassword: <>
+  ldapTrustStorePath: <for a secure ldap connectivity>
+  ldapTrustStorePassword: '<for a secure ldap connectivity>'
+```
