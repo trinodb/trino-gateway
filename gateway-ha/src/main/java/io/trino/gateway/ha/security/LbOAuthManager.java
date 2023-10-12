@@ -7,6 +7,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.ha.config.OAuthConfiguration;
 
@@ -132,7 +133,8 @@ public class LbOAuthManager {
   }
 
   @Data
-  private static final class OidcTokens {
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  static final class OidcTokens {
 
     @JsonProperty
     private final String accessToken;
