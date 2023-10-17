@@ -11,7 +11,11 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 public class TestOidcToken {
   @Test
-  public void testOidcTokenParams() {
+  public void testParseTokenParamsGracefully() {
+    // This test is to make sure that we simulate the condition where
+    // the OIDC providers send additional parameters in the token
+    // 'to_be_ignored' parameter should not cause any parsing exception
+    // All the other parameters should have the correct values
     OidcTokens oidcTokens = null;
     try {
       ObjectMapper objectMapper = new ObjectMapper();
