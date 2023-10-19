@@ -1,5 +1,6 @@
 package io.trino.gateway.ha.router;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,9 +9,6 @@ import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import javax.servlet.http.HttpServletRequest;
-
 import lombok.extern.slf4j.Slf4j;
 import org.jeasy.rules.api.Facts;
 import org.jeasy.rules.api.Rules;

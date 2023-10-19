@@ -2,9 +2,9 @@ package io.trino.gateway.ha.security;
 
 import static io.trino.gateway.ha.security.SessionCookie.OAUTH_ID_TOKEN;
 import static io.trino.gateway.ha.security.SessionCookie.logOut;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
@@ -13,12 +13,11 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;

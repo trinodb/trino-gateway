@@ -1,20 +1,19 @@
 package io.trino.gateway.ha.security;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.auth0.jwt.interfaces.Claim;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.SecurityContext;
-
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -98,7 +97,7 @@ public class TestLbFilter {
         .setSecurityContext(secContextCaptor.capture());
 
     // Checks authorization for authenticated principal
-    assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
+    assert(secContextCaptor.getValue().isUserInRole("USER"));
     assertFalse(secContextCaptor.getValue().isUserInRole("ADMIN"));
   }
 

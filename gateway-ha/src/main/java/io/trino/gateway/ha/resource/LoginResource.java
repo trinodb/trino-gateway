@@ -1,21 +1,21 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
-import io.dropwizard.views.View;
+import io.dropwizard.views.common.View;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.SessionCookie;
 import io.trino.jdbc.$internal.javax.annotation.Nullable;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.nio.charset.Charset;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
 

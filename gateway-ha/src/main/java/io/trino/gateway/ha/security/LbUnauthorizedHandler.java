@@ -1,8 +1,8 @@
 package io.trino.gateway.ha.security;
 
 import io.dropwizard.auth.UnauthorizedHandler;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
-import javax.ws.rs.core.Response;
 
 public class LbUnauthorizedHandler implements UnauthorizedHandler {
 

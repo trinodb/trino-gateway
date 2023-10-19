@@ -23,21 +23,25 @@
         <dependency>
             <groupId>org.jeasy</groupId>
             <artifactId>easy-rules-core</artifactId>
-            <version>${jeasy.version}</version>
+            <version>${dep.jeasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jeasy</groupId>
             <artifactId>easy-rules-mvel</artifactId>
-            <version>${jeasy.version}</version>
+            <version>${dep.jeasy.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jeasy</groupId>
             <artifactId>easy-rules-support</artifactId>
-            <version>${jeasy.version}</version>
+            <version>${dep.jeasy.version}</version>
         </dependency>
         <dependency>
           <groupId>com.fasterxml.jackson.core</groupId>
           <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>io.trino.gateway</groupId>
@@ -49,43 +53,47 @@
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
-            <version>${dropwizard.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views-freemarker</artifactId>
-            <version>${dropwizard.version}</version>
+            <artifactId>dropwizard-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-assets</artifactId>
-            <version>${dropwizard.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-views</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-views-freemarker</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>${guice.version}</version>
+            <version>${dep.guice.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
+            <version>${dep.guava.version}</version>
         </dependency>
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>${reflections.version}</version>
+            <version>${dep.reflections.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>1.6.2</version>
+            <artifactId>jakarta.mail</artifactId>
+            <version>${dep.jakarta.mail.version}</version>
         </dependency>
         <dependency>
             <groupId>com.auth0</groupId>
@@ -110,28 +118,33 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
-            <version>387</version>
+            <version>${dep.trino.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>${dep.jakarta.annotations.version}</version>
         </dependency>
         <!--db -->
         <dependency>
             <groupId>org.javalite</groupId>
             <artifactId>activejdbc</artifactId>
-            <version>${activejdbc.version}</version>
+            <version>${dep.activejdbc.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ehcache</groupId>
             <artifactId>ehcache</artifactId>
-            <version>${ehcache.version}</version>
+            <version>${dep.ehcache.version}</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>${mysqlconnector.version}</version>
+            <version>${dep.mysqlconnector.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.6.0</version>
+            <version>${dep.postgresql.version}</version>
         </dependency>
         <!-- Test deps -->
         <dependency>
@@ -149,7 +162,7 @@
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
-            <version>2.24.0</version>
+            <version>${dep.wiremock.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -162,20 +175,20 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.5.0</version>
+            <version>${dep.mokito.junit.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.192</version>
+            <version>${dep.h2.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.9.0</version>
+            <version>${dep.okhttp.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -190,7 +203,7 @@
             <plugin>
                 <groupId>org.javalite</groupId>
                 <artifactId>activejdbc-instrumentation</artifactId>
-                <version>2.2</version>
+                <version>${dep.activejdbc.version}</version>
                 <executions>
                     <execution>
                         <phase>process-classes</phase>
@@ -204,7 +217,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
+                <version>${dep.plugin.maven.shade}</version>
                 <configuration>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <shadedArtifactAttached>true</shadedArtifactAttached>
@@ -248,7 +261,7 @@
             <plugin>
                 <groupId>org.javalite</groupId>
                 <artifactId>db-migrator-maven-plugin</artifactId>
-                <version>${activejdbc.version}</version>
+                <version>${dep.activejdbc.version}</version>
                 <configuration>
                     <configFile>${project.basedir}/src/migrations/database.properties</configFile>
                     <environments>${environments}</environments>
@@ -257,7 +270,7 @@
                     <dependency>
                         <groupId>mysql</groupId>
                         <artifactId>mysql-connector-java</artifactId>
-                        <version>${mysqlconnector.version}</version>
+                        <version>${dep.mysqlconnector.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

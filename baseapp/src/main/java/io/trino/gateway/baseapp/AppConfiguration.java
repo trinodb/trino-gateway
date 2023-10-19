@@ -1,6 +1,6 @@
 package io.trino.gateway.baseapp;
 
-import io.dropwizard.Configuration;
+import io.dropwizard.core.Configuration;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

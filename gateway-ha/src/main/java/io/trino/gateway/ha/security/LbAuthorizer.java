@@ -2,6 +2,8 @@ package io.trino.gateway.ha.security;
 
 import io.dropwizard.auth.Authorizer;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import jakarta.annotation.Nullable;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -14,7 +16,9 @@ public class LbAuthorizer implements Authorizer<LbPrincipal> {
   }
 
   @Override
-  public boolean authorize(LbPrincipal principal, String role) {
+  public boolean authorize(LbPrincipal principal,
+                           String role,
+                           @Nullable ContainerRequestContext ctx) {
     switch (role) {
       case "ADMIN":
         log.info("User {} identified as ADMIN", principal.getName());
