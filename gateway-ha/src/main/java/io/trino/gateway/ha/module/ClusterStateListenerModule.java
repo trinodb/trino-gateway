@@ -2,7 +2,7 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;

@@ -6,7 +6,7 @@ import com.google.common.cache.LoadingCache;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
-
+import jakarta.ws.rs.HttpMethod;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -19,8 +19,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import javax.ws.rs.HttpMethod;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**

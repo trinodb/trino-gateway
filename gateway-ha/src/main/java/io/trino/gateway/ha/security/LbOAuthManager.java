@@ -10,18 +10,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.ha.config.OAuthConfiguration;
-
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.Response;
-
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

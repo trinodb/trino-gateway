@@ -9,10 +9,10 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

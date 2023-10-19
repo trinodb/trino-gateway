@@ -1,15 +1,18 @@
 package io.trino.gateway.proxyserver;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.dynamic.HttpClientTransportDynamic;
+import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+
 
 @Slf4j
 public class ProxyServletImpl extends ProxyServlet.Transparent {
@@ -29,7 +32,7 @@ public class ProxyServletImpl extends ProxyServlet.Transparent {
   // Overriding this method to support ssl
   @Override
   protected HttpClient newHttpClient() {
-    SslContextFactory sslFactory = new SslContextFactory();
+    SslContextFactory.Client sslFactory = new SslContextFactory.Client();
 
     if (serverConfig != null && serverConfig.isForwardKeystore()) {
       sslFactory.setKeyStorePath(serverConfig.getKeystorePath());
@@ -37,10 +40,12 @@ public class ProxyServletImpl extends ProxyServlet.Transparent {
     } else {
       sslFactory.setTrustAll(true);
     }
-    sslFactory.setStopTimeout(TimeUnit.SECONDS.toMillis(15));
     sslFactory.setSslSessionTimeout((int) TimeUnit.SECONDS.toMillis(15));
 
-    HttpClient httpClient = new HttpClient(sslFactory);
+    ClientConnector clientConnector = new ClientConnector();
+    clientConnector.setSslContextFactory(sslFactory);
+    
+    HttpClient httpClient = new HttpClient(new HttpClientTransportDynamic(clientConnector));
     httpClient.setMaxConnectionsPerDestination(10000);
     httpClient.setConnectTimeout(TimeUnit.SECONDS.toMillis(60));
     return httpClient;
