@@ -17,9 +17,24 @@
 
 # Release notes
 
+## Trino Gateway 4 (30 Nov 2023)
+
+[gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
+
+* Add support for configuring additional whitelisted URL paths. (https://github.com/trinodb/trino-gateway/pull/63)
+* Improve flexibility of user and group name matching for authorization. (https://github.com/trinodb/trino-gateway/pull/32)
+* Add support to use external URL for backend creation. (https://github.com/trinodb/trino-gateway/pull/76)
+* Enable configuration of HTTP header size. (https://github.com/trinodb/trino-gateway/pull/67)
+* Automatically set JDBC configuration parameter for TLS when connecting to
+  clusters for monitoring. (https://github.com/trinodb/trino-gateway/pull/71)
+* Modernize application and remove potential for undiscovered bugs and security
+  issues with update of many core dependencies. (https://github.com/trinodb/trino-gateway/pull/59)
+* Avoid failure when unhandled OIDC properties are present. (https://github.com/trinodb/trino-gateway/pull/69)
+* Prevent failures resulting from reloading and parsing rules file. (https://github.com/trinodb/trino-gateway/pull/5)
+
 ## Trino Gateway 3 (26 Sep 2023)
 
-* [gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
+[gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
 
 The first release of Trino Gateway is based on the [Presto
 Gateway](https://github.com/lyft/presto-gateway/) 1.9.5 codebase
