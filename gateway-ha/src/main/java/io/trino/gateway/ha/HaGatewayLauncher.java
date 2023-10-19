@@ -1,8 +1,8 @@
 package io.trino.gateway.ha;
 
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.views.ViewBundle;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.views.common.ViewBundle;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 

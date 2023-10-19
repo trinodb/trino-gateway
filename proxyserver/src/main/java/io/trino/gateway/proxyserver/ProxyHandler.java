@@ -1,5 +1,7 @@
 package io.trino.gateway.proxyserver;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -8,10 +10,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.zip.GZIPInputStream;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.eclipse.jetty.client.api.Request;
@@ -89,15 +87,6 @@ public class ProxyHandler {
       HttpFields httpFields = proxyRequest.getHeaders();
       log.debug(httpFields.toString());
     }
-  }
-
-  protected void setProxyHeader(Request proxyRequest, String key, String value) {
-    if (key == null || value == null) {
-      return;
-    }
-    log.debug("Setting header [{}] with value [{}]", key, value);
-    proxyRequest.getHeaders().remove(key);
-    proxyRequest.header(key, value);
   }
 
   protected boolean isGZipEncoding(HttpServletResponse response) {

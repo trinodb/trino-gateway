@@ -1,7 +1,7 @@
 package io.trino.gateway.ha.security;
 
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 
 public class SessionCookie {
   static final String OAUTH_ID_TOKEN = "token";

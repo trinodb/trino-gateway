@@ -1,8 +1,8 @@
 package io.trino.gateway.ha.router;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
@@ -442,5 +442,3 @@ public class TestTrinoQueueLengthRoutingTable {
   }
 
 }
-
-

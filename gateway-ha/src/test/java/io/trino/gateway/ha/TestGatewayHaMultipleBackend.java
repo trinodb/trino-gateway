@@ -1,6 +1,6 @@
 package io.trino.gateway.ha;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -62,7 +62,6 @@ public class TestGatewayHaMultipleBackend {
             .build();
     Response response1 = httpClient.newCall(request1).execute();
     assertEquals(EXPECTED_RESPONSE1, response1.body().string());
-
     // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
     // routing group
     Request request4 =

@@ -1,10 +1,10 @@
 package io.trino.gateway.baseapp;
 
 import com.google.inject.AbstractModule;
+import io.dropwizard.core.server.DefaultServerFactory;
+import io.dropwizard.core.server.SimpleServerFactory;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
-import io.dropwizard.server.DefaultServerFactory;
-import io.dropwizard.server.SimpleServerFactory;
 import java.util.stream.Stream;
 import lombok.Getter;
 

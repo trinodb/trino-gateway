@@ -7,7 +7,7 @@ import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.Authorizer;
 import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.auth.chained.ChainedAuthFilter;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
