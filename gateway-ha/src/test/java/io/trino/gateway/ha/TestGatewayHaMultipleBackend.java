@@ -1,9 +1,13 @@
 package io.trino.gateway.ha;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,6 +39,8 @@ public class TestGatewayHaMultipleBackend {
   private final WireMockServer customBackend =
           new WireMockServer(WireMockConfiguration.options().port(customBackendPort));
 
+  private final OkHttpClient httpClient = new OkHttpClient();
+
   @BeforeAll
   public void setup() throws Exception {
     HaGatewayTestUtils.prepareMockBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE1);
@@ -62,7 +68,6 @@ public class TestGatewayHaMultipleBackend {
 
   @Test
   public void testCustomPath() throws Exception {
-    OkHttpClient httpClient = new OkHttpClient();
     RequestBody requestBody =
             RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "abc");
     Request request1 =
@@ -87,7 +92,6 @@ public class TestGatewayHaMultipleBackend {
   @Test
   public void testQueryDeliveryToMultipleRoutingGroups() throws Exception {
     // Default request should be routed to adhoc backend
-    OkHttpClient httpClient = new OkHttpClient();
     RequestBody requestBody =
         RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
     Request request1 =
@@ -107,6 +111,31 @@ public class TestGatewayHaMultipleBackend {
             .build();
     Response response4 = httpClient.newCall(request4).execute();
     assertEquals(EXPECTED_RESPONSE2, response4.body().string());
+  }
+
+  @Test
+  public void testBackendConfiguration() throws Exception {
+    Request request = new Request.Builder()
+            .url("http://localhost:" + routerPort + "/entity/GATEWAY_BACKEND")
+            .method("GET", null)
+            .build();
+    Response response = httpClient.newCall(request).execute();
+
+    final ObjectMapper objectMapper = new ObjectMapper();
+    ProxyBackendConfiguration[] backendConfiguration =
+            objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
+
+    assertNotNull(backendConfiguration);
+    assertEquals(3, backendConfiguration.length);
+    assertTrue(backendConfiguration[0].isActive());
+    assertTrue(backendConfiguration[1].isActive());
+    assertTrue(backendConfiguration[2].isActive());
+    assertEquals("adhoc", backendConfiguration[0].getRoutingGroup());
+    assertEquals("scheduled", backendConfiguration[1].getRoutingGroup());
+    assertEquals("custom", backendConfiguration[2].getRoutingGroup());
+    assertEquals("externalUrl", backendConfiguration[0].getExternalUrl());
+    assertEquals("externalUrl", backendConfiguration[1].getExternalUrl());
+    assertEquals("externalUrl", backendConfiguration[2].getExternalUrl());
   }
 
   @AfterAll
