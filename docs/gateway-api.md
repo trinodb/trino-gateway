@@ -21,10 +21,10 @@
 
 ```$xslt
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "trino-3", \
-        "proxyTo": "http://localhost:8083",\
-        "active": true, \
-        "routingGroup": "adhoc" \
+ -d '{  "name": "trino-3",
+        "proxyTo": "http://localhost:8083",
+        "active": true,
+        "routingGroup": "adhoc"
     }'
 ```
 
@@ -34,18 +34,18 @@ to override the link in the Active Backends page.
 
 ```$xslt
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
- -d '{  "name": "trino-3", \
-        "proxyTo": "http://localhost:8083",\
-        "active": true, \
-        "routingGroup": "adhoc" \
-        "externalUrl": "http://localhost:8084",\
+ -d '{  "name": "trino-3",
+        "proxyTo": "http://localhost:8083",
+        "active": true,
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8084"
     }'
 ```
 
 ## Get all backends
 
+`curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND`
 ```$xslt
-curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
 [
     {
         "name": "trino-1",
@@ -80,7 +80,7 @@ curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
 ## Deactivate a backend
 
 ```$xslt
-curl -X POST http://localhost:8080/gateway/backend/deactivate/trino2
+curl -X POST http://localhost:8080/gateway/backend/deactivate/trino-2
 ```
 
 ## Get all active backends
@@ -101,5 +101,5 @@ curl -X POST http://localhost:8080/gateway/backend/deactivate/trino2
 
 ## Activate a backend
 
-`curl -X POST http://localhost:8080/gateway/backend/activate/trino2`
+`curl -X POST http://localhost:8080/gateway/backend/activate/trino-2`
 
