@@ -1,5 +1,8 @@
 package io.trino.gateway.ha.security;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
@@ -7,9 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @Slf4j
 public class TestLbAuthorizer {
@@ -46,11 +46,11 @@ public class TestLbAuthorizer {
     }
 
     static void assertMatch(String role) {
-        assertTrue(authorizer.authorize(principal, role));
+        assertTrue(authorizer.authorize(principal, role, null));
     }
 
     static void assertNotMatch(String role) {
-        assertFalse(authorizer.authorize(principal, role));
+        assertFalse(authorizer.authorize(principal, role, null));
     }
 
     static void assertBadPattern(String role) {
