@@ -95,8 +95,8 @@ public class TestRoutingGroupSelector {
     FileWriter fw = new FileWriter(file);
     fw.write(
         "---\n"
-            + "name: \"airflow\"\n"
-            + "description: \"if query from airflow, route to etl group\"\n"
+            + "name: \"airflow1\"\n"
+            + "description: \"original rule\"\n"
             + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
             + "actions:\n"
             + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
@@ -114,8 +114,8 @@ public class TestRoutingGroupSelector {
     fw = new FileWriter(file);
     fw.write(
         "---\n"
-            + "name: \"airflow\"\n"
-            + "description: \"if query from airflow, route to etl group\"\n"
+            + "name: \"airflow2\"\n"
+            + "description: \"updated rule\"\n"
             + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
             + "actions:\n"
             + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2

@@ -48,6 +48,7 @@ public class RuleReloadingRoutingGroupSelector
     try {
       BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
               BasicFileAttributes.class);
+      log.debug("File modified time: " + attr.lastModifiedTime() + ". lastUpdatedTime: " + lastUpdatedTime);
       if (attr.lastModifiedTime().toMillis() > lastUpdatedTime) {
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
