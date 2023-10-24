@@ -19,4 +19,13 @@ public class RequestRouterConfiguration {
 
   // Use the certificate between gateway and trino?
   private boolean forwardKeystore;
+
+  // Set size for HttpConfiguration
+  private int outputBufferSize = 32 * 1024;
+  private int requestHeaderSize = 8 * 1024;
+  private int responseHeaderSize = 8 * 1024;
+
+  // Set size for HttpClient
+  private int requestBufferSize = 4 * 1024;
+  private int responseBufferSize = 16 * 1024;
 }

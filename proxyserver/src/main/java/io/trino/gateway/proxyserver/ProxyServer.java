@@ -63,7 +63,9 @@ public class ProxyServer implements Closeable {
       HttpConfiguration httpsConfig = new HttpConfiguration();
       httpsConfig.setSecureScheme(HttpScheme.HTTPS.asString());
       httpsConfig.setSecurePort(config.getLocalPort());
-      httpsConfig.setOutputBufferSize(32768);
+      httpsConfig.setOutputBufferSize(config.getOutputBufferSize());
+      httpsConfig.setRequestHeaderSize(config.getRequestHeaderSize());
+      httpsConfig.setResponseHeaderSize(config.getResponseHeaderSize());
 
       SecureRequestCustomizer src = new SecureRequestCustomizer();
       src.setStsMaxAge(TimeUnit.SECONDS.toSeconds(2000));
@@ -111,7 +113,6 @@ public class ProxyServer implements Closeable {
   }
 
   public void start() {
-
     try {
       this.server.start();
     } catch (Exception e) {

@@ -195,6 +195,11 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
       routerProxyConfig.setKeystorePass(routerConfiguration.getKeystorePass());
       routerProxyConfig.setForwardKeystore(routerConfiguration.isForwardKeystore());
       routerProxyConfig.setPreserveHost("false");
+      routerProxyConfig.setOutputBufferSize(routerConfiguration.getOutputBufferSize());
+      routerProxyConfig.setRequestHeaderSize(routerConfiguration.getRequestHeaderSize());
+      routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
+      routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
+      routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
       ProxyHandler proxyHandler = getProxyHandler();
       gateway = new ProxyServer(routerProxyConfig, proxyHandler);
     }

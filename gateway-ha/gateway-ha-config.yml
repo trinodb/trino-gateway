@@ -6,6 +6,7 @@ requestRouter:
   port: 8080
   name: trinoRouter
   historySize: 1000
+  requestBufferSize: 8 * 1024
 
 dataStore:
   jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db

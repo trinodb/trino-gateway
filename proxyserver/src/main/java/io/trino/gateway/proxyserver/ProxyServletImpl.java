@@ -48,6 +48,8 @@ public class ProxyServletImpl extends ProxyServlet.Transparent {
     HttpClient httpClient = new HttpClient(new HttpClientTransportDynamic(clientConnector));
     httpClient.setMaxConnectionsPerDestination(10000);
     httpClient.setConnectTimeout(TimeUnit.SECONDS.toMillis(60));
+    httpClient.setRequestBufferSize(serverConfig.getRequestBufferSize());
+    httpClient.setResponseBufferSize(serverConfig.getResponseBufferSize());
     return httpClient;
   }
 
