@@ -1,6 +1,6 @@
 package io.trino.gateway.proxyserver;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -16,7 +16,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestProxyServer {
 
@@ -54,8 +54,8 @@ public class TestProxyServer {
       HttpResponse response = httpclient.execute(httpUriRequest);
       assertEquals(mockResponseText, EntityUtils.toString(response.getEntity()));
       RecordedRequest recordedRequest = backend.takeRequest();
-      assertEquals(recordedRequest.getHeader("HEADER1"), "FOO");
-      assertEquals(recordedRequest.getHeader("HEADER2"), "BAR");
+      assertEquals("FOO", recordedRequest.getHeader("HEADER1"));
+      assertEquals("BAR", recordedRequest.getHeader("HEADER2"));
     } finally {
       proxyServer.close();
       backend.shutdown();
@@ -79,7 +79,7 @@ public class TestProxyServer {
       HttpResponse response = httpclient.execute(httpUriRequest);
       assertEquals(mockResponseText, EntityUtils.toString(response.getEntity()));
       RecordedRequest recordedRequest = backend.takeRequest();
-      assertEquals(recordedRequest.getHeader(mockLongHeaderKey), mockLongHeaderValue);
+      assertEquals(mockLongHeaderValue, recordedRequest.getHeader(mockLongHeaderKey));
     } finally {
       proxyServer.close();
       backend.shutdown();
