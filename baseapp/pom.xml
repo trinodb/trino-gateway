@@ -44,12 +44,6 @@
             <artifactId>lombok</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!-- Test deps -->
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>
