@@ -111,6 +111,11 @@ public class TestRoutingGroupSelector {
     assertEquals("etl",
         routingGroupSelector.findRoutingGroup(mockRequest));
 
+    Thread.sleep(1);
+    // java.nio.file.attribute.FileTime offers a maximum precision of 1 ms. If the first
+    // half of this test runs in <1ms, the gateway may not recognize that the file
+    // has changed.
+
     fw = new FileWriter(file);
     fw.write(
         "---\n"
