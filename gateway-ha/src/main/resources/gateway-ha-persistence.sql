@@ -18,7 +18,7 @@ CREATE INDEX query_history_created_idx ON query_history(created);
 
 CREATE TABLE IF NOT EXISTS resource_groups (
     resource_group_id BIGINT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(250) NOT NULL UNIQUE,
+    name VARCHAR(250) NOT NULL,
 
     -- OPTIONAL POLICY CONTROLS
     parent BIGINT NULL,
