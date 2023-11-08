@@ -41,7 +41,6 @@ public class TestSpecificDbResourceGroupsManager extends TestResourceGroupsManag
   private void createResourceGroup() {
     ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
 
-    resourceGroup.setResourceGroupId(1L);
     resourceGroup.setName("admin2");
     resourceGroup.setHardConcurrencyLimit(20);
     resourceGroup.setMaxQueued(200);

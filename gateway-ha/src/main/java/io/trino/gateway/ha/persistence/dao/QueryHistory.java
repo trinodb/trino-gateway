@@ -12,12 +12,12 @@ import org.javalite.activejdbc.annotations.Table;
 @Table("query_history")
 @Cached
 public class QueryHistory extends Model {
-  private static final String queryId = "query_id";
-  private static final String queryText = "query_text";
-  private static final String backendUrl = "backend_url";
-  private static final String userName = "user_name";
-  private static final String source = "source";
-  private static final String created = "created";
+  public static final String queryId = "query_id";
+  public static final String queryText = "query_text";
+  public static final String backendUrl = "backend_url";
+  public static final String userName = "user_name";
+  public static final String source = "source";
+  public static final String created = "created";
 
   public static List<QueryHistoryManager.QueryDetail> upcast(List<QueryHistory> queryHistoryList) {
     List<QueryHistoryManager.QueryDetail> queryDetails = new ArrayList<>();

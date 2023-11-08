@@ -146,6 +146,11 @@
             <artifactId>postgresql</artifactId>
             <version>${dep.postgresql.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${dep.oracle.version}</version>
+        </dependency>
         <!-- Test deps -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
