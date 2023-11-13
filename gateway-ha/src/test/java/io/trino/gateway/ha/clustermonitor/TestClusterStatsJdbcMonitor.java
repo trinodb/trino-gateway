@@ -10,11 +10,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Properties;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,7 +38,7 @@ public class TestClusterStatsJdbcMonitor {
     @Mock
     private ResultSet resultSet;
 
-    private java.util.Properties properties;
+    private Properties properties;
 
     @BeforeEach
     public void initMocks() {
@@ -56,24 +58,24 @@ public class TestClusterStatsJdbcMonitor {
     public void setUp() {
         BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
         backendStateConfiguration.setUsername("Trino");
-        properties = new java.util.Properties();
+        properties = new Properties();
         properties.setProperty("user", backendStateConfiguration.getUsername());
         properties.setProperty("password", backendStateConfiguration.getPassword());
         properties.setProperty("SSL", String.valueOf(backendStateConfiguration.getSsl()));
         clusterStatsJdbcMonitor = new ClusterStatsJdbcMonitor(backendStateConfiguration);
     }
 
-    private static Stream<Arguments> provideSchemeAndPort(){
+    private static Stream<Arguments> provideProtocolAndPortAndSsl(){
         return Stream.of(
-            Arguments.of("https", "90", "jdbc:trino://trino.example.com:90/system"),
-            Arguments.of("http", "90", "jdbc:trino://trino.example.com:90/system"),
-            Arguments.of("https", "", "jdbc:trino://trino.example.com:443/system"),
-            Arguments.of("http", "", "jdbc:trino://trino.example.com:80/system")
+            Arguments.of("https", "90", "jdbc:trino://trino.example.com:90/system", "true"),
+            Arguments.of("http", "90", "jdbc:trino://trino.example.com:90/system", "false"),
+            Arguments.of("https", "", "jdbc:trino://trino.example.com:443/system", "true"),
+            Arguments.of("http", "", "jdbc:trino://trino.example.com:80/system", "false")
         );
     }
     @ParameterizedTest
-    @MethodSource("provideSchemeAndPort")
-    public void testProtocol(String scheme, String port, String expectedJdbcUrl) throws java.sql.SQLException {
+    @MethodSource("provideProtocolAndPortAndSsl")
+    public void testProtocolAndSsl(String scheme, String port, String expectedJdbcUrl, String expectedSsl) throws java.sql.SQLException {
         try(MockedStatic<DriverManager> m = Mockito.mockStatic(java.sql.DriverManager.class)) {
             m.when(() -> DriverManager.getConnection(anyString(), any())).thenReturn(connection);
             when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
@@ -83,6 +85,8 @@ public class TestClusterStatsJdbcMonitor {
             proxyBackend.setName("abc");
 
             clusterStatsJdbcMonitor.monitor(proxyBackend);
+
+            properties.setProperty("SSL", expectedSsl);
 
             m.verify(() -> DriverManager.getConnection(expectedJdbcUrl, properties));
         }
