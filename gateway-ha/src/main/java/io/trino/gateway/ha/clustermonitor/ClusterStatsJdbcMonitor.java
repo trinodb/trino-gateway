@@ -64,6 +64,8 @@ public class ClusterStatsJdbcMonitor implements ClusterStatsMonitor {
               parsedUrl.getHost(),
               parsedUrl.getPort() == -1 ? parsedUrl.getDefaultPort() : parsedUrl.getPort()
           );
+      // automatically set ssl config based on url protocol
+      properties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
     } catch (MalformedURLException e) {
       log.error("could not parse backend url {} ", url);
       return clusterStats;
