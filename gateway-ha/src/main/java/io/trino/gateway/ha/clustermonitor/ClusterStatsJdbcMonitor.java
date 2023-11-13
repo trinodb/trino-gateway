@@ -78,14 +78,14 @@ public class ClusterStatsJdbcMonitor implements ClusterStatsMonitor {
       while (rs.next()) {
         partialState.put(rs.getString("state"), rs.getInt("count"));
       }
-      clusterStats.setHealthy(true);
+      clusterStats.setHealthy(BackendHealthState.HEALTHY);
       clusterStats.setQueuedQueryCount(partialState.getOrDefault("QUEUED", 0));
       clusterStats.setRunningQueryCount(partialState.getOrDefault("RUNNING", 0));
       return clusterStats;
     } catch (TimeoutException e) {
-      log.error("timed out fetching status for {} backend, {}", url, e);
+      log.error("timed out fetching status for {} backend, {}", jdbcUrl, e);
     } catch (Exception e) {
-      log.error("could not fetch status for {} backend, {}", url, e);
+      log.error("could not fetch status for {} backend, {}", jdbcUrl, e);
     }
     return clusterStats;
   }

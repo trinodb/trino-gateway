@@ -12,7 +12,7 @@ public class ClusterStats {
   private int queuedQueryCount;
   private int blockedQueryCount;
   private int numWorkerNodes;
-  private boolean healthy;
+  private BackendHealthState healthy = BackendHealthState.PENDING;
   private String clusterId;
   private String proxyTo;
   private String externalUrl;

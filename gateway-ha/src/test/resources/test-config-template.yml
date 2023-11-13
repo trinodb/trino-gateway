@@ -17,11 +17,21 @@ dataStore:
   password: sa
   driver: org.h2.Driver
 
+backendState:
+  username: lb_query
+  ssl: false
+
+clusterStatsConfiguration:
+  useApi: true
+
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
 
 extraWhitelistPaths:
   - "/v1/custom"

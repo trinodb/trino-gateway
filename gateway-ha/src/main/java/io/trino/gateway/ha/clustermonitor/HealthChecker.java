@@ -15,7 +15,7 @@ public class HealthChecker implements TrinoClusterStatsObserver {
   @Override
   public void observe(List<ClusterStats> clustersStats) {
     for (ClusterStats clusterStats : clustersStats) {
-      if (!clusterStats.isHealthy()) {
+      if (clusterStats.getHealthy() != BackendHealthState.HEALTHY) {
         notifyUnhealthyCluster(clusterStats);
       } else {
         if (clusterStats.getQueuedQueryCount() > MAX_THRESHOLD_QUEUED_QUERY_COUNT) {

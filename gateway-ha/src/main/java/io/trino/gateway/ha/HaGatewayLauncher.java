@@ -12,6 +12,8 @@ public class HaGatewayLauncher extends BaseApp<HaGatewayConfiguration> {
     super(basePackages);
   }
 
+  public HaGatewayLauncher(){}
+
   @Override
   public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap) {
     super.initialize(bootstrap);
