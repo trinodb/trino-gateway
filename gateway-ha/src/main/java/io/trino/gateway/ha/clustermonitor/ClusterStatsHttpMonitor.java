@@ -49,17 +49,17 @@ public class ClusterStatsHttpMonitor implements ClusterStatsMonitor {
       HashMap<String, Object> result = null;
       result = new ObjectMapper().readValue(response, HashMap.class);
 
-      clusterStats.setNumWorkerNodes((int) result.get("activeWorkers"));
-      clusterStats.setQueuedQueryCount((int) result.get("queuedQueries"));
-      clusterStats.setRunningQueryCount((int) result.get("runningQueries"));
-      clusterStats.setBlockedQueryCount((int) result.get("blockedQueries"));
-      clusterStats.setHealthy(clusterStats.getNumWorkerNodes() > 0);
+      clusterStats.setNumWorkerNodes((int) result.getOrDefault("activeWorkers", 0));
+      clusterStats.setQueuedQueryCount((int) result.getOrDefault("queuedQueries", 0));
+      clusterStats.setRunningQueryCount((int) result.getOrDefault("runningQueries", 0));
+      clusterStats.setBlockedQueryCount((int) result.getOrDefault("blockedQueries", 0));
+      clusterStats.setHealthy(clusterStats.getNumWorkerNodes() > 0 ? BackendHealthState.HEALTHY : BackendHealthState.UNHEALTHY);
       clusterStats.setProxyTo(backend.getProxyTo());
       clusterStats.setExternalUrl(backend.getExternalUrl());
       clusterStats.setRoutingGroup(backend.getRoutingGroup());
 
     } catch (Exception e) {
-      log.error("Error parsing cluster stats from [{}]", response, e);
+      log.error("Error parsing cluster stats from {}", response, e);
     }
 
     // Fetch User Level Stats.

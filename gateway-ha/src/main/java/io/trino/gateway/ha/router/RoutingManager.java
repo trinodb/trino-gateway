@@ -3,6 +3,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import io.trino.gateway.ha.clustermonitor.BackendHealthState;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
@@ -31,7 +32,7 @@ public abstract class RoutingManager {
   private final LoadingCache<String, String> queryIdBackendCache;
   private ExecutorService executorService = Executors.newFixedThreadPool(5);
   private GatewayBackendManager gatewayBackendManager;
-  private ConcurrentHashMap<String, Boolean> backendToHealth;
+  private ConcurrentHashMap<String, BackendHealthState> backendToHealth;
 
   public RoutingManager(GatewayBackendManager gatewayBackendManager) {
     this.gatewayBackendManager = gatewayBackendManager;
@@ -47,7 +48,7 @@ public abstract class RoutingManager {
                   }
                 });
 
-    this.backendToHealth = new ConcurrentHashMap<String, Boolean>();
+    this.backendToHealth = new ConcurrentHashMap<>();
   }
 
   protected GatewayBackendManager getGatewayBackendManager() {
@@ -109,20 +110,10 @@ public abstract class RoutingManager {
     return backendAddress;
   }
 
-  public void upateBackEndHealth(String backendId, Boolean value) {
+  public void upateBackEndHealth(String backendId, BackendHealthState value) {
     log.info("backend {} isHealthy {}", backendId, value);
     backendToHealth.put(backendId, value);
   }
-
-  public void updateBackEndHealthDB(ClusterStats stats) {
-    String name = stats.getClusterId();
-    if (stats.isHealthy()) {
-      gatewayBackendManager.activateBackend(name);
-    } else {
-      gatewayBackendManager.deactivateBackend(name);
-    }
-  }
-
 
   /**
    * This tries to find out which backend may have info about given query id. If not found returns
@@ -176,11 +167,11 @@ public abstract class RoutingManager {
       log.error("backends can not be empty");
       return true;
     }
-    Boolean isHealthy = backendToHealth.get(backendId);
+    BackendHealthState isHealthy = backendToHealth.get(backendId);
     if (isHealthy == null) {
       return true;
     }
-    return !isHealthy;
+    return isHealthy != BackendHealthState.HEALTHY;
   }
 
 }

@@ -1,6 +1,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.HaGatewayTestUtils;
+import io.trino.gateway.ha.clustermonitor.BackendHealthState;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -49,8 +50,8 @@ public class TestHaRoutingManager {
       proxyBackend.setProxyTo(backend + ".trino.example.com");
       proxyBackend.setExternalUrl("trino.example.com");
       backendManager.addBackend(proxyBackend);
-      //set backend as healthyti start with
-      haRoutingManager.upateBackEndHealth(backend, true);
+      //set backend as healthy to start with
+      haRoutingManager.upateBackEndHealth(backend, BackendHealthState.HEALTHY);
     }
 
     //Keep only 1st backend as healthy, mark all the others as unhealthy
@@ -58,7 +59,7 @@ public class TestHaRoutingManager {
 
     for (int i = 1; i < numBackends; i++) {
       backend = groupName + i;
-      haRoutingManager.upateBackEndHealth(backend, false);
+      haRoutingManager.upateBackEndHealth(backend, BackendHealthState.UNHEALTHY);
     }
 
     assert (haRoutingManager.provideBackendForRoutingGroup(groupName, "")

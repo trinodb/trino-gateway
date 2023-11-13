@@ -24,6 +24,18 @@
             background-color: red;
         }
 
+        .active_HEALTHY {
+            background-color: green;
+        }
+
+        .active_UNHEALTHY {
+            background-color: red;
+        }
+
+        .active_PENDING {
+            background-color: grey;
+        }
+
         #availableClusters {
             width: 75%;
             border: 1px solid #ddd;
@@ -67,6 +79,7 @@
             <th>Url</th>
             <th>Group</th>
             <th>Active</th>
+            <th>Healthy</th>
             <#if backendStates?keys?size != 0>
                 <th>Queued<th>
                 <th>Running<th>
@@ -76,10 +89,11 @@
         <tbody>
         <#list backendConfigurations as bc>
             <tr>
-                <td>  ${bc.name}</td>
+                <td>${bc.name}</td>
                 <td><a href="${bc.externalUrl}/ui" target="_blank">${bc.externalUrl}</a></td>
                 <td> ${bc.routingGroup}</td>
                 <td class="active_${bc.active?c}"> ${bc.active?c} </td>
+                <td class="active_${backendStates[bc.name].healthy}">${backendStates[bc.name].healthy}</td>
                 <#if backendStates?keys?size != 0 && backendStates[bc.name]??>
                     <td>${backendStates[bc.name].state["QUEUED"]}<td>
                     <td>${backendStates[bc.name].state["RUNNING"]}<td>

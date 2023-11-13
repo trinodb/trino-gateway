@@ -1,5 +1,6 @@
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.clustermonitor.BackendHealthState;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -29,7 +30,7 @@ public class BackendStateManager {
     Map<String, Integer> state = new HashMap<>();
     state.put("QUEUED", stats.getQueuedQueryCount());
     state.put("RUNNING", stats.getRunningQueryCount());
-    return new BackendState(name, state);
+    return new BackendState(name, state, stats.getHealthy());
   }
 
   public BackendStateConfiguration getBackendStateConfiguration() {
@@ -40,14 +41,22 @@ public class BackendStateManager {
     clusterStats.put(clusterId, stats);
   }
 
+  public void updateHealthState(String clusterId, BackendHealthState state) {
+    ClusterStats stats = clusterStats.getOrDefault(clusterId, new ClusterStats());
+    stats.setHealthy(state);
+    clusterStats.put(clusterId, stats);
+  }
+
   @Data
   public static class BackendState {
     private final String name;
     private final Map<String, Integer> state;
+    private final BackendHealthState healthy;
 
-    public BackendState(String name, Map<String, Integer> state) {
+    public BackendState(String name, Map<String, Integer> state, BackendHealthState healthy) {
       this.name = name;
       this.state = state;
+      this.healthy = healthy;
     }
   }
 }

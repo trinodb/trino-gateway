@@ -8,7 +8,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.dropwizard.views.common.View;
+import io.trino.gateway.ha.clustermonitor.BackendHealthState;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -44,6 +46,9 @@ public class EntityEditorResource {
   private ResourceGroupsManager resourceGroupsManager;
 
   @Inject
+  private BackendStateManager backendStateManager;
+
+  @Inject
   private RoutingManager routingManager;
 
   @GET
@@ -75,7 +80,8 @@ public class EntityEditorResource {
               OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
           gatewayBackendManager.updateBackend(backend);
           log.info("Setting up the backend {} with healthy state", backend.getName());
-          routingManager.upateBackEndHealth(backend.getName(), true);
+          routingManager.upateBackEndHealth(backend.getName(), BackendHealthState.PENDING);
+          backendStateManager.updateHealthState(backend.getName(), BackendHealthState.PENDING);
           break;
         case RESOURCE_GROUP:
           ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,

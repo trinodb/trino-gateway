@@ -27,7 +27,7 @@ public class TrinoQueueLengthChecker implements TrinoClusterStatsObserver {
             = new HashMap<>();
 
     for (ClusterStats stat : stats) {
-      if (!stat.isHealthy()) {
+      if (stat.getHealthy() != BackendHealthState.HEALTHY) {
         // Skip if the cluster isn't healthy
         continue;
       }

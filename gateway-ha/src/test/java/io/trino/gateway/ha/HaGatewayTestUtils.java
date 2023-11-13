@@ -31,6 +31,8 @@ public class HaGatewayTestUtils {
   private static final OkHttpClient httpClient = new OkHttpClient();
   private static final Random RANDOM = new Random();
 
+  public static final int WAIT_FOR_BACKEND_IN_SECONDS = 65;
+
   public static void seedRequiredData(TestConfig testConfig) {
     String jdbcUrl = "jdbc:h2:" + testConfig.getH2DbFilePath();
     DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
@@ -40,16 +42,26 @@ public class HaGatewayTestUtils {
     connectionManager.close();
   }
 
-  public static void prepareMockBackend(
-      WireMockServer backend, String endPoint, String expectedResonse) {
-    backend.start();
+  public static void prepareMockPostBackend(
+      WireMockServer backend, String endPoint, String expectedResonse, int status) {
     backend.stubFor(
         WireMock.post(endPoint)
             .willReturn(
                 WireMock.aResponse()
                     .withBody(expectedResonse)
                     .withHeader("Content-Encoding", "plain")
-                    .withStatus(200)));
+                    .withStatus(status)));
+  }
+
+  public static void prepareMockGetBackend(
+      WireMockServer backend, String endPoint, String response, int status) {
+    backend.stubFor(
+        WireMock.get(endPoint)
+            .willReturn(
+                WireMock.aResponse()
+                    .withBody(response)
+                    .withHeader("Content-Encoding", "plain")
+                    .withStatus(status)));
   }
 
   public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)

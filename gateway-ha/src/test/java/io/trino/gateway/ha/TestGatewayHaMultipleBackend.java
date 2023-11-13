@@ -1,5 +1,10 @@
 package io.trino.gateway.ha;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.WAIT_FOR_BACKEND_IN_SECONDS;
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_QUEUED_LIST_PATH;
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_LOGIN_PATH;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,7 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -18,11 +25,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 @TestInstance(Lifecycle.PER_CLASS)
+@ExtendWith(DropwizardExtensionsSupport.class)
+@Slf4j
 public class TestGatewayHaMultipleBackend {
-  public static final String EXPECTED_RESPONSE1 = "{\"id\":\"testId1\"}";
-  public static final String EXPECTED_RESPONSE2 = "{\"id\":\"testId2\"}";
+  public static final String EXPECTED_RESPONSE_1 = "{\"id\":\"testId1\"}";
+  public static final String EXPECTED_RESPONSE_2 = "{\"id\":\"testId2\"}";
   public static final String CUSTOM_RESPONSE = "123";
   public static final String CUSTOM_PATH = "/v1/custom/extra";
 
@@ -43,9 +53,25 @@ public class TestGatewayHaMultipleBackend {
 
   @BeforeAll
   public void setup() throws Exception {
-    HaGatewayTestUtils.prepareMockBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE1);
-    HaGatewayTestUtils.prepareMockBackend(scheduledBackend, "/v1/statement", EXPECTED_RESPONSE2);
-    HaGatewayTestUtils.prepareMockBackend(customBackend, CUSTOM_PATH, CUSTOM_RESPONSE);
+    adhocBackend.start();
+    scheduledBackend.start();
+    customBackend.start();
+    // mock adhocBackend response
+    HaGatewayTestUtils.prepareMockPostBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE_1, 200);
+    HaGatewayTestUtils.prepareMockPostBackend(adhocBackend, UI_LOGIN_PATH, "", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(adhocBackend, UI_API_STATS_PATH, "{\"activeWorkers\": 1}", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(adhocBackend, UI_API_QUEUED_LIST_PATH, null, 200);
+
+    // mock scheduledBackend response
+    HaGatewayTestUtils.prepareMockPostBackend(scheduledBackend, "/v1/statement", EXPECTED_RESPONSE_2, 200);
+    HaGatewayTestUtils.prepareMockPostBackend(scheduledBackend, UI_LOGIN_PATH, "", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(scheduledBackend, UI_API_STATS_PATH, "{\"activeWorkers\": 1}", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(scheduledBackend, UI_API_QUEUED_LIST_PATH, null, 200);
+
+    HaGatewayTestUtils.prepareMockPostBackend(customBackend, CUSTOM_PATH, CUSTOM_RESPONSE, 200);
+    HaGatewayTestUtils.prepareMockPostBackend(customBackend, UI_LOGIN_PATH, "", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(customBackend, UI_API_STATS_PATH, "{\"activeWorkers\": 1}", 200);
+    HaGatewayTestUtils.prepareMockGetBackend(customBackend, UI_API_QUEUED_LIST_PATH, null, 200);
 
     // seed database
     HaGatewayTestUtils.TestConfig testConfig =
@@ -64,6 +90,8 @@ public class TestGatewayHaMultipleBackend {
             "custom", "http://localhost:" + customBackendPort, "externalUrl", true, "custom",
             routerPort);
 
+    log.info("waiting for backend to become healthy");
+    SECONDS.sleep(WAIT_FOR_BACKEND_IN_SECONDS);
   }
 
   @Test
@@ -77,7 +105,7 @@ public class TestGatewayHaMultipleBackend {
                     .addHeader("X-Trino-Routing-Group", "custom")
                     .build();
     Response response1 = httpClient.newCall(request1).execute();
-    assertEquals(response1.body().string(), CUSTOM_RESPONSE);
+    assertEquals(CUSTOM_RESPONSE, response1.body().string());
 
     Request request2 =
             new Request.Builder()
@@ -86,7 +114,7 @@ public class TestGatewayHaMultipleBackend {
                     .addHeader("X-Trino-Routing-Group", "custom")
                     .build();
     Response response2 = httpClient.newCall(request2).execute();
-    assertEquals(response2.code(), 404);
+    assertEquals(404, response2.code());
   }
 
   @Test
@@ -100,7 +128,7 @@ public class TestGatewayHaMultipleBackend {
             .post(requestBody)
             .build();
     Response response1 = httpClient.newCall(request1).execute();
-    assertEquals(EXPECTED_RESPONSE1, response1.body().string());
+    assertEquals(EXPECTED_RESPONSE_1, response1.body().string());
     // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
     // routing group
     Request request4 =
@@ -110,7 +138,7 @@ public class TestGatewayHaMultipleBackend {
             .addHeader("X-Trino-Routing-Group", "scheduled")
             .build();
     Response response4 = httpClient.newCall(request4).execute();
-    assertEquals(EXPECTED_RESPONSE2, response4.body().string());
+    assertEquals(EXPECTED_RESPONSE_2, response4.body().string());
   }
 
   @Test

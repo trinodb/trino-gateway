@@ -14,8 +14,7 @@ public class HealthCheckObserver implements TrinoClusterStatsObserver {
   @Override
   public void observe(java.util.List<ClusterStats> clustersStats) {
     for (ClusterStats clusterStats : clustersStats) {
-      routingManager.upateBackEndHealth(clusterStats.getClusterId(), clusterStats.isHealthy());
-      routingManager.updateBackEndHealthDB(clusterStats);
+      routingManager.upateBackEndHealth(clusterStats.getClusterId(), clusterStats.getHealthy());
     }
   }
 
