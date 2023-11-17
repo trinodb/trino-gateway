@@ -120,7 +120,7 @@ public class LbOAuthManager {
       Jwk jwk = provider.get(jwt.getKeyId());
       RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
 
-      if (LbTokenUtil.validateToken(idToken, publicKey, jwt.getIssuer())) {
+      if (LbTokenUtil.validateToken(idToken, publicKey, jwt.getIssuer(), Optional.of(oauthConfig.getAudiences()))) {
         return Optional.of(jwt.getClaims());
       }
 

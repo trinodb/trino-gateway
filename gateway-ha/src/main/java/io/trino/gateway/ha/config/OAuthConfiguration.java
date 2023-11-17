@@ -19,4 +19,5 @@ public class OAuthConfiguration {
   private List<String> scopes;
   private String redirectUrl;
   private String userIdField;
+  private List<String> audiences;
 }
