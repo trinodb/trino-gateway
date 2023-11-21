@@ -2,8 +2,8 @@
 
 <table>
   <tr>
-    <td><a href="configuration.md">Configuration</a></td>
-    <td><b><a href="design.md">Design</a></b></td>
+    <td><a href="installation.md">Installation</a></td>
+    <td><a href="design.md">Design</a></td>
     <td><a href="development.md">Development</a></td>
     <td><a href="security.md">Security</a></td>
     <td><a href="quickstart.md">Quickstart</a></td>
