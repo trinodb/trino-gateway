@@ -42,4 +42,22 @@ extraWhitelistPaths:
   - "/ext/faster"
 ```
 
-This example enables additional proxying of any requests to path starting with the specified paths. 
+This example enables additional proxying of any requests to path starting with the specified paths.
+
+## Router Policy
+There are 2 routers you can choose from
+### Que length based
+- This distributed the queries based on the number of queries running
+- Add to the modules section to the configuration file 
+```
+modules:
+  - io.trino.gateway.ha.module.QueueLengthListenerModule
+  - io.trino.gateway.ha.module.QueueLengthRouterProvider
+```
+### Random routing
+The queries are routed randomly to the available backend
+```
+modules:
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.BasicRouterProvider
+```

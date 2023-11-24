@@ -36,8 +36,11 @@ monitor:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
-  - io.trino.gateway.ha.module.ClusterStateListenerModule
+#  - io.trino.gateway.ha.module.ClusterStateListenerModule
+#  - io.trino.gateway.ha.module.BasicRouterProvider
   - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+  - io.trino.gateway.ha.module.QueueLengthListenerModule
+  - io.trino.gateway.ha.module.QueueLengthRouterProvider
 
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
