@@ -78,7 +78,12 @@ public class ProxyServer implements Closeable {
                   new SslConnectionFactory(sslContextFactory, connectionFactory.getProtocol()),
                   connectionFactory);
     } else {
-      connector = new ServerConnector(server);
+      HttpConfiguration httpConfig = new HttpConfiguration();
+      httpConfig.setOutputBufferSize(config.getOutputBufferSize());
+      httpConfig.setRequestHeaderSize(config.getRequestHeaderSize());
+      httpConfig.setResponseHeaderSize(config.getResponseHeaderSize());
+      HttpConnectionFactory connectionFactory = new HttpConnectionFactory(httpConfig);
+      connector = new ServerConnector(server, connectionFactory);
     }
     connector.setHost("0.0.0.0");
     connector.setPort(config.getLocalPort());
