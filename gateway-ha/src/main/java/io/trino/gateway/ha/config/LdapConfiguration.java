@@ -33,8 +33,15 @@ public class LdapConfiguration
     private String ldapAdminPassword;
     private String ldapTrustStorePath;
     private String ldapTrustStorePassword;
+    private Integer poolMaxIdle;
+    private Integer poolMaxTotal;
+    private Integer poolMinIdle;
+    private boolean poolTestOnBorrow;
 
-    public LdapConfiguration(String ldapHost, Integer ldapPort, boolean useTls, boolean useSsl, String ldapAdminBindDn, String ldapUserBaseDn, String ldapUserSearch, String ldapGroupMemberAttribute, String ldapAdminPassword, String ldapTrustStorePath, String ldapTrustStorePassword)
+    public LdapConfiguration(String ldapHost, Integer ldapPort, boolean useTls, boolean useSsl, String ldapAdminBindDn,
+                             String ldapUserBaseDn, String ldapUserSearch, String ldapGroupMemberAttribute,
+                             String ldapAdminPassword, String ldapTrustStorePath, String ldapTrustStorePassword,
+                             Integer poolMaxIdle, Integer poolMaxTotal, Integer poolMinIdle, boolean poolTestOnBorrow)
     {
         this.ldapHost = ldapHost;
         this.ldapPort = ldapPort;
@@ -47,6 +54,10 @@ public class LdapConfiguration
         this.ldapAdminPassword = ldapAdminPassword;
         this.ldapTrustStorePath = ldapTrustStorePath;
         this.ldapTrustStorePassword = ldapTrustStorePassword;
+        this.poolMaxIdle = poolMaxIdle;
+        this.poolMaxTotal = poolMaxTotal;
+        this.poolMinIdle = poolMinIdle;
+        this.poolTestOnBorrow = poolTestOnBorrow;
     }
 
     public LdapConfiguration() {}
@@ -180,5 +191,45 @@ public class LdapConfiguration
     public void setLdapTrustStorePassword(String ldapTrustStorePassword)
     {
         this.ldapTrustStorePassword = ldapTrustStorePassword;
+    }
+
+    public Integer getPoolMaxIdle()
+    {
+        return this.poolMaxIdle;
+    }
+
+    public void setPoolMaxIdle(Integer poolMaxIdle)
+    {
+        this.poolMaxIdle = poolMaxIdle;
+    }
+
+    public Integer getPoolMaxTotal()
+    {
+        return this.poolMaxTotal;
+    }
+
+    public void setPoolMaxTotal(Integer poolMaxTotal)
+    {
+        this.poolMaxTotal = poolMaxTotal;
+    }
+
+    public Integer getPoolMinIdle()
+    {
+        return this.poolMinIdle;
+    }
+
+    public void setPoolMinIdle(Integer poolMinIdle)
+    {
+        this.poolMinIdle = poolMinIdle;
+    }
+
+    public boolean isPoolTestOnBorrow()
+    {
+        return this.poolTestOnBorrow;
+    }
+
+    public void setPoolTestOnBorrow(boolean poolTestOnBorrow)
+    {
+        this.poolTestOnBorrow = poolTestOnBorrow;
     }
 }
