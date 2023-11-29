@@ -62,9 +62,10 @@ public class LbLdapClient
 
         //A single connection and keep it alive
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
-        poolConfig.setMaxIdle(1);
-        poolConfig.setMaxTotal(1);
-        poolConfig.setMinIdle(0);
+        poolConfig.setMaxIdle(ldapConfig.getPoolMaxIdle());
+        poolConfig.setMaxTotal(ldapConfig.getPoolMaxTotal());
+        poolConfig.setMinIdle(ldapConfig.getPoolMinIdle());
+        poolConfig.setTestOnBorrow(ldapConfig.isPoolTestOnBorrow());
 
         ValidatingPoolableLdapConnectionFactory validatingFactory =
                 new ValidatingPoolableLdapConnectionFactory(defaultFactory);
