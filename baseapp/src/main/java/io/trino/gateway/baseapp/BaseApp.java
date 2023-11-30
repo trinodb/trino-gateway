@@ -87,7 +87,7 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
   }
 
   /**
-   * When the application runs, this is called after the {@link Bundle}s are run.
+   * When the application runs, this is called after the bundles are run.
    *
    * <p>You generally don't want to override this but if you do, make sure to call up into super to
    * allow the app to configure its Guice wiring correctly and apply anything you set up in {@link
