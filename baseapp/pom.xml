@@ -39,11 +39,6 @@
             <artifactId>reflections</artifactId>
             <version>${dep.reflections.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

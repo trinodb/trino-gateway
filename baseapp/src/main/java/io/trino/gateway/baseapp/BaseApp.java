@@ -17,10 +17,6 @@ import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.servlets.tasks.Task;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -30,6 +26,10 @@ import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Supports Guice in Dropwizard.
@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
  * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
  * injection.
  */
-@Slf4j
 public abstract class BaseApp<T extends AppConfiguration> extends Application<T> {
 
   private static final Logger logger = LoggerFactory.getLogger(BaseApp.class);
@@ -146,19 +145,19 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
   protected List<AppModule> addModules(T configuration, Environment environment) {
     List<AppModule> modules = new ArrayList<>();
     if (configuration.getModules() == null) {
-      log.warn("No modules to load.");
+      logger.warn("No modules to load.");
       return modules;
     }
     for (String clazz : configuration.getModules()) {
       try {
-        log.info("Trying to load module [{}]", clazz);
+        logger.info("Trying to load module [{}]", clazz);
         Object ob =
             Class.forName(clazz)
                 .getConstructor(configuration.getClass(), Environment.class)
                 .newInstance(configuration, environment);
         modules.add((AppModule) ob);
       } catch (Exception e) {
-        log.error("Could not instantiate module [" + clazz + "]", e);
+        logger.error("Could not instantiate module [" + clazz + "]", e);
       }
     }
     return modules;
@@ -176,7 +175,7 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
       T configuration, Environment environment, Injector injector) {
     List<Managed> managedApps = new ArrayList<>();
     if (configuration.getManagedApps() == null) {
-      log.error("No managed apps found");
+      logger.error("No managed apps found");
       return managedApps;
     }
     configuration
@@ -187,9 +186,9 @@ public abstract class BaseApp<T extends AppConfiguration> extends Application<T>
                 Class c = Class.forName(clazz);
                 LifecycleEnvironment lifecycle = environment.lifecycle();
                 lifecycle.manage((Managed) injector.getInstance(c));
-                log.info("op=register type=managed item={}", c);
+                logger.info("op=register type=managed item={}", c);
               } catch (Exception e) {
-                log.error("Error loading managed app", e);
+                logger.error("Error loading managed app", e);
               }
             });
     return managedApps;
