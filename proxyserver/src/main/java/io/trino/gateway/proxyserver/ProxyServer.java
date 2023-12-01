@@ -2,14 +2,10 @@ package io.trino.gateway.proxyserver;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
-import java.io.Closeable;
-import java.io.File;
-import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.util.TextUtils;
 import org.eclipse.jetty.http.HttpScheme;
 import org.eclipse.jetty.proxy.ConnectHandler;
+
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -19,9 +15,16 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
+import java.io.Closeable;
+import java.io.File;
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
+
 public class ProxyServer implements Closeable {
+  private static final Logger log = LoggerFactory.getLogger(ProxyServer.class);
   private final Server server;
   private final ProxyServletImpl proxy;
   private final ProxyHandler proxyHandler;
@@ -35,7 +38,7 @@ public class ProxyServer implements Closeable {
                      ProxyServletImpl proxy) {
     this.server = new Server();
     this.server.setStopAtShutdown(true);
-    this.proxy = proxy; 
+    this.proxy = proxy;
     this.proxyHandler = proxyHandler;
 
     this.proxy.setServerConfig(config);
