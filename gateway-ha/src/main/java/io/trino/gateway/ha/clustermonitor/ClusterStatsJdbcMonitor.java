@@ -3,6 +3,9 @@ package io.trino.gateway.ha.clustermonitor;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import jakarta.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -16,12 +19,9 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import javax.annotation.Nullable;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ClusterStatsJdbcMonitor implements ClusterStatsMonitor {
+  private static final Logger log = LoggerFactory.getLogger(ClusterStatsJdbcMonitor.class);
   @Nullable
   private final Properties properties;
 

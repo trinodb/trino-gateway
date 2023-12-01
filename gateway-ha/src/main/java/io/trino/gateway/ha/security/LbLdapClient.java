@@ -4,7 +4,6 @@ import io.trino.gateway.ha.config.LdapConfiguration;
 
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
@@ -18,9 +17,13 @@ import org.apache.directory.ldap.client.template.EntryMapper;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.PasswordWarning;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class LbLdapClient {
+
+  private static final Logger log = LoggerFactory.getLogger(LbLdapClient.class);
+
   public static class UserRecord {
     String memberOf;
 

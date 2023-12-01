@@ -2,11 +2,10 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
+
 import java.util.List;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class HaQueryHistoryManager implements QueryHistoryManager {
   private JdbcConnectionManager connectionManager;
 

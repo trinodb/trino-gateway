@@ -5,6 +5,7 @@ import io.dropwizard.views.common.View;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.SessionCookie;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -14,12 +15,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.nio.charset.Charset;
-import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
 
-
-@Slf4j
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class LoginResource {
@@ -81,6 +79,4 @@ public class LoginResource {
       super(templateName, Charset.defaultCharset());
     }
   }
-
-
 }

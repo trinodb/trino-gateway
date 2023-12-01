@@ -3,6 +3,8 @@ package io.trino.gateway.ha.router;
 import com.google.common.base.Strings;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,8 +20,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * A Routing Manager that provides load distribution on to registered active backends based on
  * its queue length. This manager listens to updates on cluster queue length as recorded by the
@@ -29,9 +29,9 @@ import lombok.extern.slf4j.Slf4j;
  * Currently updates are made only on heart beats from
  * {@link ActiveClusterMonitor} & during routing requests.
  */
-@Slf4j
 public class TrinoQueueLengthRoutingTable extends HaRoutingManager {
 
+  private static final Logger log = LoggerFactory.getLogger(TrinoQueueLengthRoutingTable.class);
   private static final Random RANDOM = new Random();
   private static final int MIN_WT = 1;
   private static final int MAX_WT = 100;

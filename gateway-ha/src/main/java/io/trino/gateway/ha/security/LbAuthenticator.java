@@ -3,9 +3,7 @@ package io.trino.gateway.ha.security;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class LbAuthenticator implements Authenticator<String, LbPrincipal> {
 
   private final LbOAuthManager oauthManager;

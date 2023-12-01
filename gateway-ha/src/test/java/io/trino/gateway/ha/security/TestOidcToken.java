@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trino.gateway.ha.security.LbOAuthManager.OidcTokens;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class TestOidcToken {
+  private static final Logger log = LoggerFactory.getLogger(TestOidcToken.class);
+
   @Test
   public void testParseTokenParamsGracefully() {
     // This test is to make sure that we simulate the condition where

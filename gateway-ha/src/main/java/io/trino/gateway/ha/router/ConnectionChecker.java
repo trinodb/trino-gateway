@@ -1,12 +1,13 @@
 package io.trino.gateway.ha.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
-import lombok.extern.slf4j.Slf4j;
 
-
-@Slf4j
 public class ConnectionChecker {
 
+  private static final Logger log = LoggerFactory.getLogger(ConnectionChecker.class);
   private HashMap<String, ConnectionCheck> connectionChecks;
 
   ConnectionChecker() {
@@ -32,13 +33,13 @@ public class ConnectionChecker {
   /**
    * Check the tcp connectivity to be used in the routing rules.
    *
-   * @param server          server to connect for the check
-   * @param port            port to connect for the check
-   * @param interval        minimum time between 2 checks, in ms
-   * @param failCount       how many times the check needs to fail consecutively
-   *                        before we call it a failure
+   * @param server server to connect for the check
+   * @param port port to connect for the check
+   * @param interval minimum time between 2 checks, in ms
+   * @param failCount how many times the check needs to fail consecutively
+   * before we call it a failure
    * @param disableDuration how long the check should be disabled
-   *                        after it has failed in seconds
+   * after it has failed in seconds
    */
   public boolean tcpCheck(String server, int port,
                           int interval, int failCount, int disableDuration) {

@@ -14,13 +14,13 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
+
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.Data;
 
 @RolesAllowed({"USER"})
 @Path("/")
@@ -130,18 +130,130 @@ public class GatewayViewResource {
     return clusterToQueryCount;
   }
 
-  @Data
   public static class GatewayView extends View {
-    private final long gatewayStartTime = START_TIME;
-    private String displayName;
-    private List<ProxyBackendConfiguration> backendConfigurations;
-    private List<QueryHistoryManager.QueryDetail> queryHistory;
-    private Map<String, BackendStateManager.BackendState> backendStates;
-    private Map<String, Integer> queryDistribution;
+        private final long gatewayStartTime = START_TIME;
+        private String displayName;
+        private List<ProxyBackendConfiguration> backendConfigurations;
+        private List<QueryHistoryManager.QueryDetail> queryHistory;
+        private Map<String, BackendStateManager.BackendState> backendStates;
+        private Map<String, Integer> queryDistribution;
 
-    protected GatewayView(String templateName, SecurityContext securityContext) {
-      super(templateName, Charset.defaultCharset());
-      setDisplayName(securityContext.getUserPrincipal().getName());
+        protected GatewayView(String templateName, SecurityContext securityContext)
+        {
+            super(templateName, Charset.defaultCharset());
+            setDisplayName(securityContext.getUserPrincipal().getName());
+        }
+
+        public long getGatewayStartTime()
+        {return this.gatewayStartTime;}
+
+        public String getDisplayName()
+        {return this.displayName;}
+
+        public List<ProxyBackendConfiguration> getBackendConfigurations()
+        {return this.backendConfigurations;}
+
+        public List<QueryHistoryManager.QueryDetail> getQueryHistory()
+        {return this.queryHistory;}
+
+        public Map<String, BackendStateManager.BackendState> getBackendStates()
+        {return this.backendStates;}
+
+        public Map<String, Integer> getQueryDistribution()
+        {return this.queryDistribution;}
+
+        public void setDisplayName(String displayName)
+        {this.displayName = displayName;}
+
+        public void setBackendConfigurations(List<ProxyBackendConfiguration> backendConfigurations)
+        {this.backendConfigurations = backendConfigurations;}
+
+        public void setQueryHistory(List<QueryHistoryManager.QueryDetail> queryHistory)
+        {this.queryHistory = queryHistory;}
+
+        public void setBackendStates(Map<String, BackendStateManager.BackendState> backendStates)
+        {this.backendStates = backendStates;}
+
+        public void setQueryDistribution(Map<String, Integer> queryDistribution)
+        {this.queryDistribution = queryDistribution;}
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof GatewayView)) {
+                return false;
+            }
+            final GatewayView other = (GatewayView) o;
+            if (!other.canEqual((Object) this)) {
+                return false;
+            }
+            if (this.getGatewayStartTime() != other.getGatewayStartTime()) {
+                return false;
+            }
+            final Object this$displayName = this.getDisplayName();
+            final Object other$displayName = other.getDisplayName();
+            if (this$displayName == null ? other$displayName != null : !this$displayName.equals(other$displayName)) {
+                return false;
+            }
+            final Object this$backendConfigurations = this.getBackendConfigurations();
+            final Object other$backendConfigurations = other.getBackendConfigurations();
+            if (this$backendConfigurations == null ? other$backendConfigurations != null : !this$backendConfigurations.equals(other$backendConfigurations)) {
+                return false;
+            }
+            final Object this$queryHistory = this.getQueryHistory();
+            final Object other$queryHistory = other.getQueryHistory();
+            if (this$queryHistory == null ? other$queryHistory != null : !this$queryHistory.equals(other$queryHistory)) {
+                return false;
+            }
+            final Object this$backendStates = this.getBackendStates();
+            final Object other$backendStates = other.getBackendStates();
+            if (this$backendStates == null ? other$backendStates != null : !this$backendStates.equals(other$backendStates)) {
+                return false;
+            }
+            final Object this$queryDistribution = this.getQueryDistribution();
+            final Object other$queryDistribution = other.getQueryDistribution();
+            if (this$queryDistribution == null ? other$queryDistribution != null : !this$queryDistribution.equals(other$queryDistribution)) {
+                return false;
+            }
+            return true;
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof GatewayView;
+        }
+
+
+        public int hashCode()
+        {
+            final int PRIME = 59;
+            int result = 1;
+            final long $gatewayStartTime = this.getGatewayStartTime();
+            result = result * PRIME + (int) ($gatewayStartTime >>> 32 ^ $gatewayStartTime);
+            final Object $displayName = this.getDisplayName();
+            result = result * PRIME + ($displayName == null ? 43 : $displayName.hashCode());
+            final Object $backendConfigurations = this.getBackendConfigurations();
+            result = result * PRIME + ($backendConfigurations == null ? 43 : $backendConfigurations.hashCode());
+            final Object $queryHistory = this.getQueryHistory();
+            result = result * PRIME + ($queryHistory == null ? 43 : $queryHistory.hashCode());
+            final Object $backendStates = this.getBackendStates();
+            result = result * PRIME + ($backendStates == null ? 43 : $backendStates.hashCode());
+            final Object $queryDistribution = this.getQueryDistribution();
+            result = result * PRIME + ($queryDistribution == null ? 43 : $queryDistribution.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "GatewayViewResource.GatewayView(gatewayStartTime="
+                    + this.getGatewayStartTime() + ", displayName="
+                    + this.getDisplayName() + ", backendConfigurations="
+                    + this.getBackendConfigurations() + ", queryHistory="
+                    + this.getQueryHistory() + ", backendStates="
+                    + this.getBackendStates() + ", queryDistribution="
+                    + this.getQueryDistribution() + ")";
+        }
     }
-  }
 }

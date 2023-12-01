@@ -18,15 +18,16 @@ import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestLbAuthenticator {
+  private static final Logger log = LoggerFactory.getLogger(TestLbAuthenticator.class);
 
   private static final String USER = "username";
   private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");

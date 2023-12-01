@@ -1,17 +1,19 @@
 package io.trino.gateway.ha.router;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 class ConnectionCheck {
   static final int NO_CHECK_YET = -100;
   static final int TCP_CHECK_FAILURE = -1;
   static final int TCP_CHECK_SUCCESS = 0;
+  private static final Logger log = LoggerFactory.getLogger(ConnectionCheck.class);
 
   private Instant lastCheckTime;
   private int checkCode;

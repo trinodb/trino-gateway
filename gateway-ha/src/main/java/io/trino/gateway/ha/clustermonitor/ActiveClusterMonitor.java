@@ -6,6 +6,8 @@ import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,13 +16,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class ActiveClusterMonitor implements Managed {
   public static final int BACKEND_CONNECT_TIMEOUT_SECONDS = 15;
   public static final int MONITOR_TASK_DELAY_MIN = 1;
   public static final int DEFAULT_THREAD_POOL_SIZE = 20;
+  private static final Logger log = LoggerFactory.getLogger(ActiveClusterMonitor.class);
 
   private final List<TrinoClusterStatsObserver> clusterStatsObservers;
   private final GatewayBackendManager gatewayBackendManager;

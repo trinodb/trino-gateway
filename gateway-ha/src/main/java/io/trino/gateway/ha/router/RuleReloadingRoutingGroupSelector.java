@@ -1,6 +1,14 @@
 package io.trino.gateway.ha.router;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.jeasy.rules.api.Facts;
+import org.jeasy.rules.api.Rules;
+import org.jeasy.rules.api.RulesEngine;
+import org.jeasy.rules.core.DefaultRulesEngine;
+import org.jeasy.rules.mvel.MVELRuleFactory;
+import org.jeasy.rules.support.reader.YamlRuleDefinitionReader;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,18 +17,11 @@ import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import lombok.extern.slf4j.Slf4j;
-import org.jeasy.rules.api.Facts;
-import org.jeasy.rules.api.Rules;
-import org.jeasy.rules.api.RulesEngine;
-import org.jeasy.rules.core.DefaultRulesEngine;
-import org.jeasy.rules.mvel.MVELRuleFactory;
-import org.jeasy.rules.support.reader.YamlRuleDefinitionReader;
 
-@Slf4j
 public class RuleReloadingRoutingGroupSelector
-    implements RoutingGroupSelector  {
+    implements RoutingGroupSelector {
 
+  private static final org.slf4j.Logger log = LoggerFactory.getLogger(RuleReloadingRoutingGroupSelector.class);
   private RulesEngine rulesEngine = new DefaultRulesEngine();
   private MVELRuleFactory ruleFactory = new MVELRuleFactory(new YamlRuleDefinitionReader());
   private String rulesConfigPath;
@@ -36,7 +37,6 @@ public class RuleReloadingRoutingGroupSelector
       BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
               BasicFileAttributes.class);
       lastUpdatedTime = attr.lastModifiedTime().toMillis();
-
     } catch (Exception e) {
       log.error("Error opening rules configuration file, using "
               + "routing group header as default.", e);
@@ -78,7 +78,6 @@ public class RuleReloadingRoutingGroupSelector
         readLock.unlock();
       }
       return result.get("routingGroup");
-
     } catch (Exception e) {
       log.error("Error opening rules configuration file, using "
               + "routing group header as default.", e);

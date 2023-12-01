@@ -7,9 +7,6 @@ import io.trino.gateway.ha.config.UserConfiguration;
 import java.util.Map;
 import java.util.Optional;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class AuthorizationManager {
   private final AuthorizationConfiguration configuration;
   private final Map<String, UserConfiguration> presetUsers;
