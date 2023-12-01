@@ -2,17 +2,17 @@ package io.trino.gateway.ha.persistence;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
+import jakarta.annotation.Nullable;
+import org.javalite.activejdbc.Base;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
-import lombok.extern.slf4j.Slf4j;
-import org.javalite.activejdbc.Base;
-
-@Slf4j
 public class JdbcConnectionManager {
+  private static final Logger log = LoggerFactory.getLogger(JdbcConnectionManager.class);
   private final DataStoreConfiguration configuration;
   private final ScheduledExecutorService executorService =
       Executors.newSingleThreadScheduledExecutor();

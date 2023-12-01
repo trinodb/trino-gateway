@@ -10,11 +10,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import java.util.NoSuchElementException;
-import lombok.extern.slf4j.Slf4j;
 
-
-@Slf4j
 @Path("/api/public")
 @Produces(MediaType.APPLICATION_JSON)
 public class PublicResource {

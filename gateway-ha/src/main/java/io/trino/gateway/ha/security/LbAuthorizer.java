@@ -4,11 +4,12 @@ import io.dropwizard.auth.Authorizer;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class LbAuthorizer implements Authorizer<LbPrincipal> {
 
+  private static final Logger log = LoggerFactory.getLogger(LbAuthorizer.class);
   private final AuthorizationConfiguration configuration;
 
   public LbAuthorizer(AuthorizationConfiguration configuration) {

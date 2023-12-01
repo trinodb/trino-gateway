@@ -6,12 +6,14 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Properties;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class EmailNotifier implements Notifier {
+  private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
   private final NotifierConfiguration notifierConfiguration;
   private final Properties props;
 

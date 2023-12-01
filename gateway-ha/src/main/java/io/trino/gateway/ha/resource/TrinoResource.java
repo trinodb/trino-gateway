@@ -1,9 +1,5 @@
 package io.trino.gateway.ha.resource;
 
-import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
-import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
-import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
@@ -19,16 +15,22 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
+import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
+import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+
 @RolesAllowed({"USER"})
 @Path("/trino")
 @Produces(MediaType.APPLICATION_JSON)
 public class TrinoResource {
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final Logger log = LoggerFactory.getLogger(TrinoResource.class);
   @Inject
   private ResourceGroupsManager resourceGroupsManager;
 
@@ -260,5 +262,4 @@ public class TrinoResource {
       return Response.ok(this.resourceGroupsManager.readExactMatchSourceSelector()).build();
     }
   */
-
 }

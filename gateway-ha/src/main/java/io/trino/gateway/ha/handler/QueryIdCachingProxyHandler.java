@@ -13,6 +13,12 @@ import io.trino.gateway.proxyserver.wrapper.MultiReadHttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.HttpMethod;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.util.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,12 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.http.HttpStatus;
-import org.eclipse.jetty.util.Callback;
 
-@Slf4j
 public class QueryIdCachingProxyHandler extends ProxyHandler {
   public static final String PROXY_TARGET_HEADER = "proxytarget";
   public static final String V1_STATEMENT_PATH = "/v1/statement";
@@ -48,6 +49,7 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
   private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final Logger log = LoggerFactory.getLogger(QueryIdCachingProxyHandler.class);
 
   private final RoutingManager routingManager;
   private final RoutingGroupSelector routingGroupSelector;
@@ -127,7 +129,6 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
 
     return extractQueryIdIfPresent(path, queryParams);
   }
-
 
   static void setForwardedHostHeaderOnProxyRequest(HttpServletRequest request,
                                                    Request proxyRequest) {

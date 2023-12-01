@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -22,9 +21,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
-public class ClusterStatsHttpMonitor implements ClusterStatsMonitor {
+public class ClusterStatsHttpMonitor  implements ClusterStatsMonitor
+{
+  private static final Logger log = LoggerFactory.getLogger(ClusterStatsHttpMonitor.class);
   private final String SESSION_USER = "sessionUser";
 
   private final BackendStateConfiguration backendStateConfiguration;

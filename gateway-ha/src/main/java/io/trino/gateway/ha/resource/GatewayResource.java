@@ -12,14 +12,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @RolesAllowed({"API"})
 @Path("/gateway")
 @Produces(MediaType.APPLICATION_JSON)
 public class GatewayResource {
 
+  private static final Logger log = LoggerFactory.getLogger(GatewayResource.class);
   @Inject
   private GatewayBackendManager gatewayBackendManager;
 

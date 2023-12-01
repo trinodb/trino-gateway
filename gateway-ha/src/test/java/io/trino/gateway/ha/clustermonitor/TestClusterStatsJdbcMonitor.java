@@ -12,7 +12,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Properties;
 import java.util.stream.Stream;
-import lombok.extern.slf4j.Slf4j;
+
+import io.trino.gateway.ha.security.LbOAuthManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +27,13 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestClusterStatsJdbcMonitor {
+    private static final Logger log = LoggerFactory.getLogger(TestClusterStatsJdbcMonitor.class);
+
     ClusterStatsJdbcMonitor clusterStatsJdbcMonitor;
     @Mock
     private Connection connection;

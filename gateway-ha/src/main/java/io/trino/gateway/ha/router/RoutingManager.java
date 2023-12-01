@@ -7,6 +7,9 @@ import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.HttpMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -19,15 +22,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
  * request object. Default implementation comes here.
  */
-@Slf4j
 public abstract class RoutingManager {
   private static final Random RANDOM = new Random();
+  private static final Logger log = LoggerFactory.getLogger(RoutingManager.class);
   private final LoadingCache<String, String> queryIdBackendCache;
   private ExecutorService executorService = Executors.newFixedThreadPool(5);
   private GatewayBackendManager gatewayBackendManager;
@@ -123,7 +125,6 @@ public abstract class RoutingManager {
     }
   }
 
-
   /**
    * This tries to find out which backend may have info about given query id. If not found returns
    * the first healthy backend.
@@ -168,7 +169,6 @@ public abstract class RoutingManager {
     return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
   }
 
-
   // Predicate helper function to remove the backends from the list
   // We are returning the unhealthy (not healthy) 
   private boolean isBackendNotHealthy(String backendId) {
@@ -182,5 +182,4 @@ public abstract class RoutingManager {
     }
     return !isHealthy;
   }
-
 }

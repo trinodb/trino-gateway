@@ -1,7 +1,6 @@
 package io.trino.gateway.ha.router;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * RoutingGroupSelector provides a way to match an HTTP request to a Gateway routing group.
@@ -31,7 +30,4 @@ public interface RoutingGroupSelector {
    */
   String findRoutingGroup(HttpServletRequest request);
 
-  @Slf4j
-  final class Logger {
-  }
 }

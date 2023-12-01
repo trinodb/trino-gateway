@@ -5,12 +5,12 @@ import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
 import io.trino.gateway.ha.persistence.dao.ResourceGroups;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalProperties;
 import io.trino.gateway.ha.persistence.dao.Selectors;
+
+import jakarta.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
-import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class HaResourceGroupsManager implements ResourceGroupsManager {
   private JdbcConnectionManager connectionManager;
 
@@ -39,6 +39,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Retrieves a list of all existing resource groups for a specified database.
+   *
    * @param routingGroupDatabase
    * @return all existing resource groups as a list of ResourceGroupDetail objects
    */
@@ -55,6 +56,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Retrieves a specific resource group based on its resourceGroupId for a specific database.
+   *
    * @param resourceGroupId
    * @param routingGroupDatabase
    * @return a specific resource group as a ResourceGroupDetail object
@@ -71,7 +73,6 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
       connectionManager.close();
     }
   }
-
 
   /**
    * Updates an existing resource group with new values.
@@ -137,6 +138,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Retrieves a list of all existing resource groups.
+   *
    * @param routingGroupDatabase
    * @return all existing selectors as a list of SelectorDetail objects
    */
@@ -153,6 +155,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Retrieves the selector.
+   *
    * @param resourceGroupId
    * @param routingGroupDatabase
    * @return the selectors
@@ -211,6 +214,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Search for selector by its exact properties and delete it.
+   *
    * @param routingGroupDatabase
    * @param selector
    */
@@ -232,7 +236,6 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
               getMatchingString(selector.getClientTags()),
               getMatchingString(selector.getSelectorResourceEstimate()));
       Selectors.delete(query);
-
     } finally {
       connectionManager.close();
     }
@@ -261,6 +264,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
   /**
    * Read all existing global properties.
    * param routingGroupDatabase
+   *
    * @return a list of global properties
    */
   @Override
@@ -324,6 +328,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Deletes a global property from the table based on its name.
+   *
    * @param routingGroupDatabase
    * @param name
    */
@@ -339,6 +344,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Creates exact match source selector for db.
+   *
    * @param exactSelectorDetail
    * @return
    */
@@ -356,6 +362,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Reads exact match source selector from db.
+   *
    * @return
    */
   @Override
@@ -372,6 +379,7 @@ public class HaResourceGroupsManager implements ResourceGroupsManager {
 
   /**
    * Gets exact match source selector from db.
+   *
    * @param exactSelectorDetail
    * @return
    */

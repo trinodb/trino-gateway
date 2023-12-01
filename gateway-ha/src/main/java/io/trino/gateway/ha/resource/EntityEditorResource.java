@@ -1,8 +1,5 @@
 package io.trino.gateway.ha.resource;
 
-import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
-import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -25,19 +22,24 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
+import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+
 @RolesAllowed({"ADMIN"})
 @Path("entity")
-public class EntityEditorResource {
+public class EntityEditorResource
+{
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final Logger log = LoggerFactory.getLogger(EntityEditorResource.class);
   @Inject
   private GatewayBackendManager gatewayBackendManager;
   @Inject
@@ -122,13 +124,55 @@ public class EntityEditorResource {
     return Response.ok(ImmutableList.of()).build();
   }
 
-  @Data
   public static class EntityView extends View {
     private String displayName;
 
     protected EntityView(String templateName, SecurityContext securityContext) {
       super(templateName, Charset.defaultCharset());
       setDisplayName(securityContext.getUserPrincipal().getName());
+    }
+
+    public String getDisplayName()
+    {return this.displayName;}
+
+    public void setDisplayName(String displayName)
+    {this.displayName = displayName;}
+
+    public boolean equals(final Object o)
+    {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof EntityView)) {
+        return false;
+      }
+      final EntityView other = (EntityView) o;
+      if (!other.canEqual((Object) this)) {
+        return false;
+      }
+      final Object this$displayName = this.getDisplayName();
+      final Object other$displayName = other.getDisplayName();
+      if (this$displayName == null ? other$displayName != null : !this$displayName.equals(other$displayName)) {
+        return false;
+      }
+      return true;
+    }
+
+    protected boolean canEqual(final Object other)
+    {return other instanceof EntityView;}
+
+    public int hashCode()
+    {
+      final int PRIME = 59;
+      int result = 1;
+      final Object $displayName = this.getDisplayName();
+      result = result * PRIME + ($displayName == null ? 43 : $displayName.hashCode());
+      return result;
+    }
+
+    public String toString()
+    {
+      return "EntityEditorResource.EntityView(displayName=" + this.getDisplayName() + ")";
     }
   }
 }
