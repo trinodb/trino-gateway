@@ -12,10 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 import java.util.Scanner;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -24,10 +20,12 @@ import okhttp3.Response;
 import org.javalite.activejdbc.Base;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 public class HaGatewayTestUtils {
+  private static final Logger log = LoggerFactory.getLogger(HaGatewayTestUtils.class);
   private static final OkHttpClient httpClient = new OkHttpClient();
   private static final Random RANDOM = new Random();
 
@@ -121,11 +119,73 @@ public class HaGatewayTestUtils {
     assertTrue(response.isSuccessful());
   }
 
-  @Data
-  @NoArgsConstructor
-  @AllArgsConstructor
   public static class TestConfig {
     private String configFilePath;
     private String h2DbFilePath;
+
+    public TestConfig(String configFilePath, String h2DbFilePath)
+    {
+      this.configFilePath = configFilePath;
+      this.h2DbFilePath = h2DbFilePath;
+    }
+
+    public TestConfig() {}
+
+    public String getConfigFilePath()
+    {return this.configFilePath;}
+
+    public String getH2DbFilePath()
+    {return this.h2DbFilePath;}
+
+    public void setConfigFilePath(String configFilePath)
+    {this.configFilePath = configFilePath;}
+
+    public void setH2DbFilePath(String h2DbFilePath)
+    {this.h2DbFilePath = h2DbFilePath;}
+
+    public boolean equals(final Object o)
+    {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof TestConfig)) {
+        return false;
+      }
+      final TestConfig other = (TestConfig) o;
+      if (!other.canEqual((Object) this)) {
+        return false;
+      }
+      final Object this$configFilePath = this.getConfigFilePath();
+      final Object other$configFilePath = other.getConfigFilePath();
+      if (this$configFilePath == null ? other$configFilePath != null : !this$configFilePath.equals(other$configFilePath)) {
+        return false;
+      }
+      final Object this$h2DbFilePath = this.getH2DbFilePath();
+      final Object other$h2DbFilePath = other.getH2DbFilePath();
+      if (this$h2DbFilePath == null ? other$h2DbFilePath != null : !this$h2DbFilePath.equals(other$h2DbFilePath)) {
+        return false;
+      }
+      return true;
+    }
+
+    protected boolean canEqual(final Object other)
+    {return other instanceof TestConfig;}
+
+    public int hashCode()
+    {
+      final int PRIME = 59;
+      int result = 1;
+      final Object $configFilePath = this.getConfigFilePath();
+      result = result * PRIME + ($configFilePath == null ? 43 : $configFilePath.hashCode());
+      final Object $h2DbFilePath = this.getH2DbFilePath();
+      result = result * PRIME + ($h2DbFilePath == null ? 43 : $h2DbFilePath.hashCode());
+      return result;
+    }
+
+    public String toString()
+    {
+      return "HaGatewayTestUtils.TestConfig(configFilePath=" + this.getConfigFilePath() +
+              ", h2DbFilePath=" + this.getH2DbFilePath() + ")";
+    }
   }
 }

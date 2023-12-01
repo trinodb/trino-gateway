@@ -10,9 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @RolesAllowed({"API"})
 @Path("gateway/backend/modify")
 @Produces(MediaType.APPLICATION_JSON)

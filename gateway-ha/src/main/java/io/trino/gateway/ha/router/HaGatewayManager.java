@@ -4,14 +4,14 @@ import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class HaGatewayManager implements GatewayBackendManager {
+  private static final Logger log = LoggerFactory.getLogger(HaGatewayManager.class);
   private JdbcConnectionManager connectionManager;
 
   public HaGatewayManager(JdbcConnectionManager connectionManager) {

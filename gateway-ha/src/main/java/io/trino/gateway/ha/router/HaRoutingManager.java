@@ -1,10 +1,11 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class HaRoutingManager extends RoutingManager {
+  private static final Logger log = LoggerFactory.getLogger(HaRoutingManager.class);
   QueryHistoryManager queryHistoryManager;
 
   public HaRoutingManager(
@@ -23,5 +24,4 @@ public class HaRoutingManager extends RoutingManager {
     }
     return backend;
   }
-
 }

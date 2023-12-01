@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 @Priority(Priorities.AUTHENTICATION)
 public class LbFilter<P extends Principal> extends AuthFilter<String, P> {

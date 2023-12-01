@@ -15,18 +15,17 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
-
-@Slf4j
 public class LbOAuthManager {
-
+  private static final Logger log = LoggerFactory.getLogger(LbOAuthManager.class);
   /**
    * Cookie key to pass the token.
    */
@@ -130,7 +129,6 @@ public class LbOAuthManager {
     return Optional.empty();
   }
 
-  @Data
   @JsonIgnoreProperties(ignoreUnknown = true)
   static final class OidcTokens {
 
@@ -161,6 +159,92 @@ public class LbOAuthManager {
       this.scope = scope;
       this.refreshToken = refreshToken;
     }
+
+    public String getAccessToken()
+    {return this.accessToken;}
+
+    public String getIdToken()
+    {return this.idToken;}
+
+    public String getScope()
+    {return this.scope;}
+
+    public String getRefreshToken()
+    {return this.refreshToken;}
+
+    public String getTokenType()
+    {return this.tokenType;}
+
+    public String getExpiresIn()
+    {return this.expiresIn;}
+
+    public boolean equals(final Object o)
+    {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof OidcTokens)) {
+        return false;
+      }
+      final OidcTokens other = (OidcTokens) o;
+      final Object this$accessToken = this.getAccessToken();
+      final Object other$accessToken = other.getAccessToken();
+      if (this$accessToken == null ? other$accessToken != null : !this$accessToken.equals(other$accessToken)) {
+        return false;
+      }
+      final Object this$idToken = this.getIdToken();
+      final Object other$idToken = other.getIdToken();
+      if (this$idToken == null ? other$idToken != null : !this$idToken.equals(other$idToken)) {
+        return false;
+      }
+      final Object this$scope = this.getScope();
+      final Object other$scope = other.getScope();
+      if (this$scope == null ? other$scope != null : !this$scope.equals(other$scope)) {
+        return false;
+      }
+      final Object this$refreshToken = this.getRefreshToken();
+      final Object other$refreshToken = other.getRefreshToken();
+      if (this$refreshToken == null ? other$refreshToken != null : !this$refreshToken.equals(other$refreshToken)) {
+        return false;
+      }
+      final Object this$tokenType = this.getTokenType();
+      final Object other$tokenType = other.getTokenType();
+      if (this$tokenType == null ? other$tokenType != null : !this$tokenType.equals(other$tokenType)) {
+        return false;
+      }
+      final Object this$expiresIn = this.getExpiresIn();
+      final Object other$expiresIn = other.getExpiresIn();
+      if (this$expiresIn == null ? other$expiresIn != null : !this$expiresIn.equals(other$expiresIn)) {
+        return false;
+      }
+      return true;
+    }
+
+    public int hashCode()
+    {
+      final int PRIME = 59;
+      int result = 1;
+      final Object $accessToken = this.getAccessToken();
+      result = result * PRIME + ($accessToken == null ? 43 : $accessToken.hashCode());
+      final Object $idToken = this.getIdToken();
+      result = result * PRIME + ($idToken == null ? 43 : $idToken.hashCode());
+      final Object $scope = this.getScope();
+      result = result * PRIME + ($scope == null ? 43 : $scope.hashCode());
+      final Object $refreshToken = this.getRefreshToken();
+      result = result * PRIME + ($refreshToken == null ? 43 : $refreshToken.hashCode());
+      final Object $tokenType = this.getTokenType();
+      result = result * PRIME + ($tokenType == null ? 43 : $tokenType.hashCode());
+      final Object $expiresIn = this.getExpiresIn();
+      result = result * PRIME + ($expiresIn == null ? 43 : $expiresIn.hashCode());
+      return result;
+    }
+
+    public String toString()
+    {
+      return "LbOAuthManager.OidcTokens(accessToken=" + this.getAccessToken() +
+              ", idToken=" + this.getIdToken() + ", scope=" + this.getScope() +
+              ", refreshToken=" + this.getRefreshToken() + ", tokenType=" + this.getTokenType() +
+              ", expiresIn=" + this.getExpiresIn() + ")";}
   }
 
 }

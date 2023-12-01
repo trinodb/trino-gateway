@@ -13,11 +13,12 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 public class LbFormAuthManager {
 
+  private static final Logger log = LoggerFactory.getLogger(LbFormAuthManager.class);
   /**
    * Cookie key to pass the token.
    */

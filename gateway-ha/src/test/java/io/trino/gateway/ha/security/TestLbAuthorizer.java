@@ -4,15 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 
-@Slf4j
 public class TestLbAuthorizer {
+    private static final Logger log = LoggerFactory.getLogger(TestLbAuthorizer.class);
+
     private static final String USER = "username";
     private static LbPrincipal principal;
     private static LbAuthorizer authorizer;

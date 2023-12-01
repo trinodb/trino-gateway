@@ -1,17 +1,14 @@
 package io.trino.gateway.ha.persistence.dao;
 
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
 import org.javalite.activejdbc.Model;
 import org.javalite.activejdbc.annotations.Cached;
 import org.javalite.activejdbc.annotations.IdName;
 import org.javalite.activejdbc.annotations.Table;
 
-@Slf4j
+import java.util.ArrayList;
+import java.util.List;
+
 @Table("gateway_backend")
 @IdName("name")
 @Cached

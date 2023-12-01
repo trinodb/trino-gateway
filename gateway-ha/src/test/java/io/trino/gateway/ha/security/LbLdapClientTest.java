@@ -6,7 +6,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
 import io.trino.gateway.ha.config.LdapConfiguration;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
@@ -19,8 +18,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @ExtendWith(MockitoExtension.class)
 public class LbLdapClientTest {
   class DummyPasswordWarning implements org.apache.directory.ldap.client.template.PasswordWarning {
@@ -39,6 +39,8 @@ public class LbLdapClientTest {
       return false;
     }
   }
+
+  private static final Logger log = LoggerFactory.getLogger(LbLdapClientTest.class);
 
   @Mock
   LdapConnectionTemplate ldapConnectionTemplate;

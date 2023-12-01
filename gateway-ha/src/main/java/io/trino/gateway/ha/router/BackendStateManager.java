@@ -3,15 +3,11 @@ package io.trino.gateway.ha.router;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import jakarta.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.Nullable;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class BackendStateManager {
   @Nullable
   private final BackendStateConfiguration configuration;
@@ -40,7 +36,6 @@ public class BackendStateManager {
     clusterStats.put(clusterId, stats);
   }
 
-  @Data
   public static class BackendState {
     private final String name;
     private final Map<String, Integer> state;
@@ -49,5 +44,53 @@ public class BackendStateManager {
       this.name = name;
       this.state = state;
     }
+
+    public String getName()
+    {return this.name;}
+
+    public Map<String, Integer> getState()
+    {return this.state;}
+
+    public boolean equals(final Object o)
+    {
+      if (o == this) {
+        return true;
+      }
+      if (!(o instanceof BackendState)) {
+        return false;
+      }
+      final BackendState other = (BackendState) o;
+      if (!other.canEqual((Object) this)) {
+        return false;
+      }
+      final Object this$name = this.getName();
+      final Object other$name = other.getName();
+      if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
+        return false;
+      }
+      final Object this$state = this.getState();
+      final Object other$state = other.getState();
+      if (this$state == null ? other$state != null : !this$state.equals(other$state)) {
+        return false;
+      }
+      return true;
+    }
+
+    protected boolean canEqual(final Object other)
+    {return other instanceof BackendState;}
+
+    public int hashCode()
+    {
+      final int PRIME = 59;
+      int result = 1;
+      final Object $name = this.getName();
+      result = result * PRIME + ($name == null ? 43 : $name.hashCode());
+      final Object $state = this.getState();
+      result = result * PRIME + ($state == null ? 43 : $state.hashCode());
+      return result;
+    }
+
+    public String toString()
+    {return "BackendStateManager.BackendState(name=" + this.getName() + ", state=" + this.getState() + ")";}
   }
 }
