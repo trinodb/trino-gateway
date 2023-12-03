@@ -7,6 +7,7 @@ import com.codahale.metrics.Meter;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.router.CookieCacheManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.HaRoutingManager;
@@ -17,6 +18,7 @@ import io.trino.gateway.ha.router.RuleReloadingRoutingGroupSelector;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jakarta.ws.rs.HttpMethod;
 import org.eclipse.jetty.client.HttpClient;
@@ -34,7 +36,8 @@ public class TestQueryIdCachingProxyHandler {
   QueryIdCachingProxyHandler queryIdCachingProxyHandler = new QueryIdCachingProxyHandler(
           new HaQueryHistoryManager(unconfiguredConnectionManager),
           new HaRoutingManager(new HaGatewayManager(unconfiguredConnectionManager),
-                  new HaQueryHistoryManager(unconfiguredConnectionManager)),
+                  new HaQueryHistoryManager(unconfiguredConnectionManager),
+                  new CookieCacheManager(unconfiguredConnectionManager)),
           new RoutingGroupSelector() {
             @Override
             public String findRoutingGroup(HttpServletRequest request)
@@ -45,7 +48,9 @@ public class TestQueryIdCachingProxyHandler {
           -1,
           new Meter(),
           new ArrayList<>(),
-          ImmutableList.of("/ui/insights/api/statement")
+          ImmutableList.of("/ui/insights/api/statement"),
+          new HashSet<>(),
+          new HashSet<>()
   );
 
   @Test
