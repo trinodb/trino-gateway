@@ -43,7 +43,12 @@ public class ProxyServer implements Closeable {
   }
 
   private void setupContext(ProxyServerConfiguration config) {
-    ServerConnector connector = null;
+    ServerConnector connector;
+    HttpConfiguration httpConfiguration = new HttpConfiguration();
+    httpConfiguration.setOutputBufferSize(config.getOutputBufferSize());
+    httpConfiguration.setRequestHeaderSize(config.getRequestHeaderSize());
+    httpConfiguration.setResponseHeaderSize(config.getResponseHeaderSize());
+    HttpConnectionFactory connectionFactory = new HttpConnectionFactory(httpConfiguration);
 
     if (config.isSsl()) {
       String keystorePath = config.getKeystorePath();
@@ -60,29 +65,19 @@ public class ProxyServer implements Closeable {
         sslContextFactory.setKeyManagerPassword(keystorePass);
       }
 
-      HttpConfiguration httpsConfig = new HttpConfiguration();
-      httpsConfig.setSecureScheme(HttpScheme.HTTPS.asString());
-      httpsConfig.setSecurePort(config.getLocalPort());
-      httpsConfig.setOutputBufferSize(config.getOutputBufferSize());
-      httpsConfig.setRequestHeaderSize(config.getRequestHeaderSize());
-      httpsConfig.setResponseHeaderSize(config.getResponseHeaderSize());
+      httpConfiguration.setSecureScheme(HttpScheme.HTTPS.asString());
+      httpConfiguration.setSecurePort(config.getLocalPort());
 
       SecureRequestCustomizer src = new SecureRequestCustomizer();
       src.setStsMaxAge(TimeUnit.SECONDS.toSeconds(2000));
       src.setStsIncludeSubDomains(true);
-      httpsConfig.addCustomizer(src);
+      httpConfiguration.addCustomizer(src);
 
-      HttpConnectionFactory connectionFactory = new HttpConnectionFactory(httpsConfig);
       connector = new ServerConnector(
-                  server,
-                  new SslConnectionFactory(sslContextFactory, connectionFactory.getProtocol()),
-                  connectionFactory);
+              server,
+              new SslConnectionFactory(sslContextFactory, connectionFactory.getProtocol()),
+              connectionFactory);
     } else {
-      HttpConfiguration httpConfig = new HttpConfiguration();
-      httpConfig.setOutputBufferSize(config.getOutputBufferSize());
-      httpConfig.setRequestHeaderSize(config.getRequestHeaderSize());
-      httpConfig.setResponseHeaderSize(config.getResponseHeaderSize());
-      HttpConnectionFactory connectionFactory = new HttpConnectionFactory(httpConfig);
       connector = new ServerConnector(server, connectionFactory);
     }
     connector.setHost("0.0.0.0");
