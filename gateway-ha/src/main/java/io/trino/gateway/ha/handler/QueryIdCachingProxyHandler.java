@@ -156,7 +156,7 @@ public class QueryIdCachingProxyHandler extends ProxyHandler {
     String trinoUser = request.getHeader(USER_HEADER);
 
     if (!Strings.isNullOrEmpty(trinoUser)) {
-      log.info("user from %s", USER_HEADER);
+      log.info("user from {}", USER_HEADER);
       return trinoUser;
     }
 
