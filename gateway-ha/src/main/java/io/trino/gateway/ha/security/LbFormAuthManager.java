@@ -9,6 +9,8 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.domain.RestLoginRequest;
+import io.trino.gateway.ha.domain.R;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Map;
@@ -62,6 +64,18 @@ public class LbFormAuthManager {
         .build();
   }
 
+  /**
+   * Login REST API
+   * @param loginForm {@link RestLoginRequest}
+   * @return token
+   */
+  public R<?> processRESTLogin(RestLoginRequest loginForm) {
+    if (authenticate(new BasicCredentials(loginForm.getUsername(), loginForm.getPassword()))) {
+      String token = getSelfSignedToken(loginForm.getUsername());
+      return R.ok(Map.of("token",token));
+    }
+    return R.fail("Authentication failed.");
+  }
 
   /**
    * Verifies if the id token is valid. If valid, it returns a map with the claims,

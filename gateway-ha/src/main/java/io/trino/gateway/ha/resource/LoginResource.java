@@ -2,21 +2,18 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.dropwizard.views.common.View;
+import io.trino.gateway.ha.domain.RestLoginRequest;
+import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.SessionCookie;
-import jakarta.ws.rs.FormParam;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.nio.charset.Charset;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.annotation.Nullable;
+import java.nio.charset.Charset;
 
 
 @Slf4j
@@ -82,5 +79,16 @@ public class LoginResource {
     }
   }
 
+  @POST
+  @Path("/rest/login")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response processRESTLogin(RestLoginRequest loginForm) {
+    if (formAuthManager == null) {
+      throw new WebApplicationException("Form authentication is not setup");
+    }
+    R<?> r = formAuthManager.processRESTLogin(loginForm);
+    return Response.ok(r).build();
+  }
 
 }
