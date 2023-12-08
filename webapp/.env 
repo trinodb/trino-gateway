@@ -1,3 +1,4 @@
 # https://vitejs.dev/guide/env-and-mode.html
 
-BASE_URL=http://127.0.0.1
+VITE_GLOB_APP_TITLE="Trino Gateway"
+VITE_GLOB_APP_SHORT_NAME="TrinoGateway"

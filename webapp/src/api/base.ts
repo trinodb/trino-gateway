@@ -113,11 +113,8 @@ export class ClientApi {
   }
 
   path(path: string): string {
-    let baseUrl = import.meta.env.BASE_URL;
-    if (baseUrl.endsWith("/")) {
-      baseUrl = baseUrl.slice(0, baseUrl.length - 1);
-    }
-    return [baseUrl, path].join("");
+    const proxyPath = import.meta.env.VITE_PROXY_PATH;
+    return [proxyPath, path].join("");
   }
 }
 

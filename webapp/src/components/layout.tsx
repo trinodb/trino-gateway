@@ -1,4 +1,4 @@
-import {Nav, Avatar, Layout, Dropdown, Button, Toast, Select, Icon} from '@douyinfe/semi-ui';
+import {Nav, Avatar, Layout, Dropdown, Button, Toast, Select} from '@douyinfe/semi-ui';
 import { IconGithubLogo, IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark } from '@douyinfe/semi-icons';
 import styles from './layout.module.scss';
 import { useState } from 'react';
@@ -8,7 +8,7 @@ import { Theme, useAccessStore, useConfigStore } from '../store';
 import { logoutApi } from '../api/user/login';
 import Locale, { ALL_LANG_OPTIONS, AllLangs, Lang, changeLang, getLang } from "../locales";
 
-import LogoIcon from "../assets/logo.svg?react";
+// import LogoIcon from "../assets/logo.svg?react";
 
 
 export const RootLayout = (props: {

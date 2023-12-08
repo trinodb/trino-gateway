@@ -1,11 +1,7 @@
-// import { api } from "../base";
+import { api } from "../base";
 
 export async function loginApi(body: Record<string, any>) {
-  // return api.post('/user/login', body)
-  console.log('loginApi', body)
-  return {
-    token: '123456'
-  }
+  return api.post('/rest/login', body)
 }
 
 export async function logoutApi(body: Record<string, any>) {
