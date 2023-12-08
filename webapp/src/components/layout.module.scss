@@ -1,0 +1,87 @@
+.header {
+  align-self: stretch;
+  height: 60px;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99;
+
+  .navigationHeaderLogo {
+    align-items: flex-start;
+    column-gap: 0;
+    display: inline-flex;
+    flex-shrink: 0;
+
+    .semiIconsSemiLogo {
+      font-size: 36px;
+      color: var(--semi-color-text-0);
+    }
+  }
+
+  .dIV {
+    align-items: center;
+    column-gap: 16px;
+    display: inline-flex;
+    flex-shrink: 0;
+
+    .semiIconsFeishuLogo,
+    .semiIconsHelpCircle,
+    .semiIconsBell {
+      font-size: 20px;
+      color: var(--semi-color-text-2);
+    }
+
+    .avatar {
+      height: 32px;
+      width: 32px;
+    }
+  }
+}
+
+.sider {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  .collapsed {
+    display: flex;
+    // 2个8边距
+    width: calc(100% - 16px);
+    cursor: pointer;
+    background-color: var(--semi-color-nav-bg);
+    position: absolute;
+    bottom: 0;
+    height: 40px;
+    align-items: center;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+    /* 隐藏滚动条 */
+  }
+
+  .nav {
+    height: 100vh;
+    padding-top: 60px;
+    overflow-y: auto;
+
+    .icon {
+      height: 20px;
+      width: 20px;
+    }
+  }
+}
+
+.content {
+  margin-top: 60px;
+  align-items: flex-start;
+  display: flex;
+  flex-basis: 0;
+  flex-direction: column;
+  padding: 20px;
+  row-gap: 24px;
+  flex-grow: 1;
+  margin-top: 60px;
+  transition: margin-left 0.3s ease;
+}
