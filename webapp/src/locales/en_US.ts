@@ -15,11 +15,9 @@ const en_US: LocaleType = {
       Logout: "Logout"
     },
     Sider: {
-      Home: "Home",
       Dashboard: "Dashboard",
-      Settings: "Settings",
-      Settings1: "Settings1",
-      Settings2: "Settings2"
+      Cluster: "Cluster",
+      History: "History",
     }
   },
   Auth: {
