@@ -1,5 +1,9 @@
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.domain.TableData;
+import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
+import io.trino.gateway.ha.domain.response.DistributionResponse;
+
 import java.util.List;
 import java.util.Optional;
 import lombok.Data;
@@ -11,6 +15,11 @@ public interface QueryHistoryManager {
   List<QueryDetail> fetchQueryHistory(Optional<String> user);
 
   String getBackendForQueryId(String queryId);
+
+
+  TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
+
+  List<DistributionResponse.LineChart> findDistribution(Long ts);
 
   @Data
   @ToString

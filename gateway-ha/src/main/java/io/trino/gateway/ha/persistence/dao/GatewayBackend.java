@@ -42,7 +42,7 @@ public class GatewayBackend extends Model {
         .set(routingGroup, backend.getRoutingGroup())
         .set(backendUrl, backend.getProxyTo())
         .set(externalUrl, backend.getExternalUrl())
-        .set(active, backend.isActive())
+        .set(active, backend.getActive())
         .saveIt();
   }
 
@@ -58,7 +58,7 @@ public class GatewayBackend extends Model {
             externalUrl,
             backend.getExternalUrl(),
             active,
-            backend.isActive())
+            backend.getActive())
         .insert();
   }
 }

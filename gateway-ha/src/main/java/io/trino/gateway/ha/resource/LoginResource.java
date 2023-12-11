@@ -2,7 +2,7 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.dropwizard.views.common.View;
-import io.trino.gateway.ha.domain.RestLoginRequest;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;

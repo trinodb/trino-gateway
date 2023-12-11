@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class ProxyBackendConfiguration extends ProxyServerConfiguration {
-  private boolean active = true;
+  private Boolean active = true;
   private String routingGroup = "adhoc";
   private String externalUrl;
 

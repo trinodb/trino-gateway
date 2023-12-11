@@ -1,4 +1,4 @@
-package io.trino.gateway.ha.domain;
+package io.trino.gateway.ha.domain.request;
 
 /**
  * REST API Request Body

@@ -127,9 +127,9 @@ public class TestGatewayHaMultipleBackend {
 
     assertNotNull(backendConfiguration);
     assertEquals(3, backendConfiguration.length);
-    assertTrue(backendConfiguration[0].isActive());
-    assertTrue(backendConfiguration[1].isActive());
-    assertTrue(backendConfiguration[2].isActive());
+    assertTrue(backendConfiguration[0].getActive());
+    assertTrue(backendConfiguration[1].getActive());
+    assertTrue(backendConfiguration[2].getActive());
     assertEquals("adhoc", backendConfiguration[0].getRoutingGroup());
     assertEquals("scheduled", backendConfiguration[1].getRoutingGroup());
     assertEquals("custom", backendConfiguration[2].getRoutingGroup());

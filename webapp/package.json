@@ -13,6 +13,8 @@
     "@douyinfe/semi-icons": "^2.47.1",
     "@douyinfe/semi-icons-lab": "^2.47.1",
     "@douyinfe/semi-ui": "^2.47.1",
+    "@types/echarts": "^4.9.22",
+    "echarts": "^5.4.3",
     "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

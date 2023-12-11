@@ -71,7 +71,7 @@ public class TestGatewayHaSingleBackend {
 
     assertNotNull(backendConfiguration);
     assertEquals(1, backendConfiguration.length);
-    assertTrue(backendConfiguration[0].isActive());
+    assertTrue(backendConfiguration[0].getActive());
     assertEquals("adhoc", backendConfiguration[0].getRoutingGroup());
     assertEquals("externalUrl", backendConfiguration[0].getExternalUrl());
   }

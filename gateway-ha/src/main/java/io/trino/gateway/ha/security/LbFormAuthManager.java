@@ -9,7 +9,7 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import io.trino.gateway.ha.domain.RestLoginRequest;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.R;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
