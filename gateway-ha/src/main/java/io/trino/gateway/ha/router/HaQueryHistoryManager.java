@@ -78,11 +78,11 @@ public class HaQueryHistoryManager implements QueryHistoryManager {
       if (StringUtils.isNotBlank(query.getUser())) {
         sql += " where user_name = '" + query.getUser() + "'";
       }
-      int[] startEnd = PageUtil.transToStartEnd(query.getPage(), query.getSize());
+      int start = PageUtil.getStart(query.getPage(), query.getSize());
       List<QueryDetail> rows = QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
               sql,
               "order by created desc",
-              "limit ", String.valueOf(startEnd[0]), ",", String.valueOf(startEnd[1]))));
+              "limit ", String.valueOf(start), ",", String.valueOf(query.getSize()))));
       Long total = QueryHistory.count();
       return TableData.build(rows, query.getSize(), total);
     } finally {

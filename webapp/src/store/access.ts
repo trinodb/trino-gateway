@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { StoreKey } from "../constant";
-import { getInfoApi } from "../api/user/login";
+import { getInfoApi } from "../api/webapp/login";
 
 export interface AccessControlStore {
   token: string;

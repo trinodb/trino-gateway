@@ -13,10 +13,19 @@ public class DistributionResponse {
   private Integer offlineBackendCount;
   private Integer onlineBackendCount;
   private Long totalQueryCount;
-  private Long averageQueryCountMinute;
-  private Long averageQueryCountSecond;
+  private Double averageQueryCountMinute;
+  private Double averageQueryCountSecond;
   private List<DistributionChart> distributionChart;
   private Map<String, List<LineChart>> lineChart;
+  private String startTime;
+
+  public String getStartTime() {
+    return startTime;
+  }
+
+  public void setStartTime(String startTime) {
+    this.startTime = startTime;
+  }
 
   public Integer getTotalBackendCount() {
     return totalBackendCount;
@@ -50,19 +59,19 @@ public class DistributionResponse {
     this.totalQueryCount = totalQueryCount;
   }
 
-  public Long getAverageQueryCountMinute() {
+  public Double getAverageQueryCountMinute() {
     return averageQueryCountMinute;
   }
 
-  public void setAverageQueryCountMinute(Long averageQueryCountMinute) {
+  public void setAverageQueryCountMinute(Double averageQueryCountMinute) {
     this.averageQueryCountMinute = averageQueryCountMinute;
   }
 
-  public Long getAverageQueryCountSecond() {
+  public Double getAverageQueryCountSecond() {
     return averageQueryCountSecond;
   }
 
-  public void setAverageQueryCountSecond(Long averageQueryCountSecond) {
+  public void setAverageQueryCountSecond(Double averageQueryCountSecond) {
     this.averageQueryCountSecond = averageQueryCountSecond;
   }
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from './dashboard.module.scss';
 import * as echarts from "echarts";
 import { Card, Col, Descriptions, Row } from "@douyinfe/semi-ui";
-import { distributionApi } from "../api/user/dashboard";
+import { distributionApi } from "../api/webapp/dashboard";
 import { DistributionDetail, DistributionChartData, LineChartData } from "../types/dashboard";
 import { getCSSVar } from "../utils/utils";
 
@@ -22,6 +22,10 @@ export function Dashboard() {
 
   const data = [
     {
+      key: '启动时间',
+      value: distributionDetail?.startTime
+    },
+    {
       key: '总数',
       value: distributionDetail?.totalBackendCount
     },
@@ -36,10 +40,10 @@ export function Dashboard() {
       key: '总查询数（近1小时）', value: distributionDetail?.totalQueryCount
     },
     {
-      key: '平均查询数（每分）', value: distributionDetail?.averageQueryCountMinute
+      key: '平均查询数（每分）', value: distributionDetail?.averageQueryCountMinute.toFixed(2)
     },
     {
-      key: '平均查询数（每秒）', value: distributionDetail?.averageQueryCountSecond
+      key: '平均查询数（每秒）', value: distributionDetail?.averageQueryCountSecond.toFixed(2)
     },
   ];
   return (
@@ -135,7 +139,7 @@ function LineChart(props: {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <div ref={chartRef} style={{ height: "500px" }}></div>
+      <div ref={chartRef} style={{ height: "450px" }}></div>
     </div>)
 }
 
@@ -193,7 +197,7 @@ function DistributionChart(props: {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <div ref={chartRef} style={{ height: "500px" }}></div>
+      <div ref={chartRef} style={{ height: "450px" }}></div>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export const routers: RouterItems = [
     text: Locale.Menu.Sider.History,
     icon: <IconHeart className={styles.icon} />,
     routeProps: {
-      path: '/clusters',
+      path: '/history',
       element: < History />
     },
   }

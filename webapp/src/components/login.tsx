@@ -3,7 +3,7 @@ import styles from './login.module.scss';
 import Locale from "../locales";
 import { useState } from 'react';
 import { FormApi } from '@douyinfe/semi-ui/lib/es/form';
-import { loginApi } from '../api/user/login';
+import { loginApi } from '../api/webapp/login';
 import { useAccessStore } from '../store';
 
 export function Login() {

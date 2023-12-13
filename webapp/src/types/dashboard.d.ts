@@ -8,6 +8,7 @@ export interface  DistributionDetail {
   averageQueryCountSecond: number;
   distributionChart: DistributionChartData[];
   lineChart: Record<string, LineChartData[]>;
+  startTime: string;
 }
 
 export interface  DistributionChartData {

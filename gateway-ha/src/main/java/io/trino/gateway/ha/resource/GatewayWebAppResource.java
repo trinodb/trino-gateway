@@ -6,9 +6,11 @@ import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
+import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
+import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
@@ -18,13 +20,16 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Path("/webapp")
 public class GatewayWebAppResource {
-  private static final long START_TIME = System.currentTimeMillis();
+  private static final LocalDateTime START_TIME = LocalDateTime.now();
+  private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
   @Inject
   private GatewayBackendManager gatewayBackendManager;
   @Inject
@@ -39,10 +44,19 @@ public class GatewayWebAppResource {
   @Path("/getAllBackends")
   public Response getAllBackends() {
     List<ProxyBackendConfiguration> allBackends = gatewayBackendManager.getAllBackends();
-    Map<String, BackendStateManager.BackendState> backendStates = allBackends.stream()
-            .map(backendStateManager::getBackendState)
-            .collect(Collectors.toMap(BackendStateManager.BackendState::getName, s -> s));
-    Map<String, Object> data = Map.of("backendStates", backendStates, "allBackends", allBackends);
+    List<BackendResponse> data = allBackends.stream().map(b -> {
+      BackendStateManager.BackendState backendState = backendStateManager.getBackendState(b);
+      Map<String, Integer> state = backendState.getState();
+      BackendResponse backendResponse = new BackendResponse();
+      backendResponse.setQueued(state.get("QUEUED"));
+      backendResponse.setRunning(state.get("RUNNING"));
+      backendResponse.setName(b.getName());
+      backendResponse.setProxyTo(b.getProxyTo());
+      backendResponse.setActive(b.getActive());
+      backendResponse.setRoutingGroup(b.getRoutingGroup());
+      backendResponse.setExternalUrl(b.getExternalUrl());
+      return backendResponse;
+    }).toList();
     return Response.ok(R.ok(data)).build();
   }
 
@@ -89,9 +103,40 @@ public class GatewayWebAppResource {
     distributionResponse.setLineChart(lineChartMap);
     distributionResponse.setDistributionChart(distributionChart);
     distributionResponse.setTotalQueryCount(totalQueryCount);
-    distributionResponse.setAverageQueryCountSecond(totalQueryCount / (latestHour * 60 * 60));
-    distributionResponse.setAverageQueryCountMinute(totalQueryCount / (latestHour * 60));
+    distributionResponse.setAverageQueryCountSecond(totalQueryCount / (latestHour * 60d * 60d));
+    distributionResponse.setAverageQueryCountMinute(totalQueryCount / (latestHour * 60d));
+    distributionResponse.setStartTime(START_TIME.format(formatter));
     return Response.ok(R.ok(distributionResponse)).build();
   }
 
+
+  @POST
+  @RolesAllowed({"ADMIN"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/saveBackend")
+  public Response saveBackend(ProxyBackendConfiguration backend) {
+    ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.addBackend(backend);
+    return Response.ok(R.ok(proxyBackendConfiguration)).build();
+  }
+
+  @POST
+  @RolesAllowed({"ADMIN"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/updateBackend")
+  public Response updateBackend(ProxyBackendConfiguration backend) {
+    ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.updateBackend(backend);
+    return Response.ok(R.ok(proxyBackendConfiguration)).build();
+  }
+
+  @POST
+  @RolesAllowed({"ADMIN"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/deleteBackend")
+  public Response deleteBackend(ProxyBackendConfiguration backend) {
+    ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
+    return Response.ok(R.ok(true)).build();
+  }
 }

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Link } from "react-router-dom";
 import { routers } from '../router';
 import { Theme, useAccessStore, useConfigStore } from '../store';
-import { logoutApi } from '../api/user/login';
+import { logoutApi } from '../api/webapp/login';
 import Locale, { ALL_LANG_OPTIONS, AllLangs, Lang, changeLang, getLang } from "../locales";
 
 // import LogoIcon from "../assets/logo.svg?react";
