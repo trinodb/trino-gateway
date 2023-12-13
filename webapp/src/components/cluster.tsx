@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import styles from './cluster.module.scss';
+
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
-import { Button, ButtonGroup, Form, Modal, Popconfirm, Switch, Table, Typography } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 
@@ -62,36 +64,37 @@ export function Cluster() {
 
   return (
     <>
-      <Table dataSource={backendData} pagination={false} >
-        <Column title="Name" dataIndex="name" key="name" />
-        <Column title="routingGroup" dataIndex="routingGroup" key="routingGroup"
-          filters={
-            [...new Set(backendData?.map(b => b.routingGroup))]
-              .map(routingGroup => {
-                return {
-                  text: routingGroup,
-                  value: routingGroup
-                }
-              })}
-          onFilter={(value, record) => {
-            console.log(value, record, value === record.routingGroup)
-            return value === record.routingGroup
-          }} />
-        <Column title="ProxyTo" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
-        <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
-        <Column title="Queued" dataIndex="queued" key="queued" />
-        <Column title="Running" dataIndex="running" key="running" />
-        <Column title="Active" dataIndex="active" key="active" render={switchRender} />
-        <Column title={<>
-          <ButtonGroup size={'default'}>
-            <Button onClick={() => {
-              setForm(undefined)
-              setVisibleForm(true)
-            }}>新增</Button>
-          </ButtonGroup>
-        </>} dataIndex="operate" key="operate" render={operateRender} />
-      </Table>
-
+      <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
+        <Table dataSource={backendData} pagination={false} rowKey={"name"}>
+          <Column title="Name" dataIndex="name" key="name" />
+          <Column title="routingGroup" dataIndex="routingGroup" key="routingGroup"
+            filters={
+              [...new Set(backendData?.map(b => b.routingGroup))]
+                .map(routingGroup => {
+                  return {
+                    text: routingGroup,
+                    value: routingGroup
+                  }
+                })}
+            onFilter={(value, record) => {
+              console.log(value, record, value === record.routingGroup)
+              return value === record.routingGroup
+            }} />
+          <Column title="ProxyTo" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
+          <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
+          <Column title="Queued" dataIndex="queued" key="queued" />
+          <Column title="Running" dataIndex="running" key="running" />
+          <Column title="Active" dataIndex="active" key="active" render={switchRender} />
+          <Column title={<>
+            <ButtonGroup size={'default'}>
+              <Button onClick={() => {
+                setForm(undefined)
+                setVisibleForm(true)
+              }}>新增</Button>
+            </ButtonGroup>
+          </>} dataIndex="operate" key="operate" render={operateRender} />
+        </Table>
+      </Card>
       <Modal
         title="自定义样式"
         visible={visibleForm}

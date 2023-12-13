@@ -18,6 +18,8 @@ public class QueryHistoryRequest {
    * size
    */
   private String user;
+  private String backendUrl;
+  private String queryId;
 
   public Integer getPage() {
     return page;
@@ -41,5 +43,21 @@ public class QueryHistoryRequest {
 
   public void setUser(String user) {
     this.user = user;
+  }
+
+  public String getBackendUrl() {
+    return backendUrl;
+  }
+
+  public void setBackendUrl(String backendUrl) {
+    this.backendUrl = backendUrl;
+  }
+
+  public String getQueryId() {
+    return queryId;
+  }
+
+  public void setQueryId(String queryId) {
+    this.queryId = queryId;
   }
 }

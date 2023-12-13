@@ -123,10 +123,13 @@ function LineChart(props: {
         trigger: 'axis'
       },
       series: Object.keys(props.data).map(d => {
-        const lineChartDatas = props.data[d]
+        const lineChartDatas =  props.data[d].reduce((obj, item) => {
+          obj[item.minute] = item.queryCount;
+          return obj;
+        }, {} as  Record<string, any>);
         return {
           name: d,
-          data: lineChartDatas.map(lineChartData => lineChartData.queryCount),
+          data: minuteStrings.map(m => lineChartDatas[m] || 0),
           type: 'line',
           smooth: true
         }

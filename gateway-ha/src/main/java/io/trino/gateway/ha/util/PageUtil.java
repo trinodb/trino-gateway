@@ -4,7 +4,7 @@ package io.trino.gateway.ha.util;
  * copy from hutool
  */
 public class PageUtil {
-  private static int firstPageNo = 0;
+  private static int firstPageNo = 1;
 
   public PageUtil() {
   }

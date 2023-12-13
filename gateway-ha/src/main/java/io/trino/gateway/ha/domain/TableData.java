@@ -1,7 +1,5 @@
 package io.trino.gateway.ha.domain;
 
-import io.trino.gateway.ha.util.PageUtil;
-
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
@@ -17,7 +15,7 @@ public class TableData<T> implements Serializable {
   private static final long serialVersionUID = 1L;
 
   /**
-   * total page
+   * total
    */
   private long total;
 
@@ -31,13 +29,13 @@ public class TableData<T> implements Serializable {
    * @param size  page size
    * @param total data total
    */
-  public TableData(List<T> list, int size, long total) {
+  public TableData(List<T> list, long total) {
     this.rows = list;
-    this.total = PageUtil.totalPage(total, size);
+    this.total = total;
   }
 
-  public static <T> TableData<T> build(List<T> list, int size, long total) {
-    return new TableData<>(list, size, total);
+  public static <T> TableData<T> build(List<T> list, long total) {
+    return new TableData<>(list, total);
   }
 
   public TableData() {

@@ -74,9 +74,15 @@ public class HaQueryHistoryManager implements QueryHistoryManager {
   public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query) {
     try {
       connectionManager.open();
-      String sql = "select * from query_history";
+      String sql = "select * from query_history where 1=1";
       if (StringUtils.isNotBlank(query.getUser())) {
-        sql += " where user_name = '" + query.getUser() + "'";
+        sql += " and user_name = '" + query.getUser() + "'";
+      }
+      if (StringUtils.isNotBlank(query.getBackendUrl())) {
+        sql += " and backend_url = '" + query.getBackendUrl() + "'";
+      }
+      if (StringUtils.isNotBlank(query.getQueryId())) {
+        sql += " and query_id = '" + query.getQueryId() + "'";
       }
       int start = PageUtil.getStart(query.getPage(), query.getSize());
       List<QueryDetail> rows = QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
@@ -84,7 +90,7 @@ public class HaQueryHistoryManager implements QueryHistoryManager {
               "order by created desc",
               "limit ", String.valueOf(start), ",", String.valueOf(query.getSize()))));
       Long total = QueryHistory.count();
-      return TableData.build(rows, query.getSize(), total);
+      return TableData.build(rows, total);
     } finally {
       connectionManager.close();
     }
