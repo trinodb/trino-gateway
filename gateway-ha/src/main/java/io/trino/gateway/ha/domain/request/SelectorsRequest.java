@@ -9,12 +9,12 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
  */
 public class SelectorsRequest {
   private String useSchema;
-  private ResourceGroupsManager.SelectorsDetail selectorsDetail;
+  private ResourceGroupsManager.SelectorsDetail data;
 
   /**
    * This field is only used for modification
    */
-  private ResourceGroupsManager.SelectorsDetail oldSelectorsDetail;
+  private ResourceGroupsManager.SelectorsDetail oldData;
 
 
   public String getUseSchema() {
@@ -25,19 +25,19 @@ public class SelectorsRequest {
     this.useSchema = useSchema;
   }
 
-  public ResourceGroupsManager.SelectorsDetail getSelectorsDetail() {
-    return selectorsDetail;
+  public ResourceGroupsManager.SelectorsDetail getData() {
+    return data;
   }
 
-  public void setSelectorsDetail(ResourceGroupsManager.SelectorsDetail selectorsDetail) {
-    this.selectorsDetail = selectorsDetail;
+  public void setData(ResourceGroupsManager.SelectorsDetail data) {
+    this.data = data;
   }
 
-  public ResourceGroupsManager.SelectorsDetail getOldSelectorsDetail() {
-    return oldSelectorsDetail;
+  public ResourceGroupsManager.SelectorsDetail getOldData() {
+    return oldData;
   }
 
-  public void setOldSelectorsDetail(ResourceGroupsManager.SelectorsDetail oldSelectorsDetail) {
-    this.oldSelectorsDetail = oldSelectorsDetail;
+  public void setOldData(ResourceGroupsManager.SelectorsDetail oldData) {
+    this.oldData = oldData;
   }
 }

@@ -9,7 +9,7 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
  */
 public class GlobalPropertyRequest {
   private String useSchema;
-  private ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail;
+  private ResourceGroupsManager.GlobalPropertiesDetail data;
 
   public String getUseSchema() {
     return useSchema;
@@ -19,11 +19,11 @@ public class GlobalPropertyRequest {
     this.useSchema = useSchema;
   }
 
-  public ResourceGroupsManager.GlobalPropertiesDetail getGlobalPropertiesDetail() {
-    return globalPropertiesDetail;
+  public ResourceGroupsManager.GlobalPropertiesDetail getData() {
+    return data;
   }
 
-  public void setGlobalPropertiesDetail(ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail) {
-    this.globalPropertiesDetail = globalPropertiesDetail;
+  public void setData(ResourceGroupsManager.GlobalPropertiesDetail data) {
+    this.data = data;
   }
 }

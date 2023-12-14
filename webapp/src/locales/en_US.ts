@@ -18,6 +18,8 @@ const en_US: LocaleType = {
       Dashboard: "Dashboard",
       Cluster: "Cluster",
       History: "History",
+      ResourceGroup: "Resource Group",
+      Selector: "Selector",
     }
   },
   Auth: {

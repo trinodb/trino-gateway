@@ -17,6 +17,8 @@ const zh_CN = {
       Dashboard: "控制台",
       Cluster: "集群",
       History: "历史",
+      ResourceGroup: "资源组",
+      Selector: "选择器",
     }
   },
   Auth: {
@@ -79,6 +81,9 @@ const zh_CN = {
     Close: "关闭",
     Create: "新建",
     Edit: "编辑",
+    Delete: "删除",
+    DeleteTitle: "确定删除吗？",
+    DeleteContent: "删除后将不恢复",
   },
 };
 

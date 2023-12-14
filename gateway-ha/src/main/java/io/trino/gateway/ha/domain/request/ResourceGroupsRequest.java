@@ -9,7 +9,7 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
  */
 public class ResourceGroupsRequest {
   private String useSchema;
-  private ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail;
+  private ResourceGroupsManager.ResourceGroupsDetail data;
 
   public String getUseSchema() {
     return useSchema;
@@ -19,11 +19,11 @@ public class ResourceGroupsRequest {
     this.useSchema = useSchema;
   }
 
-  public ResourceGroupsManager.ResourceGroupsDetail getResourceGroupsDetail() {
-    return resourceGroupsDetail;
+  public ResourceGroupsManager.ResourceGroupsDetail getData() {
+    return data;
   }
 
-  public void setResourceGroupsDetail(ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail) {
-    this.resourceGroupsDetail = resourceGroupsDetail;
+  public void setData(ResourceGroupsManager.ResourceGroupsDetail data) {
+    this.data = data;
   }
 }

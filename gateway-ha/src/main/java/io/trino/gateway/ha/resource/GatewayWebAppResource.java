@@ -147,7 +147,7 @@ public class GatewayWebAppResource {
   @Path("/saveResourceGroup")
   public Response saveResourceGroup(ResourceGroupsRequest request) {
     ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
-            resourceGroupsManager.createResourceGroup(request.getResourceGroupsDetail(), request.getUseSchema());
+            resourceGroupsManager.createResourceGroup(request.getData(), request.getUseSchema());
     return Response.ok(R.ok(newResourceGroup)).build();
   }
 
@@ -158,7 +158,7 @@ public class GatewayWebAppResource {
   @Path("/updateResourceGroup")
   public Response updateResourceGroup(ResourceGroupsRequest request) {
     ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
-            resourceGroupsManager.updateResourceGroup(request.getResourceGroupsDetail(), request.getUseSchema());
+            resourceGroupsManager.updateResourceGroup(request.getData(), request.getUseSchema());
     return Response.ok(R.ok(newResourceGroup)).build();
   }
 
@@ -168,7 +168,7 @@ public class GatewayWebAppResource {
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/deleteResourceGroup")
   public Response deleteResourceGroup(ResourceGroupsRequest request) {
-    ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail = request.getResourceGroupsDetail();
+    ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail = request.getData();
     resourceGroupsManager.deleteResourceGroup(resourceGroupsDetail.getResourceGroupId(), request.getUseSchema());
     return Response.ok(R.ok(true)).build();
   }
@@ -205,7 +205,7 @@ public class GatewayWebAppResource {
   @Path("/saveSelector")
   public Response saveSelector(SelectorsRequest selectorsRequest) {
     ResourceGroupsManager.SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(
-            selectorsRequest.getSelectorsDetail(),
+            selectorsRequest.getData(),
             selectorsRequest.getUseSchema());
     return Response.ok(R.ok(updatedSelector)).build();
   }
@@ -217,8 +217,8 @@ public class GatewayWebAppResource {
   @Path("/updateSelector")
   public Response updateSelector(SelectorsRequest selectorsRequest) {
     ResourceGroupsManager.SelectorsDetail updatedSelector = resourceGroupsManager.updateSelector(
-            selectorsRequest.getOldSelectorsDetail(),
-            selectorsRequest.getSelectorsDetail(),
+            selectorsRequest.getOldData(),
+            selectorsRequest.getData(),
             selectorsRequest.getUseSchema());
     return Response.ok(R.ok(updatedSelector)).build();
   }
@@ -229,7 +229,7 @@ public class GatewayWebAppResource {
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/deleteSelector")
   public Response deleteSelector(SelectorsRequest request) {
-    resourceGroupsManager.deleteSelector(request.getOldSelectorsDetail(), request.getUseSchema());
+    resourceGroupsManager.deleteSelector(request.getData(), request.getUseSchema());
     return Response.ok(R.ok(true)).build();
   }
 
@@ -266,7 +266,7 @@ public class GatewayWebAppResource {
   @Path("/saveGlobalProperty")
   public Response saveGlobalProperty(GlobalPropertyRequest request) {
     ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.createGlobalProperty(
-            request.getGlobalPropertiesDetail(),
+            request.getData(),
             request.getUseSchema());
     return Response.ok(R.ok(globalProperty)).build();
   }
@@ -278,7 +278,7 @@ public class GatewayWebAppResource {
   @Path("/updateGlobalProperty")
   public Response updateGlobalProperty(GlobalPropertyRequest request) {
     ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.updateGlobalProperty(
-            request.getGlobalPropertiesDetail(),
+            request.getData(),
             request.getUseSchema());
     return Response.ok(R.ok(globalProperty)).build();
   }
@@ -289,7 +289,7 @@ public class GatewayWebAppResource {
   @Produces(MediaType.APPLICATION_JSON)
   @Path("/deleteGlobalProperty")
   public Response deleteGlobalProperty(GlobalPropertyRequest request) {
-    ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail = request.getGlobalPropertiesDetail();
+    ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail = request.getData();
     resourceGroupsManager.deleteGlobalProperty(
             globalPropertiesDetail.getName(),
             request.getUseSchema());
