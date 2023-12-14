@@ -1,7 +1,7 @@
 package io.trino.gateway.ha.domain.request;
 
 /**
- * QueryHistory Request Body
+ * Distribution Request Body
  *
  * @author Wei Peng
  */

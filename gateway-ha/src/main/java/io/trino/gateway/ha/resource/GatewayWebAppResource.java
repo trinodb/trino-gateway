@@ -1,17 +1,14 @@
 package io.trino.gateway.ha.resource;
 
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.domain.TableData;
-import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
-import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
+import io.trino.gateway.ha.domain.request.*;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
-import io.trino.gateway.ha.router.BackendStateManager;
-import io.trino.gateway.ha.router.GatewayBackendManager;
-import io.trino.gateway.ha.router.HaGatewayManager;
-import io.trino.gateway.ha.router.QueryHistoryManager;
+import io.trino.gateway.ha.router.*;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -24,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Path("/webapp")
@@ -36,6 +34,8 @@ public class GatewayWebAppResource {
   private QueryHistoryManager queryHistoryManager;
   @Inject
   private BackendStateManager backendStateManager;
+  @Inject
+  private ResourceGroupsManager resourceGroupsManager;
 
   @POST
   @RolesAllowed({"USER"})
@@ -138,5 +138,209 @@ public class GatewayWebAppResource {
   public Response deleteBackend(ProxyBackendConfiguration backend) {
     ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
     return Response.ok(R.ok(true)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/saveResourceGroup")
+  public Response saveResourceGroup(ResourceGroupsRequest request) {
+    ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
+            resourceGroupsManager.createResourceGroup(request.getResourceGroupsDetail(), request.getUseSchema());
+    return Response.ok(R.ok(newResourceGroup)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/updateResourceGroup")
+  public Response updateResourceGroup(ResourceGroupsRequest request) {
+    ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
+            resourceGroupsManager.updateResourceGroup(request.getResourceGroupsDetail(), request.getUseSchema());
+    return Response.ok(R.ok(newResourceGroup)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/deleteResourceGroup")
+  public Response deleteResourceGroup(ResourceGroupsRequest request) {
+    ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail = request.getResourceGroupsDetail();
+    resourceGroupsManager.deleteResourceGroup(resourceGroupsDetail.getResourceGroupId(), request.getUseSchema());
+    return Response.ok(R.ok(true)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/findResourceGroup")
+  public Response findResourceGroup(QueryResourceGroupsRequest request) {
+    List<ResourceGroupsManager.ResourceGroupsDetail> resourceGroupsDetailList = resourceGroupsManager.readAllResourceGroups(request.getUseSchema());
+    return Response.ok(R.ok(resourceGroupsDetailList)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/getResourceGroup")
+  public Response readResourceGroup(QueryResourceGroupsRequest request) {
+    if (Objects.isNull(request.getResourceGroupId())) {
+      return Response.ok(R.fail("ResourceGroupId cannot be null!")).build();
+    }
+    List<ResourceGroupsManager.ResourceGroupsDetail> resourceGroup = resourceGroupsManager.readResourceGroup(
+            request.getResourceGroupId(),
+            request.getUseSchema());
+    return Response.ok(R.ok(resourceGroup.stream().findFirst())).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/saveSelector")
+  public Response saveSelector(SelectorsRequest selectorsRequest) {
+    ResourceGroupsManager.SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(
+            selectorsRequest.getSelectorsDetail(),
+            selectorsRequest.getUseSchema());
+    return Response.ok(R.ok(updatedSelector)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/updateSelector")
+  public Response updateSelector(SelectorsRequest selectorsRequest) {
+    ResourceGroupsManager.SelectorsDetail updatedSelector = resourceGroupsManager.updateSelector(
+            selectorsRequest.getOldSelectorsDetail(),
+            selectorsRequest.getSelectorsDetail(),
+            selectorsRequest.getUseSchema());
+    return Response.ok(R.ok(updatedSelector)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/deleteSelector")
+  public Response deleteSelector(SelectorsRequest request) {
+    resourceGroupsManager.deleteSelector(request.getOldSelectorsDetail(), request.getUseSchema());
+    return Response.ok(R.ok(true)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/findSelector")
+  public Response findSelector(QuerySelectorsRequest request) {
+    List<ResourceGroupsManager.SelectorsDetail> selectorsDetailList = resourceGroupsManager.readAllSelectors(
+            request.getUseSchema());
+    return Response.ok(R.ok(selectorsDetailList)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/getSelector")
+  public Response getSelector(QuerySelectorsRequest request) {
+    if (Objects.isNull(request.getResourceGroupId())) {
+      return Response.ok(R.fail("ResourceGroupId cannot be null!")).build();
+    }
+    List<ResourceGroupsManager.SelectorsDetail> selectors = resourceGroupsManager.readSelector(
+            request.getResourceGroupId(),
+            request.getUseSchema());
+    return Response.ok(R.ok(selectors.stream().findFirst())).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/saveGlobalProperty")
+  public Response saveGlobalProperty(GlobalPropertyRequest request) {
+    ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.createGlobalProperty(
+            request.getGlobalPropertiesDetail(),
+            request.getUseSchema());
+    return Response.ok(R.ok(globalProperty)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/updateGlobalProperty")
+  public Response updateGlobalProperty(GlobalPropertyRequest request) {
+    ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.updateGlobalProperty(
+            request.getGlobalPropertiesDetail(),
+            request.getUseSchema());
+    return Response.ok(R.ok(globalProperty)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/deleteGlobalProperty")
+  public Response deleteGlobalProperty(GlobalPropertyRequest request) {
+    ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail = request.getGlobalPropertiesDetail();
+    resourceGroupsManager.deleteGlobalProperty(
+            globalPropertiesDetail.getName(),
+            request.getUseSchema());
+    return Response.ok(R.ok(true)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/findGlobalProperty")
+  public Response readAllGlobalProperties(QueryGlobalPropertyRequest request) {
+    List<ResourceGroupsManager.GlobalPropertiesDetail> globalPropertiesDetailList;
+    if (Strings.isNullOrEmpty(request.getName())) {
+      globalPropertiesDetailList = resourceGroupsManager.readAllGlobalProperties(request.getUseSchema());
+    } else {
+      globalPropertiesDetailList = resourceGroupsManager.readGlobalProperty(request.getName(), request.getUseSchema());
+    }
+    return Response.ok(R.ok(globalPropertiesDetailList)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/getGlobalProperty")
+  public Response readGlobalProperty(QueryGlobalPropertyRequest request) {
+    if (Strings.isNullOrEmpty(request.getName())) {
+      return Response.ok(R.fail("Name cannot be null!")).build();
+    }
+    List<ResourceGroupsManager.GlobalPropertiesDetail> globalProperty = resourceGroupsManager.readGlobalProperty(request.getName(), request.getUseSchema());
+    return Response.ok(R.ok(globalProperty.stream().findFirst())).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/saveExactMatchSourceSelector")
+  public Response saveExactMatchSourceSelector(ResourceGroupsManager.ExactSelectorsDetail exactMatchSourceSelector) {
+    ResourceGroupsManager.ExactSelectorsDetail newExactMatchSourceSelector = resourceGroupsManager.createExactMatchSourceSelector(exactMatchSourceSelector);
+    return Response.ok(R.ok(newExactMatchSourceSelector)).build();
+  }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/findExactMatchSourceSelector")
+  public Response readExactMatchSourceSelector() {
+    List<ResourceGroupsManager.ExactSelectorsDetail> selectorsDetailList = resourceGroupsManager.readExactMatchSourceSelector();
+    return Response.ok(R.ok(selectorsDetailList)).build();
   }
 }
