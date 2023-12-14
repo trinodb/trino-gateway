@@ -5,6 +5,7 @@
     <td><a href="configuration.md">Configuration</a></td>
     <td><b><a href="design.md">Design</a></b></td>
     <td><a href="development.md">Development</a></td>
+    <td><a href="quickstart.md">Quickstart</a></td>
     <td><a href="security.md">Security</a></td>
     <td><a href="operation.md">Operation</a></td>
     <td><a href="gateway-api.md">Gateway API</a></td>
