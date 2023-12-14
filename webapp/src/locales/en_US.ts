@@ -9,6 +9,18 @@ const en_US: LocaleType = {
     LocalCacheTry: "Please clean the cache and try again!",
     LocalCacheClean: "Clear All Cache",
   },
+  Dashboard: {
+    QPH: "QPH",
+    QPS: "Avg. QPS",
+    QPM: "Avg. QPM",
+    Backends: "Backends",
+    BackendsOffline: "Backends Offline",
+    BackendsOnline: "Backends Online",
+    StartTime:"Started at",
+    Summary: "Summary",
+    QueryDistribution: "Query Distribution/hour.",
+    QueryCount: "Query Count",
+  },
   Menu: {
     Header: {
       PersonalCenter: "Profile",
@@ -82,6 +94,10 @@ const en_US: LocaleType = {
     Close: "Close",
     Create: "Create",
     Edit: "Edit",
+    Delete: "Delete",
+    DeleteTitle: "Are you sure you want to delete?",
+    DeleteContent: "Once deleted, it cannot be recovered!",
+    Query: "Query",
   },
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import styles from './cluster.module.scss';
-
+import styles from './resource-group.module.scss';
+import Locale from "../locales";
 import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
@@ -33,10 +33,10 @@ export function ResourceGroup() {
         <Button onClick={() => {
           setForm(record)
           setVisibleForm(true)
-        }}>编辑</Button>
+        }}>{Locale.UI.Edit}</Button>
         <Popconfirm
-          title="确定是否要删除？"
-          content="删除改将不可逆"
+          title={Locale.UI.DeleteTitle}
+          content={Locale.UI.DeleteContent}
           position="bottomRight"
           onConfirm={() => {
             resourceGroupDeleteApi({
@@ -50,7 +50,7 @@ export function ResourceGroup() {
             }).catch(() => { });
           }}
         >
-          <Button>删除</Button>
+          <Button>{Locale.UI.Delete}</Button>
         </Popconfirm>
       </ButtonGroup>
     );
@@ -72,38 +72,38 @@ export function ResourceGroup() {
       </Card>
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
         <Table dataSource={resourceGroupData} pagination={false} rowKey={"resourceGroupId"}>
-          <Column title="resourceGroupId" dataIndex="resourceGroupId" key="resourceGroupId" />
+          <Column title="ResourceGroupId" dataIndex="resourceGroupId" key="resourceGroupId" />
           <Column title="Name" dataIndex="name" key="name" />
-          <Column title="parent" dataIndex="parent" key="parent" />
+          <Column title="Parent" dataIndex="parent" key="parent" />
           <Column title="jmxExport" dataIndex="jmxExport" key="jmxExport" />
-          <Column title="schedulingPolicy" dataIndex="schedulingPolicy" key="schedulingPolicy" />
-          <Column title="schedulingWeight" dataIndex="schedulingWeight" key="schedulingWeight" />
-          <Column title="softMemoryLimit" dataIndex="softMemoryLimit" key="softMemoryLimit" />
-          <Column title="maxQueued" dataIndex="maxQueued" key="maxQueued" />
-          <Column title="hardConcurrencyLimit" dataIndex="hardConcurrencyLimit" key="hardConcurrencyLimit" />
-          <Column title="softConcurrencyLimit" dataIndex="softConcurrencyLimit" key="softConcurrencyLimit" />
-          <Column title="softCpuLimit" dataIndex="softCpuLimit" key="softCpuLimit" />
-          <Column title="hardCpuLimit" dataIndex="hardCpuLimit" key="hardCpuLimit" />
-          <Column title="environment" dataIndex="environment" key="environment" />
+          <Column title="SchedulingPolicy" dataIndex="schedulingPolicy" key="schedulingPolicy" />
+          <Column title="SchedulingWeight" dataIndex="schedulingWeight" key="schedulingWeight" />
+          <Column title="SoftMemoryLimit" dataIndex="softMemoryLimit" key="softMemoryLimit" />
+          <Column title="MaxQueued" dataIndex="maxQueued" key="maxQueued" />
+          <Column title="HardConcurrencyLimit" dataIndex="hardConcurrencyLimit" key="hardConcurrencyLimit" />
+          <Column title="SoftConcurrencyLimit" dataIndex="softConcurrencyLimit" key="softConcurrencyLimit" />
+          <Column title="SoftCpuLimit" dataIndex="softCpuLimit" key="softCpuLimit" />
+          <Column title="HardCpuLimit" dataIndex="hardCpuLimit" key="hardCpuLimit" />
+          <Column title="Environment" dataIndex="environment" key="environment" />
           <Column title={<>
             <ButtonGroup size={'default'}>
               <Button onClick={() => {
                 setForm(undefined)
                 setVisibleForm(true)
-              }}>新增</Button>
+              }}>{Locale.UI.Create}</Button>
             </ButtonGroup>
           </>} dataIndex="operate" key="operate" fixed="right" render={operateRender} />
         </Table>
       </Card>
       <Modal
-        title="自定义样式"
+        title={form === undefined ? Locale.UI.Create : Locale.UI.Edit}
         visible={visibleForm}
         onOk={() => { formApi?.submitForm() }}
         onCancel={() => { setVisibleForm(false) }}
         centered
         width={700}
         height={700}
-        bodyStyle={{ overflow: 'auto', height: '80%', width: '600' }}
+        bodyStyle={{ overflow: 'auto' }}
       >
         <Form
           labelPosition="left"
@@ -137,7 +137,7 @@ export function ResourceGroup() {
           {form !== undefined && (
             <Form.InputNumber
               field="resourceGroupId"
-              label="resourceGroupId"
+              label="ResourceGroupId"
               disabled
               hideButtons
               initValue={form?.resourceGroupId}
@@ -155,7 +155,7 @@ export function ResourceGroup() {
           />
           <Form.InputNumber
             field="parent"
-            label="parent"
+            label="Parent"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -179,7 +179,7 @@ export function ResourceGroup() {
           />
           <Form.Input
             field="schedulingPolicy"
-            label="schedulingPolicy"
+            label="SchedulingPolicy"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -189,7 +189,7 @@ export function ResourceGroup() {
           />
           <Form.InputNumber
             field="schedulingWeight"
-            label="schedulingWeight"
+            label="SchedulingWeight"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -203,7 +203,7 @@ export function ResourceGroup() {
           />
           <Form.Input
             field="softMemoryLimit"
-            label="softMemoryLimit"
+            label="SoftMemoryLimit"
             trigger='blur'
             rules={[
               { required: true, message: 'required error' },
@@ -213,7 +213,7 @@ export function ResourceGroup() {
           />
           <Form.InputNumber
             field="maxQueued"
-            label="maxQueued"
+            label="MaxQueued"
             trigger='blur'
             rules={[
               { required: true, message: 'required error' },
@@ -227,7 +227,7 @@ export function ResourceGroup() {
           />
           <Form.InputNumber
             field="hardConcurrencyLimit"
-            label="hardConcurrencyLimit"
+            label="HardConcurrencyLimit"
             trigger='blur'
             rules={[
               { required: true, message: 'required error' },
@@ -241,7 +241,7 @@ export function ResourceGroup() {
           />
           <Form.InputNumber
             field="softConcurrencyLimit"
-            label="softConcurrencyLimit"
+            label="SoftConcurrencyLimit"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -255,7 +255,7 @@ export function ResourceGroup() {
           />
           <Form.Input
             field="softCpuLimit"
-            label="softCpuLimit"
+            label="SoftCpuLimit"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -265,7 +265,7 @@ export function ResourceGroup() {
           />
           <Form.Input
             field="hardCpuLimit"
-            label="hardCpuLimit"
+            label="HardCpuLimit"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -275,7 +275,7 @@ export function ResourceGroup() {
           />
           <Form.Input
             field="environment"
-            label="environment"
+            label="Environment"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },

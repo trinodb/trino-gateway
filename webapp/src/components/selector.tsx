@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import styles from './cluster.module.scss';
-
+import styles from './selector.module.scss';
+import Locale from "../locales";
 import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
@@ -33,10 +33,10 @@ export function Selector() {
         <Button onClick={() => {
           setForm(record)
           setVisibleForm(true)
-        }}>编辑</Button>
+        }}>{Locale.UI.Edit}</Button>
         <Popconfirm
-          title="确定是否要删除？"
-          content="删除改将不可逆"
+          title={Locale.UI.DeleteTitle}
+          content={Locale.UI.DeleteContent}
           position="bottomRight"
           onConfirm={() => {
             selectorDeleteApi({
@@ -48,7 +48,7 @@ export function Selector() {
             }).catch(() => { });
           }}
         >
-          <Button>删除</Button>
+          <Button>{Locale.UI.Delete}</Button>
         </Popconfirm>
       </ButtonGroup>
     );
@@ -70,32 +70,32 @@ export function Selector() {
       </Card>
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
         <Table dataSource={selectorData} pagination={false} rowKey={"resourceGroupId"}>
-          <Column title="resourceGroupId" dataIndex="resourceGroupId" key="resourceGroupId" />
-          <Column title="priority" dataIndex="priority" key="priority" />
-          <Column title="userRegex" dataIndex="userRegex" key="userRegex" />
-          <Column title="sourceRegex" dataIndex="sourceRegex" key="sourceRegex" />
-          <Column title="queryType" dataIndex="queryType" key="queryType" />
-          <Column title="clientTags" dataIndex="clientTags" key="clientTags" />
-          <Column title="selectorResourceEstimate" dataIndex="selectorResourceEstimate" key="selectorResourceEstimate" />
+          <Column title="ResourceGroupId" dataIndex="resourceGroupId" key="resourceGroupId" />
+          <Column title="Priority" dataIndex="priority" key="priority" />
+          <Column title="UserRegex" dataIndex="userRegex" key="userRegex" />
+          <Column title="SourceRegex" dataIndex="sourceRegex" key="sourceRegex" />
+          <Column title="QueryType" dataIndex="queryType" key="queryType" />
+          <Column title="ClientTags" dataIndex="clientTags" key="clientTags" />
+          <Column title="SelectorResourceEstimate" dataIndex="selectorResourceEstimate" key="selectorResourceEstimate" />
           <Column title={<>
             <ButtonGroup size={'default'}>
               <Button onClick={() => {
                 setForm(undefined)
                 setVisibleForm(true)
-              }}>新增</Button>
+              }}>{Locale.UI.Create}</Button>
             </ButtonGroup>
           </>} dataIndex="operate" key="operate" fixed="right" render={operateRender} />
         </Table>
       </Card>
       <Modal
-        title="自定义样式"
+        title={form === undefined ? Locale.UI.Create : Locale.UI.Edit}
         visible={visibleForm}
         onOk={() => { formApi?.submitForm() }}
         onCancel={() => { setVisibleForm(false) }}
         centered
-        width={700}
-        height={700}
-        bodyStyle={{ overflow: 'auto', height: '80%', width: '600' }}
+        width={600}
+        height={600}
+        bodyStyle={{ overflow: 'auto' }}
       >
         <Form
           labelPosition="left"
@@ -129,7 +129,7 @@ export function Selector() {
         >
           <Form.InputNumber
             field="resourceGroupId"
-            label="resourceGroupId"
+            label="ResourceGroupId"
             trigger='blur'
             rules={[
               { required: true, message: 'required error' },
@@ -143,7 +143,7 @@ export function Selector() {
           />
           <Form.InputNumber
             field="priority"
-            label="priority"
+            label="Priority"
             trigger='blur'
             rules={[
               { required: true, message: 'required error' },
@@ -157,7 +157,7 @@ export function Selector() {
           />
           <Form.Input
             field="userRegex"
-            label="userRegex"
+            label="UserRegex"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -167,7 +167,7 @@ export function Selector() {
           />
           <Form.Input
             field="sourceRegex"
-            label="sourceRegex"
+            label="SourceRegex"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -177,7 +177,7 @@ export function Selector() {
           />
           <Form.Input
             field="queryType"
-            label="queryType"
+            label="QueryType"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -187,7 +187,7 @@ export function Selector() {
           />
           <Form.Input
             field="clientTags"
-            label="clientTags"
+            label="ClientTags"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },
@@ -197,7 +197,7 @@ export function Selector() {
           />
           <Form.Input
             field="selectorResourceEstimate"
-            label="selectorResourceEstimate"
+            label="SelectorResourceEstimate"
             trigger='blur'
             rules={[
               // { required: true, message: 'required error' },

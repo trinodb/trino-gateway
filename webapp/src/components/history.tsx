@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from './history.module.scss';
+import Locale from "../locales";
 import { Button, Card, Form, Table, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
@@ -73,7 +74,7 @@ export function History() {
               </Form.Select>
               <Form.Input field='user' label='User' style={{ width: 150 }} showClear />
               <Form.Input field='queryId' label='QueryId' style={{ width: 260 }} showClear />
-              <Button htmlType='submit' style={{ width: 70 }}>查询</Button>
+              <Button htmlType='submit' style={{ width: 70 }}>{Locale.UI.Query}</Button>
             </>
           )}
           layout='horizontal'
@@ -90,12 +91,12 @@ export function History() {
           total: historyData?.total || 0,
           onPageChange: list,
         }}>
-          <Column title="queryId" dataIndex="queryId" key="queryId" render={linkRender} />
-          <Column title="routedTo" dataIndex="backendUrl" key="backendUrl" />
-          <Column title="user" dataIndex="user" key="user" />
-          <Column title="source" dataIndex="source" key="source" />
-          <Column title="queryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
-          <Column title="submissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} />
+          <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkRender} />
+          <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrl" />
+          <Column title="User" dataIndex="user" key="user" />
+          <Column title="Source" dataIndex="source" key="source" />
+          <Column title="QueryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
+          <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} />
         </Table>
       </Card>
     </>

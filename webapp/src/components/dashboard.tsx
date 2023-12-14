@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-
+import Locale from "../locales";
 import styles from './dashboard.module.scss';
 import * as echarts from "echarts";
 import { Card, Col, Descriptions, Row } from "@douyinfe/semi-ui";
@@ -22,28 +22,32 @@ export function Dashboard() {
 
   const data = [
     {
-      key: '启动时间',
+      key: Locale.Dashboard.StartTime,
       value: distributionDetail?.startTime
     },
     {
-      key: '总数',
+      key: Locale.Dashboard.Backends,
       value: distributionDetail?.totalBackendCount
     },
     {
-      key: '在线',
+      key: Locale.Dashboard.BackendsOnline,
       value: distributionDetail?.onlineBackendCount,
     },
     {
-      key: '下线', value: distributionDetail?.offlineBackendCount
+      key: Locale.Dashboard.BackendsOffline,
+      value: distributionDetail?.offlineBackendCount
     },
     {
-      key: '总查询数（近1小时）', value: distributionDetail?.totalQueryCount
+      key: Locale.Dashboard.QPH,
+      value: distributionDetail?.totalQueryCount
     },
     {
-      key: '平均查询数（每分）', value: distributionDetail?.averageQueryCountMinute.toFixed(2)
+      key: Locale.Dashboard.QPM,
+      value: distributionDetail?.averageQueryCountMinute.toFixed(2)
     },
     {
-      key: '平均查询数（每秒）', value: distributionDetail?.averageQueryCountSecond.toFixed(2)
+      key: Locale.Dashboard.QPS,
+      value: distributionDetail?.averageQueryCountSecond.toFixed(2)
     },
   ];
   return (
@@ -51,19 +55,19 @@ export function Dashboard() {
       <div style={{ width: '100%' }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <Card title='概览' bordered={false} className={styles.card}>
+            <Card title={Locale.Dashboard.Summary} bordered={false} className={styles.card}>
               <Descriptions data={data} row size="large" className={styles.description} />
             </Card>
           </Col>
         </Row>
         <Row gutter={[16, 16]}>
           <Col span={16}>
-            <Card title='查询分布（近1小时）' bordered={false} className={styles.card}>
+            <Card title={Locale.Dashboard.QueryDistribution} bordered={false} className={styles.card}>
               <LineChart data={distributionDetail?.lineChart || {}} />
             </Card>
           </Col>
           <Col span={8}>
-            <Card title='查询分布（近1小时）' bordered={false} className={styles.card}>
+            <Card title={Locale.Dashboard.QueryDistribution} bordered={false} className={styles.card}>
               <DistributionChart data={distributionDetail?.distributionChart || []} />
             </Card>
           </Col>
@@ -123,10 +127,10 @@ function LineChart(props: {
         trigger: 'axis'
       },
       series: Object.keys(props.data).map(d => {
-        const lineChartDatas =  props.data[d].reduce((obj, item) => {
+        const lineChartDatas = props.data[d].reduce((obj, item) => {
           obj[item.minute] = item.queryCount;
           return obj;
-        }, {} as  Record<string, any>);
+        }, {} as Record<string, any>);
         return {
           name: d,
           data: minuteStrings.map(m => lineChartDatas[m] || 0),
@@ -164,7 +168,7 @@ function DistributionChart(props: {
       },
       series: [
         {
-          name: '查询数',
+          name: Locale.Dashboard.QueryCount,
           type: 'pie',
           radius: ['40%', '70%'],
           avoidLabelOverlap: false,

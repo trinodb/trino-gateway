@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from './cluster.module.scss';
-
+import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
 import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
@@ -43,10 +43,10 @@ export function Cluster() {
         <Button onClick={() => {
           setForm(record)
           setVisibleForm(true)
-        }}>编辑</Button>
+        }}>{Locale.UI.Edit}</Button>
         <Popconfirm
-          title="确定是否要删除？"
-          content="删除改将不可逆"
+          title={Locale.UI.DeleteTitle}
+          content={Locale.UI.DeleteContent}
           position="bottomRight"
           onConfirm={() => {
             backendDeleteApi({ name: record.name })
@@ -56,7 +56,7 @@ export function Cluster() {
               }).catch(() => { });
           }}
         >
-          <Button>删除</Button>
+          <Button>{Locale.UI.Delete}</Button>
         </Popconfirm>
       </ButtonGroup>
     );
@@ -90,23 +90,26 @@ export function Cluster() {
               <Button onClick={() => {
                 setForm(undefined)
                 setVisibleForm(true)
-              }}>新增</Button>
+              }}>{Locale.UI.Create}</Button>
             </ButtonGroup>
           </>} dataIndex="operate" key="operate" render={operateRender} />
         </Table>
       </Card>
       <Modal
-        title="自定义样式"
+        title={form === undefined ? Locale.UI.Create : Locale.UI.Edit}
         visible={visibleForm}
         onOk={() => { formApi?.submitForm() }}
         onCancel={() => { setVisibleForm(false) }}
         centered
-        bodyStyle={{ overflow: 'auto', height: '80%' }}
+        width={500}
+        height={500}
+        bodyStyle={{ overflow: 'auto' }}
       >
         <Form
           labelPosition="left"
-          labelAlign="right"
-          style={{ padding: '10px', width: 600 }}
+          labelAlign="left"
+          labelWidth={150}
+          style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
             console.log(values)
             if (form === undefined) {
@@ -131,7 +134,6 @@ export function Cluster() {
             field="name"
             label="Name"
             trigger='blur'
-            style={{ width: 200 }}
             rules={[
               { required: true, message: 'required error' },
               { type: 'string', message: 'type error' },
@@ -143,7 +145,6 @@ export function Cluster() {
             field="routingGroup"
             label="RoutingGroup"
             trigger='blur'
-            style={{ width: 200 }}
             rules={[
               { required: true, message: 'required error' },
               { type: 'string', message: 'type error' },
@@ -154,7 +155,6 @@ export function Cluster() {
             field="proxyTo"
             label="ProxyTo"
             trigger='blur'
-            style={{ width: 200 }}
             rules={[
               { required: true, message: 'required error' },
               { type: 'string', message: 'type error' },
@@ -165,7 +165,6 @@ export function Cluster() {
             field="externalUrl"
             label="ExternalUrl"
             trigger='blur'
-            style={{ width: 200 }}
             rules={[
               { required: true, message: 'required error' },
               { type: 'string', message: 'type error' },
@@ -204,7 +203,7 @@ const SwitchRender = (props: {
       loading={loading}
       onChange={handleSwitchChange}
       checked={props.text}
-      aria-label="a switch for demo"
+      aria-label="a switch"
     />
   );
 };

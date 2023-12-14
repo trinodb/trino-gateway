@@ -8,6 +8,18 @@ const zh_CN = {
     LocalCacheTry: "请清理缓存后重试！",
     LocalCacheClean: "清除所有缓存",
   },
+  Dashboard: {
+    QPH: "QPH",
+    QPS: "Avg. QPS",
+    QPM: "Avg. QPM",
+    Backends: "Backends",
+    BackendsOffline: "Backends Offline",
+    BackendsOnline: "Backends Online",
+    StartTime:"Started at",
+    Summary: "Summary",
+    QueryDistribution: "Query Distribution/hour.",
+    QueryCount: "Query Count",
+  },
   Menu: {
     Header: {
       PersonalCenter: "个人中心",
@@ -83,7 +95,8 @@ const zh_CN = {
     Edit: "编辑",
     Delete: "删除",
     DeleteTitle: "确定删除吗？",
-    DeleteContent: "删除后将不恢复",
+    DeleteContent: "删除后将不能恢复！",
+    Query: "查询",
   },
 };
 
