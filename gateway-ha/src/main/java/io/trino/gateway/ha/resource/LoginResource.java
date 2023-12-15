@@ -2,18 +2,23 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.dropwizard.views.common.View;
-import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.R;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
+import io.trino.gateway.ha.security.LbPrincipal;
 import io.trino.gateway.ha.security.SessionCookie;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 import java.nio.charset.Charset;
+import java.util.Map;
 
 
 @Slf4j
@@ -90,5 +95,22 @@ public class LoginResource {
     R<?> r = formAuthManager.processRESTLogin(loginForm);
     return Response.ok(r).build();
   }
+
+  @POST
+  @RolesAllowed({"USER"})
+  @Path("/rest/userinfo")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response restUserinfo(@Context SecurityContext securityContext) {
+    LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
+    String[] roles = principal.getMemberOf().orElse("").split("_");
+    Map<String, Object> resMap = Map.of(
+            "roles", roles,
+            "userId", principal.getName(),
+            "userName", principal.getName()
+    );
+    return Response.ok(R.ok(resMap)).build();
+  }
+
 
 }

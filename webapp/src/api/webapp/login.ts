@@ -11,19 +11,6 @@ export async function logoutApi(body: Record<string, any>) {
 }
 
 export async function getInfoApi() {
-  // return api.get('/user/getInfo')
-  console.log('getInfoApi')
-  return {
-    userId: "1",
-    userName: "admin",
-    nickName: "admin",
-    userType: "0",
-    email: "admin@xx.com",
-    phonenumber: "",
-    sex: "",
-    avatar: "",
-    permissions: [],
-    roles: [],
-  }
+  return api.post('/rest/userinfo', {})
 }
 

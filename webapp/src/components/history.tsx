@@ -21,7 +21,6 @@ export function History() {
     list(1);
     backendsApi({})
       .then(data => {
-        console.log(data)
         setBackendData(data);
       }).catch(() => { });
   }, []);
@@ -38,7 +37,6 @@ export function History() {
       ...form
     })
       .then(data => {
-        console.log(data)
         setHistoryData(data);
       }).catch(() => { });
   }
@@ -69,7 +67,7 @@ export function History() {
             <>
               <Form.Select field="backendUrl" label='RoutedTo' style={{ width: 200 }} showClear>
                 {backendData?.map(b => (
-                  <Form.Select.Option value={b.proxyTo}>{b.proxyTo}</Form.Select.Option>
+                  <Form.Select.Option key={b.proxyTo} value={b.proxyTo}>{b.proxyTo}</Form.Select.Option>
                 ))}
               </Form.Select>
               <Form.Input field='user' label='User' style={{ width: 150 }} showClear />
@@ -80,7 +78,6 @@ export function History() {
           layout='horizontal'
           onSubmit={(values) => {
             setForm(values)
-            console.log(values)
           }}
         ></Form>
       </Card>

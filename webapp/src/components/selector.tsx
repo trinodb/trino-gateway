@@ -6,8 +6,10 @@ import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { selectorDeleteApi, selectorSaveApi, selectorUpdateApi, selectorsApi } from "../api/webapp/selector";
 import { SelectorData } from "../types/selector";
+import { Role, useAccessStore } from "../store";
 
 export function Selector() {
+  const access = useAccessStore();
   const [selectorData, setResourceGroupData] = useState<SelectorData[]>();
   const [visibleForm, setVisibleForm] = useState(false);
   const [formApi, setFormApi] = useState<FormApi<any>>();
@@ -21,13 +23,11 @@ export function Selector() {
   const list = () => {
     selectorsApi({})
       .then(data => {
-        console.log(data)
         setResourceGroupData(data);
       }).catch(() => { });
   }
 
-  const operateRender = (text: any, record: any, index: any) => {
-    console.log(text, record, index);
+  const operateRender = (_text: any, record: any) => {
     return (
       <ButtonGroup size={'default'}>
         <Button onClick={() => {
@@ -77,6 +77,7 @@ export function Selector() {
           <Column title="QueryType" dataIndex="queryType" key="queryType" />
           <Column title="ClientTags" dataIndex="clientTags" key="clientTags" />
           <Column title="SelectorResourceEstimate" dataIndex="selectorResourceEstimate" key="selectorResourceEstimate" />
+          {access.hasRole(Role.ADMIN) && (
           <Column title={<>
             <ButtonGroup size={'default'}>
               <Button onClick={() => {
@@ -84,7 +85,8 @@ export function Selector() {
                 setVisibleForm(true)
               }}>{Locale.UI.Create}</Button>
             </ButtonGroup>
-          </>} dataIndex="operate" key="operate" fixed="right" render={operateRender} />
+          </>} dataIndex="operate" key="operate" render={operateRender} />
+          )}
         </Table>
       </Card>
       <Modal
@@ -103,7 +105,6 @@ export function Selector() {
           labelWidth={200}
           style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
-            console.log(values)
             if (form === undefined) {
               selectorSaveApi({
                 useSchema: useSchema,

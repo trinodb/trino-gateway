@@ -6,8 +6,10 @@ import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { resourceGroupDeleteApi, resourceGroupSaveApi, resourceGroupUpdateApi, resourceGroupsApi } from "../api/webapp/resource-group";
 import { ResourceGroupData } from "../types/resource-group";
+import { Role, useAccessStore } from "../store";
 
 export function ResourceGroup() {
+  const access = useAccessStore();
   const [resourceGroupData, setResourceGroupData] = useState<ResourceGroupData[]>();
   const [visibleForm, setVisibleForm] = useState(false);
   const [formApi, setFormApi] = useState<FormApi<any>>();
@@ -21,13 +23,11 @@ export function ResourceGroup() {
   const list = () => {
     resourceGroupsApi({})
       .then(data => {
-        console.log(data)
         setResourceGroupData(data);
       }).catch(() => { });
   }
 
-  const operateRender = (text: any, record: any, index: any) => {
-    console.log(text, record, index);
+  const operateRender = (_text: any, record: any) => {
     return (
       <ButtonGroup size={'default'}>
         <Button onClick={() => {
@@ -85,14 +85,16 @@ export function ResourceGroup() {
           <Column title="SoftCpuLimit" dataIndex="softCpuLimit" key="softCpuLimit" />
           <Column title="HardCpuLimit" dataIndex="hardCpuLimit" key="hardCpuLimit" />
           <Column title="Environment" dataIndex="environment" key="environment" />
-          <Column title={<>
-            <ButtonGroup size={'default'}>
-              <Button onClick={() => {
-                setForm(undefined)
-                setVisibleForm(true)
-              }}>{Locale.UI.Create}</Button>
-            </ButtonGroup>
-          </>} dataIndex="operate" key="operate" fixed="right" render={operateRender} />
+          {access.hasRole(Role.ADMIN) && (
+            <Column title={<>
+              <ButtonGroup size={'default'}>
+                <Button onClick={() => {
+                  setForm(undefined)
+                  setVisibleForm(true)
+                }}>{Locale.UI.Create}</Button>
+              </ButtonGroup>
+            </>} dataIndex="operate" key="operate" fixed="right" render={operateRender} />
+          )}
         </Table>
       </Card>
       <Modal
@@ -111,7 +113,6 @@ export function ResourceGroup() {
           labelWidth={200}
           style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
-            console.log(values)
             if (form === undefined) {
               resourceGroupSaveApi({
                 useSchema: useSchema,

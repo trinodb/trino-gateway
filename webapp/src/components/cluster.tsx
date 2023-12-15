@@ -5,9 +5,11 @@ import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from 
 import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
+import { Role, useAccessStore } from "../store";
 
 export function Cluster() {
   const { Text } = Typography;
+  const access = useAccessStore();
   const [backendData, setBackendData] = useState<BackendData[]>();
   const [visibleForm, setVisibleForm] = useState(false);
   const [formApi, setFormApi] = useState<FormApi<any>>();
@@ -21,7 +23,6 @@ export function Cluster() {
   const list = () => {
     backendsApi({})
       .then(data => {
-        console.log(data)
         setBackendData(data);
       }).catch(() => { });
   }
@@ -36,8 +37,7 @@ export function Cluster() {
       <SwitchRender text={text} record={record} index={index} list={list}></SwitchRender>
     );
   }
-  const operateRender = (text: any, record: any, index: any) => {
-    console.log(text, record, index);
+  const operateRender = (_text: any, record: any) => {
     return (
       <ButtonGroup size={'default'}>
         <Button onClick={() => {
@@ -77,7 +77,6 @@ export function Cluster() {
                   }
                 })}
             onFilter={(value, record) => {
-              console.log(value, record, value === record.routingGroup)
               return value === record.routingGroup
             }} />
           <Column title="ProxyTo" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
@@ -85,14 +84,16 @@ export function Cluster() {
           <Column title="Queued" dataIndex="queued" key="queued" />
           <Column title="Running" dataIndex="running" key="running" />
           <Column title="Active" dataIndex="active" key="active" render={switchRender} />
-          <Column title={<>
-            <ButtonGroup size={'default'}>
-              <Button onClick={() => {
-                setForm(undefined)
-                setVisibleForm(true)
-              }}>{Locale.UI.Create}</Button>
-            </ButtonGroup>
-          </>} dataIndex="operate" key="operate" render={operateRender} />
+          {access.hasRole(Role.ADMIN) && (
+            <Column title={<>
+              <ButtonGroup size={'default'}>
+                <Button onClick={() => {
+                  setForm(undefined)
+                  setVisibleForm(true)
+                }}>{Locale.UI.Create}</Button>
+              </ButtonGroup>
+            </>} dataIndex="operate" key="operate" render={operateRender} />
+          )}
         </Table>
       </Card>
       <Modal
@@ -111,7 +112,6 @@ export function Cluster() {
           labelWidth={150}
           style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
-            console.log(values)
             if (form === undefined) {
               backendSaveApi(values)
                 .then(data => {
@@ -184,11 +184,11 @@ const SwitchRender = (props: {
   index: any;
   list: () => void;
 }) => {
+  const access = useAccessStore();
   const [loading, setLoading] = useState(false);
 
-  const handleSwitchChange = (v: any, e: any) => {
+  const handleSwitchChange = (v: any) => {
     setLoading(true);
-    console.log(v, e, loading, props.text, props.record, props.index);
     props.record.active = v
     backendUpdateApi(props.record)
       .then(data => {
@@ -203,6 +203,7 @@ const SwitchRender = (props: {
       loading={loading}
       onChange={handleSwitchChange}
       checked={props.text}
+      disabled={!access.hasRole(Role.ADMIN)}
       aria-label="a switch"
     />
   );

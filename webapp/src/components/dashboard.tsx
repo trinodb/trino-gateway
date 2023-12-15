@@ -15,7 +15,6 @@ export function Dashboard() {
   useEffect(() => {
     distributionApi({})
       .then(data => {
-        console.log(data)
         setDistributionDetail(data);
       }).catch(() => { });
   }, []);
@@ -99,7 +98,6 @@ function LineChart(props: {
         maxMinute = maxMinuteTemp
       }
     })
-    console.log(minMinute, maxMinute)
     const minuteStrings: string[] = [];
     for (let i = minMinute; i <= maxMinute; i++) {
       if ((i % 100) >= 60) {

@@ -3,6 +3,12 @@ import { persist } from "zustand/middleware";
 import { StoreKey } from "../constant";
 import { getInfoApi } from "../api/webapp/login";
 
+export enum Role {
+  ADMIN = "ADMIN",
+  API = "API",
+  USER = "USER",
+}
+
 export interface AccessControlStore {
   token: string;
 
@@ -20,6 +26,7 @@ export interface AccessControlStore {
   updateToken: (_: string) => void;
   isAuthorized: () => boolean;
   getUserInfo: (_?: boolean) => void;
+  hasRole: (role: Role) => boolean;
 }
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
@@ -63,6 +70,9 @@ export const useAccessStore = create<AccessControlStore>()(
           fetchState = 2;
         });
       },
+      hasRole(role: Role) {
+        return get().roles.includes(role);
+      }
     }),
     {
       name: StoreKey.Access,

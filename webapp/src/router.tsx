@@ -48,7 +48,7 @@ export const routers: RouterItems = [
     },
   },
   {
-    itemKey: 'resource_group',
+    itemKey: 'resource-group',
     text: Locale.Menu.Sider.ResourceGroup,
     icon: <IconPopover className={styles.icon} />,
     routeProps: {
