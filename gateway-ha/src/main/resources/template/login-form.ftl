@@ -28,7 +28,7 @@
     <table style="width:100%">
     <tr>
         <td>
-           <h2>Trino Load Balancer</h2>
+           <h2>Trino Gateway</h2>
         </td>
     </tr>
     </table>
