@@ -7,12 +7,13 @@ import {
 } from "react-router-dom";
 import { Login } from './components/login';
 import { RootLayout as Layout } from './components/layout';
-import { routers } from './router';
-import { LocaleProvider } from '@douyinfe/semi-ui';
+import { hasPagePermission, routers } from './router';
+import { Empty, LocaleProvider } from '@douyinfe/semi-ui';
 import { getSemiLang } from './locales';
 import { useAccessStore, useConfigStore } from './store';
 import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
+import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
 
 
 function Screen() {
@@ -23,15 +24,11 @@ function Screen() {
       {access.isAuthorized() ? (
         <Layout>
           <Routes>
-            {routers.flatMap((router) => {
-              if (router.items) {
-                return router.items.map((subRouter) => {
-                  return <Route {...subRouter.routeProps} key={subRouter.itemKey} />
-                })
-              } else {
-                return [<Route {...router.routeProps} key={router.itemKey} />]
-              }
+            {routers.flatMap(router => {
+              return hasPagePermission(router, access) ? [<Route {...router.routeProps} key={router.itemKey} />] : [];
             })}
+            {/* Default page */}
+            <Route path="*" element={<Home />} key={"*"} />
           </Routes>
         </Layout>
       ) : (
@@ -54,6 +51,20 @@ function App() {
         </LocaleProvider >
       </ErrorBoundary>
     </>
+  )
+}
+
+function Home() {
+  const access = useAccessStore();
+  return (
+    <div style={{ margin: '100px' }}>
+      <Empty
+        image={<IllustrationIdle style={{ width: 250, height: 250 }} />}
+        darkModeImage={<IllustrationIdleDark style={{ width: 250, height: 250 }} />}
+        description={`Welcome, ${access.userName} 🌻🌻🌻`}
+        style={{ fontSize: '22px' }}
+      />
+    </div>
   )
 }
 

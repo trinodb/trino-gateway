@@ -27,6 +27,7 @@ export interface AccessControlStore {
   isAuthorized: () => boolean;
   getUserInfo: (_?: boolean) => void;
   hasRole: (role: Role) => boolean;
+  hasPermission: (permission: string | undefined) => boolean;
 }
 
 let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
@@ -72,7 +73,11 @@ export const useAccessStore = create<AccessControlStore>()(
       },
       hasRole(role: Role) {
         return get().roles.includes(role);
-      }
+      },
+      hasPermission(permission: string | undefined) {
+        const permissions = get().permissions
+        return permission == undefined || permissions == null || permissions.length == 0 || permissions.includes(permission);
+      },
     }),
     {
       name: StoreKey.Access,

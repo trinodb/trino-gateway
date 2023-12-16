@@ -102,10 +102,15 @@ public class LoginResource {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response restUserinfo(@Context SecurityContext securityContext) {
+    if (formAuthManager == null) {
+      throw new WebApplicationException("Form authentication is not setup");
+    }
     LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
     String[] roles = principal.getMemberOf().orElse("").split("_");
+    String[] pagePermissions = formAuthManager.processPagePermissions(roles);
     Map<String, Object> resMap = Map.of(
             "roles", roles,
+            "permissions", pagePermissions,
             "userId", principal.getName(),
             "userName", principal.getName()
     );

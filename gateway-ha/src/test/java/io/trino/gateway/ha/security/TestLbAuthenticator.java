@@ -93,7 +93,7 @@ public class TestLbAuthenticator {
         this.put("user2", new UserConfiguration("priv2, priv2", "pass2"));
       }
     };
-    LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers);
+    LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, new HashMap<>());
 
     assertTrue(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
@@ -106,14 +106,14 @@ public class TestLbAuthenticator {
 
   @Test
   public void testNoLdapNoPresetUsers() throws Exception {
-    LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+    LbFormAuthManager authentication = new LbFormAuthManager(null, null,null);
     assertFalse(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
   }
 
   @Test
   public void testWrongLdapConfig() throws Exception {
-    LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+    LbFormAuthManager authentication = new LbFormAuthManager(null, null,null);
     assertFalse(authentication
         .authenticate(new BasicCredentials("user1", "pass1")));
   }
@@ -142,7 +142,7 @@ public class TestLbAuthenticator {
       }
     };
 
-    LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers);
+    LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
     Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
     NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
     String value = cookie.getValue();

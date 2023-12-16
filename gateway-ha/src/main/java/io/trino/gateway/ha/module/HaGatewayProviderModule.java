@@ -97,7 +97,8 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
     if (authenticationConfiguration != null
         && authenticationConfiguration.getForm() != null) {
       return new LbFormAuthManager(authenticationConfiguration.getForm(),
-          configuration.getPresetUsers());
+              configuration.getPresetUsers(),
+              configuration.getPagePermissions());
     }
     return null;
   }

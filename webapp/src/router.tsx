@@ -10,20 +10,24 @@ import { Cluster } from './components/cluster';
 import { History } from './components/history';
 import { Selector } from "./components/selector";
 import { ResourceGroup } from "./components/resource-group";
+import { AccessControlStore, Role } from "./store";
 
 
 export interface SubItemItem extends NavItemPropsWithItems {
   routeProps: RouteProps,
+  roles: Role[]
 }
 
 export interface SubRouterItem extends SubNavProps {
   items: (SubItemItem)[],
   routeProps?: RouteProps,
+  roles: Role[]
 }
 
 export interface RouterItem extends NavItemProps {
   items?: (SubItemItem)[],
   routeProps: RouteProps,
+  roles: Role[]
 }
 
 export type RouterItems = (RouterItem | SubRouterItem)[]
@@ -33,6 +37,8 @@ export const routers: RouterItems = [
     itemKey: '',
     text: Locale.Menu.Sider.Dashboard,
     icon: <IconIntro className={styles.icon} />,
+    // Role.****
+    roles: [],
     routeProps: {
       path: '/',
       element: < Dashboard />
@@ -42,6 +48,7 @@ export const routers: RouterItems = [
     itemKey: 'cluster',
     text: Locale.Menu.Sider.Cluster,
     icon: <IconToast className={styles.icon} />,
+    roles: [],
     routeProps: {
       path: '/cluster',
       element: < Cluster />
@@ -51,6 +58,7 @@ export const routers: RouterItems = [
     itemKey: 'resource-group',
     text: Locale.Menu.Sider.ResourceGroup,
     icon: <IconPopover className={styles.icon} />,
+    roles: [],
     routeProps: {
       path: '/resource-group',
       element: < ResourceGroup />
@@ -60,6 +68,7 @@ export const routers: RouterItems = [
     itemKey: 'selector',
     text: Locale.Menu.Sider.Selector,
     icon: <IconScrollList className={styles.icon} />,
+    roles: [],
     routeProps: {
       path: '/selector',
       element: < Selector />
@@ -69,9 +78,37 @@ export const routers: RouterItems = [
     itemKey: 'history',
     text: Locale.Menu.Sider.History,
     icon: <IconHeart className={styles.icon} />,
+    roles: [],
     routeProps: {
       path: '/history',
       element: < History />
     },
   }
 ]
+
+export function hasPagePermission(router: RouterItem | SubRouterItem, access: AccessControlStore) {
+  let parentHasPermission = true;
+  if (router.items == undefined) {
+    // First level menu
+    if (router.roles.length != 0) {
+      parentHasPermission = router.roles.some(role => access.hasRole(role));
+    }
+    if (parentHasPermission && router.itemKey != undefined) {
+      parentHasPermission = access.hasPermission(router.itemKey.toString());
+    }
+  } else {
+    // Second level menu
+    router.items = router.items.filter(item => {
+      let chilnHasPermission = true;
+      if (item.roles.length != 0) {
+        chilnHasPermission = item.roles.some(role => access.hasRole(role));
+      }
+      if (chilnHasPermission && item.itemKey != undefined) {
+        chilnHasPermission = access.hasPermission(item.itemKey.toString());
+      }
+      return chilnHasPermission;
+    });
+    parentHasPermission = router.items.length != 0;
+  }
+  return parentHasPermission;
+}

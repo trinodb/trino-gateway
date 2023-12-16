@@ -3,7 +3,7 @@ import { IconGithubLogo, IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon
 import styles from './layout.module.scss';
 import { useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
-import { routers } from '../router';
+import { hasPagePermission, routers } from '../router';
 import { Theme, useAccessStore, useConfigStore } from '../store';
 import { logoutApi } from '../api/webapp/login';
 import Locale, { ALL_LANG_OPTIONS, AllLangs, Lang, changeLang, getLang } from "../locales";
@@ -131,7 +131,7 @@ export const RootLayout = (props: {
                   return itemElement
                 }
               }}
-              items={routers}
+              items={routers.filter(router => hasPagePermission(router, access))}
             >
               <Nav.Footer style={{ padding: 0 }}>
                 {collapsed ? (

@@ -19,7 +19,8 @@ public class HaGatewayConfiguration extends AppConfiguration {
   private RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
   private AuthenticationConfiguration authentication;
   private AuthorizationConfiguration authorization;
-  private Map<String, UserConfiguration> presetUsers = new HashMap();
+  private Map<String, UserConfiguration> presetUsers = new HashMap<>();
+  private Map<String, String> pagePermissions = new HashMap<>();
   private BackendStateConfiguration backendState;
   private ClusterStatsConfiguration clusterStatsConfiguration;
   private List<String> extraWhitelistPaths = new ArrayList<>();

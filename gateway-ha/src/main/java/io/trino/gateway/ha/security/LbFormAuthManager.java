@@ -13,6 +13,7 @@ import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.R;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -26,13 +27,16 @@ public class LbFormAuthManager {
   private final FormAuthConfiguration configuration;
   private final LbKeyProvider lbKeyProvider;
   Map<String, UserConfiguration> presetUsers;
+  Map<String, String> pagePermissions;
   private LdapConfiguration ldapConfiguration;
   private LbLdapClient lbLdapClient;
 
   public LbFormAuthManager(FormAuthConfiguration configuration,
-                           Map<String, UserConfiguration> presetUsers) {
+                           Map<String, UserConfiguration> presetUsers,
+                           Map<String, String> pagePermissions) {
     this.configuration = configuration;
     this.presetUsers = presetUsers;
+    this.pagePermissions = pagePermissions;
 
     if (configuration != null) {
       this.lbKeyProvider = new LbKeyProvider(configuration
@@ -139,5 +143,17 @@ public class LbFormAuthManager {
     }
 
     return false;
+  }
+
+  public String[] processPagePermissions(String[] roles) {
+    for (String role : roles) {
+      String value = pagePermissions.get(role);
+      if (value == null) {
+        return new String[0];
+      }
+    }
+    return Arrays.stream(roles)
+            .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
+            .distinct().toArray(String[]::new);
   }
 }
