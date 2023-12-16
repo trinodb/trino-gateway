@@ -1,7 +1,7 @@
 <table style="width:75%">
 <tr>
     <td>
-       <h2>Trino Load Balancer</h2>
+       <h2>Trino Gateway</h2>
 	</td>
     <td>User: ${displayName}</td>
     <td><a href="/logout">log out</a></td>
