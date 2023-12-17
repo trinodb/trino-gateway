@@ -1,0 +1,58 @@
+routingRules:
+  rulesEngineEnabled: False
+  # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
+
+requestRouter:
+  port: 8080
+  name: trinoRouter
+  historySize: 1000
+  requestBufferSize: 8192
+
+dataStore:
+  jdbcUrl: jdbc:postgresql://postgres:5432/trino_gateway_db
+  user: trino_gateway_db_admin
+  password: P0stG&es
+  driver: org.postgresql.Driver
+  queryHistoryHoursRetention: 24
+
+backendState:
+  username: lb_query
+  ssl: false
+
+clusterStatsConfiguration:
+  useApi: true
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 8090
+  adminConnectors:
+    - type: http
+      port: 8091
+
+# This can be adjusted based on the coordinator state
+monitor:
+  connectionTimeout: 15
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.GatewayManagedApp
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
+
+# Logging settings.
+logging:
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: INFO
+
+  # Logger-specific levels.
+  loggers:
+    io.trino: DEBUG
+
+  appenders:
+    - type: console
+      filterFactories:
+        - type: Log-filter-factory
