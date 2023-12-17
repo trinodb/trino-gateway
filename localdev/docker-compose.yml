@@ -1,5 +1,9 @@
 version: "3.4"
 services:
+  gateway:
+    extends:
+      file: gateway-compose.yml
+      service: gateway
   mysqldb:
     environment:
       - MYSQL_ROOT_PASSWORD=root123
@@ -22,33 +26,14 @@ services:
         source: ./add_backends.sql
         type: bind
   postgres:
-    image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres}
-    restart: always
-    environment:
-      - PGPORT=5432
-      - POSTGRES_PASSWORD=P0stG&es
-      - POSTGRES_DB=trino_gateway_db
-      - POSTGRES_USER=trino_gateway_db_admin
-    ports:
-      - "5432:5432"
-    healthcheck:
-      # Need user and database name to check PostgreSQL server status
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    volumes:
-      - target: /etc/postgresql/gateway-ha-persistence-postgres.sql
-        source: ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql
-        type: bind
-      - target: /etc/postgresql/add_backends_postgres.sql
-        source: ./add_backends_postgres.sql
-        type: bind
+    extends:
+      file: postgres-backend-compose.yml
+      service: postgres
   trino-1:
-    image: trinodb/trino:395
+    image: trinodb/trino:434
     ports:
       - "8081:8080"
   trino-2:
-    image: trinodb/trino:395
+    image: trinodb/trino:434
     ports:
       - "8082:8080"
