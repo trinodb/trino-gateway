@@ -1,0 +1,20 @@
+version: "3.4"
+services:
+  gateway:
+    extends:
+      file: ./gateway-compose.yml
+      service: gateway
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+  postgres:
+    extends:
+      file: ./postgres-backend-compose.yml
+      service: postgres
+    healthcheck:
+      interval: 1s
+      timeout: 1s
+      retries: 60
+      start_period: 10s

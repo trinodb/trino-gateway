@@ -37,6 +37,8 @@ or execute the following command:
 
 ### Build and run
 
+#### Locally
+
 This project requires Java 17. Note that higher version of Java have not been
 verified and may run into unexpected issues.
 
@@ -50,6 +52,27 @@ db information.
 cd gateway-ha/target/
 java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
 ```
+
+#### In Docker
+
+From the root of the directory run the following commands to build the jar, docker image, and then spin it up:
+
+```
+./mvnw clean install
+
+# Note - Feel free to change the architecture and version being targeted
+# Without specifying a release version with '-r' it'll default to the current snapshot
+PLATFORM="amd64"
+bash docker/build.sh -a ${PLATFORM}
+
+# This grabs the version from the pom but you can manually specify it instead
+TRINO_GATEWAY_VERSION=$("./mvnw" -f "pom.xml" --quiet help:evaluate -Dexpression=project.version -DforceStdout)
+TRINO_GATEWAY_IMAGE="trino-gateway:${TRINO_GATEWAY_VERSION}-${PLATFORM}" docker compose -f docker/minimal-compose.yml up -d
+```
+
+The [config file found here](/gateway-ha/gateway-ha-config-docker.yml) is mounted into the container.
+
+#### Common Run Failures
 
 If you encounter a `Failed to connect to JDBC URL` error with the MySQL backend,
 this may be due to newer versions of Java disabling certain algorithms when
