@@ -8,15 +8,8 @@
   z-index: 99;
 
   .navigationHeaderLogo {
-    align-items: flex-start;
-    column-gap: 0;
-    display: inline-flex;
-    flex-shrink: 0;
-
-    .semiIconsSemiLogo {
-      font-size: 36px;
-      color: var(--semi-color-text-0);
-    }
+    height: 50px;
+    width: 50px;
   }
 
   .dIV {

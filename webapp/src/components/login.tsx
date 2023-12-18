@@ -31,11 +31,11 @@ export function Login() {
       <div className={styles.login}>
         <div className={styles.component66}>
           <img
-            src="https://lf9-static.semi.design/obj/semi-tos/template/caee33dd-322d-4e91-a4ed-eea1b94605bb.png"
+            src="/logo.svg"
             className={styles.logo}
           />
           <div className={styles.header}>
-            <p className={styles.title}>{Locale.Auth.LoginTitle}</p>
+            {/* <p className={styles.title}>{Locale.Auth.LoginTitle}</p> */}
             <p className={styles.text}>
               <span className={styles.text}>{Locale.Auth.tips.tip1}</span>
               <span className={styles.text1}>{Locale.Auth.tips.tip2}</span>

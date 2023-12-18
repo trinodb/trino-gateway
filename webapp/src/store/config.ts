@@ -9,7 +9,7 @@ export enum Theme {
 }
 
 export const DEFAULT_CONFIG = {
-  avatar: "https://sf6-cdn-tos.douyinstatic.com/obj/eden-cn/ptlz_zlp/ljhwZthlaukjlkulzlp/root-web-sites/avatarDemo.jpeg",
+  avatar: "/logo.svg",
   theme: Theme.Auto as Theme,
 
   fontSize: 14,

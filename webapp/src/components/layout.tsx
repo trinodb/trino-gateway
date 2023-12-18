@@ -8,8 +8,6 @@ import { Theme, useAccessStore, useConfigStore } from '../store';
 import { logoutApi } from '../api/webapp/login';
 import Locale, { ALL_LANG_OPTIONS, AllLangs, Lang, changeLang, getLang } from "../locales";
 
-// import LogoIcon from "../assets/logo.svg?react";
-
 
 export const RootLayout = (props: {
   children: React.ReactNode
@@ -47,10 +45,10 @@ export const RootLayout = (props: {
             mode="horizontal"
             header={{
               logo: (
-                <div className={styles.navigationHeaderLogo}>
-                  {/* <LogoIcon /> */}
-                  {/* <Icon svg={<LogoIcon />} className={styles.semiIconsSemiLogo} /> */}
-                </div>
+                <img
+                  src="/logo.svg"
+                  className={styles.navigationHeaderLogo}
+                />
               ),
               text: "Trino Gateway",
             }}

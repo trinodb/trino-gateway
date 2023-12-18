@@ -37,7 +37,7 @@ const zh_CN = {
     LoginTitle: "欢迎回来",
     tips: {
       tip1: "登录",
-      tip2: " Semi Design ",
+      tip2: " Trino Gateway ",
       tip3: "账户"
     },
     RegisterTitle: "注册账号",
