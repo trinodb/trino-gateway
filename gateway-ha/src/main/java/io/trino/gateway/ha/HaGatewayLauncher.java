@@ -16,7 +16,8 @@ public class HaGatewayLauncher extends BaseApp<HaGatewayConfiguration> {
   public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap) {
     super.initialize(bootstrap);
     bootstrap.addBundle(new ViewBundle<>());
-    bootstrap.addBundle(new AssetsBundle("/assets", "/assets", null, "assets"));
+    bootstrap.addBundle(new AssetsBundle("/static/assets", "/assets", null, "assets"));
+    bootstrap.addBundle(new AssetsBundle("/static", "/logo.svg","logo.svg", "logo.svg"));
   }
 
   public static void main(String[] args) throws Exception {

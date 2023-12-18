@@ -56,18 +56,6 @@ public class LbFormAuthManager {
     return "sub";
   }
 
-  public Response processLoginForm(String username, String password) {
-    if (authenticate(new BasicCredentials(username, password))) {
-      String token = getSelfSignedToken(username);
-      return Response.status(302).location(URI.create("/"))
-          .cookie(SessionCookie.getTokenCookie(token))
-          .build();
-    }
-
-    return Response.status(302).location(URI.create("/"))
-        .build();
-  }
-
   /**
    * Login REST API
    * @param loginForm {@link RestLoginRequest}

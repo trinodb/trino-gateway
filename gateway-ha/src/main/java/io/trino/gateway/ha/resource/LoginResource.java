@@ -52,39 +52,6 @@ public class LoginResource {
   }
 
   @POST
-  @Path("login_form")
-  public Response processLoginForm(@FormParam("username") String userName,
-                                   @FormParam("password") String password) {
-    if (formAuthManager == null) {
-      throw new WebApplicationException("Form authentication is not setup");
-    }
-    return formAuthManager.processLoginForm(userName, password);
-  }
-
-  @GET
-  @Path("login")
-  @Produces(MediaType.TEXT_HTML)
-  public LoginResource.LoginForm loginFormUi() {
-    if (formAuthManager == null) {
-      throw new WebApplicationException("Form authentication is not setup");
-    }
-
-    return new LoginResource.LoginForm("/template/login-form.ftl");
-  }
-
-  @Path("logout")
-  @GET
-  public Response logOut() {
-    return SessionCookie.logOut();
-  }
-
-  public static class LoginForm extends View {
-    protected LoginForm(String templateName) {
-      super(templateName, Charset.defaultCharset());
-    }
-  }
-
-  @POST
   @Path("/rest/login")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)

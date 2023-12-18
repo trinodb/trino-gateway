@@ -73,10 +73,6 @@
             <artifactId>dropwizard-views</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views-freemarker</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
             <version>${dep.guice.version}</version>

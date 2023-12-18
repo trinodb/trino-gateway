@@ -47,12 +47,6 @@ public class EntityEditorResource {
   private RoutingManager routingManager;
 
   @GET
-  @Produces(MediaType.TEXT_HTML)
-  public EntityView entityUi(@Context SecurityContext securityContext) {
-    return new EntityView("/template/entity-view.ftl", securityContext);
-  }
-
-  @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_JSON)
   public List<EntityType> getAllEntityTypes() {
