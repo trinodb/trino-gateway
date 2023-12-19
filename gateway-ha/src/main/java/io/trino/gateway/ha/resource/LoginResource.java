@@ -1,13 +1,11 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
-import io.dropwizard.views.common.View;
 import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbPrincipal;
-import io.trino.gateway.ha.security.SessionCookie;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -17,7 +15,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
-import java.nio.charset.Charset;
 import java.util.Map;
 
 
@@ -33,13 +30,16 @@ public class LoginResource {
   @Nullable
   private LbFormAuthManager formAuthManager;
 
+  @POST
   @Path("sso")
-  @GET
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
   public Response login() {
     if (oauthManager == null) {
       throw new WebApplicationException("OAuth configuration is not setup");
     }
-    return oauthManager.getAuthorizationCode();
+    String authorizationUrl = oauthManager.getAuthorizationCode();
+    return Response.ok(R.ok("Ok", authorizationUrl)).build();
   }
 
   @Path("oidc/callback")
@@ -52,7 +52,7 @@ public class LoginResource {
   }
 
   @POST
-  @Path("/rest/login")
+  @Path("login")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response processRESTLogin(RestLoginRequest loginForm) {
@@ -64,17 +64,29 @@ public class LoginResource {
   }
 
   @POST
+  @Path("logout")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response processRESTLogin() {
+    return Response.ok(R.ok()).build();
+  }
+
+  @POST
   @RolesAllowed({"USER"})
-  @Path("/rest/userinfo")
+  @Path("userinfo")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response restUserinfo(@Context SecurityContext securityContext) {
-    if (formAuthManager == null) {
-      throw new WebApplicationException("Form authentication is not setup");
-    }
     LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
     String[] roles = principal.getMemberOf().orElse("").split("_");
-    String[] pagePermissions = formAuthManager.processPagePermissions(roles);
+    String[] pagePermissions;
+    if (formAuthManager != null) {
+      pagePermissions = formAuthManager.processPagePermissions(roles);
+    } else if (oauthManager != null) {
+      pagePermissions = oauthManager.processPagePermissions(roles);
+    } else {
+      throw new WebApplicationException("Have to setup authentication!");
+    }
     Map<String, Object> resMap = Map.of(
             "roles", roles,
             "permissions", pagePermissions,
@@ -84,5 +96,20 @@ public class LoginResource {
     return Response.ok(R.ok(resMap)).build();
   }
 
+  @POST
+  @Path("loginType")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response loginType() {
+    String loginType;
+    if (formAuthManager != null) {
+      loginType = "form";
+    } else if (oauthManager != null) {
+      loginType = "oauth";
+    } else {
+      throw new WebApplicationException("Have to setup authentication!");
+    }
+    return Response.ok(R.ok("Ok", loginType)).build();
+  }
 
 }

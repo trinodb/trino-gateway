@@ -14,11 +14,19 @@ import { useAccessStore, useConfigStore } from './store';
 import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
+import Cookies from 'js-cookie';
 
 
 function Screen() {
   useSwitchTheme()
   const access = useAccessStore();
+  useEffect(() => {
+    const token = Cookies.get('token');
+    if (token){
+      access.updateToken(token);
+      Cookies.remove('token');
+    }
+  },[])
   return (
     <>
       {access.isAuthorized() ? (

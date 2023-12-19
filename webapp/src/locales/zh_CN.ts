@@ -50,6 +50,7 @@ const zh_CN = {
     Code: "验证码",
     Send: "发送",
     Login: "登录",
+    OAuth2: "外部身份验证登录",
     Register: "注册",
     Later: "稍后再说",
     SendSuccess: "发送成功",

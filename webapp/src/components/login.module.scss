@@ -92,5 +92,22 @@
         width: 440px;
       }
     }
+
+    .oauth {
+      align-items: center;
+      justify-content: center;
+      display: flex;
+
+      .button {
+        height: 40px;
+        width: 440px;
+      }
+    }
+
+    .undefined {
+      align-items: center;
+      justify-content: center;
+      display: flex;
+    }
   }
 }

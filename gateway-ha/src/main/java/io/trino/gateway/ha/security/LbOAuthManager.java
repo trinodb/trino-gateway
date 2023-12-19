@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
@@ -31,9 +32,11 @@ public class LbOAuthManager {
    * Cookie key to pass the token.
    */
   private final OAuthConfiguration oauthConfig;
+  private final Map<String, String> pagePermissions;
 
-  public LbOAuthManager(OAuthConfiguration configuration) {
+  public LbOAuthManager(OAuthConfiguration configuration, Map<String, String> pagePermissions) {
     this.oauthConfig = configuration;
+    this.pagePermissions = pagePermissions;
   }
 
   public String getUserIdField() {
@@ -53,6 +56,7 @@ public class LbOAuthManager {
     String clientId = oauthConfig.getClientId();
     String clientSecret = oauthConfig.getClientSecret();
     String redirectUri = oauthConfig.getRedirectUrl();
+    String redirectWebUrl = oauthConfig.getRedirectWebUrl();
     Client oauthClient = ClientBuilder.newBuilder().build();
 
     Form form = new Form().param("grant_type", "authorization_code")
@@ -78,9 +82,9 @@ public class LbOAuthManager {
     OidcTokens tokens = tokenResponse.readEntity(OidcTokens.class);
 
     return Response.status(302)
-        .location(URI.create(redirectLocation))
-        .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
-        .build();
+            .location(URI.create(redirectWebUrl == null ? redirectLocation : redirectWebUrl))
+            .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
+            .build();
   }
 
   /**
@@ -88,18 +92,14 @@ public class LbOAuthManager {
    *
    * @return redirect response to the authorization provider
    */
-  public Response getAuthorizationCode() {
+  public String getAuthorizationCode() {
     String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
     String clientId = oauthConfig.getClientId();
     String redirectUrl = oauthConfig.getRedirectUrl();
     String scopes = String.join("+", oauthConfig.getScopes());
-    String url = String.format(
+    return String.format(
         "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
         authorizationEndpoint, clientId, redirectUrl, scopes);
-
-    return Response.status(302)
-        .location(URI.create(url))
-        .build();
   }
 
   /**
@@ -128,6 +128,18 @@ public class LbOAuthManager {
       log.error("Could not validate token or get claims from it.", exc);
     }
     return Optional.empty();
+  }
+
+  public String[] processPagePermissions(String[] roles) {
+    for (String role : roles) {
+      String value = pagePermissions.get(role);
+      if (value == null) {
+        return new String[0];
+      }
+    }
+    return Arrays.stream(roles)
+            .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
+            .distinct().toArray(String[]::new);
   }
 
   @Data

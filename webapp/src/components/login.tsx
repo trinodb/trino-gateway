@@ -1,9 +1,9 @@
-import { Form, Button, Toast } from '@douyinfe/semi-ui';
+import { Form, Button, Toast, Spin } from '@douyinfe/semi-ui';
 import styles from './login.module.scss';
 import Locale from "../locales";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormApi } from '@douyinfe/semi-ui/lib/es/form';
-import { loginApi } from '../api/webapp/login';
+import { loginFormApi, loginOAuthApi, loginTypeApi } from '../api/webapp/login';
 import { useAccessStore } from '../store';
 
 export function Login() {
@@ -14,16 +14,30 @@ export function Login() {
 
   const [loginBo, setLoginBo] = useState<Record<string, any>>({});
 
-  const submit = () => {
+  const [loginType, setLoginType] = useState<'form' | 'oauth'>();
+
+  useEffect(() => {
+    loginTypeApi().then(data => {
+      setLoginType(data)
+    }).catch(() => { });
+  }, [])
+
+  const submitForm = () => {
     if (formApi) {
       formApi.validate(['username', 'password'])
         .then(() => {
-          loginApi(loginBo).then(data => {
+          loginFormApi(loginBo).then(data => {
             access.updateToken(data.token);
             Toast.success(Locale.Auth.LoginSuccess);
           }).catch(() => { });
         }).catch(() => { });
     }
+  }
+
+  const submitOAuth = () => {
+    loginOAuthApi({}).then(data => {
+      window.location.href = data
+    }).catch(() => { });
   }
 
   return (
@@ -43,37 +57,51 @@ export function Login() {
             </p>
           </div>
         </div>
-        <div className={styles.form}>
-          <Form className={styles.inputs} getFormApi={setFormApi} onValueChange={values => setLoginBo(values)}>
-            <Form.Input
-              label={{ text: Locale.Auth.Username }}
-              field="username"
-              placeholder={Locale.Auth.UsernameTip}
-              style={{ width: "100%" }}
-              fieldStyle={{ alignSelf: "stretch", padding: 0 }}
-              rules={[
-                { required: true, message: 'required error' },
-                { type: 'string', message: 'type error' },
-                // { validator: (rule, value) => value === 'admin', message: 'should be admin' },
-              ]}
-            />
-            <Form.Input
-              label={{ text: Locale.Auth.Password }}
-              field="password"
-              type="password"
-              placeholder={Locale.Auth.PasswordTip}
-              style={{ width: "100%" }}
-              fieldStyle={{ alignSelf: "stretch", padding: 0 }}
-              rules={[
-                { required: true, message: 'required error' },
-                { type: 'string', message: 'type error' },
-              ]}
-            />
-          </Form>
-          <Button theme="solid" className={styles.button} onClick={submit}>
-            {Locale.Auth.Login}
-          </Button>
-        </div>
+        {loginType == 'form' && (
+          <div className={styles.form}>
+            <Form className={styles.inputs} getFormApi={setFormApi} onValueChange={values => setLoginBo(values)}>
+              <Form.Input
+                label={{ text: Locale.Auth.Username }}
+                field="username"
+                placeholder={Locale.Auth.UsernameTip}
+                style={{ width: "100%" }}
+                fieldStyle={{ alignSelf: "stretch", padding: 0 }}
+                rules={[
+                  { required: true, message: 'required error' },
+                  { type: 'string', message: 'type error' },
+                  // { validator: (rule, value) => value === 'admin', message: 'should be admin' },
+                ]}
+              />
+              <Form.Input
+                label={{ text: Locale.Auth.Password }}
+                field="password"
+                type="password"
+                placeholder={Locale.Auth.PasswordTip}
+                style={{ width: "100%" }}
+                fieldStyle={{ alignSelf: "stretch", padding: 0 }}
+                rules={[
+                  { required: true, message: 'required error' },
+                  { type: 'string', message: 'type error' },
+                ]}
+              />
+            </Form>
+            <Button theme="solid" className={styles.button} onClick={submitForm}>
+              {Locale.Auth.Login}
+            </Button>
+          </div>
+        )}
+        {loginType == 'oauth' && (
+          <div className={styles.oauth}>
+            <Button theme="solid" className={styles.button} onClick={submitOAuth}>
+              {Locale.Auth.OAuth2}
+            </Button>
+          </div>
+        )}
+        {loginType == undefined && (
+          <div className={styles.undefined}>
+            <Spin size="large" />
+          </div>
+        )}
       </div>
     </div>
   );

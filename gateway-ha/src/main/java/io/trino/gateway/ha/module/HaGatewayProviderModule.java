@@ -87,7 +87,7 @@ public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, E
     AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
     if (authenticationConfiguration != null
         && authenticationConfiguration.getOauth() != null) {
-      return new LbOAuthManager(authenticationConfiguration.getOauth());
+      return new LbOAuthManager(authenticationConfiguration.getOauth(), configuration.getPagePermissions());
     }
     return null;
   }
