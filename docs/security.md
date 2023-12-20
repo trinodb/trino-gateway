@@ -151,4 +151,8 @@ The LDAP config file should have the following contents:
   ldapAdminPassword: <>
   ldapTrustStorePath: <for a secure ldap connectivity>
   ldapTrustStorePassword: '<for a secure ldap connectivity>'
+  poolMaxIdle: 8
+  poolMaxTotal: 8
+  poolMinIdle: 0
+  poolTestOnBorrow: true
 ```

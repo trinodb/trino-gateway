@@ -24,6 +24,10 @@ public class LdapConfiguration {
   private String ldapAdminPassword;
   private String ldapTrustStorePath;
   private String ldapTrustStorePassword;
+  private Integer poolMaxIdle;
+  private Integer poolMaxTotal;
+  private Integer poolMinIdle;
+  private boolean poolTestOnBorrow;
 
   public static LdapConfiguration load(String path) {
     LdapConfiguration configuration = null;

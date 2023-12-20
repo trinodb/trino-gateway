@@ -10,3 +10,7 @@ ldapGroupMemberAttribute: 'memberOf'
 ldapAdminPassword: 'passit'
 ldapTrustStorePath: '/etc/ssl/certs/java/cacerts'
 ldapTrustStorePassword: 'secret'
+poolMaxIdle: 8
+poolMaxTotal: 8
+poolMinIdle: 0
+poolTestOnBorrow: true
