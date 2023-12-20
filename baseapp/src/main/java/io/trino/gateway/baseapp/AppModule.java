@@ -5,10 +5,9 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.server.SimpleServerFactory;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
-import java.util.stream.Stream;
-import lombok.Getter;
 
-@Getter
+import java.util.stream.Stream;
+
 public abstract class AppModule<T extends AppConfiguration, E> extends AbstractModule {
   private final T configuration;
   private final E environment;
@@ -35,5 +34,15 @@ public abstract class AppModule<T extends AppConfiguration, E> extends AbstractM
             .mapToInt(HttpConnectorFactory::getPort)
             .findFirst()
             .orElseThrow(IllegalStateException::new);
+  }
+
+  public T getConfiguration()
+  {
+    return this.configuration;
+  }
+
+  public E getEnvironment()
+  {
+    return this.environment;
   }
 }

@@ -3,7 +3,6 @@ package io.trino.gateway.proxyserver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
@@ -12,10 +11,11 @@ import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
-@Slf4j
 public class ProxyServletImpl extends ProxyServlet.Transparent {
+  private static final Logger log = LoggerFactory.getLogger(ProxyServletImpl.class);
   private ProxyHandler proxyHandler;
   private ProxyServerConfiguration serverConfig;
 
@@ -44,7 +44,7 @@ public class ProxyServletImpl extends ProxyServlet.Transparent {
 
     ClientConnector clientConnector = new ClientConnector();
     clientConnector.setSslContextFactory(sslFactory);
-    
+
     HttpClient httpClient = new HttpClient(new HttpClientTransportDynamic(clientConnector));
     httpClient.setMaxConnectionsPerDestination(10000);
     httpClient.setConnectTimeout(TimeUnit.SECONDS.toMillis(60));

@@ -1,0 +1,36 @@
+requestRouter:
+  #SQL clients connect to the request port
+  port: 9080
+  name: testTrinoRouter
+  historySize: 1000
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 9081
+  adminConnectors:
+    - type: http
+      port: 9082
+
+dataStore:
+  #This stores the URLs of backend Trino servers and query history
+  jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+  user: postgres
+  password: mysecretpassword
+  driver: org.postgresql.Driver
+
+clusterStatsConfiguration:
+  useApi: true
+
+backendState:
+  username: gateway
+  ssl: false
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.GatewayManagedApp
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
