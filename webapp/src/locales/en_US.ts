@@ -53,6 +53,7 @@ const en_US: LocaleType = {
     Register: "Sign up",
     Login: "Sign in",
     OAuth2: "Sign in with External Authentication",
+    NoneAuth: "Please set up authentication first!",
     Later: "Later",
     SendSuccess: "Send Success",
     LoginSuccess: "Login Success",

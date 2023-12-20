@@ -1,4 +1,4 @@
-import { Form, Button, Toast, Spin } from '@douyinfe/semi-ui';
+import { Form, Button, Toast, Spin, Typography } from '@douyinfe/semi-ui';
 import styles from './login.module.scss';
 import Locale from "../locales";
 import { useEffect, useState } from 'react';
@@ -7,14 +7,15 @@ import { loginFormApi, loginOAuthApi, loginTypeApi } from '../api/webapp/login';
 import { useAccessStore } from '../store';
 
 export function Login() {
-
+  const { Title } = Typography;
+  
   const access = useAccessStore();
 
   const [formApi, setFormApi] = useState<FormApi<any>>();
 
   const [loginBo, setLoginBo] = useState<Record<string, any>>({});
 
-  const [loginType, setLoginType] = useState<'form' | 'oauth'>();
+  const [loginType, setLoginType] = useState<'form' | 'oauth' | 'none'>();
 
   useEffect(() => {
     loginTypeApi().then(data => {
@@ -95,6 +96,11 @@ export function Login() {
             <Button theme="solid" className={styles.button} onClick={submitOAuth}>
               {Locale.Auth.OAuth2}
             </Button>
+          </div>
+        )}
+        {loginType == 'none' && (
+          <div className={styles.oauth}>
+            <Title heading={3}>{Locale.Auth.NoneAuth}</Title>
           </div>
         )}
         {loginType == undefined && (

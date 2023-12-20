@@ -133,12 +133,12 @@ export const RootLayout = (props: {
             >
               <Nav.Footer style={{ padding: 0 }}>
                 {collapsed ? (
-                  <div className={styles.collapsed} style={{ justifyContent: 'center' }}>
-                    <IconDoubleChevronRight onClick={() => setCollapsed(false)} />
+                  <div className={styles.collapsed} style={{ justifyContent: 'center' }} onClick={() => setCollapsed(false)}>
+                    <IconDoubleChevronRight />
                   </div>
                 ) : (
-                  <div className={styles.collapsed} style={{ justifyContent: 'flex-end' }}>
-                    <IconDoubleChevronLeft onClick={() => setCollapsed(true)} style={{ paddingRight: '12px' }} />
+                  <div className={styles.collapsed} style={{ justifyContent: 'flex-end' }} onClick={() => setCollapsed(true)}>
+                    <IconDoubleChevronLeft style={{ paddingRight: '12px' }} />
                   </div>
                 )}
               </Nav.Footer>

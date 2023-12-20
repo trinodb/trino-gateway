@@ -14,8 +14,6 @@
     "@douyinfe/semi-icons-lab": "^2.47.1",
     "@douyinfe/semi-illustrations": "^2.47.1",
     "@douyinfe/semi-ui": "^2.47.1",
-    "@types/echarts": "^4.9.22",
-    "@types/js-cookie": "^3.0.6",
     "echarts": "^5.4.3",
     "js-cookie": "^3.0.5",
     "moment": "^2.29.4",
@@ -36,6 +34,8 @@
     "eslint-plugin-react-refresh": "^0.4.4",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
-    "vite-plugin-svgr": "^4.2.0"
+    "vite-plugin-svgr": "^4.2.0",
+    "@types/echarts": "^4.9.22",
+    "@types/js-cookie": "^3.0.6"
   }
 }

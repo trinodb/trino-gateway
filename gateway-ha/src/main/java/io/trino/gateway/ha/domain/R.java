@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.domain;
 
+import jakarta.ws.rs.core.Response;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -67,6 +69,10 @@ public class R<T> implements Serializable {
 
   public static <T> R<T> fail(int code, String msg) {
     return restResult(null, code, msg);
+  }
+
+  public static <T> R<T> fail(Response.Status status) {
+    return restResult(null, status.getStatusCode(), status.getReasonPhrase());
   }
 
   /**

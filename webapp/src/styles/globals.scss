@@ -23,7 +23,15 @@
 }
 
 :root {
+  @include light;
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark;
+  }
 }
 
 body {

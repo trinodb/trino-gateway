@@ -107,7 +107,7 @@ public class LoginResource {
     } else if (oauthManager != null) {
       loginType = "oauth";
     } else {
-      throw new WebApplicationException("Have to setup authentication!");
+      loginType = "none";
     }
     return Response.ok(R.ok("Ok", loginType)).build();
   }

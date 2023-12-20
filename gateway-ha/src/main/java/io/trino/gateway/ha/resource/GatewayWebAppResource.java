@@ -9,19 +9,21 @@ import io.trino.gateway.ha.domain.request.*;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.router.*;
+import io.trino.gateway.ha.security.LbPrincipal;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Path("/webapp")
@@ -64,8 +66,13 @@ public class GatewayWebAppResource {
   @RolesAllowed({"USER"})
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  @Path("/getQueryHistory")
-  public Response getQueryHistory(QueryHistoryRequest query) {
+  @Path("/findQueryHistory")
+  public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext) {
+    LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
+    String[] roles = principal.getMemberOf().orElse("").split("_");
+    if (!Arrays.asList(roles).contains("ADMIN")) {
+      query.setUser(principal.getName());
+    }
     TableData<?> queryHistory = queryHistoryManager.findQueryHistory(query);
     return Response.ok(R.ok(queryHistory)).build();
   }
@@ -98,8 +105,8 @@ public class GatewayWebAppResource {
     long totalQueryCount = distributionChart.stream().collect(Collectors.summarizingLong(DistributionResponse.DistributionChart::getQueryCount)).getSum();
     DistributionResponse distributionResponse = new DistributionResponse();
     distributionResponse.setTotalBackendCount(allBackends.size());
-    distributionResponse.setOfflineBackendCount(activeMap.get(false).size());
-    distributionResponse.setOnlineBackendCount(activeMap.get(true).size());
+    distributionResponse.setOfflineBackendCount(ObjectUtils.defaultIfNull(activeMap.get(false), Collections.EMPTY_LIST).size());
+    distributionResponse.setOnlineBackendCount(ObjectUtils.defaultIfNull(activeMap.get(true), Collections.EMPTY_LIST).size());
     distributionResponse.setLineChart(lineChartMap);
     distributionResponse.setDistributionChart(distributionChart);
     distributionResponse.setTotalQueryCount(totalQueryCount);
