@@ -13,6 +13,9 @@ import java.security.Principal;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Priority(Priorities.AUTHENTICATION)
 public class LbFilter<P extends Principal> extends AuthFilter<String, P> {
 
@@ -41,6 +44,7 @@ public class LbFilter<P extends Principal> extends AuthFilter<String, P> {
       }
 
     } catch (Exception e) {
+      log.debug("Error while filtering request for authentication", e);
       throw new WebApplicationException(unauthorizedHandler.buildResponse(prefix, realm));
     }
 
