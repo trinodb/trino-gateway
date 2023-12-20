@@ -13,6 +13,8 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.domain.R;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
@@ -143,11 +145,14 @@ public class TestLbAuthenticator {
     };
 
     LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
-    Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
-    NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
-    String value = cookie.getValue();
-    assertTrue(value != null && value.length() > 0);
-    log.info(cookie.getValue());
-    JWT.decode(value);
+    RestLoginRequest restLoginRequest = new RestLoginRequest();
+    restLoginRequest.setUsername("user1");
+    restLoginRequest.setPassword("pass1");
+    R<?> r = lbFormAuthManager.processRESTLogin(restLoginRequest);
+    assertTrue(R.isSuccess(r));
+    Map data = (Map) r.getData();
+    String token = (String) data.get("token");
+    log.info(token);
+    JWT.decode(token);
   }
 }
