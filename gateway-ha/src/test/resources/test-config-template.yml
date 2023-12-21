@@ -19,6 +19,7 @@ dataStore:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.BasicRouterProvider
 
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
