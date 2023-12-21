@@ -3,6 +3,8 @@
 A load balancer, proxy server, and configurable routing gateway for multiple
 [Trino](https://trino.io) clusters.
 
+<img src="./docs/assets/logos/trino-gateway-h.png"/>
+
 Find out more details from our documentation:
 
 * [Design](./docs/design.md)
@@ -15,3 +17,5 @@ Find out more details from our documentation:
 * [References](./docs/references.md)
 * [Release notes](./docs/release-notes.md)
 * [Contributing](./.github/CONTRIBUTING.md)
+
+<img src="./docs/assets/logos/trino-gateway-v.png"/>
