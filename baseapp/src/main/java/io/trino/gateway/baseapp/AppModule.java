@@ -8,41 +8,45 @@ import io.dropwizard.jetty.HttpConnectorFactory;
 
 import java.util.stream.Stream;
 
-public abstract class AppModule<T extends AppConfiguration, E> extends AbstractModule {
-  private final T configuration;
-  private final E environment;
+public abstract class AppModule<T extends AppConfiguration, E>
+        extends AbstractModule
+{
+    private final T configuration;
+    private final E environment;
 
-  public AppModule(T config, E env) {
-    this.configuration = config;
-    this.environment = env;
-  }
+    public AppModule(T config, E env)
+    {
+        this.configuration = config;
+        this.environment = env;
+    }
 
-  @Override
-  protected void configure() {}
+    @Override
+    protected void configure() {}
 
-  protected int getApplicationPort() {
-    Stream<ConnectorFactory> connectors =
-            configuration.getServerFactory() instanceof DefaultServerFactory
-                    ? ((DefaultServerFactory) configuration.getServerFactory())
-                    .getApplicationConnectors().stream()
-                    : Stream.of((SimpleServerFactory) configuration.getServerFactory())
-                    .map(SimpleServerFactory::getConnector);
+    protected int getApplicationPort()
+    {
+        Stream<ConnectorFactory> connectors =
+                configuration.getServerFactory() instanceof DefaultServerFactory
+                        ? ((DefaultServerFactory) configuration.getServerFactory())
+                        .getApplicationConnectors().stream()
+                        : Stream.of((SimpleServerFactory) configuration.getServerFactory())
+                        .map(SimpleServerFactory::getConnector);
 
-    return connectors
-            .filter(connector -> connector.getClass().isAssignableFrom(HttpConnectorFactory.class))
-            .map(connector -> (HttpConnectorFactory) connector)
-            .mapToInt(HttpConnectorFactory::getPort)
-            .findFirst()
-            .orElseThrow(IllegalStateException::new);
-  }
+        return connectors
+                .filter(connector -> connector.getClass().isAssignableFrom(HttpConnectorFactory.class))
+                .map(connector -> (HttpConnectorFactory) connector)
+                .mapToInt(HttpConnectorFactory::getPort)
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
+    }
 
-  public T getConfiguration()
-  {
-    return this.configuration;
-  }
+    public T getConfiguration()
+    {
+        return this.configuration;
+    }
 
-  public E getEnvironment()
-  {
-    return this.environment;
-  }
+    public E getEnvironment()
+    {
+        return this.environment;
+    }
 }
