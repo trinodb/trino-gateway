@@ -174,75 +174,75 @@ public class ProxyServerConfiguration
 
     public boolean equals(final Object o)
     {
-      if (o == this) {
-        return true;
-      }
-      if (!(o instanceof ProxyServerConfiguration)) {
-        return false;
-      }
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof ProxyServerConfiguration)) {
+            return false;
+        }
         final ProxyServerConfiguration other = (ProxyServerConfiguration) o;
-      if (!other.canEqual((Object) this)) {
-        return false;
-      }
-        final Object this$name = this.getName();
-        final Object other$name = other.getName();
-      if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
-        return false;
-      }
-      if (this.getLocalPort() != other.getLocalPort()) {
-        return false;
-      }
-        final Object this$proxyTo = this.getProxyTo();
-        final Object other$proxyTo = other.getProxyTo();
-      if (this$proxyTo == null ? other$proxyTo != null : !this$proxyTo.equals(other$proxyTo)) {
-        return false;
-      }
-        final Object this$prefix = this.getPrefix();
-        final Object other$prefix = other.getPrefix();
-      if (this$prefix == null ? other$prefix != null : !this$prefix.equals(other$prefix)) {
-        return false;
-      }
-        final Object this$trustAll = this.getTrustAll();
-        final Object other$trustAll = other.getTrustAll();
-      if (this$trustAll == null ? other$trustAll != null : !this$trustAll.equals(other$trustAll)) {
-        return false;
-      }
-        final Object this$preserveHost = this.getPreserveHost();
-        final Object other$preserveHost = other.getPreserveHost();
-      if (this$preserveHost == null ? other$preserveHost != null : !this$preserveHost.equals(other$preserveHost)) {
-        return false;
-      }
-      if (this.isSsl() != other.isSsl()) {
-        return false;
-      }
-        final Object this$keystorePath = this.getKeystorePath();
-        final Object other$keystorePath = other.getKeystorePath();
-      if (this$keystorePath == null ? other$keystorePath != null : !this$keystorePath.equals(other$keystorePath)) {
-        return false;
-      }
-        final Object this$keystorePass = this.getKeystorePass();
-        final Object other$keystorePass = other.getKeystorePass();
-      if (this$keystorePass == null ? other$keystorePass != null : !this$keystorePass.equals(other$keystorePass)) {
-        return false;
-      }
-      if (this.isForwardKeystore() != other.isForwardKeystore()) {
-        return false;
-      }
-      if (this.getOutputBufferSize() != other.getOutputBufferSize()) {
-        return false;
-      }
-      if (this.getRequestHeaderSize() != other.getRequestHeaderSize()) {
-        return false;
-      }
-      if (this.getResponseHeaderSize() != other.getResponseHeaderSize()) {
-        return false;
-      }
-      if (this.getRequestBufferSize() != other.getRequestBufferSize()) {
-        return false;
-      }
-      if (this.getResponseBufferSize() != other.getResponseBufferSize()) {
-        return false;
-      }
+        if (!other.canEqual((Object) this)) {
+            return false;
+        }
+        final Object thisName = this.getName();
+        final Object otherName = other.getName();
+        if (thisName == null ? otherName != null : !thisName.equals(otherName)) {
+            return false;
+        }
+        if (this.getLocalPort() != other.getLocalPort()) {
+            return false;
+        }
+        final Object thisProxyTo = this.getProxyTo();
+        final Object otherProxyTo = other.getProxyTo();
+        if (thisProxyTo == null ? otherProxyTo != null : !thisProxyTo.equals(otherProxyTo)) {
+            return false;
+        }
+        final Object thisPrefix = this.getPrefix();
+        final Object otherPrefix = other.getPrefix();
+        if (thisPrefix == null ? otherPrefix != null : !thisPrefix.equals(otherPrefix)) {
+            return false;
+        }
+        final Object thisTrustAll = this.getTrustAll();
+        final Object otherTrustAll = other.getTrustAll();
+        if (thisTrustAll == null ? otherTrustAll != null : !thisTrustAll.equals(otherTrustAll)) {
+            return false;
+        }
+        final Object thisPreserveHost = this.getPreserveHost();
+        final Object otherPreserveHost = other.getPreserveHost();
+        if (thisPreserveHost == null ? otherPreserveHost != null : !thisPreserveHost.equals(otherPreserveHost)) {
+            return false;
+        }
+        if (this.isSsl() != other.isSsl()) {
+            return false;
+        }
+        final Object thisKeystorePath = this.getKeystorePath();
+        final Object otherKeystorePath = other.getKeystorePath();
+        if (thisKeystorePath == null ? otherKeystorePath != null : !thisKeystorePath.equals(otherKeystorePath)) {
+            return false;
+        }
+        final Object thisKeystorePass = this.getKeystorePass();
+        final Object otherKeystorePass = other.getKeystorePass();
+        if (thisKeystorePass == null ? otherKeystorePass != null : !thisKeystorePass.equals(otherKeystorePass)) {
+            return false;
+        }
+        if (this.isForwardKeystore() != other.isForwardKeystore()) {
+            return false;
+        }
+        if (this.getOutputBufferSize() != other.getOutputBufferSize()) {
+            return false;
+        }
+        if (this.getRequestHeaderSize() != other.getRequestHeaderSize()) {
+            return false;
+        }
+        if (this.getResponseHeaderSize() != other.getResponseHeaderSize()) {
+            return false;
+        }
+        if (this.getRequestBufferSize() != other.getRequestBufferSize()) {
+            return false;
+        }
+        if (this.getResponseBufferSize() != other.getResponseBufferSize()) {
+            return false;
+        }
         return true;
     }
 
@@ -253,52 +253,52 @@ public class ProxyServerConfiguration
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $name = this.getName();
-        result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-        result = result * PRIME + this.getLocalPort();
-        final Object $proxyTo = this.getProxyTo();
-        result = result * PRIME + ($proxyTo == null ? 43 : $proxyTo.hashCode());
-        final Object $prefix = this.getPrefix();
-        result = result * PRIME + ($prefix == null ? 43 : $prefix.hashCode());
-        final Object $trustAll = this.getTrustAll();
-        result = result * PRIME + ($trustAll == null ? 43 : $trustAll.hashCode());
-        final Object $preserveHost = this.getPreserveHost();
-        result = result * PRIME + ($preserveHost == null ? 43 : $preserveHost.hashCode());
-        result = result * PRIME + (this.isSsl() ? 79 : 97);
-        final Object $keystorePath = this.getKeystorePath();
-        result = result * PRIME + ($keystorePath == null ? 43 : $keystorePath.hashCode());
-        final Object $keystorePass = this.getKeystorePass();
-        result = result * PRIME + ($keystorePass == null ? 43 : $keystorePass.hashCode());
-        result = result * PRIME + (this.isForwardKeystore() ? 79 : 97);
-        result = result * PRIME + this.getOutputBufferSize();
-        result = result * PRIME + this.getRequestHeaderSize();
-        result = result * PRIME + this.getResponseHeaderSize();
-        result = result * PRIME + this.getRequestBufferSize();
-        result = result * PRIME + this.getResponseBufferSize();
+        final Object name = this.getName();
+        result = result * prime + (name == null ? 43 : name.hashCode());
+        result = result * prime + this.getLocalPort();
+        final Object proxyTo = this.getProxyTo();
+        result = result * prime + (proxyTo == null ? 43 : proxyTo.hashCode());
+        final Object prefix = this.getPrefix();
+        result = result * prime + (prefix == null ? 43 : prefix.hashCode());
+        final Object trustAll = this.getTrustAll();
+        result = result * prime + (trustAll == null ? 43 : trustAll.hashCode());
+        final Object preserveHost = this.getPreserveHost();
+        result = result * prime + (preserveHost == null ? 43 : preserveHost.hashCode());
+        result = result * prime + (this.isSsl() ? 79 : 97);
+        final Object keystorePath = this.getKeystorePath();
+        result = result * prime + (keystorePath == null ? 43 : keystorePath.hashCode());
+        final Object keystorePass = this.getKeystorePass();
+        result = result * prime + (keystorePass == null ? 43 : keystorePass.hashCode());
+        result = result * prime + (this.isForwardKeystore() ? 79 : 97);
+        result = result * prime + this.getOutputBufferSize();
+        result = result * prime + this.getRequestHeaderSize();
+        result = result * prime + this.getResponseHeaderSize();
+        result = result * prime + this.getRequestBufferSize();
+        result = result * prime + this.getResponseBufferSize();
         return result;
     }
 
-  @Override
-  public String toString()
-  {
-    return "ProxyServerConfiguration{" +
-            "name='" + name + '\'' +
-            ", localPort=" + localPort +
-            ", proxyTo='" + proxyTo + '\'' +
-            ", prefix='" + prefix + '\'' +
-            ", trustAll='" + trustAll + '\'' +
-            ", preserveHost='" + preserveHost + '\'' +
-            ", ssl=" + ssl +
-            ", keystorePath='" + keystorePath + '\'' +
-            ", keystorePass='" + keystorePass + '\'' +
-            ", forwardKeystore=" + forwardKeystore +
-            ", outputBufferSize=" + outputBufferSize +
-            ", requestHeaderSize=" + requestHeaderSize +
-            ", responseHeaderSize=" + responseHeaderSize +
-            ", requestBufferSize=" + requestBufferSize +
-            ", responseBufferSize=" + responseBufferSize +
-            '}';
-  }
+    @Override
+    public String toString()
+    {
+        return "ProxyServerConfiguration{" +
+                "name='" + name + '\'' +
+                ", localPort=" + localPort +
+                ", proxyTo='" + proxyTo + '\'' +
+                ", prefix='" + prefix + '\'' +
+                ", trustAll='" + trustAll + '\'' +
+                ", preserveHost='" + preserveHost + '\'' +
+                ", ssl=" + ssl +
+                ", keystorePath='" + keystorePath + '\'' +
+                ", keystorePass='" + keystorePass + '\'' +
+                ", forwardKeystore=" + forwardKeystore +
+                ", outputBufferSize=" + outputBufferSize +
+                ", requestHeaderSize=" + requestHeaderSize +
+                ", responseHeaderSize=" + responseHeaderSize +
+                ", requestBufferSize=" + requestBufferSize +
+                ", responseBufferSize=" + responseBufferSize +
+                '}';
+    }
 }
