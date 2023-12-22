@@ -18,57 +18,65 @@ import org.slf4j.LoggerFactory;
 @RolesAllowed({"API"})
 @Path("/gateway")
 @Produces(MediaType.APPLICATION_JSON)
-public class GatewayResource {
+public class GatewayResource
+{
+    private static final Logger log = LoggerFactory.getLogger(GatewayResource.class);
+    @Inject
+    private GatewayBackendManager gatewayBackendManager;
 
-  private static final Logger log = LoggerFactory.getLogger(GatewayResource.class);
-  @Inject
-  private GatewayBackendManager gatewayBackendManager;
-
-  @GET
-  public Response ok(@Context Request request) {
-    return Response.ok("ok").build();
-  }
-
-  @GET
-  @Path("/backend/all")
-  public Response getAllBackends() {
-    return Response.ok(this.gatewayBackendManager.getAllBackends()).build();
-  }
-
-  @GET
-  @Path("/backend/active")
-  public Response getActiveBackends() {
-    return Response.ok(gatewayBackendManager.getAllActiveBackends()).build();
-  }
-
-  @POST
-  @Path("/backend/deactivate/{name}")
-  public Response deactivateBackend(@PathParam("name") String name) {
-    try {
-      this.gatewayBackendManager.deactivateBackend(name);
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      return throwError(e);
+    @GET
+    public Response ok(@Context Request request)
+    {
+        return Response.ok("ok").build();
     }
-    return Response.ok().build();
-  }
 
-  @POST
-  @Path("/backend/activate/{name}")
-  public Response activateBackend(@PathParam("name") String name) {
-    try {
-      this.gatewayBackendManager.activateBackend(name);
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      return throwError(e);
+    @GET
+    @Path("/backend/all")
+    public Response getAllBackends()
+    {
+        return Response.ok(this.gatewayBackendManager.getAllBackends()).build();
     }
-    return Response.ok().build();
-  }
 
-  private Response throwError(Exception e) {
-    return Response.status(Response.Status.NOT_FOUND)
-        .entity(e.getMessage())
-        .type("text/plain")
-        .build();
-  }
+    @GET
+    @Path("/backend/active")
+    public Response getActiveBackends()
+    {
+        return Response.ok(gatewayBackendManager.getAllActiveBackends()).build();
+    }
+
+    @POST
+    @Path("/backend/deactivate/{name}")
+    public Response deactivateBackend(@PathParam("name") String name)
+    {
+        try {
+            this.gatewayBackendManager.deactivateBackend(name);
+        }
+        catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return throwError(e);
+        }
+        return Response.ok().build();
+    }
+
+    @POST
+    @Path("/backend/activate/{name}")
+    public Response activateBackend(@PathParam("name") String name)
+    {
+        try {
+            this.gatewayBackendManager.activateBackend(name);
+        }
+        catch (Exception e) {
+            log.error(e.getMessage(), e);
+            return throwError(e);
+        }
+        return Response.ok().build();
+    }
+
+    private Response throwError(Exception e)
+    {
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(e.getMessage())
+                .type("text/plain")
+                .build();
+    }
 }

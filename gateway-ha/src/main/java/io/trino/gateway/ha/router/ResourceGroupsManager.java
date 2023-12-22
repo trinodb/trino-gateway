@@ -1,625 +1,749 @@
 package io.trino.gateway.ha.router;
 
-
-import jakarta.annotation.Nullable;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+
 import java.util.List;
+import java.util.Objects;
 
-public interface ResourceGroupsManager {
-  ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
-                                           @Nullable String routingGroupDatabase);
+public interface ResourceGroupsManager
+{
+    ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
+            @Nullable String routingGroupDatabase);
 
-  List<ResourceGroupsDetail> readAllResourceGroups(@Nullable String routingGroupDatabase);
+    List<ResourceGroupsDetail> readAllResourceGroups(@Nullable String routingGroupDatabase);
 
-  List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId,
-                                               @Nullable String routingGroupDatabase);
+    List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId,
+            @Nullable String routingGroupDatabase);
 
-  ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup,
-                                           @Nullable String routingGroupDatabase);
+    ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup,
+            @Nullable String routingGroupDatabase);
 
-  void deleteResourceGroup(long resourceGroupId, @Nullable String routingGroupDatabase);
+    void deleteResourceGroup(long resourceGroupId, @Nullable String routingGroupDatabase);
 
-  SelectorsDetail createSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase);
+    SelectorsDetail createSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase);
 
-  List<SelectorsDetail> readAllSelectors(@Nullable String routingGroupDatabase);
+    List<SelectorsDetail> readAllSelectors(@Nullable String routingGroupDatabase);
 
-  List<SelectorsDetail> readSelector(long resourceGroupId, @Nullable String routingGrouoDatabase);
+    List<SelectorsDetail> readSelector(long resourceGroupId, @Nullable String routingGrouoDatabase);
 
-  SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector,
-                                 @Nullable String routingGroupDatabase);
+    SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector,
+            @Nullable String routingGroupDatabase);
 
-  void deleteSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase);
+    void deleteSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase);
 
-  GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail,
-                                              @Nullable String routingGroupDatabase);
+    GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail,
+            @Nullable String routingGroupDatabase);
 
-  List<GlobalPropertiesDetail> readAllGlobalProperties(@Nullable String routingGroupDatabase);
+    List<GlobalPropertiesDetail> readAllGlobalProperties(@Nullable String routingGroupDatabase);
 
-  List<GlobalPropertiesDetail> readGlobalProperty(String name,
-                                                  @Nullable String routingGroupDatabase);
+    List<GlobalPropertiesDetail> readGlobalProperty(String name,
+            @Nullable String routingGroupDatabase);
 
-  GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty,
-                                              @Nullable String routingGroupDatabase);
+    GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty,
+            @Nullable String routingGroupDatabase);
 
-  void deleteGlobalProperty(String name, @Nullable String routingGroupDatabase);
+    void deleteGlobalProperty(String name, @Nullable String routingGroupDatabase);
 
-  ExactSelectorsDetail createExactMatchSourceSelector(ExactSelectorsDetail exactSelectorDetail);
+    ExactSelectorsDetail createExactMatchSourceSelector(ExactSelectorsDetail exactSelectorDetail);
 
-  List<ExactSelectorsDetail> readExactMatchSourceSelector();
+    List<ExactSelectorsDetail> readExactMatchSourceSelector();
 
-  ExactSelectorsDetail getExactMatchSourceSelector(ExactSelectorsDetail exactSelectorDetail);
+    ExactSelectorsDetail getExactMatchSourceSelector(ExactSelectorsDetail exactSelectorDetail);
 
-  class ResourceGroupsDetail implements Comparable<ResourceGroupsDetail> {
-    @Nonnull private long resourceGroupId;
-    @Nonnull private String name;
-
-    /* OPTIONAL POLICY CONTROLS */
-    private Long parent;
-    private Boolean jmxExport;
-    private String schedulingPolicy;
-    private Integer schedulingWeight;
-
-    /* REQUIRED QUOTAS */
-    @Nonnull private String softMemoryLimit;
-    @Nonnull private int maxQueued;
-    @Nonnull private int hardConcurrencyLimit;
-
-    /* OPTIONAL QUOTAS */
-    private Integer softConcurrencyLimit;
-    private String softCpuLimit;
-    private String hardCpuLimit;
-    private String environment;
-
-    public ResourceGroupsDetail() {}
-
-    public ResourceGroupsDetail(@Nonnull long resourceGroupId, @Nonnull String name, @Nonnull String softMemoryLimit, @Nonnull int maxQueued, @Nonnull int hardConcurrencyLimit)
+    class ResourceGroupsDetail
+            implements Comparable<ResourceGroupsDetail>
     {
-        this.resourceGroupId = resourceGroupId;
-        this.name = name;
-        this.softMemoryLimit = softMemoryLimit;
-        this.maxQueued = maxQueued;
-        this.hardConcurrencyLimit = hardConcurrencyLimit;
+        @Nonnull private long resourceGroupId;
+        @Nonnull private String name;
+
+        /* OPTIONAL POLICY CONTROLS */
+        private Long parent;
+        private Boolean jmxExport;
+        private String schedulingPolicy;
+        private Integer schedulingWeight;
+
+        /* REQUIRED QUOTAS */
+        @Nonnull private String softMemoryLimit;
+        @Nonnull private int maxQueued;
+        @Nonnull private int hardConcurrencyLimit;
+
+        /* OPTIONAL QUOTAS */
+        private Integer softConcurrencyLimit;
+        private String softCpuLimit;
+        private String hardCpuLimit;
+        private String environment;
+
+        public ResourceGroupsDetail() {}
+
+        public ResourceGroupsDetail(@Nonnull long resourceGroupId, @Nonnull String name, @Nonnull String softMemoryLimit, @Nonnull int maxQueued, @Nonnull int hardConcurrencyLimit)
+        {
+            this.resourceGroupId = resourceGroupId;
+            this.name = name;
+            this.softMemoryLimit = softMemoryLimit;
+            this.maxQueued = maxQueued;
+            this.hardConcurrencyLimit = hardConcurrencyLimit;
+        }
+
+        @Override
+        public int compareTo(ResourceGroupsDetail o)
+        {
+            if (this.resourceGroupId < o.resourceGroupId) {
+                return 1;
+            }
+            else {
+                return this.resourceGroupId == o.resourceGroupId ? 0 : -1;
+            }
+        }
+
+        public @Nonnull long getResourceGroupId()
+        {
+            return this.resourceGroupId;
+        }
+
+        public void setResourceGroupId(@Nonnull long resourceGroupId)
+        {
+            this.resourceGroupId = resourceGroupId;
+        }
+
+        public @Nonnull String getName()
+        {
+            return this.name;
+        }
+
+        public void setName(@Nonnull String name)
+        {
+            this.name = name;
+        }
+
+        public Long getParent()
+        {
+            return this.parent;
+        }
+
+        public void setParent(Long parent)
+        {
+            this.parent = parent;
+        }
+
+        public Boolean getJmxExport()
+        {
+            return this.jmxExport;
+        }
+
+        public void setJmxExport(Boolean jmxExport)
+        {
+            this.jmxExport = jmxExport;
+        }
+
+        public String getSchedulingPolicy()
+        {
+            return this.schedulingPolicy;
+        }
+
+        public void setSchedulingPolicy(String schedulingPolicy)
+        {
+            this.schedulingPolicy = schedulingPolicy;
+        }
+
+        public Integer getSchedulingWeight()
+        {
+            return this.schedulingWeight;
+        }
+
+        public void setSchedulingWeight(Integer schedulingWeight)
+        {
+            this.schedulingWeight = schedulingWeight;
+        }
+
+        public @Nonnull String getSoftMemoryLimit()
+        {
+            return this.softMemoryLimit;
+        }
+
+        public void setSoftMemoryLimit(@Nonnull String softMemoryLimit)
+        {
+            this.softMemoryLimit = softMemoryLimit;
+        }
+
+        public @Nonnull int getMaxQueued()
+        {
+            return this.maxQueued;
+        }
+
+        public void setMaxQueued(@Nonnull int maxQueued)
+        {
+            this.maxQueued = maxQueued;
+        }
+
+        public @Nonnull int getHardConcurrencyLimit()
+        {
+            return this.hardConcurrencyLimit;
+        }
+
+        public void setHardConcurrencyLimit(@Nonnull int hardConcurrencyLimit)
+        {
+            this.hardConcurrencyLimit = hardConcurrencyLimit;
+        }
+
+        public Integer getSoftConcurrencyLimit()
+        {
+            return this.softConcurrencyLimit;
+        }
+
+        public void setSoftConcurrencyLimit(Integer softConcurrencyLimit)
+        {
+            this.softConcurrencyLimit = softConcurrencyLimit;
+        }
+
+        public String getSoftCpuLimit()
+        {
+            return this.softCpuLimit;
+        }
+
+        public void setSoftCpuLimit(String softCpuLimit)
+        {
+            this.softCpuLimit = softCpuLimit;
+        }
+
+        public String getHardCpuLimit()
+        {
+            return this.hardCpuLimit;
+        }
+
+        public void setHardCpuLimit(String hardCpuLimit)
+        {
+            this.hardCpuLimit = hardCpuLimit;
+        }
+
+        public String getEnvironment()
+        {
+            return this.environment;
+        }
+
+        public void setEnvironment(String environment)
+        {
+            this.environment = environment;
+        }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof ResourceGroupsDetail other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            if (this.getResourceGroupId() != other.getResourceGroupId()) {
+                return false;
+            }
+            final Object name = this.getName();
+            final Object otherName = other.getName();
+            if (!Objects.equals(name, otherName)) {
+                return false;
+            }
+            final Object parent = this.getParent();
+            final Object otherParent = other.getParent();
+            if (!Objects.equals(parent, otherParent)) {
+                return false;
+            }
+            final Object jmxExport = this.getJmxExport();
+            final Object otherJmxExport = other.getJmxExport();
+            if (!Objects.equals(jmxExport, otherJmxExport)) {
+                return false;
+            }
+            final Object schedulingPolicy = this.getSchedulingPolicy();
+            final Object otherSchedulingPolicy = other.getSchedulingPolicy();
+            if (!Objects.equals(schedulingPolicy, otherSchedulingPolicy)) {
+                return false;
+            }
+            final Object schedulingWeight = this.getSchedulingWeight();
+            final Object otherSchedulingWeight = other.getSchedulingWeight();
+            if (!Objects.equals(schedulingWeight, otherSchedulingWeight)) {
+                return false;
+            }
+            final Object softMemoryLimit = this.getSoftMemoryLimit();
+            final Object otherSoftMemoryLimit = other.getSoftMemoryLimit();
+            if (!Objects.equals(softMemoryLimit, otherSoftMemoryLimit)) {
+                return false;
+            }
+            if (this.getMaxQueued() != other.getMaxQueued()) {
+                return false;
+            }
+            if (this.getHardConcurrencyLimit() != other.getHardConcurrencyLimit()) {
+                return false;
+            }
+            final Object softConcurrencyLimit = this.getSoftConcurrencyLimit();
+            final Object otherSoftConcurrencyLimit = other.getSoftConcurrencyLimit();
+            if (!Objects.equals(softConcurrencyLimit, otherSoftConcurrencyLimit)) {
+                return false;
+            }
+            final Object softCpuLimit = this.getSoftCpuLimit();
+            final Object otherSoftCpuLimit = other.getSoftCpuLimit();
+            if (!Objects.equals(softCpuLimit, otherSoftCpuLimit)) {
+                return false;
+            }
+            final Object hardCpuLimit = this.getHardCpuLimit();
+            final Object otherHardCpuLimit = other.getHardCpuLimit();
+            if (!Objects.equals(hardCpuLimit, otherHardCpuLimit)) {
+                return false;
+            }
+            final Object environment = this.getEnvironment();
+            final Object otherEnvironment = other.getEnvironment();
+            return Objects.equals(environment, otherEnvironment);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof ResourceGroupsDetail;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final long resourceGroupId = this.getResourceGroupId();
+            result = result * prime + (int) (resourceGroupId >>> 32 ^ resourceGroupId);
+            final Object name = this.getName();
+            result = result * prime + (name == null ? 43 : name.hashCode());
+            final Object parent = this.getParent();
+            result = result * prime + (parent == null ? 43 : parent.hashCode());
+            final Object jmxExport = this.getJmxExport();
+            result = result * prime + (jmxExport == null ? 43 : jmxExport.hashCode());
+            final Object schedulingPolicy = this.getSchedulingPolicy();
+            result = result * prime + (schedulingPolicy == null ? 43 : schedulingPolicy.hashCode());
+            final Object schedulingWeight = this.getSchedulingWeight();
+            result = result * prime + (schedulingWeight == null ? 43 : schedulingWeight.hashCode());
+            final Object softMemoryLimit = this.getSoftMemoryLimit();
+            result = result * prime + (softMemoryLimit == null ? 43 : softMemoryLimit.hashCode());
+            result = result * prime + this.getMaxQueued();
+            result = result * prime + this.getHardConcurrencyLimit();
+            final Object softConcurrencyLimit = this.getSoftConcurrencyLimit();
+            result = result * prime + (softConcurrencyLimit == null ? 43 : softConcurrencyLimit.hashCode());
+            final Object softCpuLimit = this.getSoftCpuLimit();
+            result = result * prime + (softCpuLimit == null ? 43 : softCpuLimit.hashCode());
+            final Object hardCpuLimit = this.getHardCpuLimit();
+            result = result * prime + (hardCpuLimit == null ? 43 : hardCpuLimit.hashCode());
+            final Object environment = this.getEnvironment();
+            result = result * prime + (environment == null ? 43 : environment.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "ResourceGroupsManager.ResourceGroupsDetail(resourceGroupId=" + this.getResourceGroupId() +
+                    ", name=" + this.getName() + ", parent=" + this.getParent() + ", jmxExport=" + this.getJmxExport() +
+                    ", schedulingPolicy=" + this.getSchedulingPolicy() + ", schedulingWeight=" + this.getSchedulingWeight() +
+                    ", softMemoryLimit=" + this.getSoftMemoryLimit() + ", maxQueued=" + this.getMaxQueued() +
+                    ", hardConcurrencyLimit=" + this.getHardConcurrencyLimit() + ", softConcurrencyLimit=" + this.getSoftConcurrencyLimit() +
+                    ", softCpuLimit=" + this.getSoftCpuLimit() + ", hardCpuLimit=" + this.getHardCpuLimit() +
+                    ", environment=" + this.getEnvironment() + ")";
+        }
     }
 
-    @Override
-    public int compareTo(ResourceGroupsDetail o) {
-      if (this.resourceGroupId < o.resourceGroupId) {
-        return 1;
-      } else {
-        return this.resourceGroupId == o.resourceGroupId ? 0 : -1;
-      }
-    }
-
-    public @Nonnull long getResourceGroupId()
-    {return this.resourceGroupId;}
-
-    public @Nonnull String getName()
-    {return this.name;}
-
-    public Long getParent()
-    {return this.parent;}
-
-    public Boolean getJmxExport()
-    {return this.jmxExport;}
-
-    public String getSchedulingPolicy()
-    {return this.schedulingPolicy;}
-
-    public Integer getSchedulingWeight()
-    {return this.schedulingWeight;}
-
-    public @Nonnull String getSoftMemoryLimit()
-    {return this.softMemoryLimit;}
-
-    public @Nonnull int getMaxQueued()
-    {return this.maxQueued;}
-
-    public @Nonnull int getHardConcurrencyLimit()
-    {return this.hardConcurrencyLimit;}
-
-    public Integer getSoftConcurrencyLimit()
-    {return this.softConcurrencyLimit;}
-
-    public String getSoftCpuLimit()
-    {return this.softCpuLimit;}
-
-    public String getHardCpuLimit()
-    {return this.hardCpuLimit;}
-
-    public String getEnvironment()
-    {return this.environment;}
-
-    public void setResourceGroupId(@Nonnull long resourceGroupId)
-    {this.resourceGroupId = resourceGroupId;}
-
-    public void setName(@Nonnull String name)
-    {this.name = name;}
-
-    public void setParent(Long parent)
-    {this.parent = parent;}
-
-    public void setJmxExport(Boolean jmxExport)
-    {this.jmxExport = jmxExport;}
-
-    public void setSchedulingPolicy(String schedulingPolicy)
-    {this.schedulingPolicy = schedulingPolicy;}
-
-    public void setSchedulingWeight(Integer schedulingWeight)
-    {this.schedulingWeight = schedulingWeight;}
-
-    public void setSoftMemoryLimit(@Nonnull String softMemoryLimit)
-    {this.softMemoryLimit = softMemoryLimit;}
-
-    public void setMaxQueued(@Nonnull int maxQueued)
-    {this.maxQueued = maxQueued;}
-
-    public void setHardConcurrencyLimit(@Nonnull int hardConcurrencyLimit)
-    {this.hardConcurrencyLimit = hardConcurrencyLimit;}
-
-    public void setSoftConcurrencyLimit(Integer softConcurrencyLimit)
-    {this.softConcurrencyLimit = softConcurrencyLimit;}
-
-    public void setSoftCpuLimit(String softCpuLimit)
-    {this.softCpuLimit = softCpuLimit;}
-
-    public void setHardCpuLimit(String hardCpuLimit)
-    {this.hardCpuLimit = hardCpuLimit;}
-
-    public void setEnvironment(String environment)
-    {this.environment = environment;}
-
-    public boolean equals(final Object o)
+    class SelectorsDetail
+            implements Comparable<SelectorsDetail>
     {
-        if (o == this) {
-            return true;
+        @Nonnull private long resourceGroupId;
+        @Nonnull private long priority;
+
+        private String userRegex;
+        private String sourceRegex;
+
+        private String queryType;
+        private String clientTags;
+        private String selectorResourceEstimate;
+
+        public SelectorsDetail() {}
+
+        public SelectorsDetail(@Nonnull long resourceGroupId, @Nonnull long priority)
+        {
+            this.resourceGroupId = resourceGroupId;
+            this.priority = priority;
         }
-        if (!(o instanceof ResourceGroupsDetail)) {
-            return false;
+
+        @Override
+        public int compareTo(SelectorsDetail o)
+        {
+            if (this.resourceGroupId < o.resourceGroupId) {
+                return 1;
+            }
+            else {
+                return this.resourceGroupId == o.resourceGroupId ? 0 : -1;
+            }
         }
-        final ResourceGroupsDetail other = (ResourceGroupsDetail) o;
-        if (!other.canEqual((Object) this)) {
-            return false;
+
+        public @Nonnull long getResourceGroupId()
+        {
+            return this.resourceGroupId;
         }
-        if (this.getResourceGroupId() != other.getResourceGroupId()) {
-            return false;
+
+        public void setResourceGroupId(@Nonnull long resourceGroupId)
+        {
+            this.resourceGroupId = resourceGroupId;
         }
-        final Object this$name = this.getName();
-        final Object other$name = other.getName();
-        if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
-            return false;
+
+        public @Nonnull long getPriority()
+        {
+            return this.priority;
         }
-        final Object this$parent = this.getParent();
-        final Object other$parent = other.getParent();
-        if (this$parent == null ? other$parent != null : !this$parent.equals(other$parent)) {
-            return false;
+
+        public void setPriority(@Nonnull long priority)
+        {
+            this.priority = priority;
         }
-        final Object this$jmxExport = this.getJmxExport();
-        final Object other$jmxExport = other.getJmxExport();
-        if (this$jmxExport == null ? other$jmxExport != null : !this$jmxExport.equals(other$jmxExport)) {
-            return false;
+
+        public String getUserRegex()
+        {
+            return this.userRegex;
         }
-        final Object this$schedulingPolicy = this.getSchedulingPolicy();
-        final Object other$schedulingPolicy = other.getSchedulingPolicy();
-        if (this$schedulingPolicy == null ? other$schedulingPolicy != null : !this$schedulingPolicy.equals(other$schedulingPolicy)) {
-            return false;
+
+        public void setUserRegex(String userRegex)
+        {
+            this.userRegex = userRegex;
         }
-        final Object this$schedulingWeight = this.getSchedulingWeight();
-        final Object other$schedulingWeight = other.getSchedulingWeight();
-        if (this$schedulingWeight == null ? other$schedulingWeight != null : !this$schedulingWeight.equals(other$schedulingWeight)) {
-            return false;
+
+        public String getSourceRegex()
+        {
+            return this.sourceRegex;
         }
-        final Object this$softMemoryLimit = this.getSoftMemoryLimit();
-        final Object other$softMemoryLimit = other.getSoftMemoryLimit();
-        if (this$softMemoryLimit == null ? other$softMemoryLimit != null : !this$softMemoryLimit.equals(other$softMemoryLimit)) {
-            return false;
+
+        public void setSourceRegex(String sourceRegex)
+        {
+            this.sourceRegex = sourceRegex;
         }
-        if (this.getMaxQueued() != other.getMaxQueued()) {
-            return false;
+
+        public String getQueryType()
+        {
+            return this.queryType;
         }
-        if (this.getHardConcurrencyLimit() != other.getHardConcurrencyLimit()) {
-            return false;
+
+        public void setQueryType(String queryType)
+        {
+            this.queryType = queryType;
         }
-        final Object this$softConcurrencyLimit = this.getSoftConcurrencyLimit();
-        final Object other$softConcurrencyLimit = other.getSoftConcurrencyLimit();
-        if (this$softConcurrencyLimit == null ? other$softConcurrencyLimit != null : !this$softConcurrencyLimit.equals(other$softConcurrencyLimit)) {
-            return false;
+
+        public String getClientTags()
+        {
+            return this.clientTags;
         }
-        final Object this$softCpuLimit = this.getSoftCpuLimit();
-        final Object other$softCpuLimit = other.getSoftCpuLimit();
-        if (this$softCpuLimit == null ? other$softCpuLimit != null : !this$softCpuLimit.equals(other$softCpuLimit)) {
-            return false;
+
+        public void setClientTags(String clientTags)
+        {
+            this.clientTags = clientTags;
         }
-        final Object this$hardCpuLimit = this.getHardCpuLimit();
-        final Object other$hardCpuLimit = other.getHardCpuLimit();
-        if (this$hardCpuLimit == null ? other$hardCpuLimit != null : !this$hardCpuLimit.equals(other$hardCpuLimit)) {
-            return false;
+
+        public String getSelectorResourceEstimate()
+        {
+            return this.selectorResourceEstimate;
         }
-        final Object this$environment = this.getEnvironment();
-        final Object other$environment = other.getEnvironment();
-        if (this$environment == null ? other$environment != null : !this$environment.equals(other$environment)) {
-            return false;
+
+        public void setSelectorResourceEstimate(String selectorResourceEstimate)
+        {
+            this.selectorResourceEstimate = selectorResourceEstimate;
         }
-        return true;
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof SelectorsDetail other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            if (this.getResourceGroupId() != other.getResourceGroupId()) {
+                return false;
+            }
+            if (this.getPriority() != other.getPriority()) {
+                return false;
+            }
+            final Object userRegex = this.getUserRegex();
+            final Object otherUserRegex = other.getUserRegex();
+            if (!Objects.equals(userRegex, otherUserRegex)) {
+                return false;
+            }
+            final Object sourceRegex = this.getSourceRegex();
+            final Object otherSourceRegex = other.getSourceRegex();
+            if (!Objects.equals(sourceRegex, otherSourceRegex)) {
+                return false;
+            }
+            final Object queryType = this.getQueryType();
+            final Object otherQueryType = other.getQueryType();
+            if (!Objects.equals(queryType, otherQueryType)) {
+                return false;
+            }
+            final Object clientTags = this.getClientTags();
+            final Object otherClientTags = other.getClientTags();
+            if (!Objects.equals(clientTags, otherClientTags)) {
+                return false;
+            }
+            final Object selectorResourceEstimate = this.getSelectorResourceEstimate();
+            final Object otherSelectorResourceEstimate = other.getSelectorResourceEstimate();
+            return Objects.equals(selectorResourceEstimate, otherSelectorResourceEstimate);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof SelectorsDetail;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final long resourceGroupId = this.getResourceGroupId();
+            result = result * prime + (int) (resourceGroupId >>> 32 ^ resourceGroupId);
+            final long priority = this.getPriority();
+            result = result * prime + (int) (priority >>> 32 ^ priority);
+            final Object userRegex = this.getUserRegex();
+            result = result * prime + (userRegex == null ? 43 : userRegex.hashCode());
+            final Object sourceRegex = this.getSourceRegex();
+            result = result * prime + (sourceRegex == null ? 43 : sourceRegex.hashCode());
+            final Object queryType = this.getQueryType();
+            result = result * prime + (queryType == null ? 43 : queryType.hashCode());
+            final Object clientTags = this.getClientTags();
+            result = result * prime + (clientTags == null ? 43 : clientTags.hashCode());
+            final Object selectorResourceEstimate = this.getSelectorResourceEstimate();
+            result = result * prime + (selectorResourceEstimate == null ? 43 : selectorResourceEstimate.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "ResourceGroupsManager.SelectorsDetail(resourceGroupId=" + this.getResourceGroupId() +
+                    ", priority=" + this.getPriority() + ", userRegex=" + this.getUserRegex() +
+                    ", sourceRegex=" + this.getSourceRegex() + ", queryType=" + this.getQueryType() +
+                    ", clientTags=" + this.getClientTags() +
+                    ", selectorResourceEstimate=" + this.getSelectorResourceEstimate() + ")";
+        }
     }
 
-    protected boolean canEqual(final Object other)
-    {return other instanceof ResourceGroupsDetail;}
-
-    public int hashCode()
+    class GlobalPropertiesDetail
+            implements Comparable<GlobalPropertiesDetail>
     {
-        final int PRIME = 59;
-        int result = 1;
-        final long $resourceGroupId = this.getResourceGroupId();
-        result = result * PRIME + (int) ($resourceGroupId >>> 32 ^ $resourceGroupId);
-        final Object $name = this.getName();
-        result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-        final Object $parent = this.getParent();
-        result = result * PRIME + ($parent == null ? 43 : $parent.hashCode());
-        final Object $jmxExport = this.getJmxExport();
-        result = result * PRIME + ($jmxExport == null ? 43 : $jmxExport.hashCode());
-        final Object $schedulingPolicy = this.getSchedulingPolicy();
-        result = result * PRIME + ($schedulingPolicy == null ? 43 : $schedulingPolicy.hashCode());
-        final Object $schedulingWeight = this.getSchedulingWeight();
-        result = result * PRIME + ($schedulingWeight == null ? 43 : $schedulingWeight.hashCode());
-        final Object $softMemoryLimit = this.getSoftMemoryLimit();
-        result = result * PRIME + ($softMemoryLimit == null ? 43 : $softMemoryLimit.hashCode());
-        result = result * PRIME + this.getMaxQueued();
-        result = result * PRIME + this.getHardConcurrencyLimit();
-        final Object $softConcurrencyLimit = this.getSoftConcurrencyLimit();
-        result = result * PRIME + ($softConcurrencyLimit == null ? 43 : $softConcurrencyLimit.hashCode());
-        final Object $softCpuLimit = this.getSoftCpuLimit();
-        result = result * PRIME + ($softCpuLimit == null ? 43 : $softCpuLimit.hashCode());
-        final Object $hardCpuLimit = this.getHardCpuLimit();
-        result = result * PRIME + ($hardCpuLimit == null ? 43 : $hardCpuLimit.hashCode());
-        final Object $environment = this.getEnvironment();
-        result = result * PRIME + ($environment == null ? 43 : $environment.hashCode());
-        return result;
+        @Nonnull private String name;
+        private String value;
+
+        public GlobalPropertiesDetail() {}
+
+        public GlobalPropertiesDetail(@Nonnull String name)
+        {
+            this.name = name;
+        }
+
+        @Override
+        public int compareTo(GlobalPropertiesDetail o)
+        {
+            return 0;
+        }
+
+        public @Nonnull String getName()
+        {
+            return this.name;
+        }
+
+        public void setName(@Nonnull String name)
+        {
+            this.name = name;
+        }
+
+        public String getValue()
+        {
+            return this.value;
+        }
+
+        public void setValue(String value)
+        {
+            this.value = value;
+        }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof GlobalPropertiesDetail other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            final Object name = this.getName();
+            final Object otherName = other.getName();
+            if (!Objects.equals(name, otherName)) {
+                return false;
+            }
+            final Object value = this.getValue();
+            final Object otherValue = other.getValue();
+            return Objects.equals(value, otherValue);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof GlobalPropertiesDetail;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final Object name = this.getName();
+            result = result * prime + (name == null ? 43 : name.hashCode());
+            final Object value = this.getValue();
+            result = result * prime + (value == null ? 43 : value.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "ResourceGroupsManager.GlobalPropertiesDetail(name=" + this.getName() + ", value=" + this.getValue() + ")";
+        }
     }
 
-    public String toString()
-        {return "ResourceGroupsManager.ResourceGroupsDetail(resourceGroupId=" + this.getResourceGroupId() +
-                ", name=" + this.getName() + ", parent=" + this.getParent() + ", jmxExport=" + this.getJmxExport() +
-                ", schedulingPolicy=" + this.getSchedulingPolicy() + ", schedulingWeight=" + this.getSchedulingWeight() +
-                ", softMemoryLimit=" + this.getSoftMemoryLimit() + ", maxQueued=" + this.getMaxQueued() +
-                ", hardConcurrencyLimit=" + this.getHardConcurrencyLimit() + ", softConcurrencyLimit=" + this.getSoftConcurrencyLimit() +
-                ", softCpuLimit=" + this.getSoftCpuLimit() + ", hardCpuLimit=" + this.getHardCpuLimit() +
-                ", environment=" + this.getEnvironment() + ")";}
-  }
-
-  class SelectorsDetail implements Comparable<SelectorsDetail> {
-    @Nonnull private long resourceGroupId;
-    @Nonnull private long priority;
-
-    private String userRegex;
-    private String sourceRegex;
-
-    private String queryType;
-    private String clientTags;
-    private String selectorResourceEstimate;
-
-    public SelectorsDetail() {}
-
-    public SelectorsDetail(@Nonnull long resourceGroupId, @Nonnull long priority)
+    class ExactSelectorsDetail
+            implements Comparable<ExactSelectorsDetail>
     {
-        this.resourceGroupId = resourceGroupId;
-        this.priority = priority;
+        @Nonnull private String resourceGroupId;
+        @Nonnull private String updateTime;
+
+        @Nonnull private String source;
+        private String environment;
+        private String queryType;
+
+        public ExactSelectorsDetail() {}
+
+        public ExactSelectorsDetail(@Nonnull String resourceGroupId, @Nonnull String updateTime, @Nonnull String source)
+        {
+            this.resourceGroupId = resourceGroupId;
+            this.updateTime = updateTime;
+            this.source = source;
+        }
+
+        @Override
+        public int compareTo(ExactSelectorsDetail o)
+        {
+            return 0;
+        }
+
+        public @Nonnull String getResourceGroupId()
+        {
+            return this.resourceGroupId;
+        }
+
+        public void setResourceGroupId(@Nonnull String resourceGroupId)
+        {
+            this.resourceGroupId = resourceGroupId;
+        }
+
+        public @Nonnull String getUpdateTime()
+        {
+            return this.updateTime;
+        }
+
+        public void setUpdateTime(@Nonnull String updateTime)
+        {
+            this.updateTime = updateTime;
+        }
+
+        public @Nonnull String getSource()
+        {
+            return this.source;
+        }
+
+        public void setSource(@Nonnull String source)
+        {
+            this.source = source;
+        }
+
+        public String getEnvironment()
+        {
+            return this.environment;
+        }
+
+        public void setEnvironment(String environment)
+        {
+            this.environment = environment;
+        }
+
+        public String getQueryType()
+        {
+            return this.queryType;
+        }
+
+        public void setQueryType(String queryType)
+        {
+            this.queryType = queryType;
+        }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof ExactSelectorsDetail other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            final Object resourceGroupId = this.getResourceGroupId();
+            final Object otherResourceGroupId = other.getResourceGroupId();
+            if (!Objects.equals(resourceGroupId, otherResourceGroupId)) {
+                return false;
+            }
+            final Object updateTime = this.getUpdateTime();
+            final Object otherUpdateTime = other.getUpdateTime();
+            if (!Objects.equals(updateTime, otherUpdateTime)) {
+                return false;
+            }
+            final Object source = this.getSource();
+            final Object otherSource = other.getSource();
+            if (!Objects.equals(source, otherSource)) {
+                return false;
+            }
+            final Object environment = this.getEnvironment();
+            final Object otherEnvironment = other.getEnvironment();
+            if (!Objects.equals(environment, otherEnvironment)) {
+                return false;
+            }
+            final Object queryType = this.getQueryType();
+            final Object otherQueryType = other.getQueryType();
+            return Objects.equals(queryType, otherQueryType);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof ExactSelectorsDetail;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final Object resourceGroupId = this.getResourceGroupId();
+            result = result * prime + (resourceGroupId == null ? 43 : resourceGroupId.hashCode());
+            final Object updateTime = this.getUpdateTime();
+            result = result * prime + (updateTime == null ? 43 : updateTime.hashCode());
+            final Object source = this.getSource();
+            result = result * prime + (source == null ? 43 : source.hashCode());
+            final Object environment = this.getEnvironment();
+            result = result * prime + (environment == null ? 43 : environment.hashCode());
+            final Object queryType = this.getQueryType();
+            result = result * prime + (queryType == null ? 43 : queryType.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "ResourceGroupsManager.ExactSelectorsDetail(resourceGroupId=" + this.getResourceGroupId() +
+                    ", updateTime=" + this.getUpdateTime() + ", source=" + this.getSource() +
+                    ", environment=" + this.getEnvironment() + ", queryType=" + this.getQueryType() + ")";
+        }
     }
-
-    @Override
-    public int compareTo(SelectorsDetail o) {
-      if (this.resourceGroupId < o.resourceGroupId) {
-        return 1;
-      } else {
-        return this.resourceGroupId == o.resourceGroupId ? 0 : -1;
-      }
-    }
-
-    public @Nonnull long getResourceGroupId()
-    {return this.resourceGroupId;}
-
-    public @Nonnull long getPriority()
-    {return this.priority;}
-
-    public String getUserRegex()
-    {return this.userRegex;}
-
-    public String getSourceRegex()
-    {return this.sourceRegex;}
-
-    public String getQueryType()
-    {return this.queryType;}
-
-    public String getClientTags()
-    {return this.clientTags;}
-
-    public String getSelectorResourceEstimate()
-    {return this.selectorResourceEstimate;}
-
-    public void setResourceGroupId(@Nonnull long resourceGroupId)
-    {this.resourceGroupId = resourceGroupId;}
-
-    public void setPriority(@Nonnull long priority)
-    {this.priority = priority;}
-
-    public void setUserRegex(String userRegex)
-    {this.userRegex = userRegex;}
-
-    public void setSourceRegex(String sourceRegex)
-    {this.sourceRegex = sourceRegex;}
-
-    public void setQueryType(String queryType)
-    {this.queryType = queryType;}
-
-    public void setClientTags(String clientTags)
-    {this.clientTags = clientTags;}
-
-    public void setSelectorResourceEstimate(String selectorResourceEstimate)
-    {this.selectorResourceEstimate = selectorResourceEstimate;}
-
-    public boolean equals(final Object o)
-    {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof SelectorsDetail)) {
-            return false;
-        }
-        final SelectorsDetail other = (SelectorsDetail) o;
-        if (!other.canEqual((Object) this)) {
-            return false;
-        }
-        if (this.getResourceGroupId() != other.getResourceGroupId()) {
-            return false;
-        }
-        if (this.getPriority() != other.getPriority()) {
-            return false;
-        }
-        final Object this$userRegex = this.getUserRegex();
-        final Object other$userRegex = other.getUserRegex();
-        if (this$userRegex == null ? other$userRegex != null : !this$userRegex.equals(other$userRegex)) {
-            return false;
-        }
-        final Object this$sourceRegex = this.getSourceRegex();
-        final Object other$sourceRegex = other.getSourceRegex();
-        if (this$sourceRegex == null ? other$sourceRegex != null : !this$sourceRegex.equals(other$sourceRegex)) {
-            return false;
-        }
-        final Object this$queryType = this.getQueryType();
-        final Object other$queryType = other.getQueryType();
-        if (this$queryType == null ? other$queryType != null : !this$queryType.equals(other$queryType)) {
-            return false;
-        }
-        final Object this$clientTags = this.getClientTags();
-        final Object other$clientTags = other.getClientTags();
-        if (this$clientTags == null ? other$clientTags != null : !this$clientTags.equals(other$clientTags)) {
-            return false;
-        }
-        final Object this$selectorResourceEstimate = this.getSelectorResourceEstimate();
-        final Object other$selectorResourceEstimate = other.getSelectorResourceEstimate();
-        if (this$selectorResourceEstimate == null ? other$selectorResourceEstimate != null : !this$selectorResourceEstimate.equals(other$selectorResourceEstimate)) {
-            return false;
-        }
-        return true;
-    }
-
-    protected boolean canEqual(final Object other)
-    {return other instanceof SelectorsDetail;}
-
-    public int hashCode()
-    {
-        final int PRIME = 59;
-        int result = 1;
-        final long $resourceGroupId = this.getResourceGroupId();
-        result = result * PRIME + (int) ($resourceGroupId >>> 32 ^ $resourceGroupId);
-        final long $priority = this.getPriority();
-        result = result * PRIME + (int) ($priority >>> 32 ^ $priority);
-        final Object $userRegex = this.getUserRegex();
-        result = result * PRIME + ($userRegex == null ? 43 : $userRegex.hashCode());
-        final Object $sourceRegex = this.getSourceRegex();
-        result = result * PRIME + ($sourceRegex == null ? 43 : $sourceRegex.hashCode());
-        final Object $queryType = this.getQueryType();
-        result = result * PRIME + ($queryType == null ? 43 : $queryType.hashCode());
-        final Object $clientTags = this.getClientTags();
-        result = result * PRIME + ($clientTags == null ? 43 : $clientTags.hashCode());
-        final Object $selectorResourceEstimate = this.getSelectorResourceEstimate();
-        result = result * PRIME + ($selectorResourceEstimate == null ? 43 : $selectorResourceEstimate.hashCode());
-        return result;
-    }
-
-    public String toString() {
-        return "ResourceGroupsManager.SelectorsDetail(resourceGroupId=" + this.getResourceGroupId() +
-                ", priority=" + this.getPriority() + ", userRegex=" + this.getUserRegex() +
-                ", sourceRegex=" + this.getSourceRegex() + ", queryType=" + this.getQueryType() +
-                ", clientTags=" + this.getClientTags() +
-                ", selectorResourceEstimate=" + this.getSelectorResourceEstimate() + ")";}
-  }
-
-  class GlobalPropertiesDetail implements Comparable<GlobalPropertiesDetail> {
-    @Nonnull private String name;
-    private String value;
-
-    public GlobalPropertiesDetail() {}
-
-    public GlobalPropertiesDetail(@Nonnull String name)
-    {
-        this.name = name;
-    }
-
-    @Override
-    public int compareTo(GlobalPropertiesDetail o) {
-      return 0;
-    }
-
-    public @Nonnull String getName()
-    {return this.name;}
-
-    public String getValue()
-    {return this.value;}
-
-    public void setName(@Nonnull String name)
-    {this.name = name;}
-
-    public void setValue(String value)
-    {this.value = value;}
-
-    public boolean equals(final Object o)
-    {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof GlobalPropertiesDetail)) {
-            return false;
-        }
-        final GlobalPropertiesDetail other = (GlobalPropertiesDetail) o;
-        if (!other.canEqual((Object) this)) {
-            return false;
-        }
-        final Object this$name = this.getName();
-        final Object other$name = other.getName();
-        if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
-            return false;
-        }
-        final Object this$value = this.getValue();
-        final Object other$value = other.getValue();
-        if (this$value == null ? other$value != null : !this$value.equals(other$value)) {
-            return false;
-        }
-        return true;
-    }
-
-    protected boolean canEqual(final Object other)
-    {return other instanceof GlobalPropertiesDetail;}
-
-    public int hashCode()
-    {
-        final int PRIME = 59;
-        int result = 1;
-        final Object $name = this.getName();
-        result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-        final Object $value = this.getValue();
-        result = result * PRIME + ($value == null ? 43 : $value.hashCode());
-        return result;
-    }
-
-    public String toString()
-    {return "ResourceGroupsManager.GlobalPropertiesDetail(name=" + this.getName() + ", value=" + this.getValue() + ")";}
-  }
-
-  class ExactSelectorsDetail implements Comparable<ExactSelectorsDetail> {
-    @Nonnull private String resourceGroupId;
-    @Nonnull private String updateTime;
-
-    @Nonnull private String source;
-    private String environment;
-    private String queryType;
-
-    public ExactSelectorsDetail() {}
-
-    public ExactSelectorsDetail(@Nonnull String resourceGroupId, @Nonnull String updateTime, @Nonnull String source)
-    {
-        this.resourceGroupId = resourceGroupId;
-        this.updateTime = updateTime;
-        this.source = source;
-    }
-
-    @Override
-    public int compareTo(ExactSelectorsDetail o) {
-      return 0;
-    }
-
-    public @Nonnull String getResourceGroupId()
-    {return this.resourceGroupId;}
-
-    public @Nonnull String getUpdateTime()
-    {return this.updateTime;}
-
-    public @Nonnull String getSource()
-    {return this.source;}
-
-    public String getEnvironment()
-    {return this.environment;}
-
-    public String getQueryType()
-    {return this.queryType;}
-
-    public void setResourceGroupId(@Nonnull String resourceGroupId)
-    {this.resourceGroupId = resourceGroupId;}
-
-    public void setUpdateTime(@Nonnull String updateTime)
-    {this.updateTime = updateTime;}
-
-    public void setSource(@Nonnull String source)
-    {this.source = source;}
-
-    public void setEnvironment(String environment)
-    {this.environment = environment;}
-
-    public void setQueryType(String queryType)
-    {this.queryType = queryType;}
-
-    public boolean equals(final Object o)
-    {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof ExactSelectorsDetail)) {
-            return false;
-        }
-        final ExactSelectorsDetail other = (ExactSelectorsDetail) o;
-        if (!other.canEqual((Object) this)) {
-            return false;
-        }
-        final Object this$resourceGroupId = this.getResourceGroupId();
-        final Object other$resourceGroupId = other.getResourceGroupId();
-        if (this$resourceGroupId == null ? other$resourceGroupId != null : !this$resourceGroupId.equals(other$resourceGroupId)) {
-            return false;
-        }
-        final Object this$updateTime = this.getUpdateTime();
-        final Object other$updateTime = other.getUpdateTime();
-        if (this$updateTime == null ? other$updateTime != null : !this$updateTime.equals(other$updateTime)) {
-            return false;
-        }
-        final Object this$source = this.getSource();
-        final Object other$source = other.getSource();
-        if (this$source == null ? other$source != null : !this$source.equals(other$source)) {
-            return false;
-        }
-        final Object this$environment = this.getEnvironment();
-        final Object other$environment = other.getEnvironment();
-        if (this$environment == null ? other$environment != null : !this$environment.equals(other$environment)) {
-            return false;
-        }
-        final Object this$queryType = this.getQueryType();
-        final Object other$queryType = other.getQueryType();
-        if (this$queryType == null ? other$queryType != null : !this$queryType.equals(other$queryType)) {
-            return false;
-        }
-        return true;
-    }
-
-    protected boolean canEqual(final Object other)
-    {return other instanceof ExactSelectorsDetail;}
-
-    public int hashCode()
-    {
-        final int PRIME = 59;
-        int result = 1;
-        final Object $resourceGroupId = this.getResourceGroupId();
-        result = result * PRIME + ($resourceGroupId == null ? 43 : $resourceGroupId.hashCode());
-        final Object $updateTime = this.getUpdateTime();
-        result = result * PRIME + ($updateTime == null ? 43 : $updateTime.hashCode());
-        final Object $source = this.getSource();
-        result = result * PRIME + ($source == null ? 43 : $source.hashCode());
-        final Object $environment = this.getEnvironment();
-        result = result * PRIME + ($environment == null ? 43 : $environment.hashCode());
-        final Object $queryType = this.getQueryType();
-        result = result * PRIME + ($queryType == null ? 43 : $queryType.hashCode());
-        return result;
-    }
-
-    public String toString(){
-        return "ResourceGroupsManager.ExactSelectorsDetail(resourceGroupId=" + this.getResourceGroupId() +
-                ", updateTime=" + this.getUpdateTime() + ", source=" + this.getSource() +
-                ", environment=" + this.getEnvironment() + ", queryType=" + this.getQueryType() + ")";}
-  }
 }

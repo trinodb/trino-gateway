@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class HaGatewayConfiguration
         extends AppConfiguration
@@ -25,173 +26,215 @@ public class HaGatewayConfiguration
     public HaGatewayConfiguration() {}
 
     public RequestRouterConfiguration getRequestRouter()
-    {return this.requestRouter;}
+    {
+        return this.requestRouter;
+    }
 
     public void setRequestRouter(RequestRouterConfiguration requestRouter)
-    {this.requestRouter = requestRouter;}
+    {
+        this.requestRouter = requestRouter;
+    }
 
     public NotifierConfiguration getNotifier()
-    {return this.notifier;}
+    {
+        return this.notifier;
+    }
 
     public void setNotifier(NotifierConfiguration notifier)
-    {this.notifier = notifier;}
+    {
+        this.notifier = notifier;
+    }
 
     public DataStoreConfiguration getDataStore()
-    {return this.dataStore;}
+    {
+        return this.dataStore;
+    }
 
     public void setDataStore(DataStoreConfiguration dataStore)
-    {this.dataStore = dataStore;}
+    {
+        this.dataStore = dataStore;
+    }
 
     public MonitorConfiguration getMonitor()
-    {return this.monitor;}
+    {
+        return this.monitor;
+    }
 
     public void setMonitor(MonitorConfiguration monitor)
-    {this.monitor = monitor;}
+    {
+        this.monitor = monitor;
+    }
 
     public RoutingRulesConfiguration getRoutingRules()
-    {return this.routingRules;}
+    {
+        return this.routingRules;
+    }
 
     public void setRoutingRules(RoutingRulesConfiguration routingRules)
-    {this.routingRules = routingRules;}
+    {
+        this.routingRules = routingRules;
+    }
 
     public AuthenticationConfiguration getAuthentication()
-    {return this.authentication;}
+    {
+        return this.authentication;
+    }
 
     public void setAuthentication(AuthenticationConfiguration authentication)
-    {this.authentication = authentication;}
+    {
+        this.authentication = authentication;
+    }
 
     public AuthorizationConfiguration getAuthorization()
-    {return this.authorization;}
+    {
+        return this.authorization;
+    }
 
     public void setAuthorization(AuthorizationConfiguration authorization)
-    {this.authorization = authorization;}
+    {
+        this.authorization = authorization;
+    }
 
     public Map<String, UserConfiguration> getPresetUsers()
-    {return this.presetUsers;}
+    {
+        return this.presetUsers;
+    }
 
     public void setPresetUsers(Map<String, UserConfiguration> presetUsers)
-    {this.presetUsers = presetUsers;}
+    {
+        this.presetUsers = presetUsers;
+    }
 
     public BackendStateConfiguration getBackendState()
-    {return this.backendState;}
+    {
+        return this.backendState;
+    }
 
     public void setBackendState(BackendStateConfiguration backendState)
-    {this.backendState = backendState;}
+    {
+        this.backendState = backendState;
+    }
 
     public ClusterStatsConfiguration getClusterStatsConfiguration()
-    {return this.clusterStatsConfiguration;}
+    {
+        return this.clusterStatsConfiguration;
+    }
 
     public void setClusterStatsConfiguration(ClusterStatsConfiguration clusterStatsConfiguration)
-    {this.clusterStatsConfiguration = clusterStatsConfiguration;}
+    {
+        this.clusterStatsConfiguration = clusterStatsConfiguration;
+    }
 
     public List<String> getExtraWhitelistPaths()
-    {return this.extraWhitelistPaths;}
+    {
+        return this.extraWhitelistPaths;
+    }
 
     public void setExtraWhitelistPaths(List<String> extraWhitelistPaths)
-    {this.extraWhitelistPaths = extraWhitelistPaths;}
+    {
+        this.extraWhitelistPaths = extraWhitelistPaths;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof HaGatewayConfiguration)) {
+        if (!(o instanceof HaGatewayConfiguration other)) {
             return false;
         }
-        final HaGatewayConfiguration other = (HaGatewayConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
-        final Object this$requestRouter = this.getRequestRouter();
-        final Object other$requestRouter = other.getRequestRouter();
-        if (this$requestRouter == null ? other$requestRouter != null : !this$requestRouter.equals(other$requestRouter)) {
+        final Object requestRouter = this.getRequestRouter();
+        final Object otherRequestRouter = other.getRequestRouter();
+        if (!Objects.equals(requestRouter, otherRequestRouter)) {
             return false;
         }
-        final Object this$notifier = this.getNotifier();
-        final Object other$notifier = other.getNotifier();
-        if (this$notifier == null ? other$notifier != null : !this$notifier.equals(other$notifier)) {
+        final Object notifier = this.getNotifier();
+        final Object otherNotifier = other.getNotifier();
+        if (!Objects.equals(notifier, otherNotifier)) {
             return false;
         }
-        final Object this$dataStore = this.getDataStore();
-        final Object other$dataStore = other.getDataStore();
-        if (this$dataStore == null ? other$dataStore != null : !this$dataStore.equals(other$dataStore)) {
+        final Object dataStore = this.getDataStore();
+        final Object otherDataStore = other.getDataStore();
+        if (!Objects.equals(dataStore, otherDataStore)) {
             return false;
         }
-        final Object this$monitor = this.getMonitor();
-        final Object other$monitor = other.getMonitor();
-        if (this$monitor == null ? other$monitor != null : !this$monitor.equals(other$monitor)) {
+        final Object monitor = this.getMonitor();
+        final Object otherMonitor = other.getMonitor();
+        if (!Objects.equals(monitor, otherMonitor)) {
             return false;
         }
-        final Object this$routingRules = this.getRoutingRules();
-        final Object other$routingRules = other.getRoutingRules();
-        if (this$routingRules == null ? other$routingRules != null : !this$routingRules.equals(other$routingRules)) {
+        final Object routingRules = this.getRoutingRules();
+        final Object otherRoutingRules = other.getRoutingRules();
+        if (!Objects.equals(routingRules, otherRoutingRules)) {
             return false;
         }
-        final Object this$authentication = this.getAuthentication();
-        final Object other$authentication = other.getAuthentication();
-        if (this$authentication == null ? other$authentication != null : !this$authentication.equals(other$authentication)) {
+        final Object authentication = this.getAuthentication();
+        final Object otherAuthentication = other.getAuthentication();
+        if (!Objects.equals(authentication, otherAuthentication)) {
             return false;
         }
-        final Object this$authorization = this.getAuthorization();
-        final Object other$authorization = other.getAuthorization();
-        if (this$authorization == null ? other$authorization != null : !this$authorization.equals(other$authorization)) {
+        final Object authorization = this.getAuthorization();
+        final Object otherAuthorization = other.getAuthorization();
+        if (!Objects.equals(authorization, otherAuthorization)) {
             return false;
         }
-        final Object this$presetUsers = this.getPresetUsers();
-        final Object other$presetUsers = other.getPresetUsers();
-        if (this$presetUsers == null ? other$presetUsers != null : !this$presetUsers.equals(other$presetUsers)) {
+        final Object presetUsers = this.getPresetUsers();
+        final Object otherPresetUsers = other.getPresetUsers();
+        if (!Objects.equals(presetUsers, otherPresetUsers)) {
             return false;
         }
-        final Object this$backendState = this.getBackendState();
-        final Object other$backendState = other.getBackendState();
-        if (this$backendState == null ? other$backendState != null : !this$backendState.equals(other$backendState)) {
+        final Object backendState = this.getBackendState();
+        final Object otherBackendState = other.getBackendState();
+        if (!Objects.equals(backendState, otherBackendState)) {
             return false;
         }
-        final Object this$clusterStatsConfiguration = this.getClusterStatsConfiguration();
-        final Object other$clusterStatsConfiguration = other.getClusterStatsConfiguration();
-        if (this$clusterStatsConfiguration == null ? other$clusterStatsConfiguration != null : !this$clusterStatsConfiguration.equals(other$clusterStatsConfiguration)) {
+        final Object clusterStatsConfiguration = this.getClusterStatsConfiguration();
+        final Object otherClusterStatsConfiguration = other.getClusterStatsConfiguration();
+        if (!Objects.equals(clusterStatsConfiguration, otherClusterStatsConfiguration)) {
             return false;
         }
-        final Object this$extraWhitelistPaths = this.getExtraWhitelistPaths();
-        final Object other$extraWhitelistPaths = other.getExtraWhitelistPaths();
-        if (this$extraWhitelistPaths == null ? other$extraWhitelistPaths != null : !this$extraWhitelistPaths.equals(other$extraWhitelistPaths)) {
-            return false;
-        }
-        return true;
+        final Object extraWhitelistPaths = this.getExtraWhitelistPaths();
+        final Object otherExtraWhitelistPaths = other.getExtraWhitelistPaths();
+        return Objects.equals(extraWhitelistPaths, otherExtraWhitelistPaths);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof HaGatewayConfiguration;}
+    {
+        return other instanceof HaGatewayConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = super.hashCode();
-        final Object $requestRouter = this.getRequestRouter();
-        result = result * PRIME + ($requestRouter == null ? 43 : $requestRouter.hashCode());
-        final Object $notifier = this.getNotifier();
-        result = result * PRIME + ($notifier == null ? 43 : $notifier.hashCode());
-        final Object $dataStore = this.getDataStore();
-        result = result * PRIME + ($dataStore == null ? 43 : $dataStore.hashCode());
-        final Object $monitor = this.getMonitor();
-        result = result * PRIME + ($monitor == null ? 43 : $monitor.hashCode());
-        final Object $routingRules = this.getRoutingRules();
-        result = result * PRIME + ($routingRules == null ? 43 : $routingRules.hashCode());
-        final Object $authentication = this.getAuthentication();
-        result = result * PRIME + ($authentication == null ? 43 : $authentication.hashCode());
-        final Object $authorization = this.getAuthorization();
-        result = result * PRIME + ($authorization == null ? 43 : $authorization.hashCode());
-        final Object $presetUsers = this.getPresetUsers();
-        result = result * PRIME + ($presetUsers == null ? 43 : $presetUsers.hashCode());
-        final Object $backendState = this.getBackendState();
-        result = result * PRIME + ($backendState == null ? 43 : $backendState.hashCode());
-        final Object $clusterStatsConfiguration = this.getClusterStatsConfiguration();
-        result = result * PRIME + ($clusterStatsConfiguration == null ? 43 : $clusterStatsConfiguration.hashCode());
-        final Object $extraWhitelistPaths = this.getExtraWhitelistPaths();
-        result = result * PRIME + ($extraWhitelistPaths == null ? 43 : $extraWhitelistPaths.hashCode());
+        final Object requestRouter = this.getRequestRouter();
+        result = result * prime + (requestRouter == null ? 43 : requestRouter.hashCode());
+        final Object notifier = this.getNotifier();
+        result = result * prime + (notifier == null ? 43 : notifier.hashCode());
+        final Object dataStore = this.getDataStore();
+        result = result * prime + (dataStore == null ? 43 : dataStore.hashCode());
+        final Object monitor = this.getMonitor();
+        result = result * prime + (monitor == null ? 43 : monitor.hashCode());
+        final Object routingRules = this.getRoutingRules();
+        result = result * prime + (routingRules == null ? 43 : routingRules.hashCode());
+        final Object authentication = this.getAuthentication();
+        result = result * prime + (authentication == null ? 43 : authentication.hashCode());
+        final Object authorization = this.getAuthorization();
+        result = result * prime + (authorization == null ? 43 : authorization.hashCode());
+        final Object presetUsers = this.getPresetUsers();
+        result = result * prime + (presetUsers == null ? 43 : presetUsers.hashCode());
+        final Object backendState = this.getBackendState();
+        result = result * prime + (backendState == null ? 43 : backendState.hashCode());
+        final Object clusterStatsConfiguration = this.getClusterStatsConfiguration();
+        result = result * prime + (clusterStatsConfiguration == null ? 43 : clusterStatsConfiguration.hashCode());
+        final Object extraWhitelistPaths = this.getExtraWhitelistPaths();
+        result = result * prime + (extraWhitelistPaths == null ? 43 : extraWhitelistPaths.hashCode());
         return result;
     }
 

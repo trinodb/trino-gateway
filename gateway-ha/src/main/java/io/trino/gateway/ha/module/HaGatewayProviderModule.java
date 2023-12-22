@@ -43,229 +43,245 @@ import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.proxyserver.ProxyHandler;
 import io.trino.gateway.proxyserver.ProxyServer;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class HaGatewayProviderModule extends AppModule<HaGatewayConfiguration, Environment> {
+public class HaGatewayProviderModule
+        extends AppModule<HaGatewayConfiguration, Environment>
+{
+    private final ResourceGroupsManager resourceGroupsManager;
+    private final GatewayBackendManager gatewayBackendManager;
+    private final QueryHistoryManager queryHistoryManager;
+    private final RoutingManager routingManager;
+    private final JdbcConnectionManager connectionManager;
+    private final LbOAuthManager oauthManager;
+    private final LbFormAuthManager formAuthManager;
+    private final AuthorizationManager authorizationManager;
+    private final BackendStateManager backendStateConnectionManager;
+    private final AuthFilter authenticationFilter;
+    private final List<String> extraWhitelistPaths;
 
-  private final ResourceGroupsManager resourceGroupsManager;
-  private final GatewayBackendManager gatewayBackendManager;
-  private final QueryHistoryManager queryHistoryManager;
-  private final RoutingManager routingManager;
-  private final JdbcConnectionManager connectionManager;
-  private final LbOAuthManager oauthManager;
-  private final LbFormAuthManager formAuthManager;
-  private final AuthorizationManager authorizationManager;
-  private final BackendStateManager backendStateConnectionManager;
-  private final AuthFilter authenticationFilter;
-  private final List<String> extraWhitelistPaths;
+    public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
+    {
+        super(configuration, environment);
+        connectionManager = new JdbcConnectionManager(configuration.getDataStore());
+        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
+        gatewayBackendManager = new HaGatewayManager(connectionManager);
+        queryHistoryManager = new HaQueryHistoryManager(connectionManager);
+        routingManager =
+                new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
 
-  public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment) {
-    super(configuration, environment);
-    connectionManager = new JdbcConnectionManager(configuration.getDataStore());
-    resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-    gatewayBackendManager = new HaGatewayManager(connectionManager);
-    queryHistoryManager = new HaQueryHistoryManager(connectionManager);
-    routingManager =
-        new HaRoutingManager(gatewayBackendManager, (HaQueryHistoryManager) queryHistoryManager);
+        Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
+        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
 
-    Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
-    AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
+        oauthManager = getOAuthManager(configuration);
+        formAuthManager = getFormAuthManager(configuration);
 
-    oauthManager = getOAuthManager(configuration);
-    formAuthManager = getFormAuthManager(configuration);
-
-    authorizationManager = new AuthorizationManager(configuration.getAuthorization(),
-        presetUsers);
-    authenticationFilter = getAuthFilter(configuration);
-    backendStateConnectionManager = new BackendStateManager(configuration.getBackendState());
-    extraWhitelistPaths = configuration.getExtraWhitelistPaths();
-  }
-
-  private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration) {
-    AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-    if (authenticationConfiguration != null
-        && authenticationConfiguration.getOauth() != null) {
-      return new LbOAuthManager(authenticationConfiguration.getOauth());
-    }
-    return null;
-  }
-
-  private LbFormAuthManager getFormAuthManager(HaGatewayConfiguration configuration) {
-    AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-    if (authenticationConfiguration != null
-        && authenticationConfiguration.getForm() != null) {
-      return new LbFormAuthManager(authenticationConfiguration.getForm(),
-          configuration.getPresetUsers());
-    }
-    return null;
-  }
-
-  private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config,
-                                                     Authorizer<LbPrincipal> authorizer) {
-    List<AuthFilter> authFilters = new ArrayList<>();
-    String defaultType = config.getDefaultType();
-    if (oauthManager != null) {
-      authFilters.add(new LbFilter.Builder<LbPrincipal>()
-          .setAuthenticator(new LbAuthenticator(oauthManager,
-              authorizationManager))
-          .setAuthorizer(authorizer)
-          .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-          .setPrefix("Bearer")
-          .buildAuthFilter());
+        authorizationManager = new AuthorizationManager(configuration.getAuthorization(),
+                presetUsers);
+        authenticationFilter = getAuthFilter(configuration);
+        backendStateConnectionManager = new BackendStateManager(configuration.getBackendState());
+        extraWhitelistPaths = configuration.getExtraWhitelistPaths();
     }
 
-    if (formAuthManager != null) {
-      authFilters.add(new LbFilter.Builder<LbPrincipal>()
-          .setAuthenticator(new FormAuthenticator(formAuthManager,
-              authorizationManager))
-          .setAuthorizer(authorizer)
-          .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-          .setPrefix("Bearer")
-          .buildAuthFilter());
-
-      authFilters.add(new BasicCredentialAuthFilter.Builder<LbPrincipal>()
-          .setAuthenticator(new ApiAuthenticator(formAuthManager,
-              authorizationManager))
-          .setAuthorizer(authorizer)
-          .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-          .setPrefix("Basic")
-          .buildAuthFilter());
+    private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
+    {
+        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
+        if (authenticationConfiguration != null
+                && authenticationConfiguration.getOauth() != null) {
+            return new LbOAuthManager(authenticationConfiguration.getOauth());
+        }
+        return null;
     }
 
-    return new ChainedAuthFilter(authFilters);
-
-  }
-
-  protected ProxyHandler getProxyHandler() {
-    Meter requestMeter =
-        getEnvironment()
-            .metrics()
-            .meter(getConfiguration().getRequestRouter().getName() + ".requests");
-
-    // By default, use routing group header to route
-    RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
-    // Use rules engine if enabled
-    RoutingRulesConfiguration routingRulesConfig = getConfiguration().getRoutingRules();
-    if (routingRulesConfig.isRulesEngineEnabled()) {
-      String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-      routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
+    private LbFormAuthManager getFormAuthManager(HaGatewayConfiguration configuration)
+    {
+        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
+        if (authenticationConfiguration != null
+                && authenticationConfiguration.getForm() != null) {
+            return new LbFormAuthManager(authenticationConfiguration.getForm(),
+                    configuration.getPresetUsers());
+        }
+        return null;
     }
 
-    return new QueryIdCachingProxyHandler(
-        getQueryHistoryManager(),
-        getRoutingManager(),
-        routingGroupSelector,
-        getApplicationPort(),
-        requestMeter,
-        extraWhitelistPaths);
-  }
+    private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config,
+            Authorizer<LbPrincipal> authorizer)
+    {
+        List<AuthFilter> authFilters = new ArrayList<>();
+        String defaultType = config.getDefaultType();
+        if (oauthManager != null) {
+            authFilters.add(new LbFilter.Builder<LbPrincipal>()
+                    .setAuthenticator(new LbAuthenticator(oauthManager,
+                            authorizationManager))
+                    .setAuthorizer(authorizer)
+                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
+                    .setPrefix("Bearer")
+                    .buildAuthFilter());
+        }
 
-  protected AuthFilter getAuthFilter(HaGatewayConfiguration configuration) {
+        if (formAuthManager != null) {
+            authFilters.add(new LbFilter.Builder<LbPrincipal>()
+                    .setAuthenticator(new FormAuthenticator(formAuthManager,
+                            authorizationManager))
+                    .setAuthorizer(authorizer)
+                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
+                    .setPrefix("Bearer")
+                    .buildAuthFilter());
 
-    AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
-    Authorizer<LbPrincipal> authorizer = (authorizationConfig != null)
-        ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
+            authFilters.add(new BasicCredentialAuthFilter.Builder<LbPrincipal>()
+                    .setAuthenticator(new ApiAuthenticator(formAuthManager,
+                            authorizationManager))
+                    .setAuthorizer(authorizer)
+                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
+                    .setPrefix("Basic")
+                    .buildAuthFilter());
+        }
 
-
-    AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
-
-    if (authenticationConfig != null) {
-      return getAuthenticationFilters(authenticationConfig, authorizer);
+        return new ChainedAuthFilter(authFilters);
     }
 
-    return new NoopFilter.Builder<LbPrincipal>()
-        .setAuthenticator(new NoopAuthenticator())
-        .setAuthorizer(authorizer)
-        .buildAuthFilter();
-  }
+    protected ProxyHandler getProxyHandler()
+    {
+        Meter requestMeter =
+                getEnvironment()
+                        .metrics()
+                        .meter(getConfiguration().getRequestRouter().getName() + ".requests");
 
-  @Provides
-  @Singleton
-  public ProxyServer provideGateway() {
-    ProxyServer gateway = null;
-    if (getConfiguration().getRequestRouter() != null) {
-      // Setting up request router
-      RequestRouterConfiguration routerConfiguration = getConfiguration().getRequestRouter();
+        // By default, use routing group header to route
+        RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
+        // Use rules engine if enabled
+        RoutingRulesConfiguration routingRulesConfig = getConfiguration().getRoutingRules();
+        if (routingRulesConfig.isRulesEngineEnabled()) {
+            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
+            routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
+        }
 
-      ProxyServerConfiguration routerProxyConfig = new ProxyServerConfiguration();
-      routerProxyConfig.setLocalPort(routerConfiguration.getPort());
-      routerProxyConfig.setName(routerConfiguration.getName());
-      routerProxyConfig.setProxyTo("");
-      routerProxyConfig.setSsl(routerConfiguration.isSsl());
-      routerProxyConfig.setKeystorePath(routerConfiguration.getKeystorePath());
-      routerProxyConfig.setKeystorePass(routerConfiguration.getKeystorePass());
-      routerProxyConfig.setForwardKeystore(routerConfiguration.isForwardKeystore());
-      routerProxyConfig.setPreserveHost("false");
-      routerProxyConfig.setOutputBufferSize(routerConfiguration.getOutputBufferSize());
-      routerProxyConfig.setRequestHeaderSize(routerConfiguration.getRequestHeaderSize());
-      routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
-      routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
-      routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-      ProxyHandler proxyHandler = getProxyHandler();
-      gateway = new ProxyServer(routerProxyConfig, proxyHandler);
+        return new QueryIdCachingProxyHandler(
+                getQueryHistoryManager(),
+                getRoutingManager(),
+                routingGroupSelector,
+                getApplicationPort(),
+                requestMeter,
+                extraWhitelistPaths);
     }
-    return gateway;
-  }
 
-  @Provides
-  @Singleton
-  public ResourceGroupsManager getResourceGroupsManager() {
-    return this.resourceGroupsManager;
-  }
+    protected AuthFilter getAuthFilter(HaGatewayConfiguration configuration)
+    {
+        AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
+        Authorizer<LbPrincipal> authorizer = (authorizationConfig != null)
+                ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
 
-  @Provides
-  @Singleton
-  public GatewayBackendManager getGatewayBackendManager() {
-    return this.gatewayBackendManager;
-  }
+        AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
 
-  @Provides
-  @Singleton
-  public QueryHistoryManager getQueryHistoryManager() {
-    return this.queryHistoryManager;
-  }
+        if (authenticationConfig != null) {
+            return getAuthenticationFilters(authenticationConfig, authorizer);
+        }
 
-  @Provides
-  @Singleton
-  public RoutingManager getRoutingManager() {
-    return this.routingManager;
-  }
+        return new NoopFilter.Builder<LbPrincipal>()
+                .setAuthenticator(new NoopAuthenticator())
+                .setAuthorizer(authorizer)
+                .buildAuthFilter();
+    }
 
-  @Provides
-  @Singleton
-  public JdbcConnectionManager getConnectionManager() {
-    return this.connectionManager;
-  }
+    @Provides
+    @Singleton
+    public ProxyServer provideGateway()
+    {
+        ProxyServer gateway = null;
+        if (getConfiguration().getRequestRouter() != null) {
+            // Setting up request router
+            RequestRouterConfiguration routerConfiguration = getConfiguration().getRequestRouter();
 
-  @Provides
-  @Singleton
-  public LbOAuthManager getAuthenticationManager() {
-    return this.oauthManager;
-  }
+            ProxyServerConfiguration routerProxyConfig = new ProxyServerConfiguration();
+            routerProxyConfig.setLocalPort(routerConfiguration.getPort());
+            routerProxyConfig.setName(routerConfiguration.getName());
+            routerProxyConfig.setProxyTo("");
+            routerProxyConfig.setSsl(routerConfiguration.isSsl());
+            routerProxyConfig.setKeystorePath(routerConfiguration.getKeystorePath());
+            routerProxyConfig.setKeystorePass(routerConfiguration.getKeystorePass());
+            routerProxyConfig.setForwardKeystore(routerConfiguration.isForwardKeystore());
+            routerProxyConfig.setPreserveHost("false");
+            routerProxyConfig.setOutputBufferSize(routerConfiguration.getOutputBufferSize());
+            routerProxyConfig.setRequestHeaderSize(routerConfiguration.getRequestHeaderSize());
+            routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
+            routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
+            routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
+            ProxyHandler proxyHandler = getProxyHandler();
+            gateway = new ProxyServer(routerProxyConfig, proxyHandler);
+        }
+        return gateway;
+    }
 
-  @Provides
-  @Singleton
-  public LbFormAuthManager getFormAuthentication() {
-    return this.formAuthManager;
-  }
+    @Provides
+    @Singleton
+    public ResourceGroupsManager getResourceGroupsManager()
+    {
+        return this.resourceGroupsManager;
+    }
 
-  @Provides
-  @Singleton
-  public AuthorizationManager getAuthorizationManager() {
-    return this.authorizationManager;
-  }
+    @Provides
+    @Singleton
+    public GatewayBackendManager getGatewayBackendManager()
+    {
+        return this.gatewayBackendManager;
+    }
 
-  @Provides
-  @Singleton
-  public AuthFilter getAuthenticationFilter() {
-    return authenticationFilter;
-  }
+    @Provides
+    @Singleton
+    public QueryHistoryManager getQueryHistoryManager()
+    {
+        return this.queryHistoryManager;
+    }
 
-  @Provides
-  @Singleton
-  public BackendStateManager getBackendStateConnectionManager() {
-    return this.backendStateConnectionManager;
-  }
+    @Provides
+    @Singleton
+    public RoutingManager getRoutingManager()
+    {
+        return this.routingManager;
+    }
+
+    @Provides
+    @Singleton
+    public JdbcConnectionManager getConnectionManager()
+    {
+        return this.connectionManager;
+    }
+
+    @Provides
+    @Singleton
+    public LbOAuthManager getAuthenticationManager()
+    {
+        return this.oauthManager;
+    }
+
+    @Provides
+    @Singleton
+    public LbFormAuthManager getFormAuthentication()
+    {
+        return this.formAuthManager;
+    }
+
+    @Provides
+    @Singleton
+    public AuthorizationManager getAuthorizationManager()
+    {
+        return this.authorizationManager;
+    }
+
+    @Provides
+    @Singleton
+    public AuthFilter getAuthenticationFilter()
+    {
+        return authenticationFilter;
+    }
+
+    @Provides
+    @Singleton
+    public BackendStateManager getBackendStateConnectionManager()
+    {
+        return this.backendStateConnectionManager;
+    }
 }

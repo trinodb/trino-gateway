@@ -1,23 +1,10 @@
 package io.trino.gateway.ha.clustermonitor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Properties;
-import java.util.stream.Stream;
-
-import io.trino.gateway.ha.security.LbOAuthManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,8 +17,20 @@ import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Properties;
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestClusterStatsJdbcMonitor {
+public class TestClusterStatsJdbcMonitor
+{
     private static final Logger log = LoggerFactory.getLogger(TestClusterStatsJdbcMonitor.class);
 
     ClusterStatsJdbcMonitor clusterStatsJdbcMonitor;
@@ -44,14 +43,25 @@ public class TestClusterStatsJdbcMonitor {
 
     private Properties properties;
 
+    private static Stream<Arguments> provideProtocolAndPortAndSsl()
+    {
+        return Stream.of(
+                Arguments.of("https", "90", "jdbc:trino://trino.example.com:90/system", "true"),
+                Arguments.of("http", "90", "jdbc:trino://trino.example.com:90/system", "false"),
+                Arguments.of("https", "", "jdbc:trino://trino.example.com:443/system", "true"),
+                Arguments.of("http", "", "jdbc:trino://trino.example.com:80/system", "false"));
+    }
+
     @BeforeEach
-    public void initMocks() {
+    public void initMocks()
+    {
         log.info("initializing test");
         MockitoAnnotations.openMocks(this);
     }
 
     @AfterAll
-    public void resetMocks() {
+    public void resetMocks()
+    {
         log.info("resetting mocks");
         Mockito.reset(connection);
         Mockito.reset(preparedStatement);
@@ -59,7 +69,8 @@ public class TestClusterStatsJdbcMonitor {
     }
 
     @BeforeAll
-    public void setUp() {
+    public void setUp()
+    {
         BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
         backendStateConfiguration.setUsername("Trino");
         properties = new Properties();
@@ -69,18 +80,12 @@ public class TestClusterStatsJdbcMonitor {
         clusterStatsJdbcMonitor = new ClusterStatsJdbcMonitor(backendStateConfiguration);
     }
 
-    private static Stream<Arguments> provideProtocolAndPortAndSsl(){
-        return Stream.of(
-            Arguments.of("https", "90", "jdbc:trino://trino.example.com:90/system", "true"),
-            Arguments.of("http", "90", "jdbc:trino://trino.example.com:90/system", "false"),
-            Arguments.of("https", "", "jdbc:trino://trino.example.com:443/system", "true"),
-            Arguments.of("http", "", "jdbc:trino://trino.example.com:80/system", "false")
-        );
-    }
     @ParameterizedTest
     @MethodSource("provideProtocolAndPortAndSsl")
-    public void testProtocolAndSsl(String scheme, String port, String expectedJdbcUrl, String expectedSsl) throws java.sql.SQLException {
-        try(MockedStatic<DriverManager> m = Mockito.mockStatic(java.sql.DriverManager.class)) {
+    public void testProtocolAndSsl(String scheme, String port, String expectedJdbcUrl, String expectedSsl)
+            throws java.sql.SQLException
+    {
+        try (MockedStatic<DriverManager> m = Mockito.mockStatic(java.sql.DriverManager.class)) {
             m.when(() -> DriverManager.getConnection(anyString(), any())).thenReturn(connection);
             when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
             when(preparedStatement.executeQuery()).thenReturn(resultSet);
@@ -96,4 +101,3 @@ public class TestClusterStatsJdbcMonitor {
         }
     }
 }
-

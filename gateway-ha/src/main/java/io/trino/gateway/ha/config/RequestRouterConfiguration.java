@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class RequestRouterConfiguration
 {
     // Local gateway port
@@ -30,108 +32,155 @@ public class RequestRouterConfiguration
     public RequestRouterConfiguration() {}
 
     public int getPort()
-    {return this.port;}
+    {
+        return this.port;
+    }
 
     public void setPort(int port)
-    {this.port = port;}
+    {
+        this.port = port;
+    }
 
     public String getName()
-    {return this.name;}
+    {
+        return this.name;
+    }
 
     public void setName(String name)
-    {this.name = name;}
+    {
+        this.name = name;
+    }
 
     public boolean isSsl()
-    {return this.ssl;}
+    {
+        return this.ssl;
+    }
 
     public void setSsl(boolean ssl)
-    {this.ssl = ssl;}
+    {
+        this.ssl = ssl;
+    }
 
     public String getKeystorePath()
-    {return this.keystorePath;}
+    {
+        return this.keystorePath;
+    }
 
     public void setKeystorePath(String keystorePath)
-    {this.keystorePath = keystorePath;}
+    {
+        this.keystorePath = keystorePath;
+    }
 
     public String getKeystorePass()
-    {return this.keystorePass;}
+    {
+        return this.keystorePass;
+    }
 
     public void setKeystorePass(String keystorePass)
-    {this.keystorePass = keystorePass;}
+    {
+        this.keystorePass = keystorePass;
+    }
 
     public int getHistorySize()
-    {return this.historySize;}
+    {
+        return this.historySize;
+    }
 
     public void setHistorySize(int historySize)
-    {this.historySize = historySize;}
+    {
+        this.historySize = historySize;
+    }
 
     public boolean isForwardKeystore()
-    {return this.forwardKeystore;}
+    {
+        return this.forwardKeystore;
+    }
 
     public void setForwardKeystore(boolean forwardKeystore)
-    {this.forwardKeystore = forwardKeystore;}
+    {
+        this.forwardKeystore = forwardKeystore;
+    }
 
     public int getOutputBufferSize()
-    {return this.outputBufferSize;}
+    {
+        return this.outputBufferSize;
+    }
 
     public void setOutputBufferSize(int outputBufferSize)
-    {this.outputBufferSize = outputBufferSize;}
+    {
+        this.outputBufferSize = outputBufferSize;
+    }
 
     public int getRequestHeaderSize()
-    {return this.requestHeaderSize;}
+    {
+        return this.requestHeaderSize;
+    }
 
     public void setRequestHeaderSize(int requestHeaderSize)
-    {this.requestHeaderSize = requestHeaderSize;}
+    {
+        this.requestHeaderSize = requestHeaderSize;
+    }
 
     public int getResponseHeaderSize()
-    {return this.responseHeaderSize;}
+    {
+        return this.responseHeaderSize;
+    }
 
     public void setResponseHeaderSize(int responseHeaderSize)
-    {this.responseHeaderSize = responseHeaderSize;}
+    {
+        this.responseHeaderSize = responseHeaderSize;
+    }
 
     public int getRequestBufferSize()
-    {return this.requestBufferSize;}
+    {
+        return this.requestBufferSize;
+    }
 
     public void setRequestBufferSize(int requestBufferSize)
-    {this.requestBufferSize = requestBufferSize;}
+    {
+        this.requestBufferSize = requestBufferSize;
+    }
 
     public int getResponseBufferSize()
-    {return this.responseBufferSize;}
+    {
+        return this.responseBufferSize;
+    }
 
     public void setResponseBufferSize(int responseBufferSize)
-    {this.responseBufferSize = responseBufferSize;}
+    {
+        this.responseBufferSize = responseBufferSize;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof RequestRouterConfiguration)) {
+        if (!(o instanceof RequestRouterConfiguration other)) {
             return false;
         }
-        final RequestRouterConfiguration other = (RequestRouterConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
         if (this.getPort() != other.getPort()) {
             return false;
         }
-        final Object this$name = this.getName();
-        final Object other$name = other.getName();
-        if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
+        final Object name = this.getName();
+        final Object otherName = other.getName();
+        if (!Objects.equals(name, otherName)) {
             return false;
         }
         if (this.isSsl() != other.isSsl()) {
             return false;
         }
-        final Object this$keystorePath = this.getKeystorePath();
-        final Object other$keystorePath = other.getKeystorePath();
-        if (this$keystorePath == null ? other$keystorePath != null : !this$keystorePath.equals(other$keystorePath)) {
+        final Object keystorePath = this.getKeystorePath();
+        final Object otherKeystorePath = other.getKeystorePath();
+        if (!Objects.equals(keystorePath, otherKeystorePath)) {
             return false;
         }
-        final Object this$keystorePass = this.getKeystorePass();
-        final Object other$keystorePass = other.getKeystorePass();
-        if (this$keystorePass == null ? other$keystorePass != null : !this$keystorePass.equals(other$keystorePass)) {
+        final Object keystorePass = this.getKeystorePass();
+        final Object otherKeystorePass = other.getKeystorePass();
+        if (!Objects.equals(keystorePass, otherKeystorePass)) {
             return false;
         }
         if (this.getHistorySize() != other.getHistorySize()) {
@@ -152,34 +201,33 @@ public class RequestRouterConfiguration
         if (this.getRequestBufferSize() != other.getRequestBufferSize()) {
             return false;
         }
-        if (this.getResponseBufferSize() != other.getResponseBufferSize()) {
-            return false;
-        }
-        return true;
+        return this.getResponseBufferSize() == other.getResponseBufferSize();
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof RequestRouterConfiguration;}
+    {
+        return other instanceof RequestRouterConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        result = result * PRIME + this.getPort();
-        final Object $name = this.getName();
-        result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-        result = result * PRIME + (this.isSsl() ? 79 : 97);
-        final Object $keystorePath = this.getKeystorePath();
-        result = result * PRIME + ($keystorePath == null ? 43 : $keystorePath.hashCode());
-        final Object $keystorePass = this.getKeystorePass();
-        result = result * PRIME + ($keystorePass == null ? 43 : $keystorePass.hashCode());
-        result = result * PRIME + this.getHistorySize();
-        result = result * PRIME + (this.isForwardKeystore() ? 79 : 97);
-        result = result * PRIME + this.getOutputBufferSize();
-        result = result * PRIME + this.getRequestHeaderSize();
-        result = result * PRIME + this.getResponseHeaderSize();
-        result = result * PRIME + this.getRequestBufferSize();
-        result = result * PRIME + this.getResponseBufferSize();
+        result = result * prime + this.getPort();
+        final Object name = this.getName();
+        result = result * prime + (name == null ? 43 : name.hashCode());
+        result = result * prime + (this.isSsl() ? 79 : 97);
+        final Object keystorePath = this.getKeystorePath();
+        result = result * prime + (keystorePath == null ? 43 : keystorePath.hashCode());
+        final Object keystorePass = this.getKeystorePass();
+        result = result * prime + (keystorePass == null ? 43 : keystorePass.hashCode());
+        result = result * prime + this.getHistorySize();
+        result = result * prime + (this.isForwardKeystore() ? 79 : 97);
+        result = result * prime + this.getOutputBufferSize();
+        result = result * prime + this.getRequestHeaderSize();
+        result = result * prime + this.getResponseHeaderSize();
+        result = result * prime + this.getRequestBufferSize();
+        result = result * prime + this.getResponseBufferSize();
         return result;
     }
 

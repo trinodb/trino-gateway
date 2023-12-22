@@ -13,40 +13,43 @@ import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.NotifierConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClusterStateListenerModule extends AppModule<HaGatewayConfiguration, Environment> {
-  List<TrinoClusterStatsObserver> observers;
-  MonitorConfiguration monitorConfig;
+public class ClusterStateListenerModule
+        extends AppModule<HaGatewayConfiguration, Environment>
+{
+    List<TrinoClusterStatsObserver> observers;
+    MonitorConfiguration monitorConfig;
 
-  public ClusterStateListenerModule(HaGatewayConfiguration config, Environment env) {
-    super(config, env);
-    monitorConfig = config.getMonitor();
-  }
+    public ClusterStateListenerModule(HaGatewayConfiguration config, Environment env)
+    {
+        super(config, env);
+        monitorConfig = config.getMonitor();
+    }
 
-  /**
-   * Observers to cluster stats updates from
-   * {@link ActiveClusterMonitor}.
-   *
-   * @return
-   */
-  @Provides
-  @Singleton
-  public List<TrinoClusterStatsObserver> getClusterStatsObservers(
-          RoutingManager mgr,
-          BackendStateManager backendStateManager
-  ) {
-    observers = new ArrayList<>();
-    NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
-    observers.add(new HealthCheckObserver(mgr));
-    observers.add(new ClusterStatsObserver(backendStateManager));
+    /**
+     * Observers to cluster stats updates from
+     * {@link ActiveClusterMonitor}.
+     */
+    @Provides
+    @Singleton
+    public List<TrinoClusterStatsObserver> getClusterStatsObservers(
+            RoutingManager mgr,
+            BackendStateManager backendStateManager)
+    {
+        observers = new ArrayList<>();
+        NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
+        observers.add(new HealthCheckObserver(mgr));
+        observers.add(new ClusterStatsObserver(backendStateManager));
 
-    return observers;
-  }
+        return observers;
+    }
 
-  @Provides
-  public MonitorConfiguration getMonitorConfiguration() {
-    return monitorConfig;
-  }
+    @Provides
+    public MonitorConfiguration getMonitorConfiguration()
+    {
+        return monitorConfig;
+    }
 }
