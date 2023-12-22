@@ -22,229 +22,233 @@ import java.net.URI;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
-public class LbOAuthManager {
-  private static final Logger log = LoggerFactory.getLogger(LbOAuthManager.class);
-  /**
-   * Cookie key to pass the token.
-   */
-  private final OAuthConfiguration oauthConfig;
+public class LbOAuthManager
+{
+    private static final Logger log = LoggerFactory.getLogger(LbOAuthManager.class);
+    /**
+     * Cookie key to pass the token.
+     */
+    private final OAuthConfiguration oauthConfig;
 
-  public LbOAuthManager(OAuthConfiguration configuration) {
-    this.oauthConfig = configuration;
-  }
-
-  public String getUserIdField() {
-    return oauthConfig.getUserIdField();
-  }
-
-  /**
-   * Exchanges authorization code for access token.
-   * Sets it in a cookie and redirects back to a location.
-   *
-   * @param code             the authorization code obtained from the authorization server
-   * @param redirectLocation the application path to redirect back to
-   * @return redirect response with a Set-Cookie header
-   */
-  public Response exchangeCodeForToken(String code, String redirectLocation) {
-    String tokenEndpoint = oauthConfig.getTokenEndpoint();
-    String clientId = oauthConfig.getClientId();
-    String clientSecret = oauthConfig.getClientSecret();
-    String redirectUri = oauthConfig.getRedirectUrl();
-    Client oauthClient = ClientBuilder.newBuilder().build();
-
-    Form form = new Form().param("grant_type", "authorization_code")
-        .param("client_id", clientId)
-        .param("client_secret", clientSecret)
-        .param("code", code)
-        .param("redirect_uri", redirectUri);
-
-    Response tokenResponse = oauthClient
-        .target(tokenEndpoint)
-        .request()
-        .post(Entity.form(form));
-
-    if (tokenResponse.getStatusInfo()
-        .getFamily() != Response.Status.Family.SUCCESSFUL) {
-      String message = String.format("token response failed with code %d - %s",
-          tokenResponse.getStatus(),
-          tokenResponse.readEntity(String.class));
-      log.error(message);
-      return Response.status(500).entity(message).build();
-    }
-
-    OidcTokens tokens = tokenResponse.readEntity(OidcTokens.class);
-
-    return Response.status(302)
-        .location(URI.create(redirectLocation))
-        .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
-        .build();
-  }
-
-  /**
-   * Redirects to the authorization provider for the authorization code.
-   *
-   * @return redirect response to the authorization provider
-   */
-  public Response getAuthorizationCode() {
-    String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
-    String clientId = oauthConfig.getClientId();
-    String redirectUrl = oauthConfig.getRedirectUrl();
-    String scopes = String.join("+", oauthConfig.getScopes());
-    String url = String.format(
-        "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
-        authorizationEndpoint, clientId, redirectUrl, scopes);
-
-    return Response.status(302)
-        .location(URI.create(url))
-        .build();
-  }
-
-  /**
-   * Verifies if the id token is valid. If valid, it returns a map with the claims,
-   * else an empty optional. idToken docs: https://www.oauth
-   * .com/oauth2-servers/openid-connect/id-tokens/
-   *
-   * @param idToken the access token provided back by the authorization server.
-   * @return a map with the token claims
-   * @throws Exception is thrown if the access token is invalid
-   */
-  public Optional<Map<String, Claim>> getClaimsFromIdToken(String idToken) {
-    try {
-      DecodedJWT jwt = JWT.decode(idToken);
-
-      String jwkEndpoint = oauthConfig.getJwkEndpoint();
-      JwkProvider provider = new UrlJwkProvider(new URL(jwkEndpoint));
-      Jwk jwk = provider.get(jwt.getKeyId());
-      RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
-
-      if (LbTokenUtil.validateToken(idToken, publicKey, jwt.getIssuer())) {
-        return Optional.of(jwt.getClaims());
-      }
-
-    } catch (Exception exc) {
-      log.error("Could not validate token or get claims from it.", exc);
-    }
-    return Optional.empty();
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  static final class OidcTokens {
-
-    @JsonProperty
-    private final String accessToken;
-    @JsonProperty
-    private final String idToken;
-    @JsonProperty
-    private final String scope;
-    @JsonProperty
-    private final String refreshToken;
-    @JsonProperty
-    private final String tokenType;
-    @JsonProperty
-    private final String expiresIn;
-
-    @JsonCreator
-    public OidcTokens(@JsonProperty("id_token") String idToken,
-                      @JsonProperty("access_token") String accessToken,
-                      @JsonProperty("refresh_token") String refreshToken,
-                      @JsonProperty("token_type") String tokenType,
-                      @JsonProperty("expires_in") String expiresIn,
-                      @JsonProperty("scope") String scope) {
-      this.accessToken = accessToken;
-      this.idToken = idToken;
-      this.tokenType = tokenType;
-      this.expiresIn = expiresIn;
-      this.scope = scope;
-      this.refreshToken = refreshToken;
-    }
-
-    public String getAccessToken()
-    {return this.accessToken;}
-
-    public String getIdToken()
-    {return this.idToken;}
-
-    public String getScope()
-    {return this.scope;}
-
-    public String getRefreshToken()
-    {return this.refreshToken;}
-
-    public String getTokenType()
-    {return this.tokenType;}
-
-    public String getExpiresIn()
-    {return this.expiresIn;}
-
-    public boolean equals(final Object o)
+    public LbOAuthManager(OAuthConfiguration configuration)
     {
-      if (o == this) {
-        return true;
-      }
-      if (!(o instanceof OidcTokens)) {
-        return false;
-      }
-      final OidcTokens other = (OidcTokens) o;
-      final Object this$accessToken = this.getAccessToken();
-      final Object other$accessToken = other.getAccessToken();
-      if (this$accessToken == null ? other$accessToken != null : !this$accessToken.equals(other$accessToken)) {
-        return false;
-      }
-      final Object this$idToken = this.getIdToken();
-      final Object other$idToken = other.getIdToken();
-      if (this$idToken == null ? other$idToken != null : !this$idToken.equals(other$idToken)) {
-        return false;
-      }
-      final Object this$scope = this.getScope();
-      final Object other$scope = other.getScope();
-      if (this$scope == null ? other$scope != null : !this$scope.equals(other$scope)) {
-        return false;
-      }
-      final Object this$refreshToken = this.getRefreshToken();
-      final Object other$refreshToken = other.getRefreshToken();
-      if (this$refreshToken == null ? other$refreshToken != null : !this$refreshToken.equals(other$refreshToken)) {
-        return false;
-      }
-      final Object this$tokenType = this.getTokenType();
-      final Object other$tokenType = other.getTokenType();
-      if (this$tokenType == null ? other$tokenType != null : !this$tokenType.equals(other$tokenType)) {
-        return false;
-      }
-      final Object this$expiresIn = this.getExpiresIn();
-      final Object other$expiresIn = other.getExpiresIn();
-      if (this$expiresIn == null ? other$expiresIn != null : !this$expiresIn.equals(other$expiresIn)) {
-        return false;
-      }
-      return true;
+        this.oauthConfig = configuration;
     }
 
-    public int hashCode()
+    public String getUserIdField()
     {
-      final int PRIME = 59;
-      int result = 1;
-      final Object $accessToken = this.getAccessToken();
-      result = result * PRIME + ($accessToken == null ? 43 : $accessToken.hashCode());
-      final Object $idToken = this.getIdToken();
-      result = result * PRIME + ($idToken == null ? 43 : $idToken.hashCode());
-      final Object $scope = this.getScope();
-      result = result * PRIME + ($scope == null ? 43 : $scope.hashCode());
-      final Object $refreshToken = this.getRefreshToken();
-      result = result * PRIME + ($refreshToken == null ? 43 : $refreshToken.hashCode());
-      final Object $tokenType = this.getTokenType();
-      result = result * PRIME + ($tokenType == null ? 43 : $tokenType.hashCode());
-      final Object $expiresIn = this.getExpiresIn();
-      result = result * PRIME + ($expiresIn == null ? 43 : $expiresIn.hashCode());
-      return result;
+        return oauthConfig.getUserIdField();
     }
 
-    public String toString()
+    /**
+     * Exchanges authorization code for access token.
+     * Sets it in a cookie and redirects back to a location.
+     *
+     * @param code the authorization code obtained from the authorization server
+     * @param redirectLocation the application path to redirect back to
+     * @return redirect response with a Set-Cookie header
+     */
+    public Response exchangeCodeForToken(String code, String redirectLocation)
     {
-      return "LbOAuthManager.OidcTokens(accessToken=" + this.getAccessToken() +
-              ", idToken=" + this.getIdToken() + ", scope=" + this.getScope() +
-              ", refreshToken=" + this.getRefreshToken() + ", tokenType=" + this.getTokenType() +
-              ", expiresIn=" + this.getExpiresIn() + ")";}
-  }
+        String tokenEndpoint = oauthConfig.getTokenEndpoint();
+        String clientId = oauthConfig.getClientId();
+        String clientSecret = oauthConfig.getClientSecret();
+        String redirectUri = oauthConfig.getRedirectUrl();
+        Client oauthClient = ClientBuilder.newBuilder().build();
 
+        Form form = new Form().param("grant_type", "authorization_code")
+                .param("client_id", clientId)
+                .param("client_secret", clientSecret)
+                .param("code", code)
+                .param("redirect_uri", redirectUri);
+
+        Response tokenResponse = oauthClient
+                .target(tokenEndpoint)
+                .request()
+                .post(Entity.form(form));
+
+        if (tokenResponse.getStatusInfo()
+                .getFamily() != Response.Status.Family.SUCCESSFUL) {
+            String message = String.format("token response failed with code %d - %s",
+                    tokenResponse.getStatus(),
+                    tokenResponse.readEntity(String.class));
+            log.error(message);
+            return Response.status(500).entity(message).build();
+        }
+
+        OidcTokens tokens = tokenResponse.readEntity(OidcTokens.class);
+
+        return Response.status(302)
+                .location(URI.create(redirectLocation))
+                .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
+                .build();
+    }
+
+    /**
+     * Redirects to the authorization provider for the authorization code.
+     *
+     * @return redirect response to the authorization provider
+     */
+    public Response getAuthorizationCode()
+    {
+        String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
+        String clientId = oauthConfig.getClientId();
+        String redirectUrl = oauthConfig.getRedirectUrl();
+        String scopes = String.join("+", oauthConfig.getScopes());
+        String url = String.format(
+                "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
+                authorizationEndpoint, clientId, redirectUrl, scopes);
+
+        return Response.status(302)
+                .location(URI.create(url))
+                .build();
+    }
+
+    /**
+     * Verifies if the id token is valid. If valid, it returns a map with the claims,
+     * else an empty optional. idToken docs: https://www.oauth
+     * .com/oauth2-servers/openid-connect/id-tokens/
+     *
+     * @param idToken the access token provided back by the authorization server.
+     * @return a map with the token claims
+     * @throws Exception is thrown if the access token is invalid
+     */
+    public Optional<Map<String, Claim>> getClaimsFromIdToken(String idToken)
+    {
+        try {
+            DecodedJWT jwt = JWT.decode(idToken);
+
+            String jwkEndpoint = oauthConfig.getJwkEndpoint();
+            JwkProvider provider = new UrlJwkProvider(new URL(jwkEndpoint));
+            Jwk jwk = provider.get(jwt.getKeyId());
+            RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
+
+            if (LbTokenUtil.validateToken(idToken, publicKey, jwt.getIssuer())) {
+                return Optional.of(jwt.getClaims());
+            }
+        }
+        catch (Exception exc) {
+            log.error("Could not validate token or get claims from it.", exc);
+        }
+        return Optional.empty();
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static final class OidcTokens
+    {
+        @JsonProperty
+        private final String accessToken;
+        @JsonProperty
+        private final String idToken;
+        @JsonProperty
+        private final String scope;
+        @JsonProperty
+        private final String refreshToken;
+        @JsonProperty
+        private final String tokenType;
+        @JsonProperty
+        private final String expiresIn;
+
+        @JsonCreator
+        public OidcTokens(@JsonProperty("id_token") String idToken,
+                @JsonProperty("access_token") String accessToken,
+                @JsonProperty("refresh_token") String refreshToken,
+                @JsonProperty("token_type") String tokenType,
+                @JsonProperty("expires_in") String expiresIn,
+                @JsonProperty("scope") String scope)
+        {
+            this.accessToken = accessToken;
+            this.idToken = idToken;
+            this.tokenType = tokenType;
+            this.expiresIn = expiresIn;
+            this.scope = scope;
+            this.refreshToken = refreshToken;
+        }
+
+        public String getAccessToken()
+        { return this.accessToken; }
+
+        public String getIdToken()
+        { return this.idToken; }
+
+        public String getScope()
+        { return this.scope; }
+
+        public String getRefreshToken()
+        { return this.refreshToken; }
+
+        public String getTokenType()
+        { return this.tokenType; }
+
+        public String getExpiresIn()
+        { return this.expiresIn; }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof OidcTokens other)) {
+                return false;
+            }
+            final Object accessToken = this.getAccessToken();
+            final Object otherAccessToken = other.getAccessToken();
+            if (!Objects.equals(accessToken, otherAccessToken)) {
+                return false;
+            }
+            final Object idToken = this.getIdToken();
+            final Object otherIdToken = other.getIdToken();
+            if (!Objects.equals(idToken, otherIdToken)) {
+                return false;
+            }
+            final Object scope = this.getScope();
+            final Object otherScope = other.getScope();
+            if (!Objects.equals(scope, otherScope)) {
+                return false;
+            }
+            final Object refreshToken = this.getRefreshToken();
+            final Object otherRefreshToken = other.getRefreshToken();
+            if (!Objects.equals(refreshToken, otherRefreshToken)) {
+                return false;
+            }
+            final Object tokenType = this.getTokenType();
+            final Object otherTokenType = other.getTokenType();
+            if (!Objects.equals(tokenType, otherTokenType)) {
+                return false;
+            }
+            final Object expiresIn = this.getExpiresIn();
+            final Object otherExpiresIn = other.getExpiresIn();
+            return Objects.equals(expiresIn, otherExpiresIn);
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final Object accessToken = this.getAccessToken();
+            result = result * prime + (accessToken == null ? 43 : accessToken.hashCode());
+            final Object idToken = this.getIdToken();
+            result = result * prime + (idToken == null ? 43 : idToken.hashCode());
+            final Object scope = this.getScope();
+            result = result * prime + (scope == null ? 43 : scope.hashCode());
+            final Object refreshToken = this.getRefreshToken();
+            result = result * prime + (refreshToken == null ? 43 : refreshToken.hashCode());
+            final Object tokenType = this.getTokenType();
+            result = result * prime + (tokenType == null ? 43 : tokenType.hashCode());
+            final Object expiresIn = this.getExpiresIn();
+            result = result * prime + (expiresIn == null ? 43 : expiresIn.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "LbOAuthManager.OidcTokens(accessToken=" + this.getAccessToken() +
+                    ", idToken=" + this.getIdToken() + ", scope=" + this.getScope() +
+                    ", refreshToken=" + this.getRefreshToken() + ", tokenType=" + this.getTokenType() +
+                    ", expiresIn=" + this.getExpiresIn() + ")";
+        }
+    }
 }

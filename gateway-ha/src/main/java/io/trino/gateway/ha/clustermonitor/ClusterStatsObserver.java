@@ -4,18 +4,21 @@ import io.trino.gateway.ha.router.BackendStateManager;
 
 import java.util.List;
 
-public class ClusterStatsObserver implements TrinoClusterStatsObserver {
+public class ClusterStatsObserver
+        implements TrinoClusterStatsObserver
+{
+    private final BackendStateManager backendStateManager;
 
-  private BackendStateManager backendStateManager;
-
-  public ClusterStatsObserver(BackendStateManager backendStateManager) {
-    this.backendStateManager = backendStateManager;
-  }
-
-  @Override
-  public void observe(List<ClusterStats> clustersStats) {
-    for (ClusterStats clusterStats : clustersStats) {
-      backendStateManager.updateStates(clusterStats.getClusterId(), clusterStats);
+    public ClusterStatsObserver(BackendStateManager backendStateManager)
+    {
+        this.backendStateManager = backendStateManager;
     }
-  }
+
+    @Override
+    public void observe(List<ClusterStats> clustersStats)
+    {
+        for (ClusterStats clusterStats : clustersStats) {
+            backendStateManager.updateStates(clusterStats.getClusterId(), clusterStats);
+        }
+    }
 }

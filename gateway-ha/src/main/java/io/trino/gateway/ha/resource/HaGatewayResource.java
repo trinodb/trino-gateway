@@ -14,29 +14,32 @@ import jakarta.ws.rs.core.Response;
 @RolesAllowed({"API"})
 @Path("gateway/backend/modify")
 @Produces(MediaType.APPLICATION_JSON)
-public class HaGatewayResource {
+public class HaGatewayResource
+{
+    @Inject
+    private GatewayBackendManager haGatewayManager;
 
-  @Inject
-  private GatewayBackendManager haGatewayManager;
+    @Path("/add")
+    @POST
+    public Response addBackend(ProxyBackendConfiguration backend)
+    {
+        ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
+        return Response.ok(updatedBackend).build();
+    }
 
-  @Path("/add")
-  @POST
-  public Response addBackend(ProxyBackendConfiguration backend) {
-    ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
-    return Response.ok(updatedBackend).build();
-  }
+    @Path("/update")
+    @POST
+    public Response updateBackend(ProxyBackendConfiguration backend)
+    {
+        ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
+        return Response.ok(updatedBackend).build();
+    }
 
-  @Path("/update")
-  @POST
-  public Response updateBackend(ProxyBackendConfiguration backend) {
-    ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
-    return Response.ok(updatedBackend).build();
-  }
-
-  @Path("/delete")
-  @POST
-  public Response removeBackend(String name) {
-    ((HaGatewayManager) haGatewayManager).deleteBackend(name);
-    return Response.ok().build();
-  }
+    @Path("/delete")
+    @POST
+    public Response removeBackend(String name)
+    {
+        ((HaGatewayManager) haGatewayManager).deleteBackend(name);
+        return Response.ok().build();
+    }
 }

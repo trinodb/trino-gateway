@@ -7,37 +7,39 @@ public class ClusterStatsConfiguration
     public ClusterStatsConfiguration() {}
 
     public boolean isUseApi()
-    {return this.useApi;}
+    {
+        return this.useApi;
+    }
 
     public void setUseApi(boolean useApi)
-    {this.useApi = useApi;}
+    {
+        this.useApi = useApi;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof ClusterStatsConfiguration)) {
+        if (!(o instanceof ClusterStatsConfiguration other)) {
             return false;
         }
-        final ClusterStatsConfiguration other = (ClusterStatsConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        if (this.isUseApi() != other.isUseApi()) {
-            return false;
-        }
-        return true;
+        return this.isUseApi() == other.isUseApi();
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof ClusterStatsConfiguration;}
+    {
+        return other instanceof ClusterStatsConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        result = result * PRIME + (this.isUseApi() ? 79 : 97);
+        result = result * prime + (this.isUseApi() ? 79 : 97);
         return result;
     }
 

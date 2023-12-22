@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class FormAuthConfiguration
 {
     private SelfSignKeyPairConfiguration selfSignKeyPair;
@@ -14,53 +16,59 @@ public class FormAuthConfiguration
     public FormAuthConfiguration() {}
 
     public SelfSignKeyPairConfiguration getSelfSignKeyPair()
-    {return this.selfSignKeyPair;}
+    {
+        return this.selfSignKeyPair;
+    }
 
     public void setSelfSignKeyPair(SelfSignKeyPairConfiguration selfSignKeyPair)
-    {this.selfSignKeyPair = selfSignKeyPair;}
+    {
+        this.selfSignKeyPair = selfSignKeyPair;
+    }
 
     public String getLdapConfigPath()
-    {return this.ldapConfigPath;}
+    {
+        return this.ldapConfigPath;
+    }
 
     public void setLdapConfigPath(String ldapConfigPath)
-    {this.ldapConfigPath = ldapConfigPath;}
+    {
+        this.ldapConfigPath = ldapConfigPath;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof FormAuthConfiguration)) {
+        if (!(o instanceof FormAuthConfiguration other)) {
             return false;
         }
-        final FormAuthConfiguration other = (FormAuthConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        final Object this$selfSignKeyPair = this.getSelfSignKeyPair();
-        final Object other$selfSignKeyPair = other.getSelfSignKeyPair();
-        if (this$selfSignKeyPair == null ? other$selfSignKeyPair != null : !this$selfSignKeyPair.equals(other$selfSignKeyPair)) {
+        final Object selfSignKeyPair = this.getSelfSignKeyPair();
+        final Object otherSelfSignKeyPair = other.getSelfSignKeyPair();
+        if (!Objects.equals(selfSignKeyPair, otherSelfSignKeyPair)) {
             return false;
         }
-        final Object this$ldapConfigPath = this.getLdapConfigPath();
-        final Object other$ldapConfigPath = other.getLdapConfigPath();
-        if (this$ldapConfigPath == null ? other$ldapConfigPath != null : !this$ldapConfigPath.equals(other$ldapConfigPath)) {
-            return false;
-        }
-        return true;
+        final Object ldapConfigPath = this.getLdapConfigPath();
+        final Object otherLdapConfigPath = other.getLdapConfigPath();
+        return Objects.equals(ldapConfigPath, otherLdapConfigPath);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof FormAuthConfiguration;}
+    {
+        return other instanceof FormAuthConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $selfSignKeyPair = this.getSelfSignKeyPair();
-        result = result * PRIME + ($selfSignKeyPair == null ? 43 : $selfSignKeyPair.hashCode());
-        final Object $ldapConfigPath = this.getLdapConfigPath();
-        result = result * PRIME + ($ldapConfigPath == null ? 43 : $ldapConfigPath.hashCode());
+        final Object selfSignKeyPair = this.getSelfSignKeyPair();
+        result = result * prime + (selfSignKeyPair == null ? 43 : selfSignKeyPair.hashCode());
+        final Object ldapConfigPath = this.getLdapConfigPath();
+        result = result * prime + (ldapConfigPath == null ? 43 : ldapConfigPath.hashCode());
         return result;
     }
 

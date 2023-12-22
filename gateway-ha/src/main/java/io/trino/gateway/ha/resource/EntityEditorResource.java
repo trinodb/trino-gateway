@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
@@ -37,142 +38,154 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 @Path("entity")
 public class EntityEditorResource
 {
+    public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(EntityEditorResource.class);
+    @Inject
+    private GatewayBackendManager gatewayBackendManager;
+    @Inject
+    private ResourceGroupsManager resourceGroupsManager;
 
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private static final Logger log = LoggerFactory.getLogger(EntityEditorResource.class);
-  @Inject
-  private GatewayBackendManager gatewayBackendManager;
-  @Inject
-  private ResourceGroupsManager resourceGroupsManager;
+    @Inject
+    private RoutingManager routingManager;
 
-  @Inject
-  private RoutingManager routingManager;
-
-  @GET
-  @Produces(MediaType.TEXT_HTML)
-  public EntityView entityUi(@Context SecurityContext securityContext) {
-    return new EntityView("/template/entity-view.ftl", securityContext);
-  }
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  @Consumes(MediaType.APPLICATION_JSON)
-  public List<EntityType> getAllEntityTypes() {
-    return Arrays.asList(EntityType.values());
-  }
-
-  @POST
-  public Response updateEntity(@QueryParam("entityType") String entityTypeStr,
-                               @QueryParam("useSchema") String database,
-                               String jsonPayload) {
-    if (Strings.isNullOrEmpty(entityTypeStr)) {
-      throw new WebApplicationException("EntryType can not be null");
-    }
-    EntityType entityType = EntityType.valueOf(entityTypeStr);
-    try {
-      switch (entityType) {
-        case GATEWAY_BACKEND:
-          //TODO: make the gateway backend database sensitive
-          ProxyBackendConfiguration backend =
-              OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
-          gatewayBackendManager.updateBackend(backend);
-          log.info("Setting up the backend {} with healthy state", backend.getName());
-          routingManager.upateBackEndHealth(backend.getName(), true);
-          break;
-        case RESOURCE_GROUP:
-          ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
-              ResourceGroupsDetail.class);
-          resourceGroupsManager.updateResourceGroup(resourceGroupDetails, database);
-          break;
-        case SELECTOR:
-          SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
-              SelectorsDetail.class);
-          List<SelectorsDetail> oldSelectorDetails =
-              resourceGroupsManager.readSelector(selectorDetails.getResourceGroupId(), database);
-          if (oldSelectorDetails.size() >= 1) {
-            resourceGroupsManager.updateSelector(oldSelectorDetails.get(0),
-                selectorDetails, database);
-          } else {
-            resourceGroupsManager.createSelector(selectorDetails, database);
-          }
-          break;
-        default:
-      }
-    } catch (IOException e) {
-      log.error(e.getMessage(), e);
-      throw new WebApplicationException(e);
-    }
-    return Response.ok().build();
-  }
-
-  @GET
-  @Path("/{entityType}")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Response getAllEntitiesForType(@PathParam("entityType") String entityTypeStr,
-                                        @QueryParam("useSchema") String database) {
-    EntityType entityType = EntityType.valueOf(entityTypeStr);
-
-    switch (entityType) {
-      case GATEWAY_BACKEND:
-        return Response.ok(gatewayBackendManager.getAllBackends()).build();
-      case RESOURCE_GROUP:
-        return Response.ok(resourceGroupsManager.readAllResourceGroups(database)).build();
-      case SELECTOR:
-        return Response.ok(resourceGroupsManager.readAllSelectors(database)).build();
-      default:
-    }
-    return Response.ok(ImmutableList.of()).build();
-  }
-
-  public static class EntityView extends View {
-    private String displayName;
-
-    protected EntityView(String templateName, SecurityContext securityContext) {
-      super(templateName, Charset.defaultCharset());
-      setDisplayName(securityContext.getUserPrincipal().getName());
-    }
-
-    public String getDisplayName()
-    {return this.displayName;}
-
-    public void setDisplayName(String displayName)
-    {this.displayName = displayName;}
-
-    public boolean equals(final Object o)
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public EntityView entityUi(@Context SecurityContext securityContext)
     {
-      if (o == this) {
-        return true;
-      }
-      if (!(o instanceof EntityView)) {
-        return false;
-      }
-      final EntityView other = (EntityView) o;
-      if (!other.canEqual((Object) this)) {
-        return false;
-      }
-      final Object this$displayName = this.getDisplayName();
-      final Object other$displayName = other.getDisplayName();
-      if (this$displayName == null ? other$displayName != null : !this$displayName.equals(other$displayName)) {
-        return false;
-      }
-      return true;
+        return new EntityView("/template/entity-view.ftl", securityContext);
     }
 
-    protected boolean canEqual(final Object other)
-    {return other instanceof EntityView;}
-
-    public int hashCode()
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public List<EntityType> getAllEntityTypes()
     {
-      final int PRIME = 59;
-      int result = 1;
-      final Object $displayName = this.getDisplayName();
-      result = result * PRIME + ($displayName == null ? 43 : $displayName.hashCode());
-      return result;
+        return Arrays.asList(EntityType.values());
     }
 
-    public String toString()
+    @POST
+    public Response updateEntity(
+            @QueryParam("entityType") String entityTypeStr,
+            @QueryParam("useSchema") String database,
+            String jsonPayload)
     {
-      return "EntityEditorResource.EntityView(displayName=" + this.getDisplayName() + ")";
+        if (Strings.isNullOrEmpty(entityTypeStr)) {
+            throw new WebApplicationException("EntryType can not be null");
+        }
+        EntityType entityType = EntityType.valueOf(entityTypeStr);
+        try {
+            switch (entityType) {
+                case GATEWAY_BACKEND:
+                    //TODO: make the gateway backend database sensitive
+                    ProxyBackendConfiguration backend =
+                            OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
+                    gatewayBackendManager.updateBackend(backend);
+                    log.info("Setting up the backend {} with healthy state", backend.getName());
+                    routingManager.upateBackEndHealth(backend.getName(), true);
+                    break;
+                case RESOURCE_GROUP:
+                    ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
+                            ResourceGroupsDetail.class);
+                    resourceGroupsManager.updateResourceGroup(resourceGroupDetails, database);
+                    break;
+                case SELECTOR:
+                    SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
+                            SelectorsDetail.class);
+                    List<SelectorsDetail> oldSelectorDetails =
+                            resourceGroupsManager.readSelector(selectorDetails.getResourceGroupId(), database);
+                    if (oldSelectorDetails.size() >= 1) {
+                        resourceGroupsManager.updateSelector(oldSelectorDetails.get(0),
+                                selectorDetails, database);
+                    }
+                    else {
+                        resourceGroupsManager.createSelector(selectorDetails, database);
+                    }
+                    break;
+                default:
+            }
+        }
+        catch (IOException e) {
+            log.error(e.getMessage(), e);
+            throw new WebApplicationException(e);
+        }
+        return Response.ok().build();
     }
-  }
+
+    @GET
+    @Path("/{entityType}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAllEntitiesForType(
+            @PathParam("entityType") String entityTypeStr,
+            @QueryParam("useSchema") String database)
+    {
+        EntityType entityType = EntityType.valueOf(entityTypeStr);
+
+        switch (entityType) {
+            case GATEWAY_BACKEND:
+                return Response.ok(gatewayBackendManager.getAllBackends()).build();
+            case RESOURCE_GROUP:
+                return Response.ok(resourceGroupsManager.readAllResourceGroups(database)).build();
+            case SELECTOR:
+                return Response.ok(resourceGroupsManager.readAllSelectors(database)).build();
+            default:
+        }
+        return Response.ok(ImmutableList.of()).build();
+    }
+
+    public static class EntityView
+            extends View
+    {
+        private String displayName;
+
+        protected EntityView(String templateName, SecurityContext securityContext)
+        {
+            super(templateName, Charset.defaultCharset());
+            setDisplayName(securityContext.getUserPrincipal().getName());
+        }
+
+        public String getDisplayName()
+        {
+            return this.displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            this.displayName = displayName;
+        }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof EntityView other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            final Object displayName = this.getDisplayName();
+            final Object otherDisplayName = other.getDisplayName();
+            return Objects.equals(displayName, otherDisplayName);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof EntityView;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final Object displayName = this.getDisplayName();
+            result = result * prime + (displayName == null ? 43 : displayName.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "EntityEditorResource.EntityView(displayName=" + this.getDisplayName() + ")";
+        }
+    }
 }

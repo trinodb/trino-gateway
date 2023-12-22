@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class BackendStateConfiguration
 {
     private String username;
@@ -9,66 +11,76 @@ public class BackendStateConfiguration
     public BackendStateConfiguration() {}
 
     public String getUsername()
-    {return this.username;}
+    {
+        return this.username;
+    }
 
     public void setUsername(String username)
-    {this.username = username;}
+    {
+        this.username = username;
+    }
 
     public String getPassword()
-    {return this.password;}
+    {
+        return this.password;
+    }
 
     public void setPassword(String password)
-    {this.password = password;}
+    {
+        this.password = password;
+    }
 
     public Boolean getSsl()
-    {return this.ssl;}
+    {
+        return this.ssl;
+    }
 
     public void setSsl(Boolean ssl)
-    {this.ssl = ssl;}
+    {
+        this.ssl = ssl;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof BackendStateConfiguration)) {
+        if (!(o instanceof BackendStateConfiguration other)) {
             return false;
         }
-        final BackendStateConfiguration other = (BackendStateConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        final Object this$username = this.getUsername();
-        final Object other$username = other.getUsername();
-        if (this$username == null ? other$username != null : !this$username.equals(other$username)) {
+        final Object username = this.getUsername();
+        final Object otherUsername = other.getUsername();
+        if (!Objects.equals(username, otherUsername)) {
             return false;
         }
-        final Object this$password = this.getPassword();
-        final Object other$password = other.getPassword();
-        if (this$password == null ? other$password != null : !this$password.equals(other$password)) {
+        final Object password = this.getPassword();
+        final Object otherPassword = other.getPassword();
+        if (!Objects.equals(password, otherPassword)) {
             return false;
         }
-        final Object this$ssl = this.getSsl();
-        final Object other$ssl = other.getSsl();
-        if (this$ssl == null ? other$ssl != null : !this$ssl.equals(other$ssl)) {
-            return false;
-        }
-        return true;
+        final Object ssl = this.getSsl();
+        final Object otherSsl = other.getSsl();
+        return Objects.equals(ssl, otherSsl);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof BackendStateConfiguration;}
+    {
+        return other instanceof BackendStateConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $username = this.getUsername();
-        result = result * PRIME + ($username == null ? 43 : $username.hashCode());
-        final Object $password = this.getPassword();
-        result = result * PRIME + ($password == null ? 43 : $password.hashCode());
-        final Object $ssl = this.getSsl();
-        result = result * PRIME + ($ssl == null ? 43 : $ssl.hashCode());
+        final Object username = this.getUsername();
+        result = result * prime + (username == null ? 43 : username.hashCode());
+        final Object password = this.getPassword();
+        result = result * prime + (password == null ? 43 : password.hashCode());
+        final Object ssl = this.getSsl();
+        result = result * prime + (ssl == null ? 43 : ssl.hashCode());
         return result;
     }
 
