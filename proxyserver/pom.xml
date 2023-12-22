@@ -13,10 +13,6 @@
     <artifactId>proxyserver</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <air.check.skip-checkstyle>false</air.check.skip-checkstyle>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>

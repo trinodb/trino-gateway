@@ -12,10 +12,6 @@
     <artifactId>baseapp</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <air.check.skip-checkstyle>false</air.check.skip-checkstyle>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.dropwizard</groupId>
