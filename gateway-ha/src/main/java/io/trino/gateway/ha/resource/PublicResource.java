@@ -15,42 +15,48 @@ import java.util.NoSuchElementException;
 
 @Path("/api/public")
 @Produces(MediaType.APPLICATION_JSON)
-public class PublicResource {
-  @Inject
-  private GatewayBackendManager gatewayBackendManager;
-  @Inject
-  private BackendStateManager backendStateManager;
+public class PublicResource
+{
+    @Inject
+    private GatewayBackendManager gatewayBackendManager;
+    @Inject
+    private BackendStateManager backendStateManager;
 
-  @GET
-  @Path("/backends")
-  public Response getAllBackends() {
-    return Response.ok(this.gatewayBackendManager.getAllBackends()).build();
-  }
-
-  @GET
-  @Path("/backends/{name}")
-  public Response getBackend(@PathParam("name") String name) {
-    try {
-      ProxyBackendConfiguration backend = gatewayBackendManager
-          .getBackendByName(name)
-          .get();
-      return Response.ok(backend).build();
-    } catch (NoSuchElementException e) {
-      return Response.status(404).build();
+    @GET
+    @Path("/backends")
+    public Response getAllBackends()
+    {
+        return Response.ok(this.gatewayBackendManager.getAllBackends()).build();
     }
-  }
 
-  @GET
-  @Path("/backends/{name}/state")
-  public Response getBackendState(@PathParam("name") String name) {
-    try {
-      BackendStateManager.BackendState state = gatewayBackendManager
-          .getBackendByName(name)
-          .map(backendStateManager::getBackendState)
-          .get();
-      return Response.ok(state.getState()).build();
-    } catch (NoSuchElementException e) {
-      return Response.status(404).build();
+    @GET
+    @Path("/backends/{name}")
+    public Response getBackend(@PathParam("name") String name)
+    {
+        try {
+            ProxyBackendConfiguration backend = gatewayBackendManager
+                    .getBackendByName(name)
+                    .get();
+            return Response.ok(backend).build();
+        }
+        catch (NoSuchElementException e) {
+            return Response.status(404).build();
+        }
     }
-  }
+
+    @GET
+    @Path("/backends/{name}/state")
+    public Response getBackendState(@PathParam("name") String name)
+    {
+        try {
+            BackendStateManager.BackendState state = gatewayBackendManager
+                    .getBackendByName(name)
+                    .map(backendStateManager::getBackendState)
+                    .get();
+            return Response.ok(state.getState()).build();
+        }
+        catch (NoSuchElementException e) {
+            return Response.status(404).build();
+        }
+    }
 }

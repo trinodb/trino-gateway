@@ -1,6 +1,7 @@
 package io.trino.gateway.ha.config;
 
 import java.util.List;
+import java.util.Objects;
 
 public class NotifierConfiguration
 {
@@ -16,63 +17,94 @@ public class NotifierConfiguration
     public NotifierConfiguration() {}
 
     public boolean isStartTlsEnabled()
-    {return this.startTlsEnabled;}
+    {
+        return this.startTlsEnabled;
+    }
 
     public void setStartTlsEnabled(boolean startTlsEnabled)
-    {this.startTlsEnabled = startTlsEnabled;}
+    {
+        this.startTlsEnabled = startTlsEnabled;
+    }
 
     public boolean isSmtpAuthEnabled()
-    {return this.smtpAuthEnabled;}
+    {
+        return this.smtpAuthEnabled;
+    }
 
     public void setSmtpAuthEnabled(boolean smtpAuthEnabled)
-    {this.smtpAuthEnabled = smtpAuthEnabled;}
+    {
+        this.smtpAuthEnabled = smtpAuthEnabled;
+    }
 
     public String getSmtpHost()
-    {return this.smtpHost;}
+    {
+        return this.smtpHost;
+    }
 
     public void setSmtpHost(String smtpHost)
-    {this.smtpHost = smtpHost;}
+    {
+        this.smtpHost = smtpHost;
+    }
 
     public int getSmtpPort()
-    {return this.smtpPort;}
+    {
+        return this.smtpPort;
+    }
 
     public void setSmtpPort(int smtpPort)
-    {this.smtpPort = smtpPort;}
+    {
+        this.smtpPort = smtpPort;
+    }
 
     public String getSmtpUser()
-    {return this.smtpUser;}
+    {
+        return this.smtpUser;
+    }
 
     public void setSmtpUser(String smtpUser)
-    {this.smtpUser = smtpUser;}
+    {
+        this.smtpUser = smtpUser;
+    }
 
     public String getSmtpPassword()
-    {return this.smtpPassword;}
+    {
+        return this.smtpPassword;
+    }
 
     public void setSmtpPassword(String smtpPassword)
-    {this.smtpPassword = smtpPassword;}
+    {
+        this.smtpPassword = smtpPassword;
+    }
 
     public String getSender()
-    {return this.sender;}
+    {
+        return this.sender;
+    }
 
     public void setSender(String sender)
-    {this.sender = sender;}
+    {
+        this.sender = sender;
+    }
 
     public List<String> getRecipients()
-    {return this.recipients;}
+    {
+        return this.recipients;
+    }
 
     public void setRecipients(List<String> recipients)
-    {this.recipients = recipients;}
+    {
+        this.recipients = recipients;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof NotifierConfiguration)) {
+        if (!(o instanceof NotifierConfiguration other)) {
             return false;
         }
-        final NotifierConfiguration other = (NotifierConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
         if (this.isStartTlsEnabled() != other.isStartTlsEnabled()) {
@@ -81,57 +113,56 @@ public class NotifierConfiguration
         if (this.isSmtpAuthEnabled() != other.isSmtpAuthEnabled()) {
             return false;
         }
-        final Object this$smtpHost = this.getSmtpHost();
-        final Object other$smtpHost = other.getSmtpHost();
-        if (this$smtpHost == null ? other$smtpHost != null : !this$smtpHost.equals(other$smtpHost)) {
+        final Object smtpHost = this.getSmtpHost();
+        final Object otherSmtpHost = other.getSmtpHost();
+        if (!Objects.equals(smtpHost, otherSmtpHost)) {
             return false;
         }
         if (this.getSmtpPort() != other.getSmtpPort()) {
             return false;
         }
-        final Object this$smtpUser = this.getSmtpUser();
-        final Object other$smtpUser = other.getSmtpUser();
-        if (this$smtpUser == null ? other$smtpUser != null : !this$smtpUser.equals(other$smtpUser)) {
+        final Object smtpUser = this.getSmtpUser();
+        final Object otherSmtpUser = other.getSmtpUser();
+        if (!Objects.equals(smtpUser, otherSmtpUser)) {
             return false;
         }
-        final Object this$smtpPassword = this.getSmtpPassword();
-        final Object other$smtpPassword = other.getSmtpPassword();
-        if (this$smtpPassword == null ? other$smtpPassword != null : !this$smtpPassword.equals(other$smtpPassword)) {
+        final Object smtpPassword = this.getSmtpPassword();
+        final Object otherSmtpPassword = other.getSmtpPassword();
+        if (!Objects.equals(smtpPassword, otherSmtpPassword)) {
             return false;
         }
-        final Object this$sender = this.getSender();
-        final Object other$sender = other.getSender();
-        if (this$sender == null ? other$sender != null : !this$sender.equals(other$sender)) {
+        final Object sender = this.getSender();
+        final Object otherSender = other.getSender();
+        if (!Objects.equals(sender, otherSender)) {
             return false;
         }
-        final Object this$recipients = this.getRecipients();
-        final Object other$recipients = other.getRecipients();
-        if (this$recipients == null ? other$recipients != null : !this$recipients.equals(other$recipients)) {
-            return false;
-        }
-        return true;
+        final Object recipients = this.getRecipients();
+        final Object otherRecipients = other.getRecipients();
+        return Objects.equals(recipients, otherRecipients);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof NotifierConfiguration;}
+    {
+        return other instanceof NotifierConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        result = result * PRIME + (this.isStartTlsEnabled() ? 79 : 97);
-        result = result * PRIME + (this.isSmtpAuthEnabled() ? 79 : 97);
-        final Object $smtpHost = this.getSmtpHost();
-        result = result * PRIME + ($smtpHost == null ? 43 : $smtpHost.hashCode());
-        result = result * PRIME + this.getSmtpPort();
-        final Object $smtpUser = this.getSmtpUser();
-        result = result * PRIME + ($smtpUser == null ? 43 : $smtpUser.hashCode());
-        final Object $smtpPassword = this.getSmtpPassword();
-        result = result * PRIME + ($smtpPassword == null ? 43 : $smtpPassword.hashCode());
-        final Object $sender = this.getSender();
-        result = result * PRIME + ($sender == null ? 43 : $sender.hashCode());
-        final Object $recipients = this.getRecipients();
-        result = result * PRIME + ($recipients == null ? 43 : $recipients.hashCode());
+        result = result * prime + (this.isStartTlsEnabled() ? 79 : 97);
+        result = result * prime + (this.isSmtpAuthEnabled() ? 79 : 97);
+        final Object smtpHost = this.getSmtpHost();
+        result = result * prime + (smtpHost == null ? 43 : smtpHost.hashCode());
+        result = result * prime + this.getSmtpPort();
+        final Object smtpUser = this.getSmtpUser();
+        result = result * prime + (smtpUser == null ? 43 : smtpUser.hashCode());
+        final Object smtpPassword = this.getSmtpPassword();
+        result = result * prime + (smtpPassword == null ? 43 : smtpPassword.hashCode());
+        final Object sender = this.getSender();
+        result = result * prime + (sender == null ? 43 : sender.hashCode());
+        final Object recipients = this.getRecipients();
+        result = result * prime + (recipients == null ? 43 : recipients.hashCode());
         return result;
     }
 

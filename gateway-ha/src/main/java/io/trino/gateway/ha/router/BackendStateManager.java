@@ -7,90 +7,102 @@ import jakarta.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-public class BackendStateManager {
-  @Nullable
-  private final BackendStateConfiguration configuration;
+public class BackendStateManager
+{
+    @Nullable
+    private final BackendStateConfiguration configuration;
 
-  private final Map<String, ClusterStats> clusterStats;
+    private final Map<String, ClusterStats> clusterStats;
 
-  public BackendStateManager(BackendStateConfiguration configuration) {
-    this.configuration = configuration;
-    this.clusterStats = new HashMap<>();
-  }
-
-  public BackendState getBackendState(ProxyBackendConfiguration backend) {
-    String name = backend.getName();
-    ClusterStats stats = clusterStats.getOrDefault(backend.getName(), new ClusterStats());
-    Map<String, Integer> state = new HashMap<>();
-    state.put("QUEUED", stats.getQueuedQueryCount());
-    state.put("RUNNING", stats.getRunningQueryCount());
-    return new BackendState(name, state);
-  }
-
-  public BackendStateConfiguration getBackendStateConfiguration() {
-    return this.configuration;
-  }
-
-  public void updateStates(String clusterId, ClusterStats stats) {
-    clusterStats.put(clusterId, stats);
-  }
-
-  public static class BackendState {
-    private final String name;
-    private final Map<String, Integer> state;
-
-    public BackendState(String name, Map<String, Integer> state) {
-      this.name = name;
-      this.state = state;
-    }
-
-    public String getName()
-    {return this.name;}
-
-    public Map<String, Integer> getState()
-    {return this.state;}
-
-    public boolean equals(final Object o)
+    public BackendStateManager(BackendStateConfiguration configuration)
     {
-      if (o == this) {
-        return true;
-      }
-      if (!(o instanceof BackendState)) {
-        return false;
-      }
-      final BackendState other = (BackendState) o;
-      if (!other.canEqual((Object) this)) {
-        return false;
-      }
-      final Object this$name = this.getName();
-      final Object other$name = other.getName();
-      if (this$name == null ? other$name != null : !this$name.equals(other$name)) {
-        return false;
-      }
-      final Object this$state = this.getState();
-      final Object other$state = other.getState();
-      if (this$state == null ? other$state != null : !this$state.equals(other$state)) {
-        return false;
-      }
-      return true;
+        this.configuration = configuration;
+        this.clusterStats = new HashMap<>();
     }
 
-    protected boolean canEqual(final Object other)
-    {return other instanceof BackendState;}
-
-    public int hashCode()
+    public BackendState getBackendState(ProxyBackendConfiguration backend)
     {
-      final int PRIME = 59;
-      int result = 1;
-      final Object $name = this.getName();
-      result = result * PRIME + ($name == null ? 43 : $name.hashCode());
-      final Object $state = this.getState();
-      result = result * PRIME + ($state == null ? 43 : $state.hashCode());
-      return result;
+        String name = backend.getName();
+        ClusterStats stats = clusterStats.getOrDefault(backend.getName(), new ClusterStats());
+        Map<String, Integer> state = new HashMap<>();
+        state.put("QUEUED", stats.getQueuedQueryCount());
+        state.put("RUNNING", stats.getRunningQueryCount());
+        return new BackendState(name, state);
     }
 
-    public String toString()
-    {return "BackendStateManager.BackendState(name=" + this.getName() + ", state=" + this.getState() + ")";}
-  }
+    public BackendStateConfiguration getBackendStateConfiguration()
+    {
+        return this.configuration;
+    }
+
+    public void updateStates(String clusterId, ClusterStats stats)
+    {
+        clusterStats.put(clusterId, stats);
+    }
+
+    public static class BackendState
+    {
+        private final String name;
+        private final Map<String, Integer> state;
+
+        public BackendState(String name, Map<String, Integer> state)
+        {
+            this.name = name;
+            this.state = state;
+        }
+
+        public String getName()
+        {
+            return this.name;
+        }
+
+        public Map<String, Integer> getState()
+        {
+            return this.state;
+        }
+
+        public boolean equals(final Object o)
+        {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof BackendState other)) {
+                return false;
+            }
+            if (!other.canEqual(this)) {
+                return false;
+            }
+            final Object name = this.getName();
+            final Object otherName = other.getName();
+            if (!Objects.equals(name, otherName)) {
+                return false;
+            }
+            final Object state = this.getState();
+            final Object otherState = other.getState();
+            return Objects.equals(state, otherState);
+        }
+
+        protected boolean canEqual(final Object other)
+        {
+            return other instanceof BackendState;
+        }
+
+        public int hashCode()
+        {
+            final int prime = 59;
+            int result = 1;
+            final Object name = this.getName();
+            result = result * prime + (name == null ? 43 : name.hashCode());
+            final Object state = this.getState();
+            result = result * prime + (state == null ? 43 : state.hashCode());
+            return result;
+        }
+
+        public String toString()
+        {
+            return "BackendStateManager.BackendState(name=" + this.getName() + ", state=" + this.getState() + ")";
+        }
+    }
 }

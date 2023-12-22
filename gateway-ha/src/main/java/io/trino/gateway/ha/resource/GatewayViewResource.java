@@ -19,118 +19,128 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RolesAllowed({"USER"})
 @Path("/")
-public class GatewayViewResource {
-  private static final long START_TIME = System.currentTimeMillis();
-  @Inject
-  private GatewayBackendManager gatewayBackendManager;
-  @Inject
-  private QueryHistoryManager queryHistoryManager;
-  @Inject
-  private BackendStateManager backendStateManager;
+public class GatewayViewResource
+{
+    private static final long START_TIME = System.currentTimeMillis();
+    @Inject
+    private GatewayBackendManager gatewayBackendManager;
+    @Inject
+    private QueryHistoryManager queryHistoryManager;
+    @Inject
+    private BackendStateManager backendStateManager;
 
-  private Optional<String> getUserNameForQueryHistory(SecurityContext securityContext) {
-    LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
-    Optional<String> userName = Optional.empty();
+    private Optional<String> getUserNameForQueryHistory(SecurityContext securityContext)
+    {
+        LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
+        Optional<String> userName = Optional.empty();
 
-    if (!securityContext.isUserInRole("ADMIN")) {
-      userName = Optional.of(principal.getName());
+        if (!securityContext.isUserInRole("ADMIN")) {
+            userName = Optional.of(principal.getName());
+        }
+        return userName;
     }
-    return userName;
-  }
 
-  @GET
-  @Produces(MediaType.TEXT_HTML)
-  public GatewayView getQueryDetailsView(@Context SecurityContext securityContext) {
-    GatewayView queryHistoryView = new GatewayView("/template/query-history-view.ftl",
-        securityContext);
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public GatewayView getQueryDetailsView(@Context SecurityContext securityContext)
+    {
+        GatewayView queryHistoryView = new GatewayView("/template/query-history-view.ftl",
+                securityContext);
 
-    // Get all active backends
-    queryHistoryView.setBackendConfigurations(
-        gatewayBackendManager.getAllBackends());
+        // Get all active backends
+        queryHistoryView.setBackendConfigurations(
+                gatewayBackendManager.getAllBackends());
 
-    Optional<String> userName = getUserNameForQueryHistory(securityContext);
-    queryHistoryView.setQueryHistory(queryHistoryManager.fetchQueryHistory(userName));
-    queryHistoryView.setQueryDistribution(getQueryHistoryDistribution(securityContext));
-    return queryHistoryView;
-  }
+        Optional<String> userName = getUserNameForQueryHistory(securityContext);
+        queryHistoryView.setQueryHistory(queryHistoryManager.fetchQueryHistory(userName));
+        queryHistoryView.setQueryDistribution(getQueryHistoryDistribution(securityContext));
+        return queryHistoryView;
+    }
 
-  @GET
-  @Produces(MediaType.TEXT_HTML)
-  @Path("viewgateway")
-  public GatewayView getGatewayView(@Context SecurityContext securityContext) {
-    GatewayView gatewayView = new GatewayView("/template/gateway-view.ftl",
-        securityContext);
-    // Get all Backends
-    gatewayView.setBackendConfigurations(
-        gatewayBackendManager.getAllBackends());
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    @Path("viewgateway")
+    public GatewayView getGatewayView(@Context SecurityContext securityContext)
+    {
+        GatewayView gatewayView = new GatewayView("/template/gateway-view.ftl",
+                securityContext);
+        // Get all Backends
+        gatewayView.setBackendConfigurations(
+                gatewayBackendManager.getAllBackends());
 
-    Map<String, BackendStateManager.BackendState> backendStates = gatewayBackendManager
-        .getAllBackends()
-        .stream()
-        .map(backendStateManager::getBackendState)
-        .collect(Collectors.toMap(s -> s.getName(), s -> s));
+        Map<String, BackendStateManager.BackendState> backendStates = gatewayBackendManager
+                .getAllBackends()
+                .stream()
+                .map(backendStateManager::getBackendState)
+                .collect(Collectors.toMap(s -> s.getName(), s -> s));
 
-    gatewayView.setBackendStates(backendStates);
+        gatewayView.setBackendStates(backendStates);
 
-    Optional<String> userName = getUserNameForQueryHistory(securityContext);
-    gatewayView.setQueryHistory(queryHistoryManager.fetchQueryHistory(userName));
-    gatewayView.setQueryDistribution(getQueryHistoryDistribution(securityContext));
-    return gatewayView;
-  }
+        Optional<String> userName = getUserNameForQueryHistory(securityContext);
+        gatewayView.setQueryHistory(queryHistoryManager.fetchQueryHistory(userName));
+        gatewayView.setQueryDistribution(getQueryHistoryDistribution(securityContext));
+        return gatewayView;
+    }
 
-  @GET
-  @Path("api/queryHistory")
-  @Produces(MediaType.APPLICATION_JSON)
-  public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext
-                                                                   securityContext) {
-    Optional<String> userName = getUserNameForQueryHistory(securityContext);
-    return queryHistoryManager.fetchQueryHistory(userName);
-  }
+    @GET
+    @Path("api/queryHistory")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext
+            securityContext)
+    {
+        Optional<String> userName = getUserNameForQueryHistory(securityContext);
+        return queryHistoryManager.fetchQueryHistory(userName);
+    }
 
-  @GET
-  @Path("api/activeBackends")
-  @Produces(MediaType.APPLICATION_JSON)
-  public List<ProxyBackendConfiguration> getActiveBackends() {
-    return gatewayBackendManager.getAllActiveBackends();
-  }
+    @GET
+    @Path("api/activeBackends")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ProxyBackendConfiguration> getActiveBackends()
+    {
+        return gatewayBackendManager.getAllActiveBackends();
+    }
 
-  @GET
-  @Path("api/queryHistoryDistribution")
-  @Produces(MediaType.APPLICATION_JSON)
-  public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext
-                                                              securityContext) {
-    Map<String, String> urlToNameMap = new HashMap<>();
-    gatewayBackendManager
-        .getAllBackends()
-        .forEach(
-            backend -> {
-              urlToNameMap.put(backend.getProxyTo(), backend.getName());
-            });
+    @GET
+    @Path("api/queryHistoryDistribution")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext
+            securityContext)
+    {
+        Map<String, String> urlToNameMap = new HashMap<>();
+        gatewayBackendManager
+                .getAllBackends()
+                .forEach(
+                        backend -> {
+                            urlToNameMap.put(backend.getProxyTo(), backend.getName());
+                        });
 
-    Map<String, Integer> clusterToQueryCount = new HashMap<>();
-    Optional<String> userName = getUserNameForQueryHistory(securityContext);
-    queryHistoryManager
-        .fetchQueryHistory(userName)
-        .forEach(
-            q -> {
-              String backend = urlToNameMap.get(q.getBackendUrl());
-              if (backend == null) {
-                backend = q.getBackendUrl();
-              }
-              if (!clusterToQueryCount.containsKey(backend)) {
-                clusterToQueryCount.put(backend, 0);
-              }
-              clusterToQueryCount.put(backend, clusterToQueryCount.get(backend) + 1);
-            });
-    return clusterToQueryCount;
-  }
+        Map<String, Integer> clusterToQueryCount = new HashMap<>();
+        Optional<String> userName = getUserNameForQueryHistory(securityContext);
+        queryHistoryManager
+                .fetchQueryHistory(userName)
+                .forEach(
+                        q -> {
+                            String backend = urlToNameMap.get(q.getBackendUrl());
+                            if (backend == null) {
+                                backend = q.getBackendUrl();
+                            }
+                            if (!clusterToQueryCount.containsKey(backend)) {
+                                clusterToQueryCount.put(backend, 0);
+                            }
+                            clusterToQueryCount.put(backend, clusterToQueryCount.get(backend) + 1);
+                        });
+        return clusterToQueryCount;
+    }
 
-  public static class GatewayView extends View {
+    public static class GatewayView
+            extends View
+    {
         private final long gatewayStartTime = START_TIME;
         private String displayName;
         private List<ProxyBackendConfiguration> backendConfigurations;
@@ -145,79 +155,97 @@ public class GatewayViewResource {
         }
 
         public long getGatewayStartTime()
-        {return this.gatewayStartTime;}
+        {
+            return this.gatewayStartTime;
+        }
 
         public String getDisplayName()
-        {return this.displayName;}
-
-        public List<ProxyBackendConfiguration> getBackendConfigurations()
-        {return this.backendConfigurations;}
-
-        public List<QueryHistoryManager.QueryDetail> getQueryHistory()
-        {return this.queryHistory;}
-
-        public Map<String, BackendStateManager.BackendState> getBackendStates()
-        {return this.backendStates;}
-
-        public Map<String, Integer> getQueryDistribution()
-        {return this.queryDistribution;}
+        {
+            return this.displayName;
+        }
 
         public void setDisplayName(String displayName)
-        {this.displayName = displayName;}
+        {
+            this.displayName = displayName;
+        }
+
+        public List<ProxyBackendConfiguration> getBackendConfigurations()
+        {
+            return this.backendConfigurations;
+        }
 
         public void setBackendConfigurations(List<ProxyBackendConfiguration> backendConfigurations)
-        {this.backendConfigurations = backendConfigurations;}
+        {
+            this.backendConfigurations = backendConfigurations;
+        }
+
+        public List<QueryHistoryManager.QueryDetail> getQueryHistory()
+        {
+            return this.queryHistory;
+        }
 
         public void setQueryHistory(List<QueryHistoryManager.QueryDetail> queryHistory)
-        {this.queryHistory = queryHistory;}
+        {
+            this.queryHistory = queryHistory;
+        }
+
+        public Map<String, BackendStateManager.BackendState> getBackendStates()
+        {
+            return this.backendStates;
+        }
 
         public void setBackendStates(Map<String, BackendStateManager.BackendState> backendStates)
-        {this.backendStates = backendStates;}
+        {
+            this.backendStates = backendStates;
+        }
+
+        public Map<String, Integer> getQueryDistribution()
+        {
+            return this.queryDistribution;
+        }
 
         public void setQueryDistribution(Map<String, Integer> queryDistribution)
-        {this.queryDistribution = queryDistribution;}
+        {
+            this.queryDistribution = queryDistribution;
+        }
 
         public boolean equals(final Object o)
         {
             if (o == this) {
                 return true;
             }
-            if (!(o instanceof GatewayView)) {
+            if (!(o instanceof GatewayView other)) {
                 return false;
             }
-            final GatewayView other = (GatewayView) o;
-            if (!other.canEqual((Object) this)) {
+            if (!other.canEqual(this)) {
                 return false;
             }
             if (this.getGatewayStartTime() != other.getGatewayStartTime()) {
                 return false;
             }
-            final Object this$displayName = this.getDisplayName();
-            final Object other$displayName = other.getDisplayName();
-            if (this$displayName == null ? other$displayName != null : !this$displayName.equals(other$displayName)) {
+            final Object displayName = this.getDisplayName();
+            final Object otherDisplayName = other.getDisplayName();
+            if (!Objects.equals(displayName, otherDisplayName)) {
                 return false;
             }
-            final Object this$backendConfigurations = this.getBackendConfigurations();
-            final Object other$backendConfigurations = other.getBackendConfigurations();
-            if (this$backendConfigurations == null ? other$backendConfigurations != null : !this$backendConfigurations.equals(other$backendConfigurations)) {
+            final Object backendConfigurations = this.getBackendConfigurations();
+            final Object otherBackendConfigurations = other.getBackendConfigurations();
+            if (!Objects.equals(backendConfigurations, otherBackendConfigurations)) {
                 return false;
             }
-            final Object this$queryHistory = this.getQueryHistory();
-            final Object other$queryHistory = other.getQueryHistory();
-            if (this$queryHistory == null ? other$queryHistory != null : !this$queryHistory.equals(other$queryHistory)) {
+            final Object queryHistory = this.getQueryHistory();
+            final Object otherQueryHistory = other.getQueryHistory();
+            if (!Objects.equals(queryHistory, otherQueryHistory)) {
                 return false;
             }
-            final Object this$backendStates = this.getBackendStates();
-            final Object other$backendStates = other.getBackendStates();
-            if (this$backendStates == null ? other$backendStates != null : !this$backendStates.equals(other$backendStates)) {
+            final Object backendStates = this.getBackendStates();
+            final Object otherBackendStates = other.getBackendStates();
+            if (!Objects.equals(backendStates, otherBackendStates)) {
                 return false;
             }
-            final Object this$queryDistribution = this.getQueryDistribution();
-            final Object other$queryDistribution = other.getQueryDistribution();
-            if (this$queryDistribution == null ? other$queryDistribution != null : !this$queryDistribution.equals(other$queryDistribution)) {
-                return false;
-            }
-            return true;
+            final Object queryDistribution = this.getQueryDistribution();
+            final Object otherQueryDistribution = other.getQueryDistribution();
+            return Objects.equals(queryDistribution, otherQueryDistribution);
         }
 
         protected boolean canEqual(final Object other)
@@ -225,23 +253,22 @@ public class GatewayViewResource {
             return other instanceof GatewayView;
         }
 
-
         public int hashCode()
         {
-            final int PRIME = 59;
+            final int prime = 59;
             int result = 1;
-            final long $gatewayStartTime = this.getGatewayStartTime();
-            result = result * PRIME + (int) ($gatewayStartTime >>> 32 ^ $gatewayStartTime);
-            final Object $displayName = this.getDisplayName();
-            result = result * PRIME + ($displayName == null ? 43 : $displayName.hashCode());
-            final Object $backendConfigurations = this.getBackendConfigurations();
-            result = result * PRIME + ($backendConfigurations == null ? 43 : $backendConfigurations.hashCode());
-            final Object $queryHistory = this.getQueryHistory();
-            result = result * PRIME + ($queryHistory == null ? 43 : $queryHistory.hashCode());
-            final Object $backendStates = this.getBackendStates();
-            result = result * PRIME + ($backendStates == null ? 43 : $backendStates.hashCode());
-            final Object $queryDistribution = this.getQueryDistribution();
-            result = result * PRIME + ($queryDistribution == null ? 43 : $queryDistribution.hashCode());
+            final long gatewayStartTime = this.getGatewayStartTime();
+            result = result * prime + (int) (gatewayStartTime >>> 32 ^ gatewayStartTime);
+            final Object displayName = this.getDisplayName();
+            result = result * prime + (displayName == null ? 43 : displayName.hashCode());
+            final Object backendConfigurations = this.getBackendConfigurations();
+            result = result * prime + (backendConfigurations == null ? 43 : backendConfigurations.hashCode());
+            final Object queryHistory = this.getQueryHistory();
+            result = result * prime + (queryHistory == null ? 43 : queryHistory.hashCode());
+            final Object backendStates = this.getBackendStates();
+            result = result * prime + (backendStates == null ? 43 : backendStates.hashCode());
+            final Object queryDistribution = this.getQueryDistribution();
+            result = result * prime + (queryDistribution == null ? 43 : queryDistribution.hashCode());
             return result;
         }
 

@@ -1,10 +1,5 @@
 package io.trino.gateway.ha.security;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-
 import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
@@ -21,141 +16,153 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+
 @ExtendWith(MockitoExtension.class)
-public class LbLdapClientTest {
-  class DummyPasswordWarning implements org.apache.directory.ldap.client.template.PasswordWarning {
-    @Override
-    public int getTimeBeforeExpiration() {
-      return 0;
+public class LbLdapClientTest
+{
+    private static final Logger log = LoggerFactory.getLogger(LbLdapClientTest.class);
+    @Mock
+    LdapConnectionTemplate ldapConnectionTemplate;
+    @Spy
+    LdapConfiguration ldapConfig =
+            LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml");
+    @InjectMocks
+    LbLdapClient lbLdapClient =
+            new LbLdapClient(LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml"));
+
+    LbLdapClientTest()
+    {
     }
 
-    @Override
-    public int getGraceAuthNsRemaining() {
-      return 0;
+    @BeforeEach
+    public void initMocks()
+    {
+        log.info("initializing test");
+        org.mockito.MockitoAnnotations.initMocks(this);
     }
 
-    @Override
-    public boolean isChangeAfterReset() {
-      return false;
+    @AfterEach
+    public void resetMocks()
+    {
+        log.info("resetting mocks");
+        Mockito.reset(ldapConnectionTemplate);
+        Mockito.reset(ldapConfig);
     }
-  }
 
-  private static final Logger log = LoggerFactory.getLogger(LbLdapClientTest.class);
+    @Test
+    public void testAuthenticate()
+    {
+        String user = "user1";
+        String password = "pass1";
 
-  @Mock
-  LdapConnectionTemplate ldapConnectionTemplate;
+        try {
+            String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
 
-  @Spy
-  LdapConfiguration ldapConfig =
-      LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml");
-  @InjectMocks
-  LbLdapClient lbLdapClient =
-          new LbLdapClient(LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml"));
+            Mockito
+                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                            filter,
+                            SearchScope.SUBTREE,
+                            password.toCharArray()))
+                    .thenReturn(null);
 
-  LbLdapClientTest() {
+            //Success case
+            assertTrue(lbLdapClient.authenticate(user, password));
 
-  }
+            Mockito
+                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                            filter,
+                            SearchScope.SUBTREE,
+                            password.toCharArray()))
+                    .thenReturn(new LbLdapClientTest.DummyPasswordWarning());
 
-  @BeforeEach
-  public void initMocks() {
-    log.info("initializing test");
-    org.mockito.MockitoAnnotations.initMocks(this);
-  }
+            //Warning case
+            assertTrue(lbLdapClient.authenticate(user, password));
 
-  @AfterEach
-  public void resetMocks() {
-    log.info("resetting mocks");
-    Mockito.reset(ldapConnectionTemplate);
-    Mockito.reset(ldapConfig);
-  }
+            Mockito
+                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                            filter,
+                            SearchScope.SUBTREE,
+                            password.toCharArray()))
+                    .thenThrow(PasswordException.class);
 
-  @Test
-  public void testAuthenticate() {
-    String user = "user1";
-    String password = "pass1";
+            //failure case
+            assertFalse(lbLdapClient.authenticate(user, password));
 
-    try {
-      String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
-
-      Mockito
-          .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-              filter,
-              SearchScope.SUBTREE,
-              password.toCharArray()))
-          .thenReturn(null);
-
-      //Success case
-      assertTrue(lbLdapClient.authenticate(user, password));
-
-      Mockito
-          .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-              filter,
-              SearchScope.SUBTREE,
-              password.toCharArray()))
-          .thenReturn(new LbLdapClientTest.DummyPasswordWarning());
-
-      //Warning case
-      assertTrue(lbLdapClient.authenticate(user, password));
-
-
-      Mockito
-          .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-              filter,
-              SearchScope.SUBTREE,
-              password.toCharArray()))
-          .thenThrow(PasswordException.class);
-
-      //failure case
-      assertFalse(lbLdapClient.authenticate(user, password));
-
-      Mockito
-          .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-              filter,
-              SearchScope.SUBTREE,
-              password.toCharArray()))
-          .thenReturn(null);
-
-
-    } catch (PasswordException ex) {
-      log.error("This should not fail");
-      //Force the test to fail
-      assertFalse(false);
+            Mockito
+                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                            filter,
+                            SearchScope.SUBTREE,
+                            password.toCharArray()))
+                    .thenReturn(null);
+        }
+        catch (PasswordException ex) {
+            log.error("This should not fail");
+            //Force the test to fail
+            assertFalse(false);
+        }
     }
-  }
 
-  @Test
-  public void testMemberof() {
-    String user = "user1";
-    String[] attributes = new String[]{"memberOf"};
-    String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
+    @Test
+    public void testMemberof()
+    {
+        String user = "user1";
+        String[] attributes = new String[] {"memberOf"};
+        String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
 
-    java.util.ArrayList users = new java.util.ArrayList();
-    users.add(new LbLdapClient.UserRecord("Admin,User"));
+        java.util.ArrayList users = new java.util.ArrayList();
+        users.add(new LbLdapClient.UserRecord("Admin,User"));
 
-    Mockito
-        .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
-            eq(filter),
-            eq(SearchScope.SUBTREE),
-            eq(attributes),
-            any(LbLdapClient.UserEntryMapper.class)))
-        .thenReturn(users);
+        Mockito
+                .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
+                        eq(filter),
+                        eq(SearchScope.SUBTREE),
+                        eq(attributes),
+                        any(LbLdapClient.UserEntryMapper.class)))
+                .thenReturn(users);
 
-    //Success case
-    String ret = lbLdapClient.getMemberOf(user);
+        //Success case
+        String ret = lbLdapClient.getMemberOf(user);
 
-    log.info("ret is {}", ret);
-    assertTrue(ret.equals("Admin,User"));
+        log.info("ret is {}", ret);
+        assertEquals("Admin,User", ret);
 
-    org.mockito.Mockito
-        .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
-            eq(filter),
-            eq(SearchScope.SUBTREE),
-            eq(attributes),
-            any(LbLdapClient.UserEntryMapper.class)))
-        .thenReturn(null);
+        org.mockito.Mockito
+                .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
+                        eq(filter),
+                        eq(SearchScope.SUBTREE),
+                        eq(attributes),
+                        any(LbLdapClient.UserEntryMapper.class)))
+                .thenReturn(null);
 
-    //failure case
-    assertFalse(lbLdapClient.getMemberOf(user).equals("Admin,User"));
+        //failure case
+        assertNotEquals("Admin,User", lbLdapClient.getMemberOf(user));
+    }
 
-  }
+    class DummyPasswordWarning
+            implements org.apache.directory.ldap.client.template.PasswordWarning
+    {
+        @Override
+        public int getTimeBeforeExpiration()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getGraceAuthNsRemaining()
+        {
+            return 0;
+        }
+
+        @Override
+        public boolean isChangeAfterReset()
+        {
+            return false;
+        }
+    }
 }

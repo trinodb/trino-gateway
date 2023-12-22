@@ -6,23 +6,27 @@ import io.dropwizard.auth.basic.BasicCredentials;
 
 import java.util.Optional;
 
-public class ApiAuthenticator implements Authenticator<BasicCredentials, LbPrincipal> {
-  private final LbFormAuthManager formAuthManager;
-  private final AuthorizationManager authorizationManager;
+public class ApiAuthenticator
+        implements Authenticator<BasicCredentials, LbPrincipal>
+{
+    private final LbFormAuthManager formAuthManager;
+    private final AuthorizationManager authorizationManager;
 
-  public ApiAuthenticator(LbFormAuthManager formAuthManager,
-                          AuthorizationManager authorizationManager) {
-    this.formAuthManager = formAuthManager;
-    this.authorizationManager = authorizationManager;
-  }
-
-  @Override
-  public Optional<LbPrincipal> authenticate(BasicCredentials credentials)
-      throws AuthenticationException {
-    if (formAuthManager.authenticate(credentials)) {
-      return Optional.of(new LbPrincipal(credentials.getUsername(),
-          authorizationManager.getPrivileges(credentials.getUsername())));
+    public ApiAuthenticator(LbFormAuthManager formAuthManager,
+            AuthorizationManager authorizationManager)
+    {
+        this.formAuthManager = formAuthManager;
+        this.authorizationManager = authorizationManager;
     }
-    return Optional.empty();
-  }
+
+    @Override
+    public Optional<LbPrincipal> authenticate(BasicCredentials credentials)
+            throws AuthenticationException
+    {
+        if (formAuthManager.authenticate(credentials)) {
+            return Optional.of(new LbPrincipal(credentials.getUsername(),
+                    authorizationManager.getPrivileges(credentials.getUsername())));
+        }
+        return Optional.empty();
+    }
 }

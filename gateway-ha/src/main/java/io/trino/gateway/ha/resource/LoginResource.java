@@ -20,63 +20,72 @@ import java.nio.charset.Charset;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
-public class LoginResource {
+public class LoginResource
+{
+    @Inject
+    @Nullable
+    private LbOAuthManager oauthManager;
+    @Inject
+    @Nullable
+    private LbFormAuthManager formAuthManager;
 
-  @Inject
-  @Nullable
-  private LbOAuthManager oauthManager;
-  @Inject
-  @Nullable
-  private LbFormAuthManager formAuthManager;
-
-  @Path("sso")
-  @GET
-  public Response login() {
-    if (oauthManager == null) {
-      throw new WebApplicationException("OAuth configuration is not setup");
-    }
-    return oauthManager.getAuthorizationCode();
-  }
-
-  @Path("oidc/callback")
-  @GET
-  public Response callback(@QueryParam("code") String code) {
-    if (oauthManager == null) {
-      throw new WebApplicationException("OAuth configuration is not setup");
-    }
-    return oauthManager.exchangeCodeForToken(code, "/");
-  }
-
-  @POST
-  @Path("login_form")
-  public Response processLoginForm(@FormParam("username") String userName,
-                                   @FormParam("password") String password) {
-    if (formAuthManager == null) {
-      throw new WebApplicationException("Form authentication is not setup");
-    }
-    return formAuthManager.processLoginForm(userName, password);
-  }
-
-  @GET
-  @Path("login")
-  @Produces(MediaType.TEXT_HTML)
-  public LoginResource.LoginForm loginFormUi() {
-    if (formAuthManager == null) {
-      throw new WebApplicationException("Form authentication is not setup");
+    @Path("sso")
+    @GET
+    public Response login()
+    {
+        if (oauthManager == null) {
+            throw new WebApplicationException("OAuth configuration is not setup");
+        }
+        return oauthManager.getAuthorizationCode();
     }
 
-    return new LoginResource.LoginForm("/template/login-form.ftl");
-  }
-
-  @Path("logout")
-  @GET
-  public Response logOut() {
-    return SessionCookie.logOut();
-  }
-
-  public static class LoginForm extends View {
-    protected LoginForm(String templateName) {
-      super(templateName, Charset.defaultCharset());
+    @Path("oidc/callback")
+    @GET
+    public Response callback(@QueryParam("code") String code)
+    {
+        if (oauthManager == null) {
+            throw new WebApplicationException("OAuth configuration is not setup");
+        }
+        return oauthManager.exchangeCodeForToken(code, "/");
     }
-  }
+
+    @POST
+    @Path("login_form")
+    public Response processLoginForm(
+            @FormParam("username") String userName,
+            @FormParam("password") String password)
+    {
+        if (formAuthManager == null) {
+            throw new WebApplicationException("Form authentication is not setup");
+        }
+        return formAuthManager.processLoginForm(userName, password);
+    }
+
+    @GET
+    @Path("login")
+    @Produces(MediaType.TEXT_HTML)
+    public LoginResource.LoginForm loginFormUi()
+    {
+        if (formAuthManager == null) {
+            throw new WebApplicationException("Form authentication is not setup");
+        }
+
+        return new LoginResource.LoginForm("/template/login-form.ftl");
+    }
+
+    @Path("logout")
+    @GET
+    public Response logOut()
+    {
+        return SessionCookie.logOut();
+    }
+
+    public static class LoginForm
+            extends View
+    {
+        protected LoginForm(String templateName)
+        {
+            super(templateName, Charset.defaultCharset());
+        }
+    }
 }

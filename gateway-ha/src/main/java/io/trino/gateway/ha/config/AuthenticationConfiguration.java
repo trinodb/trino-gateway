@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class AuthenticationConfiguration
 {
     private String defaultType;
@@ -16,66 +18,76 @@ public class AuthenticationConfiguration
     public AuthenticationConfiguration() {}
 
     public String getDefaultType()
-    {return this.defaultType;}
+    {
+        return this.defaultType;
+    }
 
     public void setDefaultType(String defaultType)
-    {this.defaultType = defaultType;}
+    {
+        this.defaultType = defaultType;
+    }
 
     public OAuthConfiguration getOauth()
-    {return this.oauth;}
+    {
+        return this.oauth;
+    }
 
     public void setOauth(OAuthConfiguration oauth)
-    {this.oauth = oauth;}
+    {
+        this.oauth = oauth;
+    }
 
     public FormAuthConfiguration getForm()
-    {return this.form;}
+    {
+        return this.form;
+    }
 
     public void setForm(FormAuthConfiguration form)
-    {this.form = form;}
+    {
+        this.form = form;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof AuthenticationConfiguration)) {
+        if (!(o instanceof AuthenticationConfiguration other)) {
             return false;
         }
-        final AuthenticationConfiguration other = (AuthenticationConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        final Object this$defaultType = this.getDefaultType();
-        final Object other$defaultType = other.getDefaultType();
-        if (this$defaultType == null ? other$defaultType != null : !this$defaultType.equals(other$defaultType)) {
+        final Object defaultType = this.getDefaultType();
+        final Object otherDefaultType = other.getDefaultType();
+        if (!Objects.equals(defaultType, otherDefaultType)) {
             return false;
         }
-        final Object this$oauth = this.getOauth();
-        final Object other$oauth = other.getOauth();
-        if (this$oauth == null ? other$oauth != null : !this$oauth.equals(other$oauth)) {
+        final Object oauth = this.getOauth();
+        final Object otherOauth = other.getOauth();
+        if (!Objects.equals(oauth, otherOauth)) {
             return false;
         }
-        final Object this$form = this.getForm();
-        final Object other$form = other.getForm();
-        if (this$form == null ? other$form != null : !this$form.equals(other$form)) {
-            return false;
-        }
-        return true;
+        final Object form = this.getForm();
+        final Object otherForm = other.getForm();
+        return Objects.equals(form, otherForm);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof AuthenticationConfiguration;}
+    {
+        return other instanceof AuthenticationConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $defaultType = this.getDefaultType();
-        result = result * PRIME + ($defaultType == null ? 43 : $defaultType.hashCode());
-        final Object $oauth = this.getOauth();
-        result = result * PRIME + ($oauth == null ? 43 : $oauth.hashCode());
-        final Object $form = this.getForm();
-        result = result * PRIME + ($form == null ? 43 : $form.hashCode());
+        final Object defaultType = this.getDefaultType();
+        result = result * prime + (defaultType == null ? 43 : defaultType.hashCode());
+        final Object oauth = this.getOauth();
+        result = result * prime + (oauth == null ? 43 : oauth.hashCode());
+        final Object form = this.getForm();
+        result = result * prime + (form == null ? 43 : form.hashCode());
         return result;
     }
 

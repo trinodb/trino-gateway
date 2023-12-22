@@ -1,9 +1,5 @@
 package io.trino.gateway.ha.security;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.auth0.jwt.interfaces.Claim;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import jakarta.ws.rs.WebApplicationException;
@@ -12,159 +8,166 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestLbFilter {
+public class TestLbFilter
+{
+    private static final String USER = "username";
+    private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
+    private static final String ID_TOKEN = "TOKEN";
 
-  private static final String USER = "username";
-  private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
-  private static final String ID_TOKEN = "TOKEN";
+    private LbOAuthManager oauthManager;
+    private AuthorizationManager authorizationManager;
+    private ContainerRequestContext requestContext;
 
-  private LbOAuthManager oauthManager;
-  private AuthorizationManager authorizationManager;
-  private ContainerRequestContext requestContext;
+    @BeforeAll
+    public void setup()
+            throws Exception
+    {
+        // Set authentication manager mock with 'sub' claim
+        oauthManager = Mockito.mock(LbOAuthManager.class);
+        Claim claim = Mockito.mock(Claim.class);
+        Mockito
+                .when(claim.toString())
+                .thenReturn(USER);
+        Mockito
+                .when(oauthManager.getClaimsFromIdToken(ID_TOKEN))
+                .thenReturn(Optional.of(Map.of("sub", claim)));
+        Mockito.when(oauthManager.getUserIdField()).thenReturn("sub");
 
-  @BeforeAll
-  public void setup() throws Exception {
+        // Set authorization manager with membership
+        authorizationManager = Mockito.mock(AuthorizationManager.class);
+        Mockito
+                .when(authorizationManager.searchMemberOf(USER))
+                .thenReturn(MEMBER_OF);
+        Mockito
+                .when(authorizationManager.getPrivileges(USER))
+                .thenReturn(MEMBER_OF);
 
-    // Set authentication manager mock with 'sub' claim
-    oauthManager = Mockito.mock(LbOAuthManager.class);
-    Claim claim = Mockito.mock(Claim.class);
-    Mockito
-        .when(claim.toString())
-        .thenReturn(USER);
-    Mockito
-        .when(oauthManager.getClaimsFromIdToken(ID_TOKEN))
-        .thenReturn(Optional.of(Map.of("sub", claim)));
-    Mockito.when(oauthManager.getUserIdField()).thenReturn("sub");
+        // Request context for the auth filter
+        requestContext = Mockito.mock(ContainerRequestContext.class);
+    }
 
-    // Set authorization manager with membership
-    authorizationManager = Mockito.mock(AuthorizationManager.class);
-    Mockito
-        .when(authorizationManager.searchMemberOf(USER))
-        .thenReturn(MEMBER_OF);
-    Mockito
-            .when(authorizationManager.getPrivileges(USER))
-            .thenReturn(MEMBER_OF);
+    @Test
+    public void testSuccessfulCookieAuthentication()
+            throws Exception
+    {
+        AuthorizationConfiguration configuration = new AuthorizationConfiguration();
+        configuration.setAdmin("NO_MEMBER");
+        configuration.setUser(MEMBER_OF.get());
 
-    // Request context for the auth filter
-    requestContext = Mockito.mock(ContainerRequestContext.class);
-  }
+        Mockito
+                .when(requestContext.getCookies())
+                .thenReturn(
+                        Map.of(SessionCookie.OAUTH_ID_TOKEN,
+                                new Cookie(SessionCookie.OAUTH_ID_TOKEN, ID_TOKEN)));
+        Mockito
+                .when(requestContext.getHeaders())
+                .thenReturn(new MultivaluedHashMap());
 
-  @Test
-  public void testSuccessfulCookieAuthentication() throws Exception {
+        LbAuthenticator authenticator = new LbAuthenticator(
+                oauthManager,
+                authorizationManager);
 
-    AuthorizationConfiguration configuration = new AuthorizationConfiguration();
-    configuration.setAdmin("NO_MEMBER");
-    configuration.setUser(MEMBER_OF.get());
+        LbAuthorizer authorizer = new LbAuthorizer(configuration);
+        LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
+                .setAuthenticator(authenticator)
+                .setAuthorizer(authorizer)
+                .setPrefix("Bearer")
+                .buildAuthFilter();
+        ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
+                .forClass(SecurityContext.class);
 
-    Mockito
-        .when(requestContext.getCookies())
-        .thenReturn(
-            Map.of(SessionCookie.OAUTH_ID_TOKEN,
-                new Cookie(SessionCookie.OAUTH_ID_TOKEN, ID_TOKEN)));
-    Mockito
-        .when(requestContext.getHeaders())
-        .thenReturn(new MultivaluedHashMap());
+        // No exception is thrown when the authentication is successful
+        lbFilter.filter(requestContext);
 
-    LbAuthenticator authenticator = new LbAuthenticator(
-        oauthManager,
-        authorizationManager);
+        // SecurityContext must be set with the right authorizer for authenticated user
+        Mockito.verify(requestContext, Mockito.times(1))
+                .setSecurityContext(secContextCaptor.capture());
 
-    LbAuthorizer authorizer = new LbAuthorizer(configuration);
-    LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-        .setAuthenticator(authenticator)
-        .setAuthorizer(authorizer)
-        .setPrefix("Bearer")
-        .buildAuthFilter();
-    ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
-        .forClass(SecurityContext.class);
+        // Checks authorization for authenticated principal
+        assert (secContextCaptor.getValue().isUserInRole("USER"));
+        assertFalse(secContextCaptor.getValue().isUserInRole("ADMIN"));
+    }
 
-    // No exception is thrown when the authentication is successful
-    lbFilter.filter(requestContext);
+    @Test
+    public void testSuccessfulHeaderAuthentication()
+            throws Exception
+    {
+        AuthorizationConfiguration configuration = new AuthorizationConfiguration();
+        configuration.setAdmin(MEMBER_OF.get());
+        configuration.setUser(MEMBER_OF.get());
 
-    // SecurityContext must be set with the right authorizer for authenticated user
-    Mockito.verify(requestContext, Mockito.times(1))
-        .setSecurityContext(secContextCaptor.capture());
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addFirst(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", ID_TOKEN));
 
-    // Checks authorization for authenticated principal
-    assert(secContextCaptor.getValue().isUserInRole("USER"));
-    assertFalse(secContextCaptor.getValue().isUserInRole("ADMIN"));
-  }
+        Mockito
+                .when(requestContext.getCookies())
+                .thenReturn(Map.of());
+        Mockito
+                .when(requestContext.getHeaders())
+                .thenReturn(headers);
+        LbAuthenticator authenticator = new LbAuthenticator(
+                oauthManager,
+                authorizationManager);
+        LbAuthorizer authorizer = new LbAuthorizer(configuration);
+        LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
+                .setAuthenticator(authenticator)
+                .setAuthorizer(authorizer)
+                .setPrefix("Bearer")
+                .buildAuthFilter();
+        ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
+                .forClass(SecurityContext.class);
 
-  @Test
-  public void testSuccessfulHeaderAuthentication() throws Exception {
-    AuthorizationConfiguration configuration = new AuthorizationConfiguration();
-    configuration.setAdmin(MEMBER_OF.get());
-    configuration.setUser(MEMBER_OF.get());
+        // No exception is thrown when the authentication is successful
+        lbFilter.filter(requestContext);
 
-    MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
-    headers.addFirst(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", ID_TOKEN));
+        // SecurityContext must be set with the right authorizer at authentication
+        Mockito.verify(requestContext, Mockito.atLeast(1))
+                .setSecurityContext(secContextCaptor.capture());
 
-    Mockito
-        .when(requestContext.getCookies())
-        .thenReturn(Map.of());
-    Mockito
-        .when(requestContext.getHeaders())
-        .thenReturn(headers);
-    LbAuthenticator authenticator = new LbAuthenticator(
-        oauthManager,
-        authorizationManager);
-    LbAuthorizer authorizer = new LbAuthorizer(configuration);
-    LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-        .setAuthenticator(authenticator)
-        .setAuthorizer(authorizer)
-        .setPrefix("Bearer")
-        .buildAuthFilter();
-    ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
-        .forClass(SecurityContext.class);
+        // Checks authorization for authenticated principal
+        assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
+        assertTrue(secContextCaptor.getValue().isUserInRole("ADMIN"));
+    }
 
-    // No exception is thrown when the authentication is successful
-    lbFilter.filter(requestContext);
+    @Test
+    public void testMissingAuthenticationToken()
+            throws WebApplicationException
+    {
+        assertThrows(WebApplicationException.class, () -> {
+            AuthorizationConfiguration configuration = new AuthorizationConfiguration();
 
-    // SecurityContext must be set with the right authorizer at authentication
-    Mockito.verify(requestContext, Mockito.atLeast(1))
-            .setSecurityContext(secContextCaptor.capture());
+            MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
 
-    // Checks authorization for authenticated principal
-    assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
-    assertTrue(secContextCaptor.getValue().isUserInRole("ADMIN"));
+            Mockito.when(requestContext.getCookies())
+                    .thenReturn(Map.of());
+            Mockito.when(requestContext.getHeaders())
+                    .thenReturn(headers);
+            LbAuthenticator authenticator = new LbAuthenticator(
+                    oauthManager,
+                    authorizationManager);
+            LbAuthorizer authorizer = new LbAuthorizer(configuration);
+            LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
+                    .setAuthenticator(authenticator)
+                    .setAuthorizer(authorizer)
+                    .setPrefix("Bearer")
+                    .buildAuthFilter();
 
-  }
-
-  @Test
-  public void testMissingAuthenticationToken() throws WebApplicationException {
-    assertThrows(WebApplicationException.class, () -> {
-
-      AuthorizationConfiguration configuration = new AuthorizationConfiguration();
-
-      MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
-
-      Mockito
-              .when(requestContext.getCookies())
-              .thenReturn(Map.of());
-      Mockito
-              .when(requestContext.getHeaders())
-              .thenReturn(headers);
-      LbAuthenticator authenticator = new LbAuthenticator(
-              oauthManager,
-              authorizationManager);
-      LbAuthorizer authorizer = new LbAuthorizer(configuration);
-      LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-              .setAuthenticator(authenticator)
-              .setAuthorizer(authorizer)
-              .setPrefix("Bearer")
-              .buildAuthFilter();
-
-      // Exception is thrown when the authentication fails
-      lbFilter.filter(requestContext);
-    });
-  }
+            // Exception is thrown when the authentication fails
+            lbFilter.filter(requestContext);
+        });
+    }
 }

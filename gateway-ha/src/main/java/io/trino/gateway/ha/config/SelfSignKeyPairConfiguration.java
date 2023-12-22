@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class SelfSignKeyPairConfiguration
 {
     private String privateKeyRsa;
@@ -8,53 +10,59 @@ public class SelfSignKeyPairConfiguration
     public SelfSignKeyPairConfiguration() {}
 
     public String getPrivateKeyRsa()
-    {return this.privateKeyRsa;}
+    {
+        return this.privateKeyRsa;
+    }
 
     public void setPrivateKeyRsa(String privateKeyRsa)
-    {this.privateKeyRsa = privateKeyRsa;}
+    {
+        this.privateKeyRsa = privateKeyRsa;
+    }
 
     public String getPublicKeyRsa()
-    {return this.publicKeyRsa;}
+    {
+        return this.publicKeyRsa;
+    }
 
     public void setPublicKeyRsa(String publicKeyRsa)
-    {this.publicKeyRsa = publicKeyRsa;}
+    {
+        this.publicKeyRsa = publicKeyRsa;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof SelfSignKeyPairConfiguration)) {
+        if (!(o instanceof SelfSignKeyPairConfiguration other)) {
             return false;
         }
-        final SelfSignKeyPairConfiguration other = (SelfSignKeyPairConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        final Object this$privateKeyRsa = this.getPrivateKeyRsa();
-        final Object other$privateKeyRsa = other.getPrivateKeyRsa();
-        if (this$privateKeyRsa == null ? other$privateKeyRsa != null : !this$privateKeyRsa.equals(other$privateKeyRsa)) {
+        final Object privateKeyRsa = this.getPrivateKeyRsa();
+        final Object otherPrivateKeyRsa = other.getPrivateKeyRsa();
+        if (!Objects.equals(privateKeyRsa, otherPrivateKeyRsa)) {
             return false;
         }
-        final Object this$publicKeyRsa = this.getPublicKeyRsa();
-        final Object other$publicKeyRsa = other.getPublicKeyRsa();
-        if (this$publicKeyRsa == null ? other$publicKeyRsa != null : !this$publicKeyRsa.equals(other$publicKeyRsa)) {
-            return false;
-        }
-        return true;
+        final Object publicKeyRsa = this.getPublicKeyRsa();
+        final Object otherPublicKeyRsa = other.getPublicKeyRsa();
+        return Objects.equals(publicKeyRsa, otherPublicKeyRsa);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof SelfSignKeyPairConfiguration;}
+    {
+        return other instanceof SelfSignKeyPairConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $privateKeyRsa = this.getPrivateKeyRsa();
-        result = result * PRIME + ($privateKeyRsa == null ? 43 : $privateKeyRsa.hashCode());
-        final Object $publicKeyRsa = this.getPublicKeyRsa();
-        result = result * PRIME + ($publicKeyRsa == null ? 43 : $publicKeyRsa.hashCode());
+        final Object privateKeyRsa = this.getPrivateKeyRsa();
+        result = result * prime + (privateKeyRsa == null ? 43 : privateKeyRsa.hashCode());
+        final Object publicKeyRsa = this.getPublicKeyRsa();
+        result = result * prime + (publicKeyRsa == null ? 43 : publicKeyRsa.hashCode());
         return result;
     }
 

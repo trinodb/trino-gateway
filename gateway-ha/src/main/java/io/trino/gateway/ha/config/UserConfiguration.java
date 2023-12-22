@@ -1,5 +1,7 @@
 package io.trino.gateway.ha.config;
 
+import java.util.Objects;
+
 public class UserConfiguration
 {
     private String privileges;
@@ -14,53 +16,59 @@ public class UserConfiguration
     public UserConfiguration() {}
 
     public String getPrivileges()
-    {return this.privileges;}
+    {
+        return this.privileges;
+    }
 
     public void setPrivileges(String privileges)
-    {this.privileges = privileges;}
+    {
+        this.privileges = privileges;
+    }
 
     public String getPassword()
-    {return this.password;}
+    {
+        return this.password;
+    }
 
     public void setPassword(String password)
-    {this.password = password;}
+    {
+        this.password = password;
+    }
 
     public boolean equals(final Object o)
     {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof UserConfiguration)) {
+        if (!(o instanceof UserConfiguration other)) {
             return false;
         }
-        final UserConfiguration other = (UserConfiguration) o;
-        if (!other.canEqual((Object) this)) {
+        if (!other.canEqual(this)) {
             return false;
         }
-        final Object this$privileges = this.getPrivileges();
-        final Object other$privileges = other.getPrivileges();
-        if (this$privileges == null ? other$privileges != null : !this$privileges.equals(other$privileges)) {
+        final Object privileges = this.getPrivileges();
+        final Object otherPrivileges = other.getPrivileges();
+        if (!Objects.equals(privileges, otherPrivileges)) {
             return false;
         }
-        final Object this$password = this.getPassword();
-        final Object other$password = other.getPassword();
-        if (this$password == null ? other$password != null : !this$password.equals(other$password)) {
-            return false;
-        }
-        return true;
+        final Object password = this.getPassword();
+        final Object otherPassword = other.getPassword();
+        return Objects.equals(password, otherPassword);
     }
 
     protected boolean canEqual(final Object other)
-    {return other instanceof UserConfiguration;}
+    {
+        return other instanceof UserConfiguration;
+    }
 
     public int hashCode()
     {
-        final int PRIME = 59;
+        final int prime = 59;
         int result = 1;
-        final Object $privileges = this.getPrivileges();
-        result = result * PRIME + ($privileges == null ? 43 : $privileges.hashCode());
-        final Object $password = this.getPassword();
-        result = result * PRIME + ($password == null ? 43 : $password.hashCode());
+        final Object privileges = this.getPrivileges();
+        result = result * prime + (privileges == null ? 43 : privileges.hashCode());
+        final Object password = this.getPassword();
+        result = result * prime + (password == null ? 43 : password.hashCode());
         return result;
     }
 
