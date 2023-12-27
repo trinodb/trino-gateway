@@ -29,7 +29,7 @@ public class ClusterStatsJdbcMonitor
 
     private final BackendStateConfiguration backendStateConfiguration;
 
-    private final String STATE_QUERY = "SELECT state, COUNT(*) as count "
+    private static final String STATE_QUERY = "SELECT state, COUNT(*) as count "
             + "FROM runtime.queries "
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
