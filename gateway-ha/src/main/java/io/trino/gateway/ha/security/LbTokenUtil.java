@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.security.interfaces.RSAPublicKey;
 
-public class LbTokenUtil
+public final class LbTokenUtil
 {
     private static final Logger log = LoggerFactory.getLogger(LbTokenUtil.class);
 
@@ -16,7 +16,7 @@ public class LbTokenUtil
      * Cookie key to pass the token.
      */
 
-    public LbTokenUtil()
+    private LbTokenUtil()
     {
     }
 
