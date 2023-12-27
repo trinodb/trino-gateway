@@ -29,7 +29,7 @@ public class ClusterStatsHttpMonitor
         implements ClusterStatsMonitor
 {
     private static final Logger log = LoggerFactory.getLogger(ClusterStatsHttpMonitor.class);
-    private final String SESSION_USER = "sessionUser";
+    private static final String SESSION_USER = "sessionUser";
 
     private final BackendStateConfiguration backendStateConfiguration;
 
