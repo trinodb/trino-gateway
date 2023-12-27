@@ -3,10 +3,14 @@ package io.trino.gateway.ha.security;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
-public class SessionCookie
+public static final class SessionCookie
 {
     static final String OAUTH_ID_TOKEN = "token";
     static final String SELF_ISSUER_ID = "self";
+
+    private SessionCookie()
+    {
+    }
 
     public static NewCookie getTokenCookie(String token)
     {
