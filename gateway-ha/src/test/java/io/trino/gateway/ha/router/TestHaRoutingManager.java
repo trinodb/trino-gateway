@@ -11,6 +11,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.io.File;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestHaRoutingManager
 {
@@ -54,14 +57,14 @@ public class TestHaRoutingManager
         }
 
         //Keep only 1st backend as healthy, mark all the others as unhealthy
-        assert (!backendManager.getAllActiveBackends().isEmpty());
+        assertTrue(!backendManager.getAllActiveBackends().isEmpty());
 
         for (int i = 1; i < numBackends; i++) {
             backend = groupName + i;
             haRoutingManager.upateBackEndHealth(backend, false);
         }
 
-        assert (haRoutingManager.provideBackendForRoutingGroup(groupName, "")
-                .equals("test_group0.trino.example.com"));
+        assertEquals(haRoutingManager.provideBackendForRoutingGroup(groupName, ""),
+                "test_group0.trino.example.com");
     }
 }

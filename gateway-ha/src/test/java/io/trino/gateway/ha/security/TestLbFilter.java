@@ -98,7 +98,7 @@ public class TestLbFilter
                 .setSecurityContext(secContextCaptor.capture());
 
         // Checks authorization for authenticated principal
-        assert (secContextCaptor.getValue().isUserInRole("USER"));
+        assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
         assertFalse(secContextCaptor.getValue().isUserInRole("ADMIN"));
     }
 
