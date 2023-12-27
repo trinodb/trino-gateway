@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("checkstyle:AnnotationUseStyle")
 @RolesAllowed({"USER"})
 @Path("/")
 public class GatewayViewResource

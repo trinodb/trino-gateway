@@ -11,6 +11,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+@SuppressWarnings("checkstyle:AnnotationUseStyle")
 @RolesAllowed({"API"})
 @Path("gateway/backend/modify")
 @Produces(MediaType.APPLICATION_JSON)
