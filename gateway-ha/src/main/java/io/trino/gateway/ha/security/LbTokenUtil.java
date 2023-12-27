@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.security.interfaces.RSAPublicKey;
 
-public static final class LbTokenUtil
+public final class LbTokenUtil
 {
     private static final Logger log = LoggerFactory.getLogger(LbTokenUtil.class);
 
