@@ -32,6 +32,8 @@ public class HaGatewayTestUtils
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final Random RANDOM = new Random();
 
+    private HaGatewayTestUtils() {}
+
     public static void seedRequiredData(TestConfig testConfig)
     {
         String jdbcUrl = "jdbc:h2:" + testConfig.getH2DbFilePath();
