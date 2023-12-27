@@ -98,7 +98,8 @@ public class TestTrinoQueueLengthRoutingTable
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
             backendManager.activateBackend(backend);
-            queueLengths.put(backend, mockQueueLength += rand.nextInt(100));
+            mockQueueLength = mockQueueLength + rand.nextInt(100);
+            queueLengths.put(backend, mockQueueLength);
         }
 
         clusterQueueMap.put(groupName, queueLengths);
@@ -120,8 +121,10 @@ public class TestTrinoQueueLengthRoutingTable
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
             backendManager.activateBackend(backend);
-            queueLengths.put(backend, mockQueueLength += queueLengthDistributiveFactor);
-            runningLengths.put(backend, mockRunningLength += runningLenDistributiveFactor);
+            mockQueueLength = mockQueueLength + queueLengthDistributiveFactor;
+            mockRunningLength = mockRunningLength + runningLenDistributiveFactor;
+            queueLengths.put(backend, mockQueueLength);
+            runningLengths.put(backend, mockRunningLength);
         }
 
         clusterQueueMap.put(groupName, queueLengths);
