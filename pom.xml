@@ -61,7 +61,7 @@
         <dep.plugin.maven.shade>2.3</dep.plugin.maven.shade>
         <dep.plugin.maven.source>3.0.0</dep.plugin.maven.source>
         <dep.mockwebserver.version>1.2.1</dep.mockwebserver.version>
-        <dep.mokito.junit.version>5.5.0</dep.mokito.junit.version>
+        <dep.mockito.version>5.8.0</dep.mockito.version>
         <dep.mysqlconnector.version>8.0.17</dep.mysqlconnector.version>
         <dep.postgresql.version>42.6.0</dep.postgresql.version>
         <dep.reflections.version>0.9.10</dep.reflections.version>
