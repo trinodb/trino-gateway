@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.HttpHeaders;
 import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.zip.GZIPInputStream;
 
@@ -66,26 +64,6 @@ public class ProxyHandler
                 String header = headers.nextElement();
                 log.debug(header + "->" + request.getHeader(header));
             }
-        }
-    }
-
-    protected void debugLogHeaders(HttpServletResponse response)
-    {
-        if (log.isDebugEnabled()) {
-            log.debug("-------HttpServletResponse headers---------");
-            Collection<String> headers = response.getHeaderNames();
-            for (String header : headers) {
-                log.debug(header + "->" + response.getHeader(header));
-            }
-        }
-    }
-
-    protected void debugLogHeaders(Request proxyRequest)
-    {
-        if (log.isDebugEnabled()) {
-            log.debug("-------Request proxyRequest headers---------");
-            HttpFields httpFields = proxyRequest.getHeaders();
-            log.debug(httpFields.toString());
         }
     }
 

@@ -12,8 +12,6 @@ import io.dropwizard.core.Application;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.servlets.tasks.Task;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
@@ -27,20 +25,14 @@ import org.reflections.util.FilterBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Supports Guice in Dropwizard.
  *
- * <p>To use it, create a subclass and provide a list of modules you want to use with the {@link
- * #addModules} method.
- *
  * <p>Packages supplied in the constructor will be scanned for Resources, Tasks, Providers,
- * Healthchecks and Managed classes, and added to the environment. If you need to add anything to
- * the environment, or access the Injector at run time, you can use the {@link #applicationAtRun}
- * method.
+ * Healthchecks and Managed classes, and added to the environment.
  *
  * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
  * injection.
@@ -91,10 +83,6 @@ public abstract class BaseApp<T extends AppConfiguration>
     /**
      * When the application runs, this is called after the bundles are run.
      *
-     * <p>You generally don't want to override this but if you do, make sure to call up into super to
-     * allow the app to configure its Guice wiring correctly and apply anything you set up in {@link
-     * #applicationAtRun}.
-     *
      * @param configuration the parsed {@link Configuration} object
      * @param environment the application's {@link Environment}
      * @throws Exception if something goes wrong
@@ -105,28 +93,13 @@ public abstract class BaseApp<T extends AppConfiguration>
     {
         this.injector = configureGuice(configuration, environment);
         logger.info("op=configure_guice injector={}", injector);
-        applicationAtRun(configuration, environment, injector);
         logger.info("op=configure_app_custom completed");
-    }
-
-    /**
-     * Access the Dropwizard {@link Environment} and/or the Guice {@link Injector} when the
-     * application is run. Override it to add providers, resources, etc. for your application as an
-     * alternative to accessing {@link #run} .
-     *
-     * @param configuration the app configuration
-     * @param environment the Dropwizard {@link Environment}
-     * @param injector the Guice {@link Injector}
-     */
-    protected void applicationAtRun(T configuration, Environment environment, Injector injector)
-    {
     }
 
     private Injector configureGuice(T configuration, Environment environment)
             throws Exception
     {
         appModules.add(new MetricRegistryModule(environment.metrics()));
-        appModules.addAll(addModules(configuration, environment));
         Injector injector = Guice.createInjector(ImmutableList.copyOf(appModules));
         injector.injectMembers(this);
         registerWithInjector(configuration, environment, injector);
@@ -140,66 +113,8 @@ public abstract class BaseApp<T extends AppConfiguration>
         registerHealthChecks(environment, injector);
         registerProviders(environment, injector);
         registerTasks(environment, injector);
-        addManagedApps(configuration, environment, injector);
         registerResources(environment, injector);
         logger.info("op=register_end configuration={}", configuration.toString());
-    }
-
-    /**
-     * Supply a list of modules to be used by Guice.
-     *
-     * @param configuration the app configuration
-     * @return a list of modules to be provisioned by Guice
-     */
-    protected List<AppModule> addModules(T configuration, Environment environment)
-    {
-        List<AppModule> modules = new ArrayList<>();
-        if (configuration.getModules() == null) {
-            logger.warn("No modules to load.");
-            return modules;
-        }
-        for (String clazz : configuration.getModules()) {
-            try {
-                logger.info("Trying to load module [{}]", clazz);
-                Object ob =
-                        Class.forName(clazz)
-                                .getConstructor(configuration.getClass(), Environment.class)
-                                .newInstance(configuration, environment);
-                modules.add((AppModule) ob);
-            }
-            catch (Exception e) {
-                logger.error("Could not instantiate module [" + clazz + "]", e);
-            }
-        }
-        return modules;
-    }
-
-    /**
-     * Supply a list of managed apps.
-     */
-    protected List<Managed> addManagedApps(
-            T configuration, Environment environment, Injector injector)
-    {
-        List<Managed> managedApps = new ArrayList<>();
-        if (configuration.getManagedApps() == null) {
-            logger.error("No managed apps found");
-            return managedApps;
-        }
-        configuration
-                .getManagedApps()
-                .forEach(
-                        clazz -> {
-                            try {
-                                Class c = Class.forName(clazz);
-                                LifecycleEnvironment lifecycle = environment.lifecycle();
-                                lifecycle.manage((Managed) injector.getInstance(c));
-                                logger.info("op=register type=managed item={}", c);
-                            }
-                            catch (Exception e) {
-                                logger.error("Error loading managed app", e);
-                            }
-                        });
-        return managedApps;
     }
 
     private void registerTasks(Environment environment, Injector injector)
