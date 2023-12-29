@@ -49,8 +49,8 @@ If it is not mounted then the gateway will fail to initialize.
 
 ## Health Checking
 
-By default the container health checking is done by the [/usr/lib/trino/bin/health-check.py](./bin/health-check.py)
-python script which simply expects a 2XX response from the server at `/api/public/backends`.
+By default the container health checking is done by the [/usr/lib/trino/bin/health-check](./bin/health-check)
+script which simply expects a 2XX response from the server at `/api/public/backends`.
 
 ## Building a custom Docker image
 

@@ -38,18 +38,15 @@ COPY --from=jdk-download $JAVA_HOME $JAVA_HOME
 RUN \
     set -xeu && \
     microdnf update -y && \
-    microdnf install -y tar less python3 python3-pip shadow-utils jq && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
-    pip3 install requests pyyaml && \
+    microdnf install -y tar less shadow-utils && \
     groupadd trino --gid 1000 && \
     useradd trino --uid 1000 --gid 1000 --create-home && \
     mkdir -p /usr/lib/trino && \
     chown -R "trino:trino" /usr/lib/trino /opt/trino
 
-ARG TRINO_GATEWAY_VERSION
-COPY --chown=trino:trino gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar /usr/lib/trino
 COPY --chown=trino:trino gateway-ha /usr/lib/trino
 
+ARG TRINO_GATEWAY_VERSION
 ENV GATEWAY_JAR_PATH "/usr/lib/trino/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
 
 EXPOSE 8080
@@ -57,4 +54,4 @@ USER trino:trino
 CMD java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar "${GATEWAY_JAR_PATH}" "server" "/opt/trino/gateway-ha-config.yml"
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
-  CMD /usr/lib/trino/bin/health-check.py
+  CMD /usr/lib/trino/bin/health-check

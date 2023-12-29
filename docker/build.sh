@@ -5,12 +5,12 @@ set -xeuo pipefail
 usage() {
     cat <<EOF 1>&2
 Usage: $0 [-h] [-a <ARCHITECTURES>] [-r <VERSION>]
-Builds the Trino Docker image
+Builds the Trino Gateway Docker image
 
 -h       Display help
 -a       Build the specified comma-separated architectures, defaults to amd64,arm64,ppc64le
--r       Build the specified Trino release version, downloads all required artifacts
--j       Build the Trino release with specified Temurin JDK release
+-r       Build the specified Trino Gateway release version, downloads all required artifacts
+-j       Build the Trino Gateway release with specified Temurin JDK release
 EOF
 }
 
@@ -102,9 +102,10 @@ fi
 
 echo "🧱 Preparing the image build context directory"
 WORK_DIR="$(mktemp -d)"
-mkdir "${WORK_DIR}/gateway-ha"
-cp "$trino_gateway_ha" "${WORK_DIR}"
-cp -R bin "${WORK_DIR}/gateway-ha"
+GATEWAY_WORK_DIR="${WORK_DIR}/gateway-ha"
+mkdir "${GATEWAY_WORK_DIR}"
+cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}"
+cp -R bin "${GATEWAY_WORK_DIR}"
 cp "${SCRIPT_DIR}/Dockerfile" "${WORK_DIR}"
 
 TAG_PREFIX="trino-gateway:${TRINO_GATEWAY_VERSION}"

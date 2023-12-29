@@ -7,7 +7,6 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: "/usr/lib/trino/bin/health-check.py"
       interval: 10s
       timeout: 5s
       retries: 3
