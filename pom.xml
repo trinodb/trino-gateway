@@ -39,7 +39,6 @@
         <project.build.targetJdk>17</project.build.targetJdk>
         <air.java.version>17</air.java.version>
         <air.check.skip-enforcer>true</air.check.skip-enforcer>
-        <air.check.skip-license>true</air.check.skip-license>
         <air.check.skip-dependency>true</air.check.skip-dependency>
         <air.check.skip-duplicate-finder>true</air.check.skip-duplicate-finder>
         <air.check.skip-modernizer>true</air.check.skip-modernizer>
