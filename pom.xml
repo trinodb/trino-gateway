@@ -6,13 +6,13 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>146</version>
+        <version>147</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
     <artifactId>trino-gateway-parent</artifactId>
-    <packaging>pom</packaging>
     <version>5-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
     <name>trino-gateway-parent</name>
     <description>A smart load balancer and query router for Trino</description>
@@ -26,6 +26,12 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <modules>
+        <module>baseapp</module>
+        <module>gateway-ha</module>
+        <module>proxyserver</module>
+    </modules>
     <scm>
         <connection>scm:git:git://github.com/trinodb/trino-gateway.git</connection>
         <tag>HEAD</tag>
@@ -35,8 +41,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
         <project.build.targetJdk>17</project.build.targetJdk>
+
         <air.java.version>17</air.java.version>
         <air.check.skip-checkstyle>true</air.check.skip-checkstyle>
         <air.check.skip-enforcer>true</air.check.skip-enforcer>
@@ -49,6 +55,7 @@
 
         <!-- dependency versions -->
         <dep.activejdbc.version>2.3</dep.activejdbc.version>
+        <dep.apache.commons.version>3.13.0</dep.apache.commons.version>
         <dep.apache.httpcomponents>4.5.13</dep.apache.httpcomponents>
         <dep.dropwizard.version>4.0.2</dep.dropwizard.version>
         <dep.ehcache.version>3.8.1</dep.ehcache.version>
@@ -57,39 +64,21 @@
         <dep.jakarta.mail.version>2.0.0</dep.jakarta.mail.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.jetty.version>11.0.15</dep.jetty.version>
-        <dep.okhttp.version>3.9.0</dep.okhttp.version>
-        <dep.plugin.maven.shade>2.3</dep.plugin.maven.shade>
-        <dep.plugin.maven.source>3.0.0</dep.plugin.maven.source>
         <dep.mockwebserver.version>1.2.1</dep.mockwebserver.version>
         <dep.mokito.junit.version>5.5.0</dep.mokito.junit.version>
         <dep.mysqlconnector.version>8.0.17</dep.mysqlconnector.version>
+        <dep.okhttp.version>3.9.0</dep.okhttp.version>
+        <dep.plugin.maven.shade>2.3</dep.plugin.maven.shade>
+        <dep.plugin.maven.source>3.0.0</dep.plugin.maven.source>
         <dep.postgresql.version>42.6.0</dep.postgresql.version>
         <dep.reflections.version>0.9.10</dep.reflections.version>
         <dep.trino.version>433</dep.trino.version>
         <dep.wiremock.version>3.0.1</dep.wiremock.version>
-        <dep.apache.commons.version>3.13.0</dep.apache.commons.version>
 
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>io.trino.gateway</groupId>
-                <artifactId>baseapp</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.trino.gateway</groupId>
-                <artifactId>proxyserver</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
-                <version>${dep.jetty.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-dependencies</artifactId>
@@ -97,11 +86,33 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${dep.jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <dependency>
                 <groupId>com.squareup.okhttp</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${dep.mockwebserver.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>io.trino.gateway</groupId>
+                <artifactId>baseapp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino.gateway</groupId>
+                <artifactId>proxyserver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
@@ -109,12 +120,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <modules>
-        <module>baseapp</module>
-        <module>proxyserver</module>
-        <module>gateway-ha</module>
-    </modules>
 
     <build>
         <plugins>
