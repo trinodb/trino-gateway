@@ -16,7 +16,6 @@ package io.trino.gateway.proxyserver;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -89,7 +88,7 @@ public class TestProxyServer
         String mockLongHeaderKey = "HEADER_LONG";
         // Mockserver has max 8k for HTTP Header values so test with header value larger than default 4k
         int headerLength = 5 * 1024;
-        String mockLongHeaderValue = RandomStringUtils.random(headerLength, true, true);
+        String mockLongHeaderValue = "x".repeat(headerLength);
         try {
             proxyServer.start();
             CloseableHttpClient httpclient = HttpClientBuilder.create().build();
