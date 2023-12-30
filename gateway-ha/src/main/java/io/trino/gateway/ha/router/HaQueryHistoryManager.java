@@ -28,14 +28,10 @@ public class HaQueryHistoryManager implements QueryHistoryManager {
   public List<QueryDetail> fetchQueryHistory(Optional<String> user) {
     try {
       connectionManager.open();
-      String sql = "select * from query_history";
       if (user.isPresent()) {
-        sql += " where user_name = '" + user.get() + "'";
+        return QueryHistory.upcast(QueryHistory.where(QueryHistory.userName + " = '" + user.get() + "'").limit(2000).orderBy(QueryHistory.created + " desc"));
       }
-      return QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
-          sql,
-          "order by created desc",
-          "limit 2000")));
+      return QueryHistory.upcast(QueryHistory.findAll().limit(2000).orderBy("created desc"));
     } finally {
       connectionManager.close();
     }
