@@ -14,8 +14,6 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -27,7 +25,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.TrinoContainer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,18 +35,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaSingleBackend
 {
-    public static final String EXPECTED_RESPONSE = "{\"id\":\"testId\"}";
     private final OkHttpClient httpClient = new OkHttpClient();
-    int backendPort = 20000 + (int) (Math.random() * 1000);
-    int routerPort = 21000 + (int) (Math.random() * 1000);
-    private final WireMockServer backend =
-            new WireMockServer(WireMockConfiguration.options().port(backendPort));
+    private TrinoContainer trino;
+    int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
     public void setup()
             throws Exception
     {
-        HaGatewayTestUtils.prepareMockBackend(backend, "/v1/statement", EXPECTED_RESPONSE);
+        trino = new TrinoContainer("trinodb/trino");
+        trino.start();
+
+        int backendPort = trino.getMappedPort(8080);
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
@@ -68,10 +68,11 @@ public class TestGatewayHaSingleBackend
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertEquals(EXPECTED_RESPONSE, response.body().string());
+        assertThat(response.body().string()).contains("nextUri");
     }
 
     @Test
@@ -98,6 +99,6 @@ public class TestGatewayHaSingleBackend
     @AfterAll
     public void cleanup()
     {
-        backend.stop();
+        trino.close();
     }
 }
