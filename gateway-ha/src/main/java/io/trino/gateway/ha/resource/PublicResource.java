@@ -49,7 +49,7 @@ public class PublicResource
         try {
             ProxyBackendConfiguration backend = gatewayBackendManager
                     .getBackendByName(name)
-                    .get();
+                    .orElseThrow();
             return Response.ok(backend).build();
         }
         catch (NoSuchElementException e) {
@@ -65,7 +65,7 @@ public class PublicResource
             BackendStateManager.BackendState state = gatewayBackendManager
                     .getBackendByName(name)
                     .map(backendStateManager::getBackendState)
-                    .get();
+                    .orElseThrow();
             return Response.ok(state.getState()).build();
         }
         catch (NoSuchElementException e) {
