@@ -47,8 +47,7 @@ import java.util.Objects;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 
-@SuppressWarnings("checkstyle:AnnotationUseStyle")
-@RolesAllowed({"ADMIN"})
+@RolesAllowed("ADMIN")
 @Path("entity")
 public class EntityEditorResource
 {
