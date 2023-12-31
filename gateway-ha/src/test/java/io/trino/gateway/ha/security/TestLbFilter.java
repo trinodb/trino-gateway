@@ -79,7 +79,7 @@ public class TestLbFilter
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
         configuration.setAdmin("NO_MEMBER");
-        configuration.setUser(MEMBER_OF.get());
+        configuration.setUser(MEMBER_OF.orElseThrow());
 
         Mockito
                 .when(requestContext.getCookies())
@@ -120,8 +120,8 @@ public class TestLbFilter
             throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
-        configuration.setAdmin(MEMBER_OF.get());
-        configuration.setUser(MEMBER_OF.get());
+        configuration.setAdmin(MEMBER_OF.orElseThrow());
+        configuration.setUser(MEMBER_OF.orElseThrow());
 
         MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
         headers.addFirst(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", ID_TOKEN));

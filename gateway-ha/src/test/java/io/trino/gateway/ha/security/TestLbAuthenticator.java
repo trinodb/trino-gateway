@@ -81,7 +81,7 @@ public class TestLbAuthenticator
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
         assertTrue(lbAuth.authenticate(ID_TOKEN).isPresent());
-        assertEquals(principal, lbAuth.authenticate(ID_TOKEN).get());
+        assertEquals(principal, lbAuth.authenticate(ID_TOKEN).orElseThrow());
     }
 
     @Test

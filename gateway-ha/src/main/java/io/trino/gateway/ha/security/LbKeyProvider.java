@@ -28,6 +28,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class LbKeyProvider
 {
     private final PrivateKey privateKey;
@@ -47,7 +49,7 @@ public class LbKeyProvider
 
         try {
             String publicKeyRsa = keypairConfig.getPublicKeyRsa();
-            try (FileReader keyReader = new FileReader(publicKeyRsa);
+            try (FileReader keyReader = new FileReader(publicKeyRsa, UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
                 byte[] content = pemObject.getContent();
@@ -56,7 +58,7 @@ public class LbKeyProvider
             }
 
             String privateKeyRsa = keypairConfig.getPrivateKeyRsa();
-            try (FileReader keyReader = new FileReader(privateKeyRsa);
+            try (FileReader keyReader = new FileReader(privateKeyRsa, UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
                 byte[] content = pemObject.getContent();

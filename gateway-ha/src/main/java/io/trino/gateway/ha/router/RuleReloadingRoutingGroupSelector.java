@@ -31,6 +31,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class RuleReloadingRoutingGroupSelector
         implements RoutingGroupSelector
 {
@@ -47,7 +49,7 @@ public class RuleReloadingRoutingGroupSelector
         this.rulesConfigPath = rulesConfigPath;
         try {
             rules = ruleFactory.createRules(
-                    new FileReader(rulesConfigPath));
+                    new FileReader(rulesConfigPath, UTF_8));
             BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
                     BasicFileAttributes.class);
             lastUpdatedTime = attr.lastModifiedTime().toMillis();
@@ -75,7 +77,7 @@ public class RuleReloadingRoutingGroupSelector
                         log.info(String.format("Updating rules to file modified at %s",
                                 attr.lastModifiedTime()));
                         rules = ruleFactory.createRules(
-                                new FileReader(rulesConfigPath));
+                                new FileReader(rulesConfigPath, UTF_8));
                         lastUpdatedTime = attr.lastModifiedTime().toMillis();
                     }
                 }

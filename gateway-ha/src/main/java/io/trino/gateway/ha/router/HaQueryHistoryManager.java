@@ -49,7 +49,7 @@ public class HaQueryHistoryManager
             connectionManager.open();
             String sql = "select * from query_history";
             if (user.isPresent()) {
-                sql += " where user_name = '" + user.get() + "'";
+                sql += " where user_name = '" + user.orElseThrow() + "'";
             }
             return QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
                     sql,

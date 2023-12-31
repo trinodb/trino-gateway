@@ -25,6 +25,7 @@ import java.io.FileWriter;
 import java.util.stream.Stream;
 
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
@@ -113,7 +114,7 @@ public class TestRoutingGroupSelector
     {
         File file = File.createTempFile("routing_rules", ".yml");
 
-        FileWriter fw = new FileWriter(file);
+        FileWriter fw = new FileWriter(file, UTF_8);
         fw.write(
                 "---\n"
                         + "name: \"airflow1\"\n"
@@ -137,7 +138,7 @@ public class TestRoutingGroupSelector
         // half of this test runs in <1ms, the gateway may not recognize that the file
         // has changed.
 
-        fw = new FileWriter(file);
+        fw = new FileWriter(file, UTF_8);
         fw.write(
                 "---\n"
                         + "name: \"airflow2\"\n"
