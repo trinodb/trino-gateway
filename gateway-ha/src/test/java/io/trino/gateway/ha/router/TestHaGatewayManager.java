@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.trino.gateway.ha.HaGatewayTestUtils;
-import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.AfterAll;
@@ -26,9 +24,9 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import java.io.File;
 import java.util.List;
 
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -40,14 +38,7 @@ public class TestHaGatewayManager
     @BeforeAll
     public void setUp()
     {
-        File baseDir = new File(System.getProperty("java.io.tmpdir"));
-        File tempH2DbDir = new File(baseDir, "h2db-" + System.currentTimeMillis());
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
-        HaGatewayTestUtils.seedRequiredData(
-                new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         haGatewayManager = new HaGatewayManager(connectionManager);
     }
 
