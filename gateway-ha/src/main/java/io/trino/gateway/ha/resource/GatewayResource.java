@@ -28,8 +28,7 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("checkstyle:AnnotationUseStyle")
-@RolesAllowed({"API"})
+@RolesAllowed("API")
 @Path("/gateway")
 @Produces(MediaType.APPLICATION_JSON)
 public class GatewayResource
