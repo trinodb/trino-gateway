@@ -182,22 +182,34 @@ public class LbOAuthManager
         }
 
         public String getAccessToken()
-        { return this.accessToken; }
+        {
+            return this.accessToken;
+        }
 
         public String getIdToken()
-        { return this.idToken; }
+        {
+            return this.idToken;
+        }
 
         public String getScope()
-        { return this.scope; }
+        {
+            return this.scope;
+        }
 
         public String getRefreshToken()
-        { return this.refreshToken; }
+        {
+            return this.refreshToken;
+        }
 
         public String getTokenType()
-        { return this.tokenType; }
+        {
+            return this.tokenType;
+        }
 
         public String getExpiresIn()
-        { return this.expiresIn; }
+        {
+            return this.expiresIn;
+        }
 
         public boolean equals(final Object o)
         {
