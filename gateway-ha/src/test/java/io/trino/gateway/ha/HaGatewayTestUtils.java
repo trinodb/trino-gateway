@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -89,7 +90,7 @@ public class HaGatewayTestUtils
 
         File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
 
-        FileWriter fw = new FileWriter(target);
+        FileWriter fw = new FileWriter(target, UTF_8);
         fw.append(configStr);
         fw.flush();
         log.info("Test Gateway Config \n[{}]", configStr);

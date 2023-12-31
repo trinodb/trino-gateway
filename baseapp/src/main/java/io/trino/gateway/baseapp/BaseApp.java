@@ -15,7 +15,6 @@ package io.trino.gateway.baseapp;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -64,7 +63,7 @@ public abstract class BaseApp<T extends AppConfiguration>
     private static final Logger logger = LoggerFactory.getLogger(BaseApp.class);
 
     private final Reflections reflections;
-    private final List<Module> appModules = Lists.newArrayList();
+    private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
     private Injector injector;
 
     protected BaseApp(String... basePackages)
@@ -140,7 +139,7 @@ public abstract class BaseApp<T extends AppConfiguration>
     {
         appModules.add(new MetricRegistryModule(environment.metrics()));
         appModules.addAll(addModules(configuration, environment));
-        Injector injector = Guice.createInjector(ImmutableList.copyOf(appModules));
+        Injector injector = Guice.createInjector(appModules.build());
         injector.injectMembers(this);
         registerWithInjector(configuration, environment, injector);
         return injector;
