@@ -105,7 +105,6 @@ public class TestLbAuthenticator
 
     @Test
     public void testPresetUsers()
-            throws Exception
     {
         Map presetUsers = new HashMap<String, UserConfiguration>()
         {
@@ -126,7 +125,6 @@ public class TestLbAuthenticator
 
     @Test
     public void testNoLdapNoPresetUsers()
-            throws Exception
     {
         LbFormAuthManager authentication = new LbFormAuthManager(null, null);
         assertFalse(authentication
@@ -135,7 +133,6 @@ public class TestLbAuthenticator
 
     @Test
     public void testWrongLdapConfig()
-            throws Exception
     {
         LbFormAuthManager authentication = new LbFormAuthManager(null, null);
         assertFalse(authentication
@@ -144,7 +141,6 @@ public class TestLbAuthenticator
 
     @Test
     public void testLogout()
-            throws Exception
     {
         Response response = logOut();
         NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
@@ -154,7 +150,6 @@ public class TestLbAuthenticator
 
     @Test
     public void testLoginForm()
-            throws Exception
     {
         SelfSignKeyPairConfiguration keyPair = new SelfSignKeyPairConfiguration();
         keyPair.setPrivateKeyRsa("src/test/resources/auth/test_private_key.pem");

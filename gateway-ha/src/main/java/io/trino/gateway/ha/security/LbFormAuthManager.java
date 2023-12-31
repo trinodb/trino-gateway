@@ -33,19 +33,13 @@ import java.util.Optional;
 public class LbFormAuthManager
 {
     private static final Logger log = LoggerFactory.getLogger(LbFormAuthManager.class);
-    /**
-     * Cookie key to pass the token.
-     */
-    private final FormAuthConfiguration configuration;
     private final LbKeyProvider lbKeyProvider;
     Map<String, UserConfiguration> presetUsers;
-    private LdapConfiguration ldapConfiguration;
     private final LbLdapClient lbLdapClient;
 
     public LbFormAuthManager(FormAuthConfiguration configuration,
             Map<String, UserConfiguration> presetUsers)
     {
-        this.configuration = configuration;
         this.presetUsers = presetUsers;
 
         if (configuration != null) {

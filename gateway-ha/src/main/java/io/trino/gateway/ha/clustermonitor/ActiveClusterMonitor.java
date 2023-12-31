@@ -17,7 +17,6 @@ import com.google.inject.Inject;
 import io.dropwizard.lifecycle.Managed;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,6 @@ public class ActiveClusterMonitor
 
     private final List<TrinoClusterStatsObserver> clusterStatsObservers;
     private final GatewayBackendManager gatewayBackendManager;
-    private final BackendStateManager backendStateManager;
     private final int connectionTimeout;
     private final int taskDelayMin;
     private final ClusterStatsMonitor clusterStatsMonitor;
@@ -52,14 +50,12 @@ public class ActiveClusterMonitor
             List<TrinoClusterStatsObserver> clusterStatsObservers,
             GatewayBackendManager gatewayBackendManager,
             MonitorConfiguration monitorConfiguration,
-            BackendStateManager backendStateManager,
             ClusterStatsMonitor clusterStatsMonitor)
     {
         this.clusterStatsObservers = clusterStatsObservers;
         this.gatewayBackendManager = gatewayBackendManager;
         this.connectionTimeout = monitorConfiguration.getConnectionTimeout();
         this.taskDelayMin = monitorConfiguration.getTaskDelayMin();
-        this.backendStateManager = backendStateManager;
         this.clusterStatsMonitor = clusterStatsMonitor;
         log.info("Running cluster monitor with connection timeout of {} and task delay of {}",
                 connectionTimeout, taskDelayMin);

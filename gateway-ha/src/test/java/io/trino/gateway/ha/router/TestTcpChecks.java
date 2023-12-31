@@ -36,13 +36,8 @@ import static org.mockito.Mockito.when;
 @TestInstance(PER_CLASS)
 public class TestTcpChecks
 {
-    public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
-    public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
-
     @Test
     public void testTcpRuleCheck()
-            throws
-            IOException
     {
         String host = "localhost";
         int port = 8888;

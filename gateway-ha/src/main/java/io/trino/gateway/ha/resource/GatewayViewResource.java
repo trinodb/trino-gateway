@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -220,80 +219,6 @@ public class GatewayViewResource
         public void setQueryDistribution(Map<String, Integer> queryDistribution)
         {
             this.queryDistribution = queryDistribution;
-        }
-
-        public boolean equals(final Object o)
-        {
-            if (o == this) {
-                return true;
-            }
-            if (!(o instanceof GatewayView other)) {
-                return false;
-            }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            if (this.getGatewayStartTime() != other.getGatewayStartTime()) {
-                return false;
-            }
-            final Object displayName = this.getDisplayName();
-            final Object otherDisplayName = other.getDisplayName();
-            if (!Objects.equals(displayName, otherDisplayName)) {
-                return false;
-            }
-            final Object backendConfigurations = this.getBackendConfigurations();
-            final Object otherBackendConfigurations = other.getBackendConfigurations();
-            if (!Objects.equals(backendConfigurations, otherBackendConfigurations)) {
-                return false;
-            }
-            final Object queryHistory = this.getQueryHistory();
-            final Object otherQueryHistory = other.getQueryHistory();
-            if (!Objects.equals(queryHistory, otherQueryHistory)) {
-                return false;
-            }
-            final Object backendStates = this.getBackendStates();
-            final Object otherBackendStates = other.getBackendStates();
-            if (!Objects.equals(backendStates, otherBackendStates)) {
-                return false;
-            }
-            final Object queryDistribution = this.getQueryDistribution();
-            final Object otherQueryDistribution = other.getQueryDistribution();
-            return Objects.equals(queryDistribution, otherQueryDistribution);
-        }
-
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof GatewayView;
-        }
-
-        public int hashCode()
-        {
-            final int prime = 59;
-            int result = 1;
-            final long gatewayStartTime = this.getGatewayStartTime();
-            result = result * prime + (int) (gatewayStartTime >>> 32 ^ gatewayStartTime);
-            final Object displayName = this.getDisplayName();
-            result = result * prime + (displayName == null ? 43 : displayName.hashCode());
-            final Object backendConfigurations = this.getBackendConfigurations();
-            result = result * prime + (backendConfigurations == null ? 43 : backendConfigurations.hashCode());
-            final Object queryHistory = this.getQueryHistory();
-            result = result * prime + (queryHistory == null ? 43 : queryHistory.hashCode());
-            final Object backendStates = this.getBackendStates();
-            result = result * prime + (backendStates == null ? 43 : backendStates.hashCode());
-            final Object queryDistribution = this.getQueryDistribution();
-            result = result * prime + (queryDistribution == null ? 43 : queryDistribution.hashCode());
-            return result;
-        }
-
-        public String toString()
-        {
-            return "GatewayViewResource.GatewayView(gatewayStartTime="
-                    + this.getGatewayStartTime() + ", displayName="
-                    + this.getDisplayName() + ", backendConfigurations="
-                    + this.getBackendConfigurations() + ", queryHistory="
-                    + this.getQueryHistory() + ", backendStates="
-                    + this.getBackendStates() + ", queryDistribution="
-                    + this.getQueryDistribution() + ")";
         }
     }
 }

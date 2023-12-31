@@ -278,27 +278,4 @@ public class TrinoResource
         resourceGroupsManager.deleteGlobalProperty(name, useSchema);
         return Response.ok().build();
     }
-
-  /* Unused API for ExactMatchSourceSelectors
-    @POST
-    @Path("/exactmatchsourceselector/create")
-    public Response createExactMatchSourceSelector(String jsonPayload) {
-      try {
-        ExactSelectorsDetail exactMatchSourceSelector =
-                OBJECT_MAPPER.readValue(jsonPayload, ExactSelectorsDetail.class);
-        ExactSelectorsDetail newExactMatchSourceSelector =
-                this.resourceGroupsManager.createExactMatchSourceSelector(exactMatchSourceSelector);
-        return Response.ok(newExactMatchSourceSelector).build();
-      } catch (IOException e) {
-        log.error(e.getMessage(), e);
-        throw new WebApplicationException(e);
-      }
-    }
-
-    @POST
-    @Path("/exactmatchsourceselector/read")
-    public Response readExactMatchSourceSelector() {
-      return Response.ok(this.resourceGroupsManager.readExactMatchSourceSelector()).build();
-    }
-  */
 }

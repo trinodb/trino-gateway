@@ -138,7 +138,6 @@ public class TestLbAuthorizer
 
     @Test
     public void testBadPatterns()
-            throws Exception
     {
         configureRole("^[a-zA--Z0-9_]+$", ADMIN_ROLE); // bad range
         assertBadPattern(ADMIN_ROLE);

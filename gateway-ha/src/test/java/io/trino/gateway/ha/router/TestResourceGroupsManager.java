@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -360,10 +359,5 @@ public class TestResourceGroupsManager
         assertEquals("@test@test_pipeline", exactSelector.getSource());
         assertEquals("test", exactSelector.getEnvironment());
         assertEquals("query_type", exactSelector.getQueryType());
-    }
-
-    @AfterAll
-    public void cleanUp()
-    {
     }
 }

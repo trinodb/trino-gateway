@@ -35,7 +35,6 @@ import java.net.URI;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 public class LbOAuthManager
@@ -209,71 +208,6 @@ public class LbOAuthManager
         public String getExpiresIn()
         {
             return this.expiresIn;
-        }
-
-        public boolean equals(final Object o)
-        {
-            if (o == this) {
-                return true;
-            }
-            if (!(o instanceof OidcTokens other)) {
-                return false;
-            }
-            final Object accessToken = this.getAccessToken();
-            final Object otherAccessToken = other.getAccessToken();
-            if (!Objects.equals(accessToken, otherAccessToken)) {
-                return false;
-            }
-            final Object idToken = this.getIdToken();
-            final Object otherIdToken = other.getIdToken();
-            if (!Objects.equals(idToken, otherIdToken)) {
-                return false;
-            }
-            final Object scope = this.getScope();
-            final Object otherScope = other.getScope();
-            if (!Objects.equals(scope, otherScope)) {
-                return false;
-            }
-            final Object refreshToken = this.getRefreshToken();
-            final Object otherRefreshToken = other.getRefreshToken();
-            if (!Objects.equals(refreshToken, otherRefreshToken)) {
-                return false;
-            }
-            final Object tokenType = this.getTokenType();
-            final Object otherTokenType = other.getTokenType();
-            if (!Objects.equals(tokenType, otherTokenType)) {
-                return false;
-            }
-            final Object expiresIn = this.getExpiresIn();
-            final Object otherExpiresIn = other.getExpiresIn();
-            return Objects.equals(expiresIn, otherExpiresIn);
-        }
-
-        public int hashCode()
-        {
-            final int prime = 59;
-            int result = 1;
-            final Object accessToken = this.getAccessToken();
-            result = result * prime + (accessToken == null ? 43 : accessToken.hashCode());
-            final Object idToken = this.getIdToken();
-            result = result * prime + (idToken == null ? 43 : idToken.hashCode());
-            final Object scope = this.getScope();
-            result = result * prime + (scope == null ? 43 : scope.hashCode());
-            final Object refreshToken = this.getRefreshToken();
-            result = result * prime + (refreshToken == null ? 43 : refreshToken.hashCode());
-            final Object tokenType = this.getTokenType();
-            result = result * prime + (tokenType == null ? 43 : tokenType.hashCode());
-            final Object expiresIn = this.getExpiresIn();
-            result = result * prime + (expiresIn == null ? 43 : expiresIn.hashCode());
-            return result;
-        }
-
-        public String toString()
-        {
-            return "LbOAuthManager.OidcTokens(accessToken=" + this.getAccessToken() +
-                    ", idToken=" + this.getIdToken() + ", scope=" + this.getScope() +
-                    ", refreshToken=" + this.getRefreshToken() + ", tokenType=" + this.getTokenType() +
-                    ", expiresIn=" + this.getExpiresIn() + ")";
         }
     }
 }

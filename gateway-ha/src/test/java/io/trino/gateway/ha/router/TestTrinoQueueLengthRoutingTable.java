@@ -62,7 +62,7 @@ public class TestTrinoQueueLengthRoutingTable
         routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager);
 
         for (String grp : mockRoutingGroups) {
-            addMockBackends(grp, NUM_BACKENDS, 0);
+            addMockBackends(grp, NUM_BACKENDS);
         }
     }
 
@@ -75,8 +75,7 @@ public class TestTrinoQueueLengthRoutingTable
         clusterRunningMap = new HashMap<>();
     }
 
-    private void addMockBackends(String groupName, int numBackends,
-            int queueLengthDistributiveFactor)
+    private void addMockBackends(String groupName, int numBackends)
     {
         String backend = null;
 

@@ -63,16 +63,13 @@ public class TestSpecificDbResourceGroupsManager
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("80%");
 
-        ResourceGroupsDetail newResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
-                specificDb);
+        resourceGroupManager.createResourceGroup(resourceGroup, specificDb);
     }
 
     @Test
     public void testReadSpecificDbResourceGroupCauseException()
     {
-        assertThrows(Exception.class, () -> {
-            List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups("abcd");
-        });
+        assertThrows(Exception.class, () -> resourceGroupManager.readAllResourceGroups("abcd"));
     }
 
     @Test

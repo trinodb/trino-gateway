@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -175,49 +174,6 @@ public class HaGatewayTestUtils
         public void setH2DbFilePath(String h2DbFilePath)
         {
             this.h2DbFilePath = h2DbFilePath;
-        }
-
-        public boolean equals(final Object o)
-        {
-            if (o == this) {
-                return true;
-            }
-            if (!(o instanceof TestConfig other)) {
-                return false;
-            }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            final Object configFilePath = this.getConfigFilePath();
-            final Object otherConfigFilePath = other.getConfigFilePath();
-            if (!Objects.equals(configFilePath, otherConfigFilePath)) {
-                return false;
-            }
-            final Object h2DbFilePath = this.getH2DbFilePath();
-            final Object otherH2DbFilePath = other.getH2DbFilePath();
-            return Objects.equals(h2DbFilePath, otherH2DbFilePath);
-        }
-
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof TestConfig;
-        }
-
-        public int hashCode()
-        {
-            final int prime = 59;
-            int result = 1;
-            final Object configFilePath = this.getConfigFilePath();
-            result = result * prime + (configFilePath == null ? 43 : configFilePath.hashCode());
-            final Object h2DbFilePath = this.getH2DbFilePath();
-            result = result * prime + (h2DbFilePath == null ? 43 : h2DbFilePath.hashCode());
-            return result;
-        }
-
-        public String toString()
-        {
-            return "HaGatewayTestUtils.TestConfig(configFilePath=" + this.getConfigFilePath() +
-                    ", h2DbFilePath=" + this.getH2DbFilePath() + ")";
         }
     }
 }

@@ -15,7 +15,6 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -110,10 +109,5 @@ public class TestHaGatewayManager
         haGatewayManager.deleteBackend(backends.get(0).getName());
         backends = haGatewayManager.getAllBackends();
         assertEquals(1, backends.size());
-    }
-
-    @AfterAll
-    public void cleanUp()
-    {
     }
 }

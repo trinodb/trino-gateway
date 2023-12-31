@@ -21,8 +21,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -31,7 +29,6 @@ public class TestQueryIdCachingProxyHandler
 {
     @Test
     public void testExtractQueryIdFromUrl()
-            throws IOException
     {
         String[] paths = {
                 "/ui/api/query/20200416_160256_03078_6b4yt",
@@ -53,7 +50,6 @@ public class TestQueryIdCachingProxyHandler
 
     @Test
     public void testForwardedHostHeaderOnProxyRequest()
-            throws IOException
     {
         String backendServer = "trinocluster";
         String backendPort = "80";
@@ -70,7 +66,6 @@ public class TestQueryIdCachingProxyHandler
 
     @Test
     public void testUserFromRequest()
-            throws IOException
     {
         HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
 

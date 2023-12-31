@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.config;
 
 import java.util.List;
-import java.util.Objects;
 
 public class OAuthConfiguration
 {
@@ -131,107 +130,5 @@ public class OAuthConfiguration
     public void setUserIdField(String userIdField)
     {
         this.userIdField = userIdField;
-    }
-
-    public boolean equals(final Object o)
-    {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof OAuthConfiguration other)) {
-            return false;
-        }
-        if (!other.canEqual(this)) {
-            return false;
-        }
-        final Object issuer = this.getIssuer();
-        final Object otherIssuer = other.getIssuer();
-        if (!Objects.equals(issuer, otherIssuer)) {
-            return false;
-        }
-        final Object clientId = this.getClientId();
-        final Object otherClientId = other.getClientId();
-        if (!Objects.equals(clientId, otherClientId)) {
-            return false;
-        }
-        final Object clientSecret = this.getClientSecret();
-        final Object otherClientSecret = other.getClientSecret();
-        if (!Objects.equals(clientSecret, otherClientSecret)) {
-            return false;
-        }
-        final Object tokenEndpoint = this.getTokenEndpoint();
-        final Object otherTokenEndpoint = other.getTokenEndpoint();
-        if (!Objects.equals(tokenEndpoint, otherTokenEndpoint)) {
-            return false;
-        }
-        final Object authorizationEndpoint = this.getAuthorizationEndpoint();
-        final Object otherAuthorizationEndpoint = other.getAuthorizationEndpoint();
-        if (!Objects.equals(authorizationEndpoint, otherAuthorizationEndpoint)) {
-            return false;
-        }
-        final Object jwkEndpoint = this.getJwkEndpoint();
-        final Object otherJwkEndpoint = other.getJwkEndpoint();
-        if (!Objects.equals(jwkEndpoint, otherJwkEndpoint)) {
-            return false;
-        }
-        final Object scopes = this.getScopes();
-        final Object otherScopes = other.getScopes();
-        if (!Objects.equals(scopes, otherScopes)) {
-            return false;
-        }
-        final Object redirectUrl = this.getRedirectUrl();
-        final Object otherRedirectUrl = other.getRedirectUrl();
-        if (!Objects.equals(redirectUrl, otherRedirectUrl)) {
-            return false;
-        }
-        final Object userIdField = this.getUserIdField();
-        final Object otherUserIdField = other.getUserIdField();
-        return Objects.equals(userIdField, otherUserIdField);
-    }
-
-    protected boolean canEqual(final Object other)
-    {
-        return other instanceof OAuthConfiguration;
-    }
-
-    public int hashCode()
-    {
-        final int prime = 59;
-        int result = 1;
-        final Object issuer = this.getIssuer();
-        result = result * prime + (issuer == null ? 43 : issuer.hashCode());
-        final Object clientId = this.getClientId();
-        result = result * prime + (clientId == null ? 43 : clientId.hashCode());
-        final Object clientSecret = this.getClientSecret();
-        result = result * prime + (clientSecret == null ? 43 : clientSecret.hashCode());
-        final Object tokenEndpoint = this.getTokenEndpoint();
-        result = result * prime + (tokenEndpoint == null ? 43 : tokenEndpoint.hashCode());
-        final Object authorizationEndpoint = this.getAuthorizationEndpoint();
-        result = result * prime + (authorizationEndpoint == null ? 43 : authorizationEndpoint.hashCode());
-        final Object jwkEndpoint = this.getJwkEndpoint();
-        result = result * prime + (jwkEndpoint == null ? 43 : jwkEndpoint.hashCode());
-        final Object scopes = this.getScopes();
-        result = result * prime + (scopes == null ? 43 : scopes.hashCode());
-        final Object redirectUrl = this.getRedirectUrl();
-        result = result * prime + (redirectUrl == null ? 43 : redirectUrl.hashCode());
-        final Object userIdField = this.getUserIdField();
-        result = result * prime + (userIdField == null ? 43 : userIdField.hashCode());
-        return result;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "OAuthConfiguration{" +
-                "issuer='" + issuer + '\'' +
-                ", clientId='" + clientId + '\'' +
-                ", clientSecret='" + clientSecret + '\'' +
-                ", tokenEndpoint='" + tokenEndpoint + '\'' +
-                ", authorizationEndpoint='" + authorizationEndpoint + '\'' +
-                ", jwkEndpoint='" + jwkEndpoint + '\'' +
-                ", scopes=" + scopes +
-                ", redirectUrl='" + redirectUrl + '\'' +
-                ", userIdField='" + userIdField + '\'' +
-                '}';
     }
 }

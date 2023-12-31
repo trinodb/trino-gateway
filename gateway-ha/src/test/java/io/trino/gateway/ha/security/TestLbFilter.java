@@ -75,7 +75,6 @@ public class TestLbFilter
 
     @Test
     public void testSuccessfulCookieAuthentication()
-            throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
         configuration.setAdmin("NO_MEMBER");
@@ -117,7 +116,6 @@ public class TestLbFilter
 
     @Test
     public void testSuccessfulHeaderAuthentication()
-            throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
         configuration.setAdmin(MEMBER_OF.orElseThrow());

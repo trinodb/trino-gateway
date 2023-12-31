@@ -22,14 +22,12 @@ import java.util.Optional;
 
 public class AuthorizationManager
 {
-    private final AuthorizationConfiguration configuration;
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
 
     public AuthorizationManager(AuthorizationConfiguration configuration,
             Map<String, UserConfiguration> presetUsers)
     {
-        this.configuration = configuration;
         this.presetUsers = presetUsers;
         if (configuration != null && configuration.getLdapConfigPath() != null) {
             lbLdapClient = new LbLdapClient(LdapConfiguration.load(configuration.getLdapConfigPath()));
