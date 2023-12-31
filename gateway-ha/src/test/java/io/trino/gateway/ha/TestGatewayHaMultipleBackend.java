@@ -27,7 +27,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.TrinoContainer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,20 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaMultipleBackend
 {
-    public static final String EXPECTED_RESPONSE1 = "{\"id\":\"testId1\"}";
-    public static final String EXPECTED_RESPONSE2 = "{\"id\":\"testId2\"}";
     public static final String CUSTOM_RESPONSE = "123";
     public static final String CUSTOM_PATH = "/v1/custom/extra";
 
-    final int routerPort = 20000 + (int) (Math.random() * 1000);
-    final int backend1Port = 21000 + (int) (Math.random() * 1000);
-    final int backend2Port = 21000 + (int) (Math.random() * 1000);
-    final int customBackendPort = 21000 + (int) (Math.random() * 1000);
+    private TrinoContainer adhocTrino;
+    private TrinoContainer scheduledTrino;
 
-    private final WireMockServer adhocBackend =
-            new WireMockServer(WireMockConfiguration.options().port(backend1Port));
-    private final WireMockServer scheduledBackend =
-            new WireMockServer(WireMockConfiguration.options().port(backend2Port));
+    final int routerPort = 20000 + (int) (Math.random() * 1000);
+    final int customBackendPort = 21000 + (int) (Math.random() * 1000);
 
     private final WireMockServer customBackend =
             new WireMockServer(WireMockConfiguration.options().port(customBackendPort));
@@ -59,8 +55,14 @@ public class TestGatewayHaMultipleBackend
     public void setup()
             throws Exception
     {
-        HaGatewayTestUtils.prepareMockBackend(adhocBackend, "/v1/statement", EXPECTED_RESPONSE1);
-        HaGatewayTestUtils.prepareMockBackend(scheduledBackend, "/v1/statement", EXPECTED_RESPONSE2);
+        adhocTrino = new TrinoContainer("trinodb/trino");
+        adhocTrino.start();
+        scheduledTrino = new TrinoContainer("trinodb/trino");
+        scheduledTrino.start();
+
+        int backend1Port = adhocTrino.getMappedPort(8080);
+        int backend2Port = scheduledTrino.getMappedPort(8080);
+
         HaGatewayTestUtils.prepareMockBackend(customBackend, CUSTOM_PATH, CUSTOM_RESPONSE);
 
         // seed database
@@ -116,20 +118,22 @@ public class TestGatewayHaMultipleBackend
         Request request1 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
                         .post(requestBody)
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
-        assertEquals(EXPECTED_RESPONSE1, response1.body().string());
+        assertThat(response1.body().string()).contains("http://localhost:" + adhocTrino.getMappedPort(8080));
         // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
         // routing group
         Request request4 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
                         .post(requestBody)
                         .addHeader("X-Trino-Routing-Group", "scheduled")
                         .build();
         Response response4 = httpClient.newCall(request4).execute();
-        assertEquals(EXPECTED_RESPONSE2, response4.body().string());
+        assertThat(response4.body().string()).contains("http://localhost:" + scheduledTrino.getMappedPort(8080));
     }
 
     @Test
@@ -162,7 +166,7 @@ public class TestGatewayHaMultipleBackend
     @AfterAll
     public void cleanup()
     {
-        adhocBackend.stop();
-        scheduledBackend.stop();
+        adhocTrino.stop();
+        scheduledTrino.stop();
     }
 }
