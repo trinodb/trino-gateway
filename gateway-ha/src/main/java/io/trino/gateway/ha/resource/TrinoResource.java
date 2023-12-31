@@ -38,8 +38,7 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesD
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 
-@SuppressWarnings("checkstyle:AnnotationUseStyle")
-@RolesAllowed({"USER"})
+@RolesAllowed("USER")
 @Path("/trino")
 @Produces(MediaType.APPLICATION_JSON)
 public class TrinoResource
