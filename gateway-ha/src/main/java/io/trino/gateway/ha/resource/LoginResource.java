@@ -35,12 +35,15 @@ import java.nio.charset.Charset;
 @Produces(MediaType.APPLICATION_JSON)
 public class LoginResource
 {
+    private final LbOAuthManager oauthManager;
+    private final LbFormAuthManager formAuthManager;
+
     @Inject
-    @Nullable
-    private LbOAuthManager oauthManager;
-    @Inject
-    @Nullable
-    private LbFormAuthManager formAuthManager;
+    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
+    {
+        this.oauthManager = oauthManager;
+        this.formAuthManager = formAuthManager;
+    }
 
     @Path("sso")
     @GET

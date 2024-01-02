@@ -36,17 +36,25 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+
 @RolesAllowed("USER")
 @Path("/")
 public class GatewayViewResource
 {
     private static final long START_TIME = System.currentTimeMillis();
+
+    private final GatewayBackendManager gatewayBackendManager;
+    private final QueryHistoryManager queryHistoryManager;
+    private final BackendStateManager backendStateManager;
+
     @Inject
-    private GatewayBackendManager gatewayBackendManager;
-    @Inject
-    private QueryHistoryManager queryHistoryManager;
-    @Inject
-    private BackendStateManager backendStateManager;
+    public GatewayViewResource(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, BackendStateManager backendStateManager)
+    {
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
+    }
 
     private Optional<String> getUserNameForQueryHistory(SecurityContext securityContext)
     {

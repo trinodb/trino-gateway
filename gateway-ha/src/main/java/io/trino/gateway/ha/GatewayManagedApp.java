@@ -17,25 +17,28 @@ import com.google.inject.Inject;
 import io.dropwizard.lifecycle.Managed;
 import io.trino.gateway.proxyserver.ProxyServer;
 
+import static java.util.Objects.requireNonNull;
+
 public class GatewayManagedApp
         implements Managed
 {
+    private final ProxyServer gateway;
+
     @Inject
-    private ProxyServer gateway;
+    public GatewayManagedApp(ProxyServer gateway)
+    {
+        this.gateway = requireNonNull(gateway, "gateway is null");
+    }
 
     @Override
     public void start()
     {
-        if (gateway != null) {
-            gateway.start();
-        }
+        gateway.start();
     }
 
     @Override
     public void stop()
     {
-        if (gateway != null) {
-            gateway.close();
-        }
+        gateway.close();
     }
 }
