@@ -156,9 +156,9 @@ public class TestLbAuthenticator
     public void testLoginForm()
             throws Exception
     {
-        SelfSignKeyPairConfiguration keyPair = new SelfSignKeyPairConfiguration();
-        keyPair.setPrivateKeyRsa("src/test/resources/auth/test_private_key.pem");
-        keyPair.setPublicKeyRsa("src/test/resources/auth/test_public_key.pem");
+        SelfSignKeyPairConfiguration keyPair = new SelfSignKeyPairConfiguration(
+                "src/test/resources/auth/test_private_key.pem",
+                "src/test/resources/auth/test_public_key.pem");
 
         FormAuthConfiguration formAuthConfig = new FormAuthConfiguration();
         formAuthConfig.setSelfSignKeyPair(keyPair);
