@@ -338,7 +338,7 @@ public class TrinoQueueLengthRoutingTable
                     }
                 }
                 // If all clusters have the same queue count, then fallback to the older weighted logic.
-                if (!Strings.isNullOrEmpty(leastQueuedCluster) && minQueueCount != maxQueueCount) {
+                if (!Strings.isNullOrEmpty(leastQueuedCluster) && !minQueueCount.equals(maxQueueCount)) {
                     log.debug("{} routing to:{}. userQueueCount:{}", user, leastQueuedCluster, minQueueCount);
 
                     return leastQueuedCluster;
