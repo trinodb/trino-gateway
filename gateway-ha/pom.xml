@@ -110,16 +110,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.trino.gateway</groupId>
-            <artifactId>baseapp</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.trino.gateway</groupId>
-            <artifactId>proxyserver</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>${dep.jakarta.annotations.version}</version>
@@ -138,9 +128,20 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${dep.apache.httpcomponents}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>1.70</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-proxy</artifactId>
         </dependency>
 
         <dependency>
@@ -191,6 +192,12 @@
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock</artifactId>
             <version>${dep.wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp</groupId>
+            <artifactId>mockwebserver</artifactId>
             <scope>test</scope>
         </dependency>
 

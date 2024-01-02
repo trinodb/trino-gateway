@@ -28,9 +28,7 @@
     </licenses>
 
     <modules>
-        <module>baseapp</module>
         <module>gateway-ha</module>
-        <module>proxyserver</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/trinodb/trino-gateway.git</connection>
@@ -96,18 +94,6 @@
                 <groupId>com.squareup.okhttp</groupId>
                 <artifactId>mockwebserver</artifactId>
                 <version>${dep.mockwebserver.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino.gateway</groupId>
-                <artifactId>baseapp</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.trino.gateway</groupId>
-                <artifactId>proxyserver</artifactId>
-                <version>${project.version}</version>
             </dependency>
 
             <dependency>
