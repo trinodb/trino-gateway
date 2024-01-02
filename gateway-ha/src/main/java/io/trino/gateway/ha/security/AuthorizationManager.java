@@ -57,7 +57,7 @@ public class AuthorizationManager
 
         UserConfiguration user = presetUsers.get(username);
         if (user != null) {
-            privs = user.getPrivileges();
+            privs = user.privileges();
         }
         else if (lbLdapClient != null) {
             privs = lbLdapClient.getMemberOf(username);
