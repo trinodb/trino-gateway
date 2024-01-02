@@ -24,13 +24,20 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import static java.util.Objects.requireNonNull;
+
 @RolesAllowed("API")
 @Path("gateway/backend/modify")
 @Produces(MediaType.APPLICATION_JSON)
 public class HaGatewayResource
 {
+    private final GatewayBackendManager haGatewayManager;
+
     @Inject
-    private GatewayBackendManager haGatewayManager;
+    public HaGatewayResource(GatewayBackendManager haGatewayManager)
+    {
+        this.haGatewayManager = requireNonNull(haGatewayManager, "haGatewayManager is null");
+    }
 
     @Path("/add")
     @POST

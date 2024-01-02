@@ -46,6 +46,7 @@ import java.util.Objects;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+import static java.util.Objects.requireNonNull;
 
 @RolesAllowed("ADMIN")
 @Path("entity")
@@ -53,13 +54,18 @@ public class EntityEditorResource
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(EntityEditorResource.class);
-    @Inject
-    private GatewayBackendManager gatewayBackendManager;
-    @Inject
-    private ResourceGroupsManager resourceGroupsManager;
+
+    private final GatewayBackendManager gatewayBackendManager;
+    private final ResourceGroupsManager resourceGroupsManager;
+    private final RoutingManager routingManager;
 
     @Inject
-    private RoutingManager routingManager;
+    public EntityEditorResource(GatewayBackendManager gatewayBackendManager, ResourceGroupsManager resourceGroupsManager, RoutingManager routingManager)
+    {
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
+        this.routingManager = requireNonNull(routingManager, "routingManager is null");
+    }
 
     @GET
     @Produces(MediaType.TEXT_HTML)

@@ -28,14 +28,22 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.util.Objects.requireNonNull;
+
 @RolesAllowed("API")
 @Path("/gateway")
 @Produces(MediaType.APPLICATION_JSON)
 public class GatewayResource
 {
     private static final Logger log = LoggerFactory.getLogger(GatewayResource.class);
+
+    private final GatewayBackendManager gatewayBackendManager;
+
     @Inject
-    private GatewayBackendManager gatewayBackendManager;
+    public GatewayResource(GatewayBackendManager gatewayBackendManager)
+    {
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+    }
 
     @GET
     public Response ok(@Context Request request)

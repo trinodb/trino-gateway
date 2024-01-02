@@ -26,14 +26,21 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.NoSuchElementException;
 
+import static java.util.Objects.requireNonNull;
+
 @Path("/api/public")
 @Produces(MediaType.APPLICATION_JSON)
 public class PublicResource
 {
+    private final GatewayBackendManager gatewayBackendManager;
+    private final BackendStateManager backendStateManager;
+
     @Inject
-    private GatewayBackendManager gatewayBackendManager;
-    @Inject
-    private BackendStateManager backendStateManager;
+    public PublicResource(GatewayBackendManager gatewayBackendManager, BackendStateManager backendStateManager)
+    {
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
+    }
 
     @GET
     @Path("/backends")

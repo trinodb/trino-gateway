@@ -37,6 +37,7 @@ import java.util.List;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+import static java.util.Objects.requireNonNull;
 
 @RolesAllowed("USER")
 @Path("/trino")
@@ -45,8 +46,14 @@ public class TrinoResource
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Logger log = LoggerFactory.getLogger(TrinoResource.class);
+
+    private final ResourceGroupsManager resourceGroupsManager;
+
     @Inject
-    private ResourceGroupsManager resourceGroupsManager;
+    public TrinoResource(ResourceGroupsManager resourceGroupsManager)
+    {
+        this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
+    }
 
     @POST
     @Path("/resourcegroup/create")
