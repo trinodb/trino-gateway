@@ -48,7 +48,7 @@ public class LbKeyProvider
         }
 
         try {
-            String publicKeyRsa = keypairConfig.getPublicKeyRsa();
+            String publicKeyRsa = keypairConfig.publicKeyRsa();
             try (FileReader keyReader = new FileReader(publicKeyRsa, UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
@@ -57,7 +57,7 @@ public class LbKeyProvider
                 this.publicKey = factory.generatePublic(pubKeySpec);
             }
 
-            String privateKeyRsa = keypairConfig.getPrivateKeyRsa();
+            String privateKeyRsa = keypairConfig.privateKeyRsa();
             try (FileReader keyReader = new FileReader(privateKeyRsa, UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
