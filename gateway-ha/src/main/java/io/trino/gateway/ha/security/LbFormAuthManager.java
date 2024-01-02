@@ -141,7 +141,7 @@ public class LbFormAuthManager
         if (presetUsers != null) {
             UserConfiguration user = presetUsers.get(credentials.getUsername());
             return user != null
-                    && user.getPassword().equals(credentials.getPassword());
+                    && user.password().equals(credentials.getPassword());
         }
 
         return false;
