@@ -25,7 +25,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +42,8 @@ public class ClusterStatsHttpMonitor
 {
     private static final Logger log = LoggerFactory.getLogger(ClusterStatsHttpMonitor.class);
     private static final String SESSION_USER = "sessionUser";
+    private static final int HTTP_OK_CODE = 200;
+    private static final int HTTP_UNAUTHORIZED_CODE = 401;
 
     private final BackendStateConfiguration backendStateConfiguration;
 
@@ -151,9 +152,9 @@ public class ClusterStatsHttpMonitor
 
         try (Response res = call.execute()) {
             switch (res.code()) {
-                case HttpStatus.SC_OK:
+                case HTTP_OK_CODE:
                     return res.body().string();
-                case HttpStatus.SC_UNAUTHORIZED:
+                case HTTP_UNAUTHORIZED_CODE:
                     log.info("Unauthorized to fetch cluster stats");
                     log.debug("username: {}, targetUrl: {}, cookieStore: {}",
                             backendStateConfiguration.getUsername(),
