@@ -74,6 +74,14 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>bom</artifactId>
+                <version>239</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-dependencies</artifactId>
                 <version>${dep.dropwizard.version}</version>
