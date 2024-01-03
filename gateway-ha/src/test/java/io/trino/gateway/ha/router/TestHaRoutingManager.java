@@ -41,7 +41,7 @@ public class TestHaRoutingManager
     }
 
     @Test
-    private void addMockBackends()
+    public void addMockBackends()
     {
         String groupName = "test_group";
         int numBackends = 5;
