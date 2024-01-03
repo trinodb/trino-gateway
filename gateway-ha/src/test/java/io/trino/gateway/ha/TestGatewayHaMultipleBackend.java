@@ -70,7 +70,7 @@ public class TestGatewayHaMultipleBackend
                 HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
 
         // Start Gateway
-        String[] args = {"server", testConfig.getConfigFilePath()};
+        String[] args = {"server", testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(

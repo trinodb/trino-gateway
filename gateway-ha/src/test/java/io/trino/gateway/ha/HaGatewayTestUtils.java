@@ -32,11 +32,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -50,7 +50,7 @@ public class HaGatewayTestUtils
 
     public static void seedRequiredData(TestConfig testConfig)
     {
-        String jdbcUrl = "jdbc:h2:" + testConfig.getH2DbFilePath();
+        String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
         connectionManager.open();
@@ -74,11 +74,9 @@ public class HaGatewayTestUtils
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
             throws IOException
     {
-        TestConfig testConfig = new TestConfig();
         File baseDir = new File(System.getProperty("java.io.tmpdir"));
         File tempH2DbDir = new File(baseDir, "h2db-" + RANDOM.nextInt() + System.currentTimeMillis());
         tempH2DbDir.deleteOnExit();
-        testConfig.setH2DbFilePath(tempH2DbDir.getAbsolutePath());
 
         String configStr =
                 getResourceFileContent(configFile)
@@ -94,7 +92,7 @@ public class HaGatewayTestUtils
         fw.append(configStr);
         fw.flush();
         log.info("Test Gateway Config \n[{}]", configStr);
-        testConfig.setConfigFilePath(target.getAbsolutePath());
+        TestConfig testConfig = new TestConfig(target.getAbsolutePath(), tempH2DbDir.getAbsolutePath());
         seedRequiredData(testConfig);
         return testConfig;
     }
@@ -143,81 +141,12 @@ public class HaGatewayTestUtils
         assertTrue(response.isSuccessful());
     }
 
-    public static class TestConfig
+    public record TestConfig(String configFilePath, String h2DbFilePath)
     {
-        private String configFilePath;
-        private String h2DbFilePath;
-
-        public TestConfig(String configFilePath, String h2DbFilePath)
+        public TestConfig
         {
-            this.configFilePath = configFilePath;
-            this.h2DbFilePath = h2DbFilePath;
-        }
-
-        public TestConfig()
-        { }
-
-        public String getConfigFilePath()
-        {
-            return this.configFilePath;
-        }
-
-        public void setConfigFilePath(String configFilePath)
-        {
-            this.configFilePath = configFilePath;
-        }
-
-        public String getH2DbFilePath()
-        {
-            return this.h2DbFilePath;
-        }
-
-        public void setH2DbFilePath(String h2DbFilePath)
-        {
-            this.h2DbFilePath = h2DbFilePath;
-        }
-
-        public boolean equals(final Object o)
-        {
-            if (o == this) {
-                return true;
-            }
-            if (!(o instanceof TestConfig other)) {
-                return false;
-            }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            final Object configFilePath = this.getConfigFilePath();
-            final Object otherConfigFilePath = other.getConfigFilePath();
-            if (!Objects.equals(configFilePath, otherConfigFilePath)) {
-                return false;
-            }
-            final Object h2DbFilePath = this.getH2DbFilePath();
-            final Object otherH2DbFilePath = other.getH2DbFilePath();
-            return Objects.equals(h2DbFilePath, otherH2DbFilePath);
-        }
-
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof TestConfig;
-        }
-
-        public int hashCode()
-        {
-            final int prime = 59;
-            int result = 1;
-            final Object configFilePath = this.getConfigFilePath();
-            result = result * prime + (configFilePath == null ? 43 : configFilePath.hashCode());
-            final Object h2DbFilePath = this.getH2DbFilePath();
-            result = result * prime + (h2DbFilePath == null ? 43 : h2DbFilePath.hashCode());
-            return result;
-        }
-
-        public String toString()
-        {
-            return "HaGatewayTestUtils.TestConfig(configFilePath=" + this.getConfigFilePath() +
-                    ", h2DbFilePath=" + this.getH2DbFilePath() + ")";
+            requireNonNull(configFilePath, "configFilePath is null");
+            requireNonNull(h2DbFilePath, "h2DbFilePath is null");
         }
     }
 }
