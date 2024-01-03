@@ -23,8 +23,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.javalite.activejdbc.Base;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +37,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestInstance(Lifecycle.PER_CLASS)
 public class HaGatewayTestUtils
 {
     private static final Logger log = LoggerFactory.getLogger(HaGatewayTestUtils.class);
