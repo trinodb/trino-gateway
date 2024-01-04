@@ -119,7 +119,6 @@ public class HaGatewayConfiguration
         this.presetUsers = presetUsers;
     }
 
-
     public Map<String, String> getPagePermissions()
     {
         return this.pagePermissions;
@@ -217,7 +216,7 @@ public class HaGatewayConfiguration
         final Object pagePermissions = this.getPagePermissions();
         final Object otherPagePermissions = other.getPagePermissions();
         if (!Objects.equals(pagePermissions, otherPagePermissions)) {
-          return false;
+            return false;
         }
         final Object backendState = this.getBackendState();
         final Object otherBackendState = other.getBackendState();

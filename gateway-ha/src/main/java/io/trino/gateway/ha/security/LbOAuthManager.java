@@ -48,7 +48,6 @@ public class LbOAuthManager
     private final OAuthConfiguration oauthConfig;
     private final Map<String, String> pagePermissions;
 
-
     public LbOAuthManager(OAuthConfiguration configuration, Map<String, String> pagePermissions)
     {
         this.oauthConfig = configuration;
@@ -110,7 +109,8 @@ public class LbOAuthManager
      *
      * @return redirect response to the authorization provider
      */
-    public String getAuthorizationCode() {
+    public String getAuthorizationCode()
+    {
         String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
         String clientId = oauthConfig.getClientId();
         String redirectUrl = oauthConfig.getRedirectUrl();
@@ -149,17 +149,18 @@ public class LbOAuthManager
         return Optional.empty();
     }
 
-  public String[] processPagePermissions(String[] roles) {
-    for (String role : roles) {
-      String value = pagePermissions.get(role);
-      if (value == null) {
-        return new String[0];
-      }
+    public String[] processPagePermissions(String[] roles)
+    {
+        for (String role : roles) {
+            String value = pagePermissions.get(role);
+            if (value == null) {
+                return new String[0];
+            }
+        }
+        return Arrays.stream(roles)
+                .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
+                .distinct().toArray(String[]::new);
     }
-    return Arrays.stream(roles)
-            .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
-            .distinct().toArray(String[]::new);
-  }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     static final class OidcTokens

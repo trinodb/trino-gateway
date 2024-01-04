@@ -98,8 +98,6 @@
             <artifactId>dropwizard-views</artifactId>
         </dependency>
 
-
-        <!-- Required for ClusterStatsJdbcMonitor -->
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>

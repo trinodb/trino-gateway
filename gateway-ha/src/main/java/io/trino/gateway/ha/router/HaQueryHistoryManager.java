@@ -18,9 +18,7 @@ import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
-
 import io.trino.gateway.ha.util.PageUtil;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.javalite.activejdbc.Base;
 
@@ -92,63 +90,66 @@ public class HaQueryHistoryManager
         return backend;
     }
 
-  @Override
-  public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query) {
-    try {
-      connectionManager.open();
-      String sql = "select * from query_history where 1=1";
-      if (StringUtils.isNotBlank(query.getUser())) {
-        sql += " and user_name = '" + query.getUser() + "'";
-      }
-      if (StringUtils.isNotBlank(query.getBackendUrl())) {
-        sql += " and backend_url = '" + query.getBackendUrl() + "'";
-      }
-      if (StringUtils.isNotBlank(query.getQueryId())) {
-        sql += " and query_id = '" + query.getQueryId() + "'";
-      }
-      int start = PageUtil.getStart(query.getPage(), query.getSize());
-      List<QueryDetail> rows = QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
-              sql,
-              "order by created desc",
-              "limit ", String.valueOf(start), ",", String.valueOf(query.getSize()))));
-      Long total = QueryHistory.count();
-      return TableData.build(rows, total);
-    } finally {
-      connectionManager.close();
+    @Override
+    public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
+    {
+        try {
+            connectionManager.open();
+            String sql = "select * from query_history where 1=1";
+            if (StringUtils.isNotBlank(query.getUser())) {
+                sql += " and user_name = '" + query.getUser() + "'";
+            }
+            if (StringUtils.isNotBlank(query.getBackendUrl())) {
+                sql += " and backend_url = '" + query.getBackendUrl() + "'";
+            }
+            if (StringUtils.isNotBlank(query.getQueryId())) {
+                sql += " and query_id = '" + query.getQueryId() + "'";
+            }
+            int start = PageUtil.getStart(query.getPage(), query.getSize());
+            List<QueryDetail> rows = QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
+                    sql,
+                    "order by created desc",
+                    "limit ", String.valueOf(start), ",", String.valueOf(query.getSize()))));
+            Long total = QueryHistory.count();
+            return TableData.build(rows, total);
+        }
+        finally {
+            connectionManager.close();
+        }
     }
-  }
 
-  @Override
-  public List<DistributionResponse.LineChart> findDistribution(Long ts) {
-    List<DistributionResponse.LineChart> resList = new ArrayList<>();
-    try {
-      connectionManager.open();
-      String sql = """
-              select FLOOR(created / 1000 / 60)  minute,
-                     backend_url                 ,
-                     count(1)                    query_count
-              from query_history
-              where created > %s
-              group by FLOOR(created / 1000 / 60), backend_url
-              """.formatted(ts);
-      List<Map> results = Base.findAll(sql);
-      for (Map model : results) {
-        // 处理查询结果
-        System.out.println(model);
-        DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
-        int minute = Integer.parseInt(model.get("minute").toString());
-        Instant instant = Instant.ofEpochSecond(minute * 60L);
-        LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        lineChart.setMinute(dateTime.format(formatter));
-        lineChart.setQueryCount(Long.parseLong(model.get("query_count").toString()));
-        lineChart.setBackendUrl(model.get("backend_url").toString());
-        resList.add(lineChart);
-      }
-      return resList;
-    } finally {
-      connectionManager.close();
+    @Override
+    public List<DistributionResponse.LineChart> findDistribution(Long ts)
+    {
+        List<DistributionResponse.LineChart> resList = new ArrayList<>();
+        try {
+            connectionManager.open();
+            String sql = """
+                select FLOOR(created / 1000 / 60)  minute,
+                       backend_url                 ,
+                       count(1)                    query_count
+                from query_history
+                where created > %s
+                group by FLOOR(created / 1000 / 60), backend_url
+                """.formatted(ts);
+            List<Map> results = Base.findAll(sql);
+            for (Map model : results) {
+                // 处理查询结果
+                System.out.println(model);
+                DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
+                int minute = Integer.parseInt(model.get("minute").toString());
+                Instant instant = Instant.ofEpochSecond(minute * 60L);
+                LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+                lineChart.setMinute(dateTime.format(formatter));
+                lineChart.setQueryCount(Long.parseLong(model.get("query_count").toString()));
+                lineChart.setBackendUrl(model.get("backend_url").toString());
+                resList.add(lineChart);
+            }
+            return resList;
+        } finally {
+            connectionManager.close();
+        }
     }
-  }
 }
 

@@ -18,26 +18,23 @@ import io.trino.gateway.ha.domain.R;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
+import io.trino.gateway.ha.security.LbPrincipal;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
-import io.trino.gateway.ha.security.LbPrincipal;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
 import jakarta.ws.rs.core.SecurityContext;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
-@Slf4j
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class LoginResource
@@ -98,7 +95,7 @@ public class LoginResource
     }
 
     @POST
-    @RolesAllowed({"USER"})
+    @RolesAllowed("USER")
     @Path("userinfo")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -109,17 +106,18 @@ public class LoginResource
         String[] pagePermissions;
         if (formAuthManager != null) {
             pagePermissions = formAuthManager.processPagePermissions(roles);
-        } else if (oauthManager != null) {
+        }
+        else if (oauthManager != null) {
             pagePermissions = oauthManager.processPagePermissions(roles);
-        } else {
+        }
+        else {
             throw new WebApplicationException("Have to setup authentication!");
         }
         Map<String, Object> resMap = Map.of(
                 "roles", roles,
                 "permissions", pagePermissions,
                 "userId", principal.getName(),
-                "userName", principal.getName()
-        );
+                "userName", principal.getName());
         return Response.ok(R.ok(resMap)).build();
     }
 
@@ -127,13 +125,16 @@ public class LoginResource
     @Path("loginType")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response loginType() {
+    public Response loginType()
+    {
         String loginType;
         if (formAuthManager != null) {
             loginType = "form";
-        } else if (oauthManager != null) {
+        }
+        else if (oauthManager != null) {
             loginType = "oauth";
-        } else {
+        }
+        else {
             loginType = "none";
         }
         return Response.ok(R.ok("Ok", loginType)).build();

@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.trino.gateway.ha.domain.request;
 
 import io.trino.gateway.ha.router.ResourceGroupsManager;
@@ -7,23 +20,28 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
  *
  * @author Wei Peng
  */
-public class ResourceGroupsRequest {
-  private String useSchema;
-  private ResourceGroupsManager.ResourceGroupsDetail data;
+public class ResourceGroupsRequest
+{
+    private String useSchema;
+    private ResourceGroupsManager.ResourceGroupsDetail data;
 
-  public String getUseSchema() {
-    return useSchema;
-  }
+    public String getUseSchema()
+    {
+        return useSchema;
+    }
 
-  public void setUseSchema(String useSchema) {
-    this.useSchema = useSchema;
-  }
+    public void setUseSchema(String useSchema)
+    {
+        this.useSchema = useSchema;
+    }
 
-  public ResourceGroupsManager.ResourceGroupsDetail getData() {
-    return data;
-  }
+    public ResourceGroupsManager.ResourceGroupsDetail getData()
+    {
+        return data;
+    }
 
-  public void setData(ResourceGroupsManager.ResourceGroupsDetail data) {
-    this.data = data;
-  }
+    public void setData(ResourceGroupsManager.ResourceGroupsDetail data)
+    {
+        this.data = data;
+    }
 }

@@ -22,8 +22,8 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.R;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,13 +75,15 @@ public class LbFormAuthManager
 
     /**
      * Login REST API
+     *
      * @param loginForm {@link RestLoginRequest}
      * @return token
      */
-    public R<?> processRESTLogin(RestLoginRequest loginForm) {
+    public R<?> processRESTLogin(RestLoginRequest loginForm)
+    {
         if (authenticate(new BasicCredentials(loginForm.getUsername(), loginForm.getPassword()))) {
             String token = getSelfSignedToken(loginForm.getUsername());
-            return R.ok(Map.of("token",token));
+            return R.ok(Map.of("token", token));
         }
         return R.fail("Authentication failed.");
     }
@@ -151,15 +153,16 @@ public class LbFormAuthManager
         return false;
     }
 
-    public String[] processPagePermissions(String[] roles) {
+    public String[] processPagePermissions(String[] roles)
+    {
         for (String role : roles) {
             String value = pagePermissions.get(role);
             if (value == null) {
                 return new String[0];
             }
         }
-      return Arrays.stream(roles)
-              .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
-              .distinct().toArray(String[]::new);
+        return Arrays.stream(roles)
+            .flatMap(role -> Arrays.stream(pagePermissions.get(role).split("_")))
+            .distinct().toArray(String[]::new);
     }
 }

@@ -66,7 +66,7 @@ public class GatewayViewResource
     }
 
     @GET
-    @RolesAllowed({"USER"})
+    @RolesAllowed("USER")
     @Path("api/queryHistory")
     @Produces(MediaType.APPLICATION_JSON)
     public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext
@@ -77,7 +77,7 @@ public class GatewayViewResource
     }
 
     @GET
-    @RolesAllowed({"USER"})
+    @RolesAllowed("USER")
     @Path("api/activeBackends")
     @Produces(MediaType.APPLICATION_JSON)
     public List<ProxyBackendConfiguration> getActiveBackends()
@@ -86,7 +86,7 @@ public class GatewayViewResource
     }
 
     @GET
-    @RolesAllowed({"USER"})
+    @RolesAllowed("USER")
     @Path("api/queryHistoryDistribution")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext

@@ -198,7 +198,7 @@ public class OAuthConfiguration
         final Object userIdField = this.getUserIdField();
         final Object otherUserIdField = other.getUserIdField();
         if (!Objects.equals(userIdField, otherUserIdField)) {
-          return false;
+            return false;
         }
         final Object redirectWebUrl = this.getRedirectWebUrl();
         final Object otherRedirectWebUrl = other.getRedirectWebUrl();

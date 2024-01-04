@@ -1,103 +1,36 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.trino.gateway.ha.util;
 
 /**
- * copy from hutool
+ * Page Util
  */
-public class PageUtil {
-  private static int firstPageNo = 1;
+public class PageUtil
+{
+    private static final int firstPageNo = 1;
 
-  public PageUtil() {
-  }
+    private PageUtil()
+    {}
 
-  public static int getFirstPageNo() {
-    return firstPageNo;
-  }
-
-  public static synchronized void setFirstPageNo(int customFirstPageNo) {
-    firstPageNo = customFirstPageNo;
-  }
-
-  public static void setOneAsFirstPageNo() {
-    setFirstPageNo(1);
-  }
-
-  public static int getStart(int pageNo, int pageSize) {
-    if (pageNo < firstPageNo) {
-      pageNo = firstPageNo;
-    }
-
-    if (pageSize < 1) {
-      pageSize = 0;
-    }
-
-    return (pageNo - firstPageNo) * pageSize;
-  }
-
-  public static int getEnd(int pageNo, int pageSize) {
-    int start = getStart(pageNo, pageSize);
-    return getEndByStart(start, pageSize);
-  }
-
-  public static int[] transToStartEnd(int pageNo, int pageSize) {
-    int start = getStart(pageNo, pageSize);
-    return new int[]{start, getEndByStart(start, pageSize)};
-  }
-
-  public static int totalPage(int totalCount, int pageSize) {
-    return totalPage((long) totalCount, pageSize);
-  }
-
-  public static int totalPage(long totalCount, int pageSize) {
-    return pageSize == 0 ? 0 : Math.toIntExact(totalCount % (long) pageSize == 0L ? totalCount / (long) pageSize : totalCount / (long) pageSize + 1L);
-  }
-
-  public static int[] rainbow(int pageNo, int totalPage, int displayCount) {
-    boolean isEven = (displayCount & 1) == 0;
-    int left = displayCount >> 1;
-    int right = displayCount >> 1;
-    int length = displayCount;
-    if (isEven) {
-      ++right;
-    }
-
-    if (totalPage < displayCount) {
-      length = totalPage;
-    }
-
-    int[] result = new int[length];
-    int i;
-    if (totalPage >= displayCount) {
-      if (pageNo <= left) {
-        for (i = 0; i < result.length; ++i) {
-          result[i] = i + 1;
+    public static int getStart(int pageNo, int pageSize)
+    {
+        if (pageNo < firstPageNo) {
+            pageNo = firstPageNo;
         }
-      } else if (pageNo > totalPage - right) {
-        for (i = 0; i < result.length; ++i) {
-          result[i] = i + totalPage - displayCount + 1;
+        if (pageSize < 1) {
+            pageSize = 0;
         }
-      } else {
-        for (i = 0; i < result.length; ++i) {
-          result[i] = i + pageNo - left + (isEven ? 1 : 0);
-        }
-      }
-    } else {
-      for (i = 0; i < result.length; ++i) {
-        result[i] = i + 1;
-      }
+        return (pageNo - firstPageNo) * pageSize;
     }
-
-    return result;
-  }
-
-  public static int[] rainbow(int currentPage, int pageCount) {
-    return rainbow(currentPage, pageCount, 10);
-  }
-
-  private static int getEndByStart(int start, int pageSize) {
-    if (pageSize < 1) {
-      pageSize = 0;
-    }
-
-    return start + pageSize;
-  }
 }

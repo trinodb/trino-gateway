@@ -33,7 +33,7 @@ public class HaGatewayLauncher
         super.initialize(bootstrap);
         bootstrap.addBundle(new ViewBundle<>());
         bootstrap.addBundle(new AssetsBundle("/static/assets", "/assets", null, "assets"));
-        bootstrap.addBundle(new AssetsBundle("/static", "/logo.svg","logo.svg", "logo.svg"));
+        bootstrap.addBundle(new AssetsBundle("/static", "/logo.svg", "logo.svg", "logo.svg"));
     }
 
     public static void main(String[] args)

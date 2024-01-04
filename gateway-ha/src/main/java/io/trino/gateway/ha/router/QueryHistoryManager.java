@@ -33,7 +33,7 @@ public interface QueryHistoryManager
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);
 
-  class QueryDetail
+    class QueryDetail
             implements Comparable<QueryDetail>
     {
         private String queryId;
