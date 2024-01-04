@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -47,7 +48,8 @@ public class TestSpecificDbResourceGroupsManager
                 new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
                 "sa", "org.h2.Driver", 4);
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
+        Jdbi jdbi = Jdbi.create(jdbcUrl);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 

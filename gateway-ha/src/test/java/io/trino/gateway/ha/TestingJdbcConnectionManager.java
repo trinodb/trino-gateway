@@ -15,6 +15,7 @@ package io.trino.gateway.ha;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
 
@@ -30,6 +31,7 @@ public final class TestingJdbcConnectionManager
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
         HaGatewayTestUtils.seedRequiredData(new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
-        return new JdbcConnectionManager(db);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        return new JdbcConnectionManager(jdbi, db);
     }
 }
