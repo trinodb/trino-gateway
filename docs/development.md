@@ -18,45 +18,22 @@
 
 # Development
 
-## How to setup a dev environment
+## Build requirements
 
-Step 1: setup mysql. Install docker with docker-compose and run the below
-command when setting up first time:
+* Mac OS X or Linux
+* Java 17+, 64-bit
+* Docker
 
-#### Run the services - mysqldb, two instances of trino
+#### Running Trino Gateway in your IDE
 
-- This setup helps you develop and test any routing rules for the trino
-- Both trino services would have a single `system` catalog
-- Add the catalog properties files in ` bin/localdev/coordinator/` for
-  additional catalogs
+The best way to run Trino Gateway for development is to run the
+`TrinoGatewayRunner` class.
+You need to run `io.trino.gateway.TrinoGatewayRunner.main()` method on your IDE
+or execute the following command:
 
+```sh
+./mvnw test-compile exec:java -pl gateway-ha -Dexec.classpathScope=test -Dexec.mainClass="io.trino.gateway.TrinoGatewayRunner"
 ```
-cd localdev
-docker-compose up -d
-```
-
-#### Check the "Status' of the services by
-
-`docker-compose ps`
-
-#### Create the schema for the backends, once mysqldb becomes healthy
-
-`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dtrinogateway < /etc/mysql/gateway-ha-persistence.sql"`
-
-#### Add the backends for mysqldb
-
-`docker-compose exec mysqldb sh -c "mysql -uroot -proot123 -hmysqldb -Dtrinogateway < /etc/mysql/add_backends.sql"`
-
-#### Create the schema for the backends, once postgres becomes healthy
-
-`docker-compose exec postgres sh -c 'PGPASSWORD="P0stG&es" psql -h localhost -p 5432 -U trino_gateway_db_admin -d trino_gateway_db -f /etc/postgresql/gateway-ha-persistence-postgres.sql'`
-
-#### Add the backends for postgres
-
-`docker-compose exec postgres sh -c 'PGPASSWORD="P0stG&es" psql -h localhost -p 5432 -U trino_gateway_db_admin -d trino_gateway_db -f /etc/postgresql/add_backends_postgres.sql'`
-
-It would add 2 trino backend records which can be used for the development and
-testing
 
 ### Build and run
 
