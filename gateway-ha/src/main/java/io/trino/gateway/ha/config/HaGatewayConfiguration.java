@@ -31,7 +31,8 @@ public class HaGatewayConfiguration
     private RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
     private AuthenticationConfiguration authentication;
     private AuthorizationConfiguration authorization;
-    private Map<String, UserConfiguration> presetUsers = new HashMap();
+    private Map<String, UserConfiguration> presetUsers = new HashMap<>();
+    private Map<String, String> pagePermissions = new HashMap<>();
     private BackendStateConfiguration backendState;
     private ClusterStatsConfiguration clusterStatsConfiguration;
     private List<String> extraWhitelistPaths = new ArrayList<>();
@@ -118,6 +119,16 @@ public class HaGatewayConfiguration
         this.presetUsers = presetUsers;
     }
 
+    public Map<String, String> getPagePermissions()
+    {
+        return this.pagePermissions;
+    }
+
+    public void setPagePermissions(Map<String, String> pagePermissions)
+    {
+        this.pagePermissions = pagePermissions;
+    }
+
     public BackendStateConfiguration getBackendState()
     {
         return this.backendState;
@@ -202,6 +213,11 @@ public class HaGatewayConfiguration
         if (!Objects.equals(presetUsers, otherPresetUsers)) {
             return false;
         }
+        final Object pagePermissions = this.getPagePermissions();
+        final Object otherPagePermissions = other.getPagePermissions();
+        if (!Objects.equals(pagePermissions, otherPagePermissions)) {
+            return false;
+        }
         final Object backendState = this.getBackendState();
         final Object otherBackendState = other.getBackendState();
         if (!Objects.equals(backendState, otherBackendState)) {
@@ -242,6 +258,8 @@ public class HaGatewayConfiguration
         result = result * prime + (authorization == null ? 43 : authorization.hashCode());
         final Object presetUsers = this.getPresetUsers();
         result = result * prime + (presetUsers == null ? 43 : presetUsers.hashCode());
+        final Object pagePermissions = this.getPagePermissions();
+        result = result * prime + (pagePermissions == null ? 43 : pagePermissions.hashCode());
         final Object backendState = this.getBackendState();
         result = result * prime + (backendState == null ? 43 : backendState.hashCode());
         final Object clusterStatsConfiguration = this.getClusterStatsConfiguration();
@@ -263,6 +281,7 @@ public class HaGatewayConfiguration
                 ", authentication=" + authentication +
                 ", authorization=" + authorization +
                 ", presetUsers=" + presetUsers +
+                ", pagePermissions=" + pagePermissions +
                 ", backendState=" + backendState +
                 ", clusterStatsConfiguration=" + clusterStatsConfiguration +
                 ", extraWhitelistPaths=" + extraWhitelistPaths +

@@ -56,7 +56,7 @@ public class GatewayBackend
                 .set(routingGroup, backend.getRoutingGroup())
                 .set(backendUrl, backend.getProxyTo())
                 .set(externalUrl, backend.getExternalUrl())
-                .set(active, backend.isActive())
+                .set(active, backend.getActive())
                 .saveIt();
     }
 
@@ -72,7 +72,7 @@ public class GatewayBackend
                         externalUrl,
                         backend.getExternalUrl(),
                         active,
-                        backend.isActive())
+                        backend.getActive())
                 .insert();
     }
 }

@@ -20,6 +20,8 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.domain.R;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -114,7 +116,7 @@ public class TestLbAuthenticator
                 this.put("user2", new UserConfiguration("priv2, priv2", "pass2"));
             }
         };
-        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, new HashMap<>());
 
         assertTrue(authentication
                 .authenticate(new BasicCredentials("user1", "pass1")));
@@ -128,7 +130,7 @@ public class TestLbAuthenticator
     public void testNoLdapNoPresetUsers()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
         assertFalse(authentication
                 .authenticate(new BasicCredentials("user1", "pass1")));
     }
@@ -137,7 +139,7 @@ public class TestLbAuthenticator
     public void testWrongLdapConfig()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
         assertFalse(authentication
                 .authenticate(new BasicCredentials("user1", "pass1")));
     }
@@ -171,12 +173,15 @@ public class TestLbAuthenticator
             }
         };
 
-        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers);
-        Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
-        NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
-        String value = cookie.getValue();
-        assertTrue(value != null && value.length() > 0);
-        log.info(cookie.getValue());
-        JWT.decode(value);
+        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
+        RestLoginRequest restLoginRequest = new RestLoginRequest();
+        restLoginRequest.setUsername("user1");
+        restLoginRequest.setPassword("pass1");
+        R<?> r = lbFormAuthManager.processRESTLogin(restLoginRequest);
+        assertTrue(R.isSuccess(r));
+        Map data = (Map) r.getData();
+        String token = (String) data.get("token");
+        log.info(token);
+        JWT.decode(token);
     }
 }

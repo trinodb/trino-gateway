@@ -20,7 +20,7 @@ import java.util.Objects;
 public class ProxyBackendConfiguration
         extends ProxyServerConfiguration
 {
-    private boolean active = true;
+    private Boolean active = true;
     private String routingGroup = "adhoc";
     private String externalUrl;
 
@@ -39,7 +39,7 @@ public class ProxyBackendConfiguration
         this.externalUrl = externalUrl;
     }
 
-    public boolean isActive()
+    public boolean getActive()
     {
         return this.active;
     }
@@ -73,7 +73,7 @@ public class ProxyBackendConfiguration
         if (!super.equals(o)) {
             return false;
         }
-        if (this.isActive() != other.isActive()) {
+        if (this.getActive() != other.getActive()) {
             return false;
         }
         final Object routingGroup = this.getRoutingGroup();
@@ -95,7 +95,7 @@ public class ProxyBackendConfiguration
     {
         final int prime = 59;
         int result = super.hashCode();
-        result = result * prime + (this.isActive() ? 79 : 97);
+        result = result * prime + (this.getActive() ? 79 : 97);
         final Object routingGroup = this.getRoutingGroup();
         result = result * prime + (routingGroup == null ? 43 : routingGroup.hashCode());
         final Object externalUrl = this.getExternalUrl();

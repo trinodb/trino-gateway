@@ -1,0 +1,42 @@
+@import "./animation.scss";
+
+// If you need to customize the theme, you have to open this line of code.
+// see: https://semi.design/en-US/start/customize-theme
+// @import '~@semi-bot/semi-theme-xxxxxx/semi.min.css';
+
+// customize
+@mixin light {
+  --login-shadow: 0px 4px 14px 0px #0000001a, 0px 0px 1px 0px #0000004d;
+  --semi-color-bg-0: rgba(245, 245, 245, 1);
+}
+
+@mixin dark {
+  --login-shadow: 0px 4px 14px 0px #FFFFFF1a, 0px 0px 1px 0px #FFFFFF4d;
+}
+
+.light {
+  @include light;
+}
+
+.dark {
+  @include dark;
+}
+
+:root {
+  @include light;
+
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark;
+  }
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  color: var(--semi-color-text-0);
+  background: var(--semi-color-bg-0);
+}

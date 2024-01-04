@@ -31,7 +31,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -65,13 +64,6 @@ public class EntityEditorResource
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
-    }
-
-    @GET
-    @Produces(MediaType.TEXT_HTML)
-    public EntityView entityUi(@Context SecurityContext securityContext)
-    {
-        return new EntityView("/template/entity-view.ftl", securityContext);
     }
 
     @GET

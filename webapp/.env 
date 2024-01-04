@@ -1,0 +1,4 @@
+# https://vitejs.dev/guide/env-and-mode.html
+
+VITE_GLOB_APP_TITLE="Trino Gateway"
+VITE_GLOB_APP_SHORT_NAME="TrinoGateway"

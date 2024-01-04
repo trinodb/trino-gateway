@@ -27,6 +27,7 @@ public class OAuthConfiguration
     private List<String> scopes;
     private String redirectUrl;
     private String userIdField;
+    private String redirectWebUrl;
 
     public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField)
     {
@@ -133,6 +134,16 @@ public class OAuthConfiguration
         this.userIdField = userIdField;
     }
 
+    public String getRedirectWebUrl()
+    {
+        return this.redirectWebUrl;
+    }
+
+    public void setRedirectWebUrl(String redirectWebUrl)
+    {
+        this.redirectWebUrl = redirectWebUrl;
+    }
+
     public boolean equals(final Object o)
     {
         if (o == this) {
@@ -186,7 +197,12 @@ public class OAuthConfiguration
         }
         final Object userIdField = this.getUserIdField();
         final Object otherUserIdField = other.getUserIdField();
-        return Objects.equals(userIdField, otherUserIdField);
+        if (!Objects.equals(userIdField, otherUserIdField)) {
+            return false;
+        }
+        final Object redirectWebUrl = this.getRedirectWebUrl();
+        final Object otherRedirectWebUrl = other.getRedirectWebUrl();
+        return Objects.equals(redirectWebUrl, otherRedirectWebUrl);
     }
 
     protected boolean canEqual(final Object other)
@@ -216,6 +232,8 @@ public class OAuthConfiguration
         result = result * prime + (redirectUrl == null ? 43 : redirectUrl.hashCode());
         final Object userIdField = this.getUserIdField();
         result = result * prime + (userIdField == null ? 43 : userIdField.hashCode());
+        final Object redirectWebUrl = this.getRedirectWebUrl();
+        result = result * prime + (redirectWebUrl == null ? 43 : redirectWebUrl.hashCode());
         return result;
     }
 
@@ -232,6 +250,7 @@ public class OAuthConfiguration
                 ", scopes=" + scopes +
                 ", redirectUrl='" + redirectUrl + '\'' +
                 ", userIdField='" + userIdField + '\'' +
+                ", redirectWebUrl='" + redirectWebUrl + '\'' +
                 '}';
     }
 }

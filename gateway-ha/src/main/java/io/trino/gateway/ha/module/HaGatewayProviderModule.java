@@ -104,7 +104,8 @@ public class HaGatewayProviderModule
         AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
         if (authenticationConfiguration != null
                 && authenticationConfiguration.getOauth() != null) {
-            return new LbOAuthManager(authenticationConfiguration.getOauth());
+            return new LbOAuthManager(authenticationConfiguration.getOauth(),
+                    configuration.getPagePermissions());
         }
         return null;
     }
@@ -115,7 +116,8 @@ public class HaGatewayProviderModule
         if (authenticationConfiguration != null
                 && authenticationConfiguration.getForm() != null) {
             return new LbFormAuthManager(authenticationConfiguration.getForm(),
-                    configuration.getPresetUsers());
+                    configuration.getPresetUsers(),
+                    configuration.getPagePermissions());
         }
         return null;
     }
