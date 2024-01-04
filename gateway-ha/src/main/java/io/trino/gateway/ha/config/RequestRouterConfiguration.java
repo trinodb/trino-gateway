@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha.config;
 
-import java.util.Objects;
-
 public class RequestRouterConfiguration
 {
     // Local gateway port
@@ -162,104 +160,5 @@ public class RequestRouterConfiguration
     public void setResponseBufferSize(int responseBufferSize)
     {
         this.responseBufferSize = responseBufferSize;
-    }
-
-    public boolean equals(final Object o)
-    {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof RequestRouterConfiguration other)) {
-            return false;
-        }
-        if (!other.canEqual(this)) {
-            return false;
-        }
-        if (this.getPort() != other.getPort()) {
-            return false;
-        }
-        final Object name = this.getName();
-        final Object otherName = other.getName();
-        if (!Objects.equals(name, otherName)) {
-            return false;
-        }
-        if (this.isSsl() != other.isSsl()) {
-            return false;
-        }
-        final Object keystorePath = this.getKeystorePath();
-        final Object otherKeystorePath = other.getKeystorePath();
-        if (!Objects.equals(keystorePath, otherKeystorePath)) {
-            return false;
-        }
-        final Object keystorePass = this.getKeystorePass();
-        final Object otherKeystorePass = other.getKeystorePass();
-        if (!Objects.equals(keystorePass, otherKeystorePass)) {
-            return false;
-        }
-        if (this.getHistorySize() != other.getHistorySize()) {
-            return false;
-        }
-        if (this.isForwardKeystore() != other.isForwardKeystore()) {
-            return false;
-        }
-        if (this.getOutputBufferSize() != other.getOutputBufferSize()) {
-            return false;
-        }
-        if (this.getRequestHeaderSize() != other.getRequestHeaderSize()) {
-            return false;
-        }
-        if (this.getResponseHeaderSize() != other.getResponseHeaderSize()) {
-            return false;
-        }
-        if (this.getRequestBufferSize() != other.getRequestBufferSize()) {
-            return false;
-        }
-        return this.getResponseBufferSize() == other.getResponseBufferSize();
-    }
-
-    protected boolean canEqual(final Object other)
-    {
-        return other instanceof RequestRouterConfiguration;
-    }
-
-    public int hashCode()
-    {
-        final int prime = 59;
-        int result = 1;
-        result = result * prime + this.getPort();
-        final Object name = this.getName();
-        result = result * prime + (name == null ? 43 : name.hashCode());
-        result = result * prime + (this.isSsl() ? 79 : 97);
-        final Object keystorePath = this.getKeystorePath();
-        result = result * prime + (keystorePath == null ? 43 : keystorePath.hashCode());
-        final Object keystorePass = this.getKeystorePass();
-        result = result * prime + (keystorePass == null ? 43 : keystorePass.hashCode());
-        result = result * prime + this.getHistorySize();
-        result = result * prime + (this.isForwardKeystore() ? 79 : 97);
-        result = result * prime + this.getOutputBufferSize();
-        result = result * prime + this.getRequestHeaderSize();
-        result = result * prime + this.getResponseHeaderSize();
-        result = result * prime + this.getRequestBufferSize();
-        result = result * prime + this.getResponseBufferSize();
-        return result;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "RequestRouterConfiguration{" +
-                "port=" + port +
-                ", name='" + name + '\'' +
-                ", ssl=" + ssl +
-                ", keystorePath='" + keystorePath + '\'' +
-                ", keystorePass='" + keystorePass + '\'' +
-                ", historySize=" + historySize +
-                ", forwardKeystore=" + forwardKeystore +
-                ", outputBufferSize=" + outputBufferSize +
-                ", requestHeaderSize=" + requestHeaderSize +
-                ", responseHeaderSize=" + responseHeaderSize +
-                ", requestBufferSize=" + requestBufferSize +
-                ", responseBufferSize=" + responseBufferSize +
-                '}';
     }
 }
