@@ -56,6 +56,7 @@ import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.proxyserver.ProxyHandler;
 import io.trino.gateway.proxyserver.ProxyServer;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
+import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,10 +80,11 @@ public class HaGatewayProviderModule
     public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
     {
         super(configuration, environment);
-        connectionManager = new JdbcConnectionManager(configuration.getDataStore());
+        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
+        connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(connectionManager);
-        queryHistoryManager = new HaQueryHistoryManager(connectionManager);
+        queryHistoryManager = new HaQueryHistoryManager(jdbi);
         routingManager =
                 new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
 
