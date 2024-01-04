@@ -23,6 +23,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.javalite.activejdbc.Base;
+import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,8 @@ public class HaGatewayTestUtils
     {
         String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(db);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         connectionManager.open();
         Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence.sql"));
         connectionManager.close();

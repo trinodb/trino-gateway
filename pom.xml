@@ -58,6 +58,7 @@
         <dep.h2.version>1.4.192</dep.h2.version>
         <dep.jakarta.annotations.version>2.1.1</dep.jakarta.annotations.version>
         <dep.jakarta.mail.version>2.0.0</dep.jakarta.mail.version>
+        <dep.jdbi.version>3.44.0</dep.jdbi.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.jetty.version>11.0.15</dep.jetty.version>
         <dep.mockito.version>5.8.0</dep.mockito.version>

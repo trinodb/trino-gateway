@@ -35,7 +35,7 @@ public class TestHaRoutingManager
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager);
-        historyManager = new HaQueryHistoryManager(connectionManager);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
         haRoutingManager = new HaRoutingManager(backendManager, historyManager);
     }
 
