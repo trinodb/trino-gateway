@@ -14,9 +14,11 @@
 package io.trino.gateway.ha.persistence;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
-import io.trino.gateway.ha.persistence.dao.QueryHistory;
+import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
 import org.javalite.activejdbc.Base;
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,17 +26,29 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
+
 public class JdbcConnectionManager
 {
     private static final Logger log = LoggerFactory.getLogger(JdbcConnectionManager.class);
+
+    private final Jdbi jdbi;
     private final DataStoreConfiguration configuration;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
 
-    public JdbcConnectionManager(DataStoreConfiguration configuration)
+    public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
+        this.jdbi = requireNonNull(jdbi, "jdbi is null")
+                .installPlugin(new SqlObjectPlugin())
+                .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
         this.configuration = configuration;
         startCleanUps();
+    }
+
+    public Jdbi getJdbi()
+    {
+        return jdbi;
     }
 
     public void open()
@@ -68,16 +82,8 @@ public class JdbcConnectionManager
         executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
-                    try {
-                        this.open();
-                        QueryHistory.delete(
-                                "created < ?",
-                                System.currentTimeMillis() - TimeUnit.HOURS.toMillis(
-                                        this.configuration.getQueryHistoryHoursRetention()));
-                    }
-                    finally {
-                        this.close();
-                    }
+                    long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
+                    jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
                 120,

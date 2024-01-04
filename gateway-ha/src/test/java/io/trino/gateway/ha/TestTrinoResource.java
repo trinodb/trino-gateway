@@ -23,6 +23,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.jetty.http.HttpStatus;
+import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,8 @@ public class TestTrinoResource
         // Setup resource group manager
         String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
-        connectionManager = new JdbcConnectionManager(db);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 
         // Generate test data
