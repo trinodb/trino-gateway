@@ -115,6 +115,7 @@
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>
                             -Xplugin:ErrorProne
+                            -Xep:MissingOverride:ERROR \
                             <!-- TODO: Enable DoubleBraceInitialization flag -->
                             -Xep:DoubleBraceInitialization:OFF
                         </arg>

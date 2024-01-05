@@ -314,6 +314,7 @@ public class QueryIdCachingProxyHandler
         return targetLocation;
     }
 
+    @Override
     protected void postConnectionHook(
             HttpServletRequest request,
             HttpServletResponse response,
