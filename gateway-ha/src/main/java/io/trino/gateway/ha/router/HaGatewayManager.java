@@ -130,6 +130,7 @@ public class HaGatewayManager
         }
     }
 
+    @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
         try {
@@ -142,6 +143,7 @@ public class HaGatewayManager
         return backend;
     }
 
+    @Override
     public ProxyBackendConfiguration updateBackend(ProxyBackendConfiguration backend)
     {
         try {

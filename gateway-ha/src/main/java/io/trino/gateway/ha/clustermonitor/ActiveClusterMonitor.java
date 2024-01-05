@@ -68,6 +68,7 @@ public class ActiveClusterMonitor
     /**
      * Run an app that queries all active trino clusters for stats.
      */
+    @Override
     public void start()
     {
         singleTaskExecutor.submit(
@@ -110,6 +111,7 @@ public class ActiveClusterMonitor
     /**
      * Shut down the app.
      */
+    @Override
     public void stop()
     {
         this.monitorActive = false;
