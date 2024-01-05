@@ -7,8 +7,10 @@ A load balancer, proxy server, and configurable routing gateway for multiple
 
 Find out more details from our documentation:
 
+* [Configuration](./docs/configuration.md)
 * [Design](./docs/design.md)
 * [Development](./docs/development.md)
+* [Quickstart](./docs/quickstart.md)
 * [Security](./docs/security.md)
 * [Operation](./docs/operation.md)
 * [Gateway API](./docs/gateway-api.md)
