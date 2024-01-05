@@ -13,68 +13,75 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
+import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import org.jdbi.v3.core.Jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Objects.requireNonNull;
 
 public class HaQueryHistoryManager
         implements QueryHistoryManager
 {
-    private final JdbcConnectionManager connectionManager;
+    private final QueryHistoryDao dao;
 
-    public HaQueryHistoryManager(JdbcConnectionManager connectionManager)
+    public HaQueryHistoryManager(Jdbi jdbi)
     {
-        this.connectionManager = connectionManager;
+        dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
     }
 
     @Override
     public void submitQueryDetail(QueryDetail queryDetail)
     {
-        try {
-            connectionManager.open();
-            QueryHistory dao = new QueryHistory();
-            QueryHistory.create(dao, queryDetail);
+        String id = queryDetail.getQueryId();
+        if (id == null || id.isEmpty()) {
+            return;
         }
-        finally {
-            connectionManager.close();
-        }
+
+        dao.insertHistory(
+                queryDetail.getQueryId(),
+                queryDetail.getQueryText(),
+                queryDetail.getBackendUrl(),
+                queryDetail.getUser(),
+                queryDetail.getSource(),
+                queryDetail.getCaptureTime());
     }
 
     @Override
     public List<QueryDetail> fetchQueryHistory(Optional<String> user)
     {
-        try {
-            connectionManager.open();
-            String sql = "select * from query_history";
-            if (user.isPresent()) {
-                sql += " where user_name = '" + user.orElseThrow() + "'";
-            }
-            return QueryHistory.upcast(QueryHistory.findBySQL(String.join(" ",
-                    sql,
-                    "order by created desc",
-                    "limit 2000")));
+        List<QueryHistory> histories;
+        if (user.isPresent()) {
+            histories = dao.findRecentQueriesByUserName(user.orElseThrow());
         }
-        finally {
-            connectionManager.close();
+        else {
+            histories = dao.findRecentQueries();
         }
+        return upcast(histories);
+    }
+
+    private static List<QueryHistoryManager.QueryDetail> upcast(List<QueryHistory> queryHistoryList)
+    {
+        List<QueryHistoryManager.QueryDetail> queryDetails = new ArrayList<>();
+        for (QueryHistory dao : queryHistoryList) {
+            QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
+            queryDetail.setQueryId(dao.queryId());
+            queryDetail.setQueryText(dao.queryText());
+            queryDetail.setCaptureTime(dao.created());
+            queryDetail.setBackendUrl(dao.backendUrl());
+            queryDetail.setUser(dao.userName());
+            queryDetail.setSource(dao.source());
+            queryDetails.add(queryDetail);
+        }
+        return queryDetails;
     }
 
     @Override
     public String getBackendForQueryId(String queryId)
     {
-        String backend = null;
-        try {
-            connectionManager.open();
-            QueryHistory queryHistory = QueryHistory.findById(queryId);
-            if (queryHistory != null) {
-                backend = queryHistory.get("backend_url").toString();
-            }
-        }
-        finally {
-            connectionManager.close();
-        }
-        return backend;
+        return dao.findBackendUrlByQueryId(queryId);
     }
 }
