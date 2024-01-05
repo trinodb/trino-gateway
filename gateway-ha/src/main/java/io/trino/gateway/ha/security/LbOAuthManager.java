@@ -211,6 +211,7 @@ public class LbOAuthManager
             return this.expiresIn;
         }
 
+        @Override
         public boolean equals(final Object o)
         {
             if (o == this) {
@@ -249,6 +250,7 @@ public class LbOAuthManager
             return Objects.equals(expiresIn, otherExpiresIn);
         }
 
+        @Override
         public int hashCode()
         {
             final int prime = 59;
@@ -268,6 +270,7 @@ public class LbOAuthManager
             return result;
         }
 
+        @Override
         public String toString()
         {
             return "LbOAuthManager.OidcTokens(accessToken=" + this.getAccessToken() +
