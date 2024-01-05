@@ -60,7 +60,7 @@ testing
 
 ### Build and run
 
-This project requires Java 17. Note that higher version of Java have not been
+This project requires Java 21. Note that higher version of Java have not been
 verified and may run into unexpected issues.
 
 Run `./mvnw clean install` to build `trino-gateway`. VM options required for

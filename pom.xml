@@ -39,9 +39,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.targetJdk>17</project.build.targetJdk>
+        <project.build.targetJdk>21</project.build.targetJdk>
 
-        <air.java.version>17</air.java.version>
+        <air.java.version>21</air.java.version>
         <air.check.skip-enforcer>true</air.check.skip-enforcer>
         <air.check.skip-dependency>true</air.check.skip-dependency>
         <air.check.skip-duplicate-finder>true</air.check.skip-duplicate-finder>
