@@ -62,7 +62,7 @@ class ConnectionCheck
             return diff > checkInterval;
         }
         catch (ArithmeticException ex) {
-            log.error("Error {}", ex);
+            log.error("Error", ex);
         }
         return true;
     }
@@ -84,7 +84,7 @@ class ConnectionCheck
             return diff < disableDuration;
         }
         catch (ArithmeticException ex) {
-            log.error("Error {}", ex);
+            log.error("Error", ex);
         }
         return true;
     }

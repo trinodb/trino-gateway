@@ -100,7 +100,7 @@ public class ClusterStatsHttpMonitor
             }
         }
         catch (Exception e) {
-            log.error("Error parsing cluster user stats: {}", e);
+            log.error("Error parsing cluster user stats", e);
         }
         clusterStats.setUserQueuedCount(clusterUserStats);
 
