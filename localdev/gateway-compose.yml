@@ -1,0 +1,22 @@
+version: "3.4"
+services:
+  gateway:
+    image: ${TRINO_GATEWAY_IMAGE:-trinodb/trino-gateway:latest}
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "8080:8080"
+    volumes:
+      - target: /opt/trino/gateway-ha-config.yml
+        source: ../gateway-ha/gateway-ha-config-docker.yml
+        type: bind
+          #      - target: /opt/trino/localhost.jks
+          #        source: ../gateway-ha/target/localhost.jks
+          #        type: bind
