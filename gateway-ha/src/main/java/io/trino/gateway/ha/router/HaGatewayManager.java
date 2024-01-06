@@ -70,7 +70,7 @@ public class HaGatewayManager
             return GatewayBackend.upcast(proxyBackendList);
         }
         catch (Exception e) {
-            log.info("Error fetching all backends", e.getLocalizedMessage());
+            log.info("Error fetching all backends: {}", e.getLocalizedMessage());
         }
         finally {
             connectionManager.close();

@@ -104,10 +104,10 @@ public class ClusterStatsJdbcMonitor
             return clusterStats;
         }
         catch (TimeoutException e) {
-            log.error("timed out fetching status for {} backend, {}", url, e);
+            log.error("timed out fetching status for {} backend", url, e);
         }
         catch (Exception e) {
-            log.error("could not fetch status for {} backend, {}", url, e);
+            log.error("could not fetch status for {} backend", url, e);
         }
         return clusterStats;
     }
