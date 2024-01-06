@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Table;
+import com.google.common.collect.TreeBasedTable;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.slf4j.Logger;
@@ -55,7 +57,7 @@ public class TrinoQueueLengthRoutingTable
 
     private final ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>> userClusterQueueLengthMap;
 
-    private final Map<String, TreeMap<Integer, String>> weightedDistributionRouting;
+    private final Table<String, Integer, String> weightedDistributionRouting = TreeBasedTable.create();
 
     /**
      * A Routing Manager that distributes queries according to assigned weights based on
@@ -67,7 +69,6 @@ public class TrinoQueueLengthRoutingTable
         super(gatewayBackendManager, queryHistoryManager);
         routingGroupWeightSum = new ConcurrentHashMap<String, Integer>();
         clusterQueueLengthMap = new ConcurrentHashMap<String, ConcurrentHashMap<String, Integer>>();
-        weightedDistributionRouting = new HashMap<String, TreeMap<Integer, String>>();
         userClusterQueueLengthMap = new ConcurrentHashMap<>();
     }
 
@@ -147,7 +148,6 @@ public class TrinoQueueLengthRoutingTable
 
             for (String routingGroup : queueLengthMap.keySet()) {
                 sum = 0;
-                TreeMap<Integer, String> weightsMap = new TreeMap<>();
 
                 if (queueLengthMap.get(routingGroup).size() == 0) {
                     log.warn("No active clusters in routingGroup : [{}]. Continue to "
@@ -156,12 +156,7 @@ public class TrinoQueueLengthRoutingTable
                 }
                 else if (queueLengthMap.get(routingGroup).size() == 1) {
                     log.debug("Routing Group: [{}] has only 1 active backend.", routingGroup);
-                    weightedDistributionRouting.put(routingGroup, new TreeMap<Integer, String>()
-                            {
-                                {
-                                    put(MAX_WT, queueLengthMap.get(routingGroup).keys().nextElement());
-                                }
-                            });
+                    weightedDistributionRouting.put(routingGroup, MAX_WT, queueLengthMap.get(routingGroup).keys().nextElement());
                     routingGroupWeightSum.put(routingGroup, MAX_WT);
                     continue;
                 }
@@ -187,20 +182,18 @@ public class TrinoQueueLengthRoutingTable
                             (int) Math.ceil(MAX_WT
                                     - (((Integer) queueLengths[i] * MAX_WT) / (double) maxQueueLn));
                     sum += weight;
-                    weightsMap.put(sum, (String) clusterNames[i]);
+                    weightedDistributionRouting.put(routingGroup, sum, (String) clusterNames[i]);
                 }
 
                 sum += calculatedWtMaxQueue;
-                weightsMap.put(sum, (String) clusterNames[numBuckets - 1]);
-
-                weightedDistributionRouting.put(routingGroup, weightsMap);
+                weightedDistributionRouting.put(routingGroup, sum, (String) clusterNames[numBuckets - 1]);
                 routingGroupWeightSum.put(routingGroup, sum);
             }
 
             if (log.isDebugEnabled()) {
-                for (String rg : weightedDistributionRouting.keySet()) {
+                for (String rg : weightedDistributionRouting.rowKeySet()) {
                     log.debug("Routing Table for : [{}] is [{}]", rg,
-                            weightedDistributionRouting.get(rg).toString());
+                            weightedDistributionRouting.row(rg));
                 }
             }
         }
@@ -288,13 +281,13 @@ public class TrinoQueueLengthRoutingTable
      */
     public Map<String, Integer> getInternalWeightedRoutingTable(String routingGroup)
     {
-        if (!weightedDistributionRouting.containsKey(routingGroup)) {
+        if (!weightedDistributionRouting.containsRow(routingGroup)) {
             return null;
         }
         Map<String, Integer> routingTable = new HashMap<>();
 
-        for (Integer wt : weightedDistributionRouting.get(routingGroup).keySet()) {
-            routingTable.put(weightedDistributionRouting.get(routingGroup).get(wt), wt);
+        for (Integer wt : weightedDistributionRouting.row(routingGroup).keySet()) {
+            routingTable.put(weightedDistributionRouting.get(routingGroup, wt), wt);
         }
         return routingTable;
     }
@@ -347,9 +340,9 @@ public class TrinoQueueLengthRoutingTable
         }
         // Looks up the closest weight to random number generated for a given routing group.
         if (routingGroupWeightSum.containsKey(routingGroup)
-                && weightedDistributionRouting.containsKey(routingGroup)) {
+                && weightedDistributionRouting.containsRow(routingGroup)) {
             int rnd = RANDOM.nextInt(routingGroupWeightSum.get(routingGroup));
-            return weightedDistributionRouting.get(routingGroup).higherEntry(rnd).getValue();
+            return ((TreeMap<Integer, String>) weightedDistributionRouting.row(routingGroup)).higherEntry(rnd).getValue();
         }
         else {
             return null;
