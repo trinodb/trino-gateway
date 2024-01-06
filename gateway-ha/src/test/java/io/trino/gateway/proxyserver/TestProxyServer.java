@@ -16,17 +16,20 @@ package io.trino.gateway.proxyserver;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
 import com.squareup.okhttp.mockwebserver.RecordedRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
+import io.airlift.http.client.HttpClient;
+import io.airlift.http.client.HttpClientConfig;
+import io.airlift.http.client.Request;
+import io.airlift.http.client.StringResponseHandler;
+import io.airlift.http.client.jetty.JettyHttpClient;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Random;
 
+import static io.airlift.http.client.Request.Builder.prepareGet;
+import static io.airlift.http.client.StringResponseHandler.createStringResponseHandler;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestProxyServer
@@ -34,6 +37,7 @@ public class TestProxyServer
     private static int serverPort;
     private static MockWebServer backend;
     private static ProxyServer proxyServer;
+    private static HttpClient httpClient = new JettyHttpClient(new HttpClientConfig());
 
     @Test
     public void testProxyServer()
@@ -43,10 +47,11 @@ public class TestProxyServer
         setProxyServer(mockResponseText);
         try {
             proxyServer.start();
-            CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-            HttpUriRequest httpUriRequest = new HttpGet("http://localhost:" + serverPort);
-            HttpResponse response = httpclient.execute(httpUriRequest);
-            assertEquals(mockResponseText, EntityUtils.toString(response.getEntity()));
+            Request request = prepareGet()
+                    .setUri(URI.create("http://localhost:" + serverPort))
+                    .build();
+            StringResponseHandler.StringResponse response = httpClient.execute(request, createStringResponseHandler());
+            assertEquals(mockResponseText, response.getBody());
         }
         finally {
             proxyServer.close();
@@ -62,13 +67,14 @@ public class TestProxyServer
         setProxyServer(mockResponseText);
         try {
             proxyServer.start();
-            CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-            HttpUriRequest httpUriRequest = new HttpGet("http://localhost:" + serverPort);
-            httpUriRequest.setHeader("HEADER1", "FOO");
-            httpUriRequest.setHeader("HEADER2", "BAR");
+            Request request = prepareGet()
+                    .setUri(URI.create("http://localhost:" + serverPort))
+                    .setHeader("HEADER1", "FOO")
+                    .setHeader("HEADER2", "BAR")
+                    .build();
+            StringResponseHandler.StringResponse response = httpClient.execute(request, createStringResponseHandler());
 
-            HttpResponse response = httpclient.execute(httpUriRequest);
-            assertEquals(mockResponseText, EntityUtils.toString(response.getEntity()));
+            assertEquals(mockResponseText, response.getBody());
             RecordedRequest recordedRequest = backend.takeRequest();
             assertEquals("FOO", recordedRequest.getHeader("HEADER1"));
             assertEquals("BAR", recordedRequest.getHeader("HEADER2"));
@@ -86,19 +92,25 @@ public class TestProxyServer
         String mockResponseText = "CUSTOM LONG HEADER TEST";
         setProxyServer(mockResponseText);
         String mockLongHeaderKey = "HEADER_LONG";
-        // Mockserver has max 8k for HTTP Header values so test with header value larger than default 4k
-        int headerLength = 5 * 1024;
+        int headerLength = 4040;
         String mockLongHeaderValue = "x".repeat(headerLength);
         try {
             proxyServer.start();
-            CloseableHttpClient httpclient = HttpClientBuilder.create().build();
-            HttpUriRequest httpUriRequest = new HttpGet("http://localhost:" + serverPort);
-            httpUriRequest.setHeader(mockLongHeaderKey, mockLongHeaderValue);
-
-            HttpResponse response = httpclient.execute(httpUriRequest);
-            assertEquals(mockResponseText, EntityUtils.toString(response.getEntity()));
+            Request request = prepareGet()
+                    .setUri(URI.create("http://localhost:" + serverPort))
+                    .setHeader(mockLongHeaderKey, mockLongHeaderValue)
+                    .build();
+            StringResponseHandler.StringResponse response = httpClient.execute(request, createStringResponseHandler());
+            assertEquals(mockResponseText, response.getBody());
             RecordedRequest recordedRequest = backend.takeRequest();
             assertEquals(mockLongHeaderValue, recordedRequest.getHeader(mockLongHeaderKey));
+
+            Request tooLargeHeaderRequest = prepareGet()
+                    .setUri(URI.create("http://localhost:" + serverPort))
+                    .setHeader(mockLongHeaderKey, "x".repeat(headerLength + 1))
+                    .build();
+            assertThatThrownBy(() -> httpClient.execute(tooLargeHeaderRequest, createStringResponseHandler()))
+                    .hasMessage("Request header too large");
         }
         finally {
             proxyServer.close();

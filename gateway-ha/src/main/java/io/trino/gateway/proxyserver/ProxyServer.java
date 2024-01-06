@@ -15,7 +15,6 @@ package io.trino.gateway.proxyserver;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
-import org.apache.http.util.TextUtils;
 import org.eclipse.jetty.http.HttpScheme;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -34,6 +33,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 public class ProxyServer
         implements Closeable
@@ -78,7 +79,7 @@ public class ProxyServer
             sslContextFactory.setTrustAll(true);
             sslContextFactory.setSslSessionTimeout((int) TimeUnit.SECONDS.toMillis(15));
 
-            if (!TextUtils.isBlank(keystorePath)) {
+            if (!isNullOrEmpty(keystorePath)) {
                 sslContextFactory.setKeyStorePath(keystoreFile.getAbsolutePath());
                 sslContextFactory.setKeyStorePassword(keystorePass);
                 sslContextFactory.setKeyManagerPassword(keystorePass);

@@ -15,7 +15,6 @@ package io.trino.gateway.proxyserver;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.http.HttpHeaders;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.util.Callback;
@@ -105,7 +104,7 @@ public class ProxyHandler
 
     protected boolean isGZipEncoding(HttpServletResponse response)
     {
-        String contentEncoding = response.getHeader(HttpHeaders.CONTENT_ENCODING);
+        String contentEncoding = response.getHeader("Content-Encoding");
         return contentEncoding != null && contentEncoding.toLowerCase().contains("gzip");
     }
 
