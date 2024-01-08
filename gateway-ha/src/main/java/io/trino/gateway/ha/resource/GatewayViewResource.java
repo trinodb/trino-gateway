@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 @RolesAllowed("USER")
@@ -230,78 +231,41 @@ public class GatewayViewResource
             this.queryDistribution = queryDistribution;
         }
 
-        public boolean equals(final Object o)
+        @Override
+        public boolean equals(Object o)
         {
-            if (o == this) {
+            if (this == o) {
                 return true;
             }
-            if (!(o instanceof GatewayView other)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            if (this.getGatewayStartTime() != other.getGatewayStartTime()) {
-                return false;
-            }
-            final Object displayName = this.getDisplayName();
-            final Object otherDisplayName = other.getDisplayName();
-            if (!Objects.equals(displayName, otherDisplayName)) {
-                return false;
-            }
-            final Object backendConfigurations = this.getBackendConfigurations();
-            final Object otherBackendConfigurations = other.getBackendConfigurations();
-            if (!Objects.equals(backendConfigurations, otherBackendConfigurations)) {
-                return false;
-            }
-            final Object queryHistory = this.getQueryHistory();
-            final Object otherQueryHistory = other.getQueryHistory();
-            if (!Objects.equals(queryHistory, otherQueryHistory)) {
-                return false;
-            }
-            final Object backendStates = this.getBackendStates();
-            final Object otherBackendStates = other.getBackendStates();
-            if (!Objects.equals(backendStates, otherBackendStates)) {
-                return false;
-            }
-            final Object queryDistribution = this.getQueryDistribution();
-            final Object otherQueryDistribution = other.getQueryDistribution();
-            return Objects.equals(queryDistribution, otherQueryDistribution);
+            GatewayView that = (GatewayView) o;
+            return gatewayStartTime == that.gatewayStartTime &&
+                    Objects.equals(displayName, that.displayName) &&
+                    Objects.equals(backendConfigurations, that.backendConfigurations) &&
+                    Objects.equals(queryHistory, that.queryHistory) &&
+                    Objects.equals(backendStates, that.backendStates) &&
+                    Objects.equals(queryDistribution, that.queryDistribution);
         }
 
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof GatewayView;
-        }
-
+        @Override
         public int hashCode()
         {
-            final int prime = 59;
-            int result = 1;
-            final long gatewayStartTime = this.getGatewayStartTime();
-            result = result * prime + (int) (gatewayStartTime >>> 32 ^ gatewayStartTime);
-            final Object displayName = this.getDisplayName();
-            result = result * prime + (displayName == null ? 43 : displayName.hashCode());
-            final Object backendConfigurations = this.getBackendConfigurations();
-            result = result * prime + (backendConfigurations == null ? 43 : backendConfigurations.hashCode());
-            final Object queryHistory = this.getQueryHistory();
-            result = result * prime + (queryHistory == null ? 43 : queryHistory.hashCode());
-            final Object backendStates = this.getBackendStates();
-            result = result * prime + (backendStates == null ? 43 : backendStates.hashCode());
-            final Object queryDistribution = this.getQueryDistribution();
-            result = result * prime + (queryDistribution == null ? 43 : queryDistribution.hashCode());
-            return result;
+            return Objects.hash(gatewayStartTime, displayName, backendConfigurations, queryHistory, backendStates, queryDistribution);
         }
 
+        @Override
         public String toString()
         {
-            return "GatewayViewResource.GatewayView(gatewayStartTime="
-                    + this.getGatewayStartTime() + ", displayName="
-                    + this.getDisplayName() + ", backendConfigurations="
-                    + this.getBackendConfigurations() + ", queryHistory="
-                    + this.getQueryHistory() + ", backendStates="
-                    + this.getBackendStates() + ", queryDistribution="
-                    + this.getQueryDistribution() + ")";
+            return toStringHelper(this)
+                    .add("gatewayStartTime", gatewayStartTime)
+                    .add("displayName", displayName)
+                    .add("backendConfigurations", backendConfigurations)
+                    .add("queryHistory", queryHistory)
+                    .add("backendStates", backendStates)
+                    .add("queryDistribution", queryDistribution)
+                    .toString();
         }
     }
 }

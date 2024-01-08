@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 import static java.util.Objects.requireNonNull;
@@ -172,39 +173,31 @@ public class EntityEditorResource
             this.displayName = displayName;
         }
 
-        public boolean equals(final Object o)
+        @Override
+        public boolean equals(Object o)
         {
-            if (o == this) {
+            if (this == o) {
                 return true;
             }
-            if (!(o instanceof EntityView other)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            final Object displayName = this.getDisplayName();
-            final Object otherDisplayName = other.getDisplayName();
-            return Objects.equals(displayName, otherDisplayName);
+            EntityView that = (EntityView) o;
+            return Objects.equals(displayName, that.displayName);
         }
 
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof EntityView;
-        }
-
+        @Override
         public int hashCode()
         {
-            final int prime = 59;
-            int result = 1;
-            final Object displayName = this.getDisplayName();
-            result = result * prime + (displayName == null ? 43 : displayName.hashCode());
-            return result;
+            return Objects.hash(displayName);
         }
 
+        @Override
         public String toString()
         {
-            return "EntityEditorResource.EntityView(displayName=" + this.getDisplayName() + ")";
+            return toStringHelper(this)
+                    .add("displayName", displayName)
+                    .toString();
         }
     }
 }
