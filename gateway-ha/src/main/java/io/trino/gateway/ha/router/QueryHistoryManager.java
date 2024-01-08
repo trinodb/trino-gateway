@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 public interface QueryHistoryManager
 {
     void submitQueryDetail(QueryDetail queryDetail);
@@ -108,75 +110,41 @@ public interface QueryHistoryManager
             this.captureTime = captureTime;
         }
 
-        public boolean equals(final Object o)
+        @Override
+        public boolean equals(Object o)
         {
-            if (o == this) {
+            if (this == o) {
                 return true;
             }
-            if (!(o instanceof QueryDetail other)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            final Object queryId = this.getQueryId();
-            final Object otherQueryId = other.getQueryId();
-            if (!Objects.equals(queryId, otherQueryId)) {
-                return false;
-            }
-            final Object queryText = this.getQueryText();
-            final Object otherQueryText = other.getQueryText();
-            if (!Objects.equals(queryText, otherQueryText)) {
-                return false;
-            }
-            final Object user = this.getUser();
-            final Object otherUser = other.getUser();
-            if (!Objects.equals(user, otherUser)) {
-                return false;
-            }
-            final Object source = this.getSource();
-            final Object otherSource = other.getSource();
-            if (!Objects.equals(source, otherSource)) {
-                return false;
-            }
-            final Object backendUrl = this.getBackendUrl();
-            final Object otherBackendUrl = other.getBackendUrl();
-            if (!Objects.equals(backendUrl, otherBackendUrl)) {
-                return false;
-            }
-            return this.getCaptureTime() == other.getCaptureTime();
+            QueryDetail that = (QueryDetail) o;
+            return captureTime == that.captureTime &&
+                    Objects.equals(queryId, that.queryId) &&
+                    Objects.equals(queryText, that.queryText) &&
+                    Objects.equals(user, that.user) &&
+                    Objects.equals(source, that.source) &&
+                    Objects.equals(backendUrl, that.backendUrl);
         }
 
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof QueryDetail;
-        }
-
+        @Override
         public int hashCode()
         {
-            final int prime = 59;
-            int result = 1;
-            final Object queryId = this.getQueryId();
-            result = result * prime + (queryId == null ? 43 : queryId.hashCode());
-            final Object queryText = this.getQueryText();
-            result = result * prime + (queryText == null ? 43 : queryText.hashCode());
-            final Object user = this.getUser();
-            result = result * prime + (user == null ? 43 : user.hashCode());
-            final Object source = this.getSource();
-            result = result * prime + (source == null ? 43 : source.hashCode());
-            final Object backendUrl = this.getBackendUrl();
-            result = result * prime + (backendUrl == null ? 43 : backendUrl.hashCode());
-            final long captureTime = this.getCaptureTime();
-            result = result * prime + (int) (captureTime >>> 32 ^ captureTime);
-            return result;
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime);
         }
 
+        @Override
         public String toString()
         {
-            return "QueryHistoryManager.QueryDetail(queryId=" + this.getQueryId() + ", " +
-                    "queryText=" + this.getQueryText() + ", user=" + this.getUser() +
-                    ", source=" + this.getSource() + ", backendUrl=" + this.getBackendUrl() +
-                    ", captureTime=" + this.getCaptureTime() + ")";
+            return toStringHelper(this)
+                    .add("queryId", queryId)
+                    .add("queryText", queryText)
+                    .add("user", user)
+                    .add("source", source)
+                    .add("backendUrl", backendUrl)
+                    .add("captureTime", captureTime)
+                    .toString();
         }
     }
 }
