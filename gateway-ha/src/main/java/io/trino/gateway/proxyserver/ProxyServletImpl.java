@@ -102,6 +102,7 @@ public class ProxyServletImpl
     /**
      * Customize the response returned from remote server.
      */
+    @Override
     protected void onResponseContent(
             HttpServletRequest request,
             HttpServletResponse response,
