@@ -16,6 +16,8 @@ package io.trino.gateway.ha.clustermonitor;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 public class ClusterStats
 {
     private int runningQueryCount;
@@ -131,98 +133,48 @@ public class ClusterStats
         this.userQueuedCount = userQueuedCount;
     }
 
-    public boolean equals(final Object o)
+    @Override
+    public boolean equals(Object o)
     {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-        if (!(o instanceof ClusterStats other)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        if (!other.canEqual(this)) {
-            return false;
-        }
-        if (this.getRunningQueryCount() != other.getRunningQueryCount()) {
-            return false;
-        }
-        if (this.getQueuedQueryCount() != other.getQueuedQueryCount()) {
-            return false;
-        }
-        if (this.getBlockedQueryCount() != other.getBlockedQueryCount()) {
-            return false;
-        }
-        if (this.getNumWorkerNodes() != other.getNumWorkerNodes()) {
-            return false;
-        }
-        if (this.isHealthy() != other.isHealthy()) {
-            return false;
-        }
-        final Object clusterId = this.getClusterId();
-        final Object otherClusterId = other.getClusterId();
-        if (!Objects.equals(clusterId, otherClusterId)) {
-            return false;
-        }
-        final Object proxyTo = this.getProxyTo();
-        final Object otherProxyTo = other.getProxyTo();
-        if (!Objects.equals(proxyTo, otherProxyTo)) {
-            return false;
-        }
-        final Object externalUrl = this.getExternalUrl();
-        final Object otherExternalUrl = other.getExternalUrl();
-        if (!Objects.equals(externalUrl, otherExternalUrl)) {
-            return false;
-        }
-        final Object routingGroup = this.getRoutingGroup();
-        final Object otherRoutingGroup = other.getRoutingGroup();
-        if (!Objects.equals(routingGroup, otherRoutingGroup)) {
-            return false;
-        }
-        final Object userQueuedCount = this.getUserQueuedCount();
-        final Object otherUserQueuedCount = other.getUserQueuedCount();
-        return Objects.equals(userQueuedCount, otherUserQueuedCount);
+        ClusterStats stats = (ClusterStats) o;
+        return runningQueryCount == stats.runningQueryCount &&
+                queuedQueryCount == stats.queuedQueryCount &&
+                blockedQueryCount == stats.blockedQueryCount &&
+                numWorkerNodes == stats.numWorkerNodes &&
+                healthy == stats.healthy &&
+                Objects.equals(clusterId, stats.clusterId) &&
+                Objects.equals(proxyTo, stats.proxyTo) &&
+                Objects.equals(externalUrl, stats.externalUrl) &&
+                Objects.equals(routingGroup, stats.routingGroup) &&
+                Objects.equals(userQueuedCount, stats.userQueuedCount);
     }
 
-    protected boolean canEqual(final Object other)
-    {
-        return other instanceof ClusterStats;
-    }
-
+    @Override
     public int hashCode()
     {
-        final int prime = 59;
-        int result = 1;
-        result = result * prime + this.getRunningQueryCount();
-        result = result * prime + this.getQueuedQueryCount();
-        result = result * prime + this.getBlockedQueryCount();
-        result = result * prime + this.getNumWorkerNodes();
-        result = result * prime + (this.isHealthy() ? 79 : 97);
-        final Object clusterId = this.getClusterId();
-        result = result * prime + (clusterId == null ? 43 : clusterId.hashCode());
-        final Object proxyTo = this.getProxyTo();
-        result = result * prime + (proxyTo == null ? 43 : proxyTo.hashCode());
-        final Object externalUrl = this.getExternalUrl();
-        result = result * prime + (externalUrl == null ? 43 : externalUrl.hashCode());
-        final Object routingGroup = this.getRoutingGroup();
-        result = result * prime + (routingGroup == null ? 43 : routingGroup.hashCode());
-        final Object userQueuedCount = this.getUserQueuedCount();
-        result = result * prime + (userQueuedCount == null ? 43 : userQueuedCount.hashCode());
-        return result;
+        return Objects.hash(runningQueryCount, queuedQueryCount, blockedQueryCount, numWorkerNodes, healthy, clusterId, proxyTo, externalUrl, routingGroup, userQueuedCount);
     }
 
     @Override
     public String toString()
     {
-        return "ClusterStats{" +
-                "runningQueryCount=" + runningQueryCount +
-                ", queuedQueryCount=" + queuedQueryCount +
-                ", blockedQueryCount=" + blockedQueryCount +
-                ", numWorkerNodes=" + numWorkerNodes +
-                ", healthy=" + healthy +
-                ", clusterId='" + clusterId + '\'' +
-                ", proxyTo='" + proxyTo + '\'' +
-                ", externalUrl='" + externalUrl + '\'' +
-                ", routingGroup='" + routingGroup + '\'' +
-                ", userQueuedCount=" + userQueuedCount +
-                '}';
+        return toStringHelper(this)
+                .add("runningQueryCount", runningQueryCount)
+                .add("queuedQueryCount", queuedQueryCount)
+                .add("blockedQueryCount", blockedQueryCount)
+                .add("numWorkerNodes", numWorkerNodes)
+                .add("healthy", healthy)
+                .add("clusterId", clusterId)
+                .add("proxyTo", proxyTo)
+                .add("externalUrl", externalUrl)
+                .add("routingGroup", routingGroup)
+                .add("userQueuedCount", userQueuedCount)
+                .toString();
     }
 }

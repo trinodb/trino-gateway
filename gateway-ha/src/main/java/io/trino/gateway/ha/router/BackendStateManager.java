@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 public class BackendStateManager
 {
     @Nullable
@@ -76,46 +78,32 @@ public class BackendStateManager
             return this.state;
         }
 
-        public boolean equals(final Object o)
+        @Override
+        public boolean equals(Object o)
         {
-            if (o == this) {
+            if (this == o) {
                 return true;
             }
-            if (!(o instanceof BackendState other)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            if (!other.canEqual(this)) {
-                return false;
-            }
-            final Object name = this.getName();
-            final Object otherName = other.getName();
-            if (!Objects.equals(name, otherName)) {
-                return false;
-            }
-            final Object state = this.getState();
-            final Object otherState = other.getState();
-            return Objects.equals(state, otherState);
+            BackendState that = (BackendState) o;
+            return Objects.equals(name, that.name) && Objects.equals(state, that.state);
         }
 
-        protected boolean canEqual(final Object other)
-        {
-            return other instanceof BackendState;
-        }
-
+        @Override
         public int hashCode()
         {
-            final int prime = 59;
-            int result = 1;
-            final Object name = this.getName();
-            result = result * prime + (name == null ? 43 : name.hashCode());
-            final Object state = this.getState();
-            result = result * prime + (state == null ? 43 : state.hashCode());
-            return result;
+            return Objects.hash(name, state);
         }
 
+        @Override
         public String toString()
         {
-            return "BackendStateManager.BackendState(name=" + this.getName() + ", state=" + this.getState() + ")";
+            return toStringHelper(this)
+                    .add("name", name)
+                    .add("state", state)
+                    .toString();
         }
     }
 }
