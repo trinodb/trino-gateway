@@ -176,6 +176,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mvel</groupId>
+            <artifactId>mvel2</artifactId>
+            <version>2.5.1.Final</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${dep.postgresql.version}</version>
