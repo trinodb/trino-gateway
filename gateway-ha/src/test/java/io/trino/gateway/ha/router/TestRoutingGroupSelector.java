@@ -19,6 +19,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -27,6 +29,7 @@ import java.util.stream.Stream;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,6 +37,7 @@ import static org.mockito.Mockito.when;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestRoutingGroupSelector
 {
+    private static final Logger log = LoggerFactory.getLogger(TestRoutingGroupSelector.class);
     public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
     public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
 
@@ -123,6 +127,9 @@ public class TestRoutingGroupSelector
                         + "actions:\n"
                         + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
         fw.close();
+        file.getPath();
+        long etlLastModified = file.lastModified();
+        log.info("etl rule file created at: " + etlLastModified);
 
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(file.getPath());
@@ -147,6 +154,9 @@ public class TestRoutingGroupSelector
                         + "actions:\n"
                         + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
         fw.close();
+        long etl2LastModified = file.lastModified();
+        log.info("etl2 rule file created at: " + etl2LastModified);
+        assertNotEquals(etl2LastModified, etlLastModified);
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         assertEquals("etl2",
