@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -45,7 +45,7 @@ public class TestQueryHistoryManager
     {
         List<QueryHistoryManager.QueryDetail> queryDetails =
                 queryHistoryManager.fetchQueryHistory(Optional.empty());
-        assertEquals(0, queryDetails.size());
+        assertThat(queryDetails).isEmpty();
         QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
         queryDetail.setBackendUrl("http://localhost:9999");
         queryDetail.setSource("sqlWorkbench");
@@ -66,10 +66,10 @@ public class TestQueryHistoryManager
         queryDetails = queryHistoryManager.fetchQueryHistory(Optional.empty());
         assertTrue(queryDetails.get(0).getCaptureTime() > queryDetails.get(1).getCaptureTime());
         // All queries when user is empty
-        assertEquals(3, queryDetails.size());
+        assertThat(queryDetails).hasSize(3);
 
         queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of("other-user"));
         // Only 1 query when user is 'other-user'
-        assertEquals(1, queryDetails.size());
+        assertThat(queryDetails).hasSize(1);
     }
 }
