@@ -151,7 +151,7 @@ public class TestGatewayHaMultipleBackend
                 objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
 
         assertNotNull(backendConfiguration);
-        assertEquals(3, backendConfiguration.length);
+        assertThat(backendConfiguration).hasSize(3);
         assertTrue(backendConfiguration[0].isActive());
         assertTrue(backendConfiguration[1].isActive());
         assertTrue(backendConfiguration[2].isActive());
