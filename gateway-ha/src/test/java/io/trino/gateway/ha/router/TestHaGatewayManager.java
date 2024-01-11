@@ -27,6 +27,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.List;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -61,16 +62,16 @@ public class TestHaGatewayManager
     public void testGetBackends()
     {
         List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-        assertEquals(1, backends.size());
+        assertThat(backends).hasSize(1);
 
         backends = haGatewayManager.getActiveBackends("adhoc");
-        assertEquals(1, backends.size());
+        assertThat(backends).hasSize(1);
 
         backends = haGatewayManager.getActiveBackends("unknown");
-        assertEquals(0, backends.size());
+        assertThat(backends).isEmpty();
 
         backends = haGatewayManager.getActiveAdhocBackends();
-        assertEquals(1, backends.size());
+        assertThat(backends).hasSize(1);
     }
 
     @Test
@@ -85,7 +86,7 @@ public class TestHaGatewayManager
         backend.setExternalUrl("adhoc1.trino.gateway.io");
         haGatewayManager.updateBackend(backend);
         List<ProxyBackendConfiguration> backends = haGatewayManager.getActiveBackends("adhoc");
-        assertEquals(1, backends.size());
+        assertThat(backends).hasSize(1);
 
         backend.setActive(false);
         backend.setRoutingGroup("etl");
@@ -94,9 +95,9 @@ public class TestHaGatewayManager
         backend.setExternalUrl("adhoc2.trino.gateway.io");
         haGatewayManager.updateBackend(backend);
         backends = haGatewayManager.getActiveBackends("adhoc");
-        assertEquals(0, backends.size());
+        assertThat(backends).isEmpty();
         backends = haGatewayManager.getAllBackends();
-        assertEquals(2, backends.size());
+        assertThat(backends).hasSize(2);
         assertEquals("etl", backends.get(1).getRoutingGroup());
     }
 
@@ -105,11 +106,11 @@ public class TestHaGatewayManager
     public void testDeleteBackend()
     {
         List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-        assertEquals(2, backends.size());
+        assertThat(backends).hasSize(2);
         assertEquals("etl", backends.get(1).getRoutingGroup());
         haGatewayManager.deleteBackend(backends.get(0).getName());
         backends = haGatewayManager.getAllBackends();
-        assertEquals(1, backends.size());
+        assertThat(backends).hasSize(1);
     }
 
     @AfterAll

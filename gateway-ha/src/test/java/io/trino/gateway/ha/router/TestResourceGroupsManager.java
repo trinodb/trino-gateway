@@ -29,6 +29,7 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.ExactSelectorsDet
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -70,7 +71,7 @@ public class TestResourceGroupsManager
     public void testReadResourceGroup()
     {
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
-        assertEquals(resourceGroups.size(), 1);
+        assertThat(resourceGroups).hasSize(1);
 
         assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
         assertEquals("admin", resourceGroups.get(0).getName());
@@ -94,8 +95,7 @@ public class TestResourceGroupsManager
 
         ResourceGroupsDetail updated = resourceGroupManager.updateResourceGroup(resourceGroup, null);
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
-        assertEquals(1, resourceGroups.size());
-        assertEquals(resourceGroup, updated);
+        assertThat(resourceGroups).containsExactly(updated);
 
         /* Update resourceGroups that do not exist yet.
          *  In this case, new resourceGroups should be created. */
@@ -119,7 +119,7 @@ public class TestResourceGroupsManager
 
         resourceGroups = resourceGroupManager.readAllResourceGroups(null);
 
-        assertEquals(3, resourceGroups.size()); // updated 2 non-existing groups, so count should be 3
+        assertThat(resourceGroups).hasSize(3); // updated 2 non-existing groups, so count should be 3
 
         assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
         assertEquals("admin", resourceGroups.get(0).getName());
@@ -142,7 +142,7 @@ public class TestResourceGroupsManager
     public void testDeleteResourceGroup()
     {
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
-        assertEquals(3, resourceGroups.size());
+        assertThat(resourceGroups).hasSize(3);
 
         assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
         assertEquals(1L, resourceGroups.get(1).getResourceGroupId());
@@ -180,7 +180,7 @@ public class TestResourceGroupsManager
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
 
-        assertEquals(1, selectors.size());
+        assertThat(selectors).hasSize(1);
         assertEquals(0L, selectors.get(0).getResourceGroupId());
         assertEquals(0L, selectors.get(0).getPriority());
         assertEquals("data-platform-admin", selectors.get(0).getUserRegex());
@@ -208,8 +208,7 @@ public class TestResourceGroupsManager
         SelectorsDetail updated = resourceGroupManager.updateSelector(selectors.get(0), selector, null);
         selectors = resourceGroupManager.readAllSelectors(null);
 
-        assertEquals(1, selectors.size());
-        assertEquals(selectors.get(0), updated);
+        assertThat(selectors).containsExactly(updated);
 
         /* Update selectors that do not exist yet.
          *  In this case, a new selector should be created. */
@@ -224,8 +223,8 @@ public class TestResourceGroupsManager
         updated = resourceGroupManager.updateSelector(new SelectorsDetail(), selector, null);
         selectors = resourceGroupManager.readAllSelectors(null);
 
-        assertEquals(2, selectors.size());
-        assertEquals(selectors.get(1), updated);
+        assertThat(selectors).hasSize(2)
+                .element(1).isEqualTo(updated);
 
         /* Create selector with an already existing resourceGroupId.
          *  In this case, new selector should be created. */
@@ -240,8 +239,8 @@ public class TestResourceGroupsManager
         updated = resourceGroupManager.updateSelector(new SelectorsDetail(), selector, null);
         selectors = resourceGroupManager.readAllSelectors(null);
 
-        assertEquals(3, selectors.size());
-        assertEquals(selectors.get(2), updated);
+        assertThat(selectors).hasSize(3)
+                .element(2).isEqualTo(updated);
     }
 
     @Test
@@ -249,12 +248,12 @@ public class TestResourceGroupsManager
     public void testDeleteSelector()
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
-        assertEquals(3, selectors.size());
+        assertThat(selectors).hasSize(3);
         assertEquals(0L, selectors.get(0).getResourceGroupId());
         resourceGroupManager.deleteSelector(selectors.get(0), null);
         selectors = resourceGroupManager.readAllSelectors(null);
 
-        assertEquals(2, selectors.size());
+        assertThat(selectors).hasSize(2);
     }
 
     @Test
@@ -289,7 +288,7 @@ public class TestResourceGroupsManager
         List<GlobalPropertiesDetail> globalProperties = resourceGroupManager.readAllGlobalProperties(
                 null);
 
-        assertEquals(1, globalProperties.size());
+        assertThat(globalProperties).hasSize(1);
         assertEquals("cpu_quota_period", globalProperties.get(0).getName());
         assertEquals("1h", globalProperties.get(0).getValue());
     }
@@ -307,8 +306,7 @@ public class TestResourceGroupsManager
         List<GlobalPropertiesDetail> globalProperties = resourceGroupManager.readAllGlobalProperties(
                 null);
 
-        assertEquals(1, globalProperties.size());
-        assertEquals(globalProperties.get(0), updated);
+        assertThat(globalProperties).containsExactly(updated);
 
         try { // make sure that the name is cpu_quota_period
             GlobalPropertiesDetail invalidGlobalProperty = new GlobalPropertiesDetail();
