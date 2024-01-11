@@ -67,7 +67,7 @@ public class TestHaRoutingManager
             haRoutingManager.upateBackEndHealth(backend, false);
         }
 
-        assertEquals(haRoutingManager.provideBackendForRoutingGroup(groupName, ""),
-                "test_group0.trino.example.com");
+        assertEquals("test_group0.trino.example.com",
+                haRoutingManager.provideBackendForRoutingGroup(groupName, ""));
     }
 }

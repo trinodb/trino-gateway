@@ -96,7 +96,7 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "custom")
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
-        assertEquals(response1.body().string(), CUSTOM_RESPONSE);
+        assertEquals(CUSTOM_RESPONSE, response1.body().string());
 
         Request request2 =
                 new Request.Builder()
@@ -105,7 +105,7 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "custom")
                         .build();
         Response response2 = httpClient.newCall(request2).execute();
-        assertEquals(response2.code(), 404);
+        assertEquals(404, response2.code());
     }
 
     @Test
