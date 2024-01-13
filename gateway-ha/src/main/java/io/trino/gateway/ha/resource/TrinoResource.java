@@ -88,18 +88,14 @@ public class TrinoResource
             @PathParam("resourceGroupId") String resourceGroupIdStr,
             @QueryParam("useSchema") String useSchema)
     {
-        if (Strings.isNullOrEmpty(resourceGroupIdStr)) { // if query not specified, return all
-            return Response.ok(this.resourceGroupsManager.readAllResourceGroups(useSchema))
-                    .build();
-        }
         long resourceGroupId = Long.parseLong(resourceGroupIdStr);
         List<ResourceGroupsDetail> resourceGroup =
                 this.resourceGroupsManager.readResourceGroup(resourceGroupId, useSchema);
         return Response.ok(resourceGroup).build();
     }
 
-    @Path("/resourcegroup/update")
     @POST
+    @Path("/resourcegroup/update")
     public Response updateResourceGroup(
             String jsonPayload,
             @QueryParam("useSchema") String useSchema)
@@ -117,15 +113,12 @@ public class TrinoResource
         }
     }
 
-    @Path("/resourcegroup/delete/{resourceGroupId}")
     @POST
+    @Path("/resourcegroup/delete/{resourceGroupId}")
     public Response deleteResourceGroup(
             @PathParam("resourceGroupId") String resourceGroupIdStr,
             @QueryParam("useSchema") String useSchema)
     {
-        if (Strings.isNullOrEmpty(resourceGroupIdStr)) { // if query not specified, return all
-            throw new WebApplicationException("EntryType can not be null");
-        }
         long resourceGroupId = Long.parseLong(resourceGroupIdStr);
         resourceGroupsManager.deleteResourceGroup(resourceGroupId, useSchema);
         return Response.ok().build();
@@ -159,20 +152,17 @@ public class TrinoResource
     @GET
     @Path("/selector/read/{resourceGroupId}")
     public Response readSelector(
-            @QueryParam("resourceGroupId") String resourceGroupIdStr,
+            @PathParam("resourceGroupId") String resourceGroupIdStr,
             @QueryParam("useSchema") String useSchema)
     {
-        if (Strings.isNullOrEmpty(resourceGroupIdStr)) { // if query not specified, return all
-            return Response.ok(this.resourceGroupsManager.readAllSelectors(useSchema)).build();
-        }
         long resourceGroupId = Long.parseLong(resourceGroupIdStr);
         List<SelectorsDetail> selectors = this.resourceGroupsManager.readSelector(resourceGroupId,
                 useSchema);
         return Response.ok(selectors).build();
     }
 
-    @Path("/selector/update")
     @POST
+    @Path("/selector/update")
     public Response updateSelector(
             String jsonPayload,
             @QueryParam("useSchema") String useSchema)
@@ -194,8 +184,8 @@ public class TrinoResource
         }
     }
 
-    @Path("/selector/delete/")
     @POST
+    @Path("/selector/delete/")
     public Response deleteSelector(String jsonPayload,
             @QueryParam("useSchema")
             String useSchema)
@@ -248,17 +238,13 @@ public class TrinoResource
             @PathParam("name") String name,
             @QueryParam("useSchema") String useSchema)
     {
-        if (Strings.isNullOrEmpty(name)) {
-            return Response.ok(this.resourceGroupsManager.readAllGlobalProperties(useSchema))
-                    .build();
-        }
         List<GlobalPropertiesDetail> globalProperty =
                 this.resourceGroupsManager.readGlobalProperty(name, useSchema);
         return Response.ok(globalProperty).build();
     }
 
-    @Path("/globalproperty/update")
     @POST
+    @Path("/globalproperty/update")
     public Response updateGlobalProperty(
             String jsonPayload,
             @QueryParam("useSchema") String useSchema)
@@ -276,8 +262,8 @@ public class TrinoResource
         }
     }
 
-    @Path("/globalproperty/delete/{name}")
     @POST
+    @Path("/globalproperty/delete/{name}")
     public Response deleteGlobalProperty(
             @PathParam("name") String name,
             @QueryParam("useSchema") String useSchema)
