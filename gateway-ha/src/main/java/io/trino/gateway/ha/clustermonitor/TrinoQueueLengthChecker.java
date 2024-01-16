@@ -13,9 +13,10 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import io.trino.gateway.ha.router.TrinoQueueLengthRoutingTable;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,45 +37,22 @@ public class TrinoQueueLengthChecker
     @Override
     public void observe(List<ClusterStats> stats)
     {
-        Map<String, Map<String, Integer>> clusterQueueMap = new HashMap<String, Map<String, Integer>>();
-        Map<String, Map<String, Integer>> clusterRunningMap
-                = new HashMap<String, Map<String, Integer>>();
-        Map<String, Map<String, Integer>> userClusterQueuedCount
-                = new HashMap<>();
+        Table<String, String, Integer> clusterQueueMap = HashBasedTable.create();
+        Table<String, String, Integer> clusterRunningMap = HashBasedTable.create();
+        Table<String, String, Integer> userClusterQueuedCount = HashBasedTable.create();
 
         for (ClusterStats stat : stats) {
             if (!stat.isHealthy()) {
                 // Skip if the cluster isn't healthy
                 continue;
             }
-            if (!clusterQueueMap.containsKey(stat.getRoutingGroup())) {
-                clusterQueueMap.put(stat.getRoutingGroup(), new HashMap<String, Integer>()
-                        {
-                            {
-                                put(stat.getClusterId(), stat.getQueuedQueryCount());
-                            }
-                        });
-                clusterRunningMap.put(stat.getRoutingGroup(), new HashMap<String, Integer>()
-                        {
-                            {
-                                put(stat.getClusterId(), stat.getRunningQueryCount());
-                            }
-                        });
-            }
-            else {
-                clusterQueueMap.get(stat.getRoutingGroup()).put(stat.getClusterId(),
-                        stat.getQueuedQueryCount());
-                clusterRunningMap.get(stat.getRoutingGroup()).put(stat.getClusterId(),
-                        stat.getRunningQueryCount());
-            }
+            clusterQueueMap.put(stat.getRoutingGroup(), stat.getClusterId(), stat.getQueuedQueryCount());
+            clusterRunningMap.put(stat.getRoutingGroup(), stat.getClusterId(), stat.getRunningQueryCount());
 
             // Create inverse map from user -> {cluster-> count}
             if (stat.getUserQueuedCount() != null && !stat.getUserQueuedCount().isEmpty()) {
                 for (Map.Entry<String, Integer> queueCount : stat.getUserQueuedCount().entrySet()) {
-                    Map<String, Integer> clusterQueue = userClusterQueuedCount.getOrDefault(
-                            queueCount.getKey(), new HashMap<>());
-                    clusterQueue.put(stat.getClusterId(), queueCount.getValue());
-                    userClusterQueuedCount.put(queueCount.getKey(), clusterQueue);
+                    userClusterQueuedCount.put(queueCount.getKey(), stat.getClusterId(), queueCount.getValue());
                 }
             }
         }

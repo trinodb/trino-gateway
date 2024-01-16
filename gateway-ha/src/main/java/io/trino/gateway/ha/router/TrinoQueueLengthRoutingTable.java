@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Table;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.slf4j.Logger;
@@ -156,12 +158,8 @@ public class TrinoQueueLengthRoutingTable
                 }
                 else if (queueLengthMap.get(routingGroup).size() == 1) {
                     log.debug("Routing Group: [{}] has only 1 active backend.", routingGroup);
-                    weightedDistributionRouting.put(routingGroup, new TreeMap<Integer, String>()
-                            {
-                                {
-                                    put(MAX_WT, queueLengthMap.get(routingGroup).keys().nextElement());
-                                }
-                            });
+                    weightedDistributionRouting.put(routingGroup,
+                            new TreeMap<>(ImmutableMap.of(MAX_WT, queueLengthMap.get(routingGroup).keys().nextElement())));
                     routingGroupWeightSum.put(routingGroup, MAX_WT);
                     continue;
                 }
@@ -209,7 +207,7 @@ public class TrinoQueueLengthRoutingTable
     /**
      * Update the Routing Table only if a previously known backend has been deactivated.
      * Newly added backends are handled through
-     * {@link TrinoQueueLengthRoutingTable#updateRoutingTable(Map, Map, Map)}
+     * {@link TrinoQueueLengthRoutingTable#updateRoutingTable(Table, Table, Table)}
      * updateRoutingTable}
      */
     public void updateRoutingTable(String routingGroup, Set<String> backends)
@@ -240,9 +238,9 @@ public class TrinoQueueLengthRoutingTable
     /**
      * Update routing Table with new Queue Lengths.
      */
-    public void updateRoutingTable(Map<String, Map<String, Integer>> updatedQueueLengthMap,
-            Map<String, Map<String, Integer>> updatedRunningLengthMap,
-            Map<String, Map<String, Integer>> updatedUserQueueLengthMap)
+    public void updateRoutingTable(Table<String, String, Integer> updatedQueueLengthMap,
+            Table<String, String, Integer> updatedRunningLengthMap,
+            Table<String, String, Integer> updatedUserQueueLengthMap)
     {
         synchronized (lockObject) {
             log.debug("Update Routing table with new cluster queue lengths : [{}]",
@@ -251,31 +249,31 @@ public class TrinoQueueLengthRoutingTable
             userClusterQueueLengthMap.clear();
 
             if (updatedUserQueueLengthMap != null) {
-                for (String user : updatedUserQueueLengthMap.keySet()) {
+                for (String user : updatedUserQueueLengthMap.rowKeySet()) {
                     ConcurrentHashMap<String, Integer> clusterQueueMap =
-                            new ConcurrentHashMap<>(updatedUserQueueLengthMap.get(user));
+                            new ConcurrentHashMap<>(updatedUserQueueLengthMap.row(user));
                     userClusterQueueLengthMap.put(user, clusterQueueMap);
                 }
             }
 
-            for (String grp : updatedQueueLengthMap.keySet()) {
+            for (String grp : updatedQueueLengthMap.rowKeySet()) {
                 if (grp == null) {
                     continue;
                 }
                 ConcurrentHashMap<String, Integer> queueMap = new ConcurrentHashMap<>();
 
-                int maxQueueLen = Collections.max(updatedQueueLengthMap.get(grp).values());
-                int minQueueLen = Collections.min(updatedQueueLengthMap.get(grp).values());
+                int maxQueueLen = Collections.max(updatedQueueLengthMap.row(grp).values());
+                int minQueueLen = Collections.min(updatedQueueLengthMap.row(grp).values());
 
-                if (minQueueLen == maxQueueLen && updatedQueueLengthMap.get(grp).size() > 1
-                        && updatedRunningLengthMap.containsKey(grp)) {
+                if (minQueueLen == maxQueueLen && updatedQueueLengthMap.row(grp).size() > 1
+                        && updatedRunningLengthMap.containsRow(grp)) {
                     log.info("Queue lengths equal: {} for all clusters in the group {}."
                                     + " Falling back to Running Counts : {}", maxQueueLen, grp,
-                            updatedRunningLengthMap.get(grp));
-                    queueMap.putAll(updatedRunningLengthMap.get(grp));
+                            updatedRunningLengthMap.row(grp));
+                    queueMap.putAll(updatedRunningLengthMap.row(grp));
                 }
                 else {
-                    queueMap.putAll(updatedQueueLengthMap.get(grp));
+                    queueMap.putAll(updatedQueueLengthMap.row(grp));
                 }
                 clusterQueueLengthMap.put(grp, queueMap);
             }
