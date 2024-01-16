@@ -122,11 +122,7 @@
                     <failOnWarning>false</failOnWarning>
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
-                        <arg>
-                            -Xplugin:ErrorProne
-                            <!-- TODO: Enable DoubleBraceInitialization flag -->
-                            -Xep:DoubleBraceInitialization:OFF
-                        </arg>
+                        <arg>-Xplugin:ErrorProne</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
