@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,8 +50,8 @@ public class TestTrinoQueueLengthRoutingTable
 
     String mockUser = "user";
 
-    Map<String, Map<String, Integer>> clusterQueueMap;
-    Map<String, Map<String, Integer>> clusterRunningMap;
+    Table<String, String, Integer> clusterQueueMap;
+    Table<String, String, Integer> clusterRunningMap;
 
     @BeforeAll
     public void setUp()
@@ -71,8 +73,8 @@ public class TestTrinoQueueLengthRoutingTable
         for (int i = 0; i < NUM_BACKENDS; i++) {
             backendManager.deactivateBackend(mockRoutingGroup + i);
         }
-        clusterQueueMap = new HashMap<>();
-        clusterRunningMap = new HashMap<>();
+        clusterQueueMap = HashBasedTable.create();
+        clusterRunningMap = HashBasedTable.create();
     }
 
     private void addMockBackends(String groupName, int numBackends,
@@ -97,16 +99,14 @@ public class TestTrinoQueueLengthRoutingTable
         int mockQueueLength = 0;
         String backend;
         Random rand = new Random();
-        Map<String, Integer> queueLengths = new HashMap<>();
 
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
             backendManager.activateBackend(backend);
             mockQueueLength = mockQueueLength + rand.nextInt(100);
-            queueLengths.put(backend, mockQueueLength);
+            clusterQueueMap.put(groupName, backend, mockQueueLength);
         }
 
-        clusterQueueMap.put(groupName, queueLengths);
         // Running counts don't matter if queue lengths are random.
         routingTable.updateRoutingTable(clusterQueueMap, clusterRunningMap, null);
     }
@@ -119,20 +119,15 @@ public class TestTrinoQueueLengthRoutingTable
         int mockRunningLength = 0;
         String backend;
 
-        Map<String, Integer> queueLengths = new HashMap<>();
-        Map<String, Integer> runningLengths = new HashMap<>();
-
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
             backendManager.activateBackend(backend);
             mockQueueLength = mockQueueLength + queueLengthDistributiveFactor;
             mockRunningLength = mockRunningLength + runningLenDistributiveFactor;
-            queueLengths.put(backend, mockQueueLength);
-            runningLengths.put(backend, mockRunningLength);
+            clusterQueueMap.put(groupName, backend, mockQueueLength);
+            clusterRunningMap.put(groupName, backend, mockRunningLength);
         }
 
-        clusterQueueMap.put(groupName, queueLengths);
-        clusterRunningMap.put(groupName, runningLengths);
         routingTable.updateRoutingTable(clusterQueueMap, clusterRunningMap, null);
     }
 
@@ -146,23 +141,19 @@ public class TestTrinoQueueLengthRoutingTable
 
         Map<String, Integer> queueLengths = new HashMap<>();
         Map<String, Integer> runningLengths = new HashMap<>();
-        Map<String, Map<String, Integer>> userClusterQueue = new HashMap<>();
+        Table<String, String, Integer> userClusterQueue = HashBasedTable.create();
 
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
             backendManager.activateBackend(backend);
-            queueLengths.put(backend, mockQueueLength);
+            clusterQueueMap.put(groupName, backend, mockQueueLength);
             runningLengths.put(backend, mockRunningLength);
+            clusterRunningMap.put(groupName, backend, mockRunningLength);
             if (userQueues.size() > i) {
-                Map<String, Integer> userQueueMap =
-                        userClusterQueue.getOrDefault(mockUser, new HashMap<>());
-                userQueueMap.put(backend, userQueues.get(i));
-                userClusterQueue.put(mockUser, userQueueMap);
+                userClusterQueue.put(mockUser, backend, userQueues.get(i));
             }
         }
 
-        clusterQueueMap.put(groupName, queueLengths);
-        clusterRunningMap.put(groupName, runningLengths);
         routingTable.updateRoutingTable(clusterQueueMap, clusterRunningMap, userClusterQueue);
     }
 
@@ -334,7 +325,7 @@ public class TestTrinoQueueLengthRoutingTable
                 if (numBk > 1) {
                     // With equal weights, the algorithm randomly chooses from the list. Check that the
                     // distribution spans atleast half of the routing group.
-                    assertTrue(routingDistribution.size() >= clusterQueueMap.get(mockRoutingGroup).size() / 2);
+                    assertTrue(routingDistribution.size() >= clusterQueueMap.row(mockRoutingGroup).size() / 2);
                 }
                 else {
                     assertEquals(Integer.valueOf(numRequests), routingDistribution.get(mockRoutingGroup + '0'));
@@ -422,9 +413,8 @@ public class TestTrinoQueueLengthRoutingTable
                 Executors.newScheduledThreadPool(1);
 
         final Runnable activeClusterMonitor = () -> {
-            Map<String, Integer> queueLenghts = new HashMap<>();
             String backend;
-            int queueLen = 0;
+            int queueLen;
             for (int i = 0; i < numBk; i++) {
                 backend = mockRoutingGroup + i;
                 if (globalToggle.get()) {
@@ -433,11 +423,10 @@ public class TestTrinoQueueLengthRoutingTable
                 else {
                     queueLen = (i < Math.floor((float) numBk / 2)) ? 100 : 75;
                 }
-
-                queueLenghts.put(backend, queueLen);
+                clusterQueueMap.put(mockRoutingGroup, backend, queueLen);
             }
             globalToggle.set(!globalToggle.get());
-            clusterQueueMap.put(mockRoutingGroup, queueLenghts);
+
             routingTable.updateRoutingTable(clusterQueueMap, clusterQueueMap, null);
         };
 

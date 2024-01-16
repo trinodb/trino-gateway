@@ -16,6 +16,7 @@ package io.trino.gateway.ha.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.common.collect.ImmutableMap;
 import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
@@ -29,7 +30,6 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,13 +107,10 @@ public class TestLbAuthenticator
     public void testPresetUsers()
             throws Exception
     {
-        Map presetUsers = new HashMap<String, UserConfiguration>()
-        {
-            {
-                this.put("user1", new UserConfiguration("priv1, priv2", "pass1"));
-                this.put("user2", new UserConfiguration("priv2, priv2", "pass2"));
-            }
-        };
+        Map<String, UserConfiguration> presetUsers = ImmutableMap.of(
+                "user1", new UserConfiguration("priv1, priv2", "pass1"),
+                "user2", new UserConfiguration("priv2, priv2", "pass2"));
+
         LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers);
 
         assertTrue(authentication
@@ -163,13 +160,9 @@ public class TestLbAuthenticator
         FormAuthConfiguration formAuthConfig = new FormAuthConfiguration();
         formAuthConfig.setSelfSignKeyPair(keyPair);
 
-        Map presetUsers = new HashMap<String, UserConfiguration>()
-        {
-            {
-                this.put("user1", new UserConfiguration("priv1, priv2", "pass1"));
-                this.put("user2", new UserConfiguration("priv2, priv2", "pass2"));
-            }
-        };
+        Map<String, UserConfiguration> presetUsers = ImmutableMap.of(
+                "user1", new UserConfiguration("priv1, priv2", "pass1"),
+                "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
         LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers);
         Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
