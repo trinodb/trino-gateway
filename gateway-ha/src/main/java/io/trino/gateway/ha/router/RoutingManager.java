@@ -16,7 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.BackendStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.HttpMethod;
@@ -47,7 +47,7 @@ public abstract class RoutingManager
     private final LoadingCache<String, String> queryIdBackendCache;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
-    private final ConcurrentHashMap<String, Boolean> backendToHealth;
+    private final ConcurrentHashMap<String, BackendStatus> backendToHealth;
 
     public RoutingManager(GatewayBackendManager gatewayBackendManager)
     {
@@ -66,7 +66,7 @@ public abstract class RoutingManager
                                     }
                                 });
 
-        this.backendToHealth = new ConcurrentHashMap<String, Boolean>();
+        this.backendToHealth = new ConcurrentHashMap<>();
     }
 
     protected GatewayBackendManager getGatewayBackendManager()
@@ -125,21 +125,10 @@ public abstract class RoutingManager
         return backendAddress;
     }
 
-    public void upateBackEndHealth(String backendId, Boolean value)
+    public void updateBackendHealth(String backendId, BackendStatus value)
     {
         log.info("backend {} isHealthy {}", backendId, value);
         backendToHealth.put(backendId, value);
-    }
-
-    public void updateBackEndHealthDB(ClusterStats stats)
-    {
-        String name = stats.getClusterId();
-        if (stats.isHealthy()) {
-            gatewayBackendManager.activateBackend(name);
-        }
-        else {
-            gatewayBackendManager.deactivateBackend(name);
-        }
     }
 
     /**
@@ -193,10 +182,10 @@ public abstract class RoutingManager
             log.error("backends can not be empty");
             return true;
         }
-        Boolean isHealthy = backendToHealth.get(backendId);
+        BackendStatus isHealthy = backendToHealth.get(backendId);
         if (isHealthy == null) {
             return true;
         }
-        return !isHealthy;
+        return isHealthy != BackendStatus.HEALTHY;
     }
 }

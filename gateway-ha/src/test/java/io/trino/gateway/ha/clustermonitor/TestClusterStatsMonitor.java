@@ -68,6 +68,6 @@ public class TestClusterStatsMonitor
 
         ClusterStats stats = monitor.monitor(proxyBackend);
         assertThat(stats.getClusterId()).isEqualTo("test_cluster");
-        assertThat(stats.isHealthy()).isTrue();
+        assertThat(stats.getBackendStatus()).isEqualTo(BackendStatus.HEALTHY);
     }
 }

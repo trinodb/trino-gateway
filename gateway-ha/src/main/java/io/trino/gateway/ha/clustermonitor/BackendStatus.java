@@ -13,23 +13,13 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
-import io.trino.gateway.ha.router.RoutingManager;
-
-public class HealthCheckObserver
-        implements TrinoClusterStatsObserver
-{
-    private final RoutingManager routingManager;
-
-    public HealthCheckObserver(RoutingManager routingManager)
-    {
-        this.routingManager = routingManager;
-    }
-
-    @Override
-    public void observe(java.util.List<ClusterStats> clustersStats)
-    {
-        for (ClusterStats clusterStats : clustersStats) {
-            routingManager.updateBackendHealth(clusterStats.getClusterId(), clusterStats.getBackendStatus());
-        }
-    }
+/**
+ * Healthy state is defined as backends are healthy and ready to be served
+ * Pending state is defined as when the backend is switched from inactive to active. It will wait until healthcheck returns success before turning backend to healthy
+ * Unhealthy state is defined as backends are returning error or not responding to healthcheck.
+ */
+public enum BackendStatus {
+  HEALTHY,
+  PENDING,
+  UNHEALTHY
 }

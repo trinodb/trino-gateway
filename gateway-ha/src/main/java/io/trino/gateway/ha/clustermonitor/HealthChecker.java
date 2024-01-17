@@ -32,7 +32,7 @@ public class HealthChecker
     public void observe(List<ClusterStats> clustersStats)
     {
         for (ClusterStats clusterStats : clustersStats) {
-            if (!clusterStats.isHealthy()) {
+            if (clusterStats.getBackendStatus() == BackendStatus.UNHEALTHY) {
                 notifyUnhealthyCluster(clusterStats);
             }
             else {

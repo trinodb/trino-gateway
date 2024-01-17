@@ -43,7 +43,7 @@ public class TrinoQueueLengthChecker
                 = new HashMap<>();
 
         for (ClusterStats stat : stats) {
-            if (!stat.isHealthy()) {
+            if (stat.getBackendStatus() != BackendStatus.HEALTHY) {
                 // Skip if the cluster isn't healthy
                 continue;
             }
