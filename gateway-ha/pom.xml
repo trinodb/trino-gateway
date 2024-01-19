@@ -109,6 +109,12 @@
 
         <dependency>
             <groupId>io.airlift</groupId>
+            <artifactId>aircompressor</artifactId>
+            <version>0.27</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
             <artifactId>bootstrap</artifactId>
         </dependency>
 
@@ -178,6 +184,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-parser</artifactId>
+            <version>440</version>
+        </dependency>
+
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
@@ -185,6 +197,11 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
         <dependency>
