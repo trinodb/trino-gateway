@@ -47,6 +47,10 @@ public class ClusterStatsJdbcMonitor
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
 
+    private static final String NODES_QUERY = "SELECT COUNT(*) as count "
+            + "FROM runtime.nodes "
+            + "WHERE state = ?";
+
     public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration)
     {
         this.backendStateConfiguration = backendStateConfiguration;
@@ -98,9 +102,19 @@ public class ClusterStatsJdbcMonitor
             while (rs.next()) {
                 partialState.put(rs.getString("state"), rs.getInt("count"));
             }
-            clusterStats.setHealthy(true);
+            clusterStats.setBackendStatus(BackendStatus.HEALTHY);
             clusterStats.setQueuedQueryCount(partialState.getOrDefault("QUEUED", 0));
             clusterStats.setRunningQueryCount(partialState.getOrDefault("RUNNING", 0));
+            // fetch active workers
+            stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor())
+                .callWithTimeout(() -> conn.prepareStatement(NODES_QUERY), 10, TimeUnit.SECONDS);
+            stmt.setString(1, "active");
+            rs = stmt.executeQuery();
+            int numOfWorkers = 0;
+            while (rs.next()) {
+                numOfWorkers = rs.getInt("count");
+            }
+            clusterStats.setNumWorkerNodes(numOfWorkers);
             return clusterStats;
         }
         catch (TimeoutException e) {

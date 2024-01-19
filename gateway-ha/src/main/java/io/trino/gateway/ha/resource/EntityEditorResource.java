@@ -18,7 +18,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.dropwizard.views.common.View;
+import io.trino.gateway.ha.clustermonitor.BackendStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -60,12 +62,15 @@ public class EntityEditorResource
     private final ResourceGroupsManager resourceGroupsManager;
     private final RoutingManager routingManager;
 
+    private final BackendStateManager backendStateManager;
+
     @Inject
-    public EntityEditorResource(GatewayBackendManager gatewayBackendManager, ResourceGroupsManager resourceGroupsManager, RoutingManager routingManager)
+    public EntityEditorResource(GatewayBackendManager gatewayBackendManager, ResourceGroupsManager resourceGroupsManager, RoutingManager routingManager, BackendStateManager backendStateManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
     }
 
     @GET
@@ -100,8 +105,9 @@ public class EntityEditorResource
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
-                    log.info("Setting up the backend {} with healthy state", backend.getName());
-                    routingManager.upateBackEndHealth(backend.getName(), true);
+                    log.info("Setting up the backend {} with pending state", backend.getName());
+                    routingManager.updateBackendHealth(backend.getName(), BackendStatus.PENDING);
+                    backendStateManager.updateHealthState(backend.getName(), BackendStatus.PENDING);
                     break;
                 case RESOURCE_GROUP:
                     ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,

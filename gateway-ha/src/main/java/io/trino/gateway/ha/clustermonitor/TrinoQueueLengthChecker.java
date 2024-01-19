@@ -42,7 +42,7 @@ public class TrinoQueueLengthChecker
         Table<String, String, Integer> userClusterQueuedCount = HashBasedTable.create();
 
         for (ClusterStats stat : stats) {
-            if (!stat.isHealthy()) {
+            if (stat.getBackendStatus() != BackendStatus.HEALTHY) {
                 // Skip if the cluster isn't healthy
                 continue;
             }

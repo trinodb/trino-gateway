@@ -72,7 +72,7 @@ public class ClusterStatsHttpMonitor
             clusterStats.setQueuedQueryCount((int) result.get("queuedQueries"));
             clusterStats.setRunningQueryCount((int) result.get("runningQueries"));
             clusterStats.setBlockedQueryCount((int) result.get("blockedQueries"));
-            clusterStats.setHealthy(clusterStats.getNumWorkerNodes() > 0);
+            clusterStats.setBackendStatus(clusterStats.getNumWorkerNodes() > 0 ? BackendStatus.HEALTHY : BackendStatus.UNHEALTHY);
             clusterStats.setProxyTo(backend.getProxyTo());
             clusterStats.setExternalUrl(backend.getExternalUrl());
             clusterStats.setRoutingGroup(backend.getRoutingGroup());

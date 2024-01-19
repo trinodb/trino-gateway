@@ -24,7 +24,7 @@ public class ClusterStats
     private int queuedQueryCount;
     private int blockedQueryCount;
     private int numWorkerNodes;
-    private boolean healthy;
+    private BackendStatus backendStatus = BackendStatus.UNHEALTHY;
     private String clusterId;
     private String proxyTo;
     private String externalUrl;
@@ -73,14 +73,14 @@ public class ClusterStats
         this.numWorkerNodes = numWorkerNodes;
     }
 
-    public boolean isHealthy()
+    public BackendStatus getBackendStatus()
     {
-        return this.healthy;
+        return this.backendStatus;
     }
 
-    public void setHealthy(boolean healthy)
+    public void setBackendStatus(BackendStatus backendStatus)
     {
-        this.healthy = healthy;
+        this.backendStatus = backendStatus;
     }
 
     public String getClusterId()
@@ -147,7 +147,7 @@ public class ClusterStats
                 queuedQueryCount == stats.queuedQueryCount &&
                 blockedQueryCount == stats.blockedQueryCount &&
                 numWorkerNodes == stats.numWorkerNodes &&
-                healthy == stats.healthy &&
+                backendStatus == stats.backendStatus &&
                 Objects.equals(clusterId, stats.clusterId) &&
                 Objects.equals(proxyTo, stats.proxyTo) &&
                 Objects.equals(externalUrl, stats.externalUrl) &&
@@ -158,7 +158,7 @@ public class ClusterStats
     @Override
     public int hashCode()
     {
-        return Objects.hash(runningQueryCount, queuedQueryCount, blockedQueryCount, numWorkerNodes, healthy, clusterId, proxyTo, externalUrl, routingGroup, userQueuedCount);
+        return Objects.hash(runningQueryCount, queuedQueryCount, blockedQueryCount, numWorkerNodes, backendStatus, clusterId, proxyTo, externalUrl, routingGroup, userQueuedCount);
     }
 
     @Override
@@ -169,7 +169,7 @@ public class ClusterStats
                 .add("queuedQueryCount", queuedQueryCount)
                 .add("blockedQueryCount", blockedQueryCount)
                 .add("numWorkerNodes", numWorkerNodes)
-                .add("healthy", healthy)
+                .add("healthy", backendStatus)
                 .add("clusterId", clusterId)
                 .add("proxyTo", proxyTo)
                 .add("externalUrl", externalUrl)
