@@ -7,10 +7,8 @@ A load balancer, proxy server, and configurable routing gateway for multiple
 
 Find out more details from our documentation:
 
-* [Configuration](./docs/configuration.md)
-* [Design](./docs/design.md)
-* [Development](./docs/development.md)
 * [Quickstart](./docs/quickstart.md)
+* [Installation](./docs/installation.md)
 * [Security](./docs/security.md)
 * [Operation](./docs/operation.md)
 * [Gateway API](./docs/gateway-api.md)
@@ -18,6 +16,8 @@ Find out more details from our documentation:
 * [Routing rules](./docs/routing-rules.md)
 * [References](./docs/references.md)
 * [Release notes](./docs/release-notes.md)
+* [Design](./docs/design.md)
+* [Development](./docs/development.md)
 * [Contributing](./.github/CONTRIBUTING.md)
 
 <img src="./docs/assets/logos/trino-gateway-v.png"/>
