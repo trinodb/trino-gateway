@@ -18,6 +18,17 @@
 
 # Release notes
 
+## Trino Gateway 5 (24 Jan 2024)
+
+[gateway-ha-5-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar)
+
+* Add support for OAuth 2 audience use. (https://github.com/trinodb/trino-gateway/pull/164)
+* Add quickstart scripts and documentation. (https://github.com/trinodb/trino-gateway/pull/110)
+* Add project logo. (https://github.com/trinodb/trino-gateway/pull/111)
+* Prevent ignoring HTTP header configuration. (https://github.com/trinodb/trino-gateway/issue/100)
+
+[Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/168)
+
 ## Trino Gateway 4 (30 Nov 2023)
 
 [gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
@@ -32,6 +43,8 @@
   issues with update of many core dependencies. (https://github.com/trinodb/trino-gateway/pull/59)
 * Avoid failure when unhandled OIDC properties are present. (https://github.com/trinodb/trino-gateway/pull/69)
 * Prevent failures resulting from reloading and parsing rules file. (https://github.com/trinodb/trino-gateway/pull/5)
+
+[Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/73)
 
 ## Trino Gateway 3 (26 Sep 2023)
 
@@ -53,3 +66,5 @@ Gateway](https://github.com/lyft/presto-gateway/) 1.9.5 codebase
 * Require Java 17 for build and runtime. (https://github.com/trinodb/trino-gateway/pull/16)
 * Deactivate clusters with zero workers. (https://github.com/trinodb/trino-gateway/pull/13)
 * Remove concurrency issue from repeated rules file loading. (https://github.com/trinodb/trino-gateway/pull/9)
+
+[Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/52)
