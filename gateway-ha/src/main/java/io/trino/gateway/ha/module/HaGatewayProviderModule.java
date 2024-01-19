@@ -30,6 +30,7 @@ import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
+import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
@@ -149,7 +150,7 @@ public class HaGatewayProviderModule
     }
 
     private ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
-                                         RoutingManager routingManager)
+            RoutingManager routingManager)
     {
         ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create(
                 environment,
@@ -159,9 +160,10 @@ public class HaGatewayProviderModule
         RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
         // Use rules engine if enabled
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
+        RequestAnalyzerConfig requestAnalyzerConfig = configuration.getRequestAnalyzerConfig();
         if (routingRulesConfig.isRulesEngineEnabled()) {
             String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-            routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
+            routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, requestAnalyzerConfig);
         }
 
         return new QueryIdCachingProxyHandler(
@@ -211,7 +213,7 @@ public class HaGatewayProviderModule
     @Provides
     @Singleton
     public ProxyServer provideGateway(QueryHistoryManager queryHistoryManager,
-                                        RoutingManager routingManager)
+            RoutingManager routingManager)
     {
         ProxyServer gateway = null;
         if (configuration.getRequestRouter() != null) {

@@ -37,7 +37,10 @@ actions:
 
 In the condition, you can access the methods of a
 [HttpServletRequest](https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html)
-object called `request`. There should be at least one action of the form
+object called `request`. Rules may also utilize [trinoRequestUser](#trinorequestuser) 
+and [trinoQueryProperties](#TrinoQueryProperties) 
+objects, which provide information about the user and query respectively.
+There should be at least one action of the form
 `result.put(\"routingGroup\", \"foo\")` which says that if a request satisfies
 the condition, it should be routed to `foo`.
 
@@ -58,6 +61,57 @@ condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
 ```
 
 If no rules match, then request is routed to adhoc.
+
+### TrinoRequestUser
+
+This class attempts to extract the user from a request. In order, it attempts
+1. The `X-Trino-User` header
+2. The `Authorization: Basic` header
+3. The `Authorization: Bearer` header. Requires configuring an OAuth2 User Info URL
+4. The `Trino-UI-Token` or `__Secure-Trino-ID-Token` cookie
+
+Kerberos and Certificate authentication are not currently supported. 
+If the request contains the `Authorization: Bearer` header, an attempt will be made to treat the
+token as a JWT and deserialize it. If this is successful, the value of the claim named in `requestAnalyzerConfig.tokenUserField`
+is used as the username. By default, this is the `email` claim. If the token is not a valid JWT,
+and `requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token will be exchanged with the
+Info URL. Responses are cached for 10 minutes to avoid triggering rate limits. 
+
+You may call `trinoRequestUser.getUser()` and  
+`trinoRequestUser.getUserInfo()` in your routing rules. If a user was not successfully extracted,
+`trinoRequestUser.getUser()` will return an empty [Optional](https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html).
+`trinoRequestUser.getUserInfo()` will return an [Optional\<UserInfo\>](https://www.javadoc.io/doc/com.nimbusds/oauth2-oidc-sdk/5.34/com/nimbusds/openid/connect/sdk/claims/UserInfo.html)
+if a token is successfully exchanged with the `oauthTokenInfoUrl`, and an empty `Optional` otherwise.
+
+User extraction is only available if enabled by configuring `requestAnalyzerConfig.isAnalyzeRequest = True`
+
+### TrinoQueryProperties
+
+This class attempts to parse the body of a request as SQL. Note that only a syntactic analysis is performed! If a query
+references a view, then that view will not be expanded, and tables referenced by the view will not be recognized.
+A routing rule can call the following methods on the `trinoQueryProperties` object:   
+* `boolean isQuery()`: is the request a valid SQL query. Note that this will return false for invalid SQL.
+* `String getQueryType()`: the class name of the `Statement`, e.g. `ShowCreate`. Note that these are not mapped
+to the `ResourceGroup` query types. For a full list of potential query types, see the classes in 
+[STATEMENT_QUERY_TYPES](https://github.com/trinodb/trino/blob/2a882933937427e28ea0a3906ab13a60bcb4faad/core/trino-main/src/main/java/io/trino/util/StatementUtils.java#L170)
+* `String getDefaultCatalog()`: the default catalog, if set. It may or may not be referenced in the actual SQL
+* `String getDefaultSchema()`: the default schema,  if set. It may or may not be referenced in the actual SQL
+* `Set<String> getCatalogs()`: the set of catalogs used in the query. Includes the default catalog if used by 
+a non-fully qualified table reference
+* `Set<String> getSchemas()`: the set of schemas used in the query. Includes the default schema if used by
+  a non-fully qualified table reference
+* `Set<String> getCatalogSchemas()` the set of qualified schemas used in the query, in the form `cat.schem` 
+* `boolean tablesContains(String testName)` returns true if the query contains a reference to the table `testName`.
+`testName` should be fully qualified, for example `testcat.testschema.testtable`
+* `Set<QualifiedName> getTables()`: the set of tables used in the query. These are fully qualified, any partially
+qualified table reference in the SQL will be qualified by the default catalog and schema.
+* `String getBody()`: the raw request body
+
+`TrinoQueryProperties` is only available if enabled by configuring `requestAnalyzerConfig.isAnalyzeRequest = True`.
+Support for [V2 style request structure](https://github.com/trinodb/trino/wiki/Trino-v2-client-protocol#submit-a-query) 
+is enabled by setting `requestAnalyzerConfig.isClientsUseV2Format = True`. By default, the max body size is 
+1,000,000 characters, this can be modified by configuring `requestAnalyzerConfig.maxBodySize`.
+
 
 ### Execution of Rules
 
