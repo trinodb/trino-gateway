@@ -18,7 +18,7 @@ import io.trino.gateway.ha.security.LbOAuthManager.OidcTokens;
 import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestOidcToken
 {
@@ -44,10 +44,10 @@ public class TestOidcToken
                 """;
         OidcTokens oidcTokens = new ObjectMapper().readValue(jsonStr, OidcTokens.class);
 
-        assertEquals("ABC235234", oidcTokens.getIdToken());
-        assertEquals("AcessABCD123", oidcTokens.getAccessToken());
-        assertEquals("RefreshTKN", oidcTokens.getRefreshToken());
-        assertEquals("123456", oidcTokens.getExpiresIn());
-        assertEquals("global", oidcTokens.getScope());
+        assertThat(oidcTokens.getIdToken()).isEqualTo("ABC235234");
+        assertThat(oidcTokens.getAccessToken()).isEqualTo("AcessABCD123");
+        assertThat(oidcTokens.getRefreshToken()).isEqualTo("RefreshTKN");
+        assertThat(oidcTokens.getExpiresIn()).isEqualTo("123456");
+        assertThat(oidcTokens.getScope()).isEqualTo("global");
     }
 }

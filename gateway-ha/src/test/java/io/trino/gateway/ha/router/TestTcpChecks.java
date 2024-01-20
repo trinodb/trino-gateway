@@ -22,10 +22,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -57,7 +54,7 @@ public class TestTcpChecks
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(rulesFile);
 
-        assertEquals("cli", routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("cli");
     }
 
     @Test
@@ -71,15 +68,15 @@ public class TestTcpChecks
         ConnectionChecker checker = new ConnectionChecker();
         ConnectionCheck check = spy(checker.getChecker("abc", 1111, checkInterval, 1, 0));
         doReturn(mock(Socket.class)).when(check).makeSocket("abc", 1111);
-        assertEquals(ConnectionCheck.TCP_CHECK_SUCCESS, check.tcpCheck());
+        assertThat(check.tcpCheck()).isEqualTo(ConnectionCheck.TCP_CHECK_SUCCESS);
 
         // If our inteval to check the request is 1000ms then connection check is needed
         TimeUnit.SECONDS.sleep(2);
-        assertTrue(check.isCheckNeeded());
+        assertThat(check.isCheckNeeded()).isTrue();
 
         // If the inerval to check 1000 ms then we won't need a check
         TimeUnit.MILLISECONDS.sleep(100);
-        assertFalse(check.isCheckNeeded());
+        assertThat(check.isCheckNeeded()).isFalse();
     }
 
     @Test
@@ -106,26 +103,26 @@ public class TestTcpChecks
         for (int i = 0; i < failcount; ++i) {
             // wait for checkinterval, fail till failcount is reached to disable the check
             TimeUnit.MILLISECONDS.sleep(1100);
-            assertNotEquals(ConnectionCheck.TCP_CHECK_SUCCESS, check.tcpCheck());
+            assertThat(check.tcpCheck()).isNotEqualTo(ConnectionCheck.TCP_CHECK_SUCCESS);
         }
         // Make the server available and check if the failure contines for disableDuration
         doReturn(mock(Socket.class)).when(check).makeSocket(host, port);
         TimeUnit.SECONDS.sleep(6);
-        assertNotEquals(ConnectionCheck.TCP_CHECK_SUCCESS, check.tcpCheck());
+        assertThat(check.tcpCheck()).isNotEqualTo(ConnectionCheck.TCP_CHECK_SUCCESS);
         TimeUnit.SECONDS.sleep(6);
-        assertEquals(ConnectionCheck.TCP_CHECK_SUCCESS, check.tcpCheck());
+        assertThat(check.tcpCheck()).isEqualTo(ConnectionCheck.TCP_CHECK_SUCCESS);
 
         // We maintain a map of the checkers, so verify that we got the same check back, as before
         Object checkObj = checker.getChecker(host, port, checkInterval,
                 failcount, disableDuration);
-        assertEquals(checkObj, checker.getChecker(host, port, checkInterval,
-                failcount, disableDuration));
+        assertThat(checker.getChecker(host, port, checkInterval, failcount, disableDuration))
+                .isEqualTo(checkObj);
 
-        assertNotEquals(checkObj, checker.getChecker(host, port, checkInterval + 10,
-                failcount, disableDuration));
-        assertNotEquals(checkObj, checker.getChecker(host, port, checkInterval,
-                failcount + 1, disableDuration));
-        assertNotEquals(checkObj, checker.getChecker(host, port, checkInterval,
-                failcount, disableDuration + 10));
+        assertThat(checker.getChecker(host, port, checkInterval + 10, failcount, disableDuration))
+                .isNotEqualTo(checkObj);
+        assertThat(checker.getChecker(host, port, checkInterval, failcount + 1, disableDuration))
+                .isNotEqualTo(checkObj);
+        assertThat(checker.getChecker(host, port, checkInterval, failcount, disableDuration + 10))
+                .isNotEqualTo(checkObj);
     }
 }

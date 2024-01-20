@@ -22,8 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestLbAuthorizer
 {
@@ -64,12 +63,12 @@ public class TestLbAuthorizer
 
     static void assertMatch(String role)
     {
-        assertTrue(authorizer.authorize(principal, role, null));
+        assertThat(authorizer.authorize(principal, role, null)).isTrue();
     }
 
     static void assertNotMatch(String role)
     {
-        assertFalse(authorizer.authorize(principal, role, null));
+        assertThat(authorizer.authorize(principal, role, null)).isFalse();
     }
 
     static void assertBadPattern(String role)

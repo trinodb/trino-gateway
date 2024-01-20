@@ -27,7 +27,6 @@ import java.util.List;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
@@ -53,7 +52,7 @@ public class TestHaGatewayManager
         backend.setProxyTo("adhoc1.trino.gateway.io");
         backend.setExternalUrl("adhoc1.trino.gateway.io");
         ProxyBackendConfiguration updated = haGatewayManager.addBackend(backend);
-        assertEquals(backend, updated);
+        assertThat(updated).isEqualTo(backend);
     }
 
     @Test
@@ -97,7 +96,7 @@ public class TestHaGatewayManager
         assertThat(backends).isEmpty();
         backends = haGatewayManager.getAllBackends();
         assertThat(backends).hasSize(2);
-        assertEquals("etl", backends.get(1).getRoutingGroup());
+        assertThat(backends.get(1).getRoutingGroup()).isEqualTo("etl");
     }
 
     @Test
@@ -106,7 +105,7 @@ public class TestHaGatewayManager
     {
         List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
         assertThat(backends).hasSize(2);
-        assertEquals("etl", backends.get(1).getRoutingGroup());
+        assertThat(backends.get(1).getRoutingGroup()).isEqualTo("etl");
         haGatewayManager.deleteBackend(backends.get(0).getName());
         backends = haGatewayManager.getAllBackends();
         assertThat(backends).hasSize(1);

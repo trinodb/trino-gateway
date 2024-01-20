@@ -24,7 +24,6 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestQueryHistoryManager
@@ -64,7 +63,7 @@ public class TestQueryHistoryManager
         queryHistoryManager.submitQueryDetail(queryDetail);
 
         queryDetails = queryHistoryManager.fetchQueryHistory(Optional.empty());
-        assertTrue(queryDetails.get(0).getCaptureTime() > queryDetails.get(1).getCaptureTime());
+        assertThat(queryDetails.get(0).getCaptureTime() > queryDetails.get(1).getCaptureTime()).isTrue();
         // All queries when user is empty
         assertThat(queryDetails).hasSize(3);
 

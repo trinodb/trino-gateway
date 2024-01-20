@@ -29,8 +29,6 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesD
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 @TestMethodOrder(OrderAnnotation.class)
@@ -62,7 +60,7 @@ public class TestResourceGroupsManager
         ResourceGroupsDetail newResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
                 null);
 
-        assertEquals(resourceGroup, newResourceGroup);
+        assertThat(newResourceGroup).isEqualTo(resourceGroup);
     }
 
     @Test
@@ -72,12 +70,12 @@ public class TestResourceGroupsManager
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(1);
 
-        assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
-        assertEquals("admin", resourceGroups.get(0).getName());
-        assertEquals(20, resourceGroups.get(0).getHardConcurrencyLimit());
-        assertEquals(200, resourceGroups.get(0).getMaxQueued());
-        assertEquals(Boolean.TRUE, resourceGroups.get(0).getJmxExport());
-        assertEquals("80%", resourceGroups.get(0).getSoftMemoryLimit());
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
+        assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(20);
+        assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(200);
+        assertThat(resourceGroups.get(0).getJmxExport()).isEqualTo(Boolean.TRUE);
+        assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("80%");
     }
 
     @Test
@@ -120,20 +118,20 @@ public class TestResourceGroupsManager
 
         assertThat(resourceGroups).hasSize(3); // updated 2 non-existing groups, so count should be 3
 
-        assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
-        assertEquals("admin", resourceGroups.get(0).getName());
-        assertEquals(50, resourceGroups.get(0).getHardConcurrencyLimit());
-        assertEquals(50, resourceGroups.get(0).getMaxQueued());
-        assertEquals(Boolean.FALSE, resourceGroups.get(0).getJmxExport());
-        assertEquals("20%", resourceGroups.get(0).getSoftMemoryLimit());
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
+        assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(50);
+        assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(50);
+        assertThat(resourceGroups.get(0).getJmxExport()).isEqualTo(Boolean.FALSE);
+        assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("20%");
 
-        assertEquals(1L, resourceGroups.get(1).getResourceGroupId());
-        assertEquals("localization-eng", resourceGroups.get(1).getName());
-        assertEquals(50, resourceGroups.get(1).getHardConcurrencyLimit());
-        assertEquals(70, resourceGroups.get(1).getMaxQueued());
-        assertEquals(Boolean.TRUE, resourceGroups.get(1).getJmxExport());
-        assertEquals("20%", resourceGroups.get(1).getSoftMemoryLimit());
-        assertEquals(Integer.valueOf(20), resourceGroups.get(1).getSoftConcurrencyLimit());
+        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(1L);
+        assertThat(resourceGroups.get(1).getName()).isEqualTo("localization-eng");
+        assertThat(resourceGroups.get(1).getHardConcurrencyLimit()).isEqualTo(50);
+        assertThat(resourceGroups.get(1).getMaxQueued()).isEqualTo(70);
+        assertThat(resourceGroups.get(1).getJmxExport()).isEqualTo(Boolean.TRUE);
+        assertThat(resourceGroups.get(1).getSoftMemoryLimit()).isEqualTo("20%");
+        assertThat(resourceGroups.get(1).getSoftConcurrencyLimit()).isEqualTo(Integer.valueOf(20));
     }
 
     @Test
@@ -143,16 +141,16 @@ public class TestResourceGroupsManager
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(3);
 
-        assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
-        assertEquals(1L, resourceGroups.get(1).getResourceGroupId());
-        assertEquals(3L, resourceGroups.get(2).getResourceGroupId());
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(1L);
+        assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(3L);
 
         resourceGroupManager.deleteResourceGroup(resourceGroups.get(1).getResourceGroupId(), null);
         resourceGroups = resourceGroupManager.readAllResourceGroups(null);
 
-        assertEquals(2, resourceGroups.size());
-        assertEquals(0L, resourceGroups.get(0).getResourceGroupId());
-        assertEquals(3L, resourceGroups.get(1).getResourceGroupId());
+        assertThat(resourceGroups).hasSize(2);
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(3L);
     }
 
     @Test
@@ -170,7 +168,7 @@ public class TestResourceGroupsManager
 
         SelectorsDetail newSelector = resourceGroupManager.createSelector(selector, null);
 
-        assertEquals(selector, newSelector);
+        assertThat(newSelector).isEqualTo(selector);
     }
 
     @Test
@@ -180,13 +178,13 @@ public class TestResourceGroupsManager
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
 
         assertThat(selectors).hasSize(1);
-        assertEquals(0L, selectors.get(0).getResourceGroupId());
-        assertEquals(0L, selectors.get(0).getPriority());
-        assertEquals("data-platform-admin", selectors.get(0).getUserRegex());
-        assertEquals("admin", selectors.get(0).getSourceRegex());
-        assertEquals("query_type", selectors.get(0).getQueryType());
-        assertEquals("client_tag", selectors.get(0).getClientTags());
-        assertEquals("estimate", selectors.get(0).getSelectorResourceEstimate());
+        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(selectors.get(0).getPriority()).isEqualTo(0L);
+        assertThat(selectors.get(0).getUserRegex()).isEqualTo("data-platform-admin");
+        assertThat(selectors.get(0).getSourceRegex()).isEqualTo("admin");
+        assertThat(selectors.get(0).getQueryType()).isEqualTo("query_type");
+        assertThat(selectors.get(0).getClientTags()).isEqualTo("client_tag");
+        assertThat(selectors.get(0).getSelectorResourceEstimate()).isEqualTo("estimate");
     }
 
     @Test
@@ -248,7 +246,7 @@ public class TestResourceGroupsManager
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(3);
-        assertEquals(0L, selectors.get(0).getResourceGroupId());
+        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(0L);
         resourceGroupManager.deleteSelector(selectors.get(0), null);
         selectors = resourceGroupManager.readAllSelectors(null);
 
@@ -266,7 +264,7 @@ public class TestResourceGroupsManager
         GlobalPropertiesDetail newGlobalProperties =
                 resourceGroupManager.createGlobalProperty(globalPropertiesDetail, null);
 
-        assertEquals(globalPropertiesDetail, newGlobalProperties);
+        assertThat(newGlobalProperties).isEqualTo(globalPropertiesDetail);
 
         try { // make sure that the name is cpu_quota_period
             GlobalPropertiesDetail invalidGlobalProperty = new GlobalPropertiesDetail();
@@ -275,8 +273,9 @@ public class TestResourceGroupsManager
             resourceGroupManager.createGlobalProperty(invalidGlobalProperty, null);
         }
         catch (Exception ex) {
-            assertTrue(ex.getCause() instanceof org.h2.jdbc.JdbcSQLException);
-            assertTrue(ex.getCause().getMessage().startsWith("Check constraint violation:"));
+            assertThat(ex.getCause())
+                    .isInstanceOf(org.h2.jdbc.JdbcSQLException.class)
+                    .hasMessageStartingWith("Check constraint violation:");
         }
     }
 
@@ -288,8 +287,8 @@ public class TestResourceGroupsManager
                 null);
 
         assertThat(globalProperties).hasSize(1);
-        assertEquals("cpu_quota_period", globalProperties.get(0).getName());
-        assertEquals("1h", globalProperties.get(0).getValue());
+        assertThat(globalProperties.get(0).getName()).isEqualTo("cpu_quota_period");
+        assertThat(globalProperties.get(0).getValue()).isEqualTo("1h");
     }
 
     @Test
@@ -314,8 +313,9 @@ public class TestResourceGroupsManager
             resourceGroupManager.updateGlobalProperty(invalidGlobalProperty, null);
         }
         catch (Exception ex) {
-            assertTrue(ex.getCause() instanceof org.h2.jdbc.JdbcSQLException);
-            assertTrue(ex.getCause().getMessage().startsWith("Check constraint violation:"));
+            assertThat(ex.getCause())
+                    .isInstanceOf(org.h2.jdbc.JdbcSQLException.class)
+                    .hasMessageStartingWith("Check constraint violation:");
         }
     }
 
@@ -334,7 +334,7 @@ public class TestResourceGroupsManager
         ExactSelectorsDetail newExactMatchSourceSelector =
                 resourceGroupManager.createExactMatchSourceSelector(exactSelectorDetail);
 
-        assertEquals(exactSelectorDetail, newExactMatchSourceSelector);
+        assertThat(newExactMatchSourceSelector).isEqualTo(exactSelectorDetail);
     }
 
     @Test
@@ -344,18 +344,18 @@ public class TestResourceGroupsManager
         List<ExactSelectorsDetail> exactSelectorsDetails =
                 resourceGroupManager.readExactMatchSourceSelector();
 
-        assertEquals(1, exactSelectorsDetails.size());
-        assertEquals("0", exactSelectorsDetails.get(0).getResourceGroupId());
-        assertEquals("@test@test_pipeline", exactSelectorsDetails.get(0).getSource());
-        assertEquals("test", exactSelectorsDetails.get(0).getEnvironment());
-        assertEquals("query_type", exactSelectorsDetails.get(0).getQueryType());
+        assertThat(exactSelectorsDetails).hasSize(1);
+        assertThat(exactSelectorsDetails.get(0).getResourceGroupId()).isEqualTo("0");
+        assertThat(exactSelectorsDetails.get(0).getSource()).isEqualTo("@test@test_pipeline");
+        assertThat(exactSelectorsDetails.get(0).getEnvironment()).isEqualTo("test");
+        assertThat(exactSelectorsDetails.get(0).getQueryType()).isEqualTo("query_type");
 
         ExactSelectorsDetail exactSelector =
                 resourceGroupManager.getExactMatchSourceSelector(exactSelectorsDetails.get(0));
 
-        assertEquals("0", exactSelector.getResourceGroupId());
-        assertEquals("@test@test_pipeline", exactSelector.getSource());
-        assertEquals("test", exactSelector.getEnvironment());
-        assertEquals("query_type", exactSelector.getQueryType());
+        assertThat(exactSelector.getResourceGroupId()).isEqualTo("0");
+        assertThat(exactSelector.getSource()).isEqualTo("@test@test_pipeline");
+        assertThat(exactSelector.getEnvironment()).isEqualTo("test");
+        assertThat(exactSelector.getQueryType()).isEqualTo("query_type");
     }
 }

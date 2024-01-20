@@ -25,9 +25,8 @@ import java.io.File;
 import java.util.List;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestSpecificDbResourceGroupsManager
@@ -70,9 +69,8 @@ public class TestSpecificDbResourceGroupsManager
     @Test
     public void testReadSpecificDbResourceGroupCauseException()
     {
-        assertThrows(Exception.class, () -> {
-            List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups("abcd");
-        });
+        assertThatThrownBy(() -> resourceGroupManager.readAllResourceGroups("abcd"))
+                .isInstanceOf(Exception.class);
     }
 
     @Test
@@ -81,7 +79,7 @@ public class TestSpecificDbResourceGroupsManager
         this.createResourceGroup();
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
                 .readAllResourceGroups(specificDb);
-        assertNotNull(resourceGroups);
+        assertThat(resourceGroups).isNotNull();
         resourceGroupManager.deleteResourceGroup(1, specificDb);
     }
 
@@ -101,7 +99,7 @@ public class TestSpecificDbResourceGroupsManager
         ResourceGroupsManager.SelectorsDetail newSelector = resourceGroupManager
                 .createSelector(selector, specificDb);
 
-        assertEquals(selector, newSelector);
+        assertThat(newSelector).isEqualTo(selector);
         resourceGroupManager
                 .deleteSelector(selector, specificDb);
         resourceGroupManager.deleteResourceGroup(1, specificDb);

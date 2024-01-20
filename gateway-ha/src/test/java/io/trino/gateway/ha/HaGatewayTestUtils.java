@@ -35,7 +35,7 @@ import java.util.Scanner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class HaGatewayTestUtils
 {
@@ -135,7 +135,7 @@ public class HaGatewayTestUtils
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertTrue(response.isSuccessful());
+        assertThat(response.isSuccessful()).isTrue();
     }
 
     public record TestConfig(String configFilePath, String h2DbFilePath)

@@ -23,8 +23,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestQueryIdCachingProxyHandler
@@ -40,14 +39,14 @@ public class TestQueryIdCachingProxyHandler
                 "/ui/api/query.html?20200416_160256_03078_6b4yt"};
         for (String path : paths) {
             String queryId = QueryIdCachingProxyHandler.extractQueryIdIfPresent(path, null);
-            assertEquals("20200416_160256_03078_6b4yt", queryId);
+            assertThat(queryId).isEqualTo("20200416_160256_03078_6b4yt");
         }
         String[] nonPaths = {
                 "/ui/api/query/myOtherThing",
                 "/ui/api/query/20200416_blah?bogus_fictional_param"};
         for (String path : nonPaths) {
             String queryId = QueryIdCachingProxyHandler.extractQueryIdIfPresent(path, null);
-            assertNull(queryId);
+            assertThat(queryId).isNull();
         }
     }
 
@@ -64,8 +63,8 @@ public class TestQueryIdCachingProxyHandler
         Request proxyRequest = httpClient.newRequest("http://localhost:80");
         QueryIdCachingProxyHandler.setForwardedHostHeaderOnProxyRequest(mockServletRequest,
                 proxyRequest);
-        assertEquals(String.format("%s:%s",
-                backendServer, backendPort), proxyRequest.getHeaders().get("Host"));
+        assertThat(proxyRequest.getHeaders().get("Host"))
+                .isEqualTo(String.format("%s:%s", backendServer, backendPort));
     }
 
     @Test
@@ -77,11 +76,11 @@ public class TestQueryIdCachingProxyHandler
         String authHeader = "Basic dGVzdDoxMjPCow==";
         Mockito.when(req.getHeader(QueryIdCachingProxyHandler.AUTHORIZATION))
                 .thenReturn(authHeader);
-        assertEquals("test", QueryIdCachingProxyHandler.getQueryUser(req));
+        assertThat(QueryIdCachingProxyHandler.getQueryUser(req)).isEqualTo("test");
 
         String user = "trino_user";
         Mockito.when(req.getHeader(QueryIdCachingProxyHandler.USER_HEADER))
                 .thenReturn(user);
-        assertEquals(user, QueryIdCachingProxyHandler.getQueryUser(req));
+        assertThat(QueryIdCachingProxyHandler.getQueryUser(req)).isEqualTo(user);
     }
 }
