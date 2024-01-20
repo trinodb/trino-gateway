@@ -37,7 +37,7 @@ public interface ResourceGroupsManager
 
     List<SelectorsDetail> readAllSelectors(@Nullable String routingGroupDatabase);
 
-    List<SelectorsDetail> readSelector(long resourceGroupId, @Nullable String routingGrouoDatabase);
+    List<SelectorsDetail> readSelector(long resourceGroupId, @Nullable String routingGroupDatabase);
 
     SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector, @Nullable String routingGroupDatabase);
 
