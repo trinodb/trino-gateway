@@ -28,8 +28,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaSingleBackend
@@ -89,9 +87,9 @@ public class TestGatewayHaSingleBackend
                 objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
 
         assertThat(backendConfiguration).hasSize(1);
-        assertTrue(backendConfiguration[0].isActive());
-        assertEquals("adhoc", backendConfiguration[0].getRoutingGroup());
-        assertEquals("externalUrl", backendConfiguration[0].getExternalUrl());
+        assertThat(backendConfiguration[0].isActive()).isTrue();
+        assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
+        assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
     }
 
     @AfterAll

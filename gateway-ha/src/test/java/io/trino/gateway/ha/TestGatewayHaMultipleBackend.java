@@ -30,9 +30,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaMultipleBackend
@@ -96,7 +93,7 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "custom")
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
-        assertEquals(CUSTOM_RESPONSE, response1.body().string());
+        assertThat(response1.body().string()).isEqualTo(CUSTOM_RESPONSE);
 
         Request request2 =
                 new Request.Builder()
@@ -105,7 +102,7 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "custom")
                         .build();
         Response response2 = httpClient.newCall(request2).execute();
-        assertEquals(404, response2.code());
+        assertThat(response2.code()).isEqualTo(404);
     }
 
     @Test
@@ -150,17 +147,17 @@ public class TestGatewayHaMultipleBackend
         ProxyBackendConfiguration[] backendConfiguration =
                 objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
 
-        assertNotNull(backendConfiguration);
+        assertThat(backendConfiguration).isNotNull();
         assertThat(backendConfiguration).hasSize(3);
-        assertTrue(backendConfiguration[0].isActive());
-        assertTrue(backendConfiguration[1].isActive());
-        assertTrue(backendConfiguration[2].isActive());
-        assertEquals("adhoc", backendConfiguration[0].getRoutingGroup());
-        assertEquals("scheduled", backendConfiguration[1].getRoutingGroup());
-        assertEquals("custom", backendConfiguration[2].getRoutingGroup());
-        assertEquals("externalUrl", backendConfiguration[0].getExternalUrl());
-        assertEquals("externalUrl", backendConfiguration[1].getExternalUrl());
-        assertEquals("externalUrl", backendConfiguration[2].getExternalUrl());
+        assertThat(backendConfiguration[0].isActive()).isTrue();
+        assertThat(backendConfiguration[1].isActive()).isTrue();
+        assertThat(backendConfiguration[2].isActive()).isTrue();
+        assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
+        assertThat(backendConfiguration[1].getRoutingGroup()).isEqualTo("scheduled");
+        assertThat(backendConfiguration[2].getRoutingGroup()).isEqualTo("custom");
+        assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
+        assertThat(backendConfiguration[1].getExternalUrl()).isEqualTo("externalUrl");
+        assertThat(backendConfiguration[2].getExternalUrl()).isEqualTo("externalUrl");
     }
 
     @AfterAll
