@@ -46,10 +46,6 @@ public class LbLdapClientTest
     LbLdapClient lbLdapClient =
             new LbLdapClient(LdapConfiguration.load("src/test/resources/auth/ldapTestConfig.yml"));
 
-    LbLdapClientTest()
-    {
-    }
-
     @BeforeEach
     public void initMocks()
     {

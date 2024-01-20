@@ -16,7 +16,6 @@ package io.trino.gateway.proxyserver;
 import io.trino.gateway.proxyserver.wrapper.MultiReadHttpServletRequest;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -29,21 +28,6 @@ import java.io.IOException;
 public class RequestFilter
         implements Filter
 {
-    private FilterConfig filterConfig;
-
-    @Override
-    public void init(FilterConfig filterConfig)
-            throws ServletException
-    {
-        this.filterConfig = filterConfig;
-    }
-
-    @Override
-    public void destroy()
-    {
-        this.filterConfig = null;
-    }
-
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException

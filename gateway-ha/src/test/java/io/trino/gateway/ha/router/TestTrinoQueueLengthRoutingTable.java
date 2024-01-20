@@ -57,13 +57,11 @@ public class TestTrinoQueueLengthRoutingTable
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager);
-        historyManager = new HaQueryHistoryManager(connectionManager)
-        {
-        };
+        historyManager = new HaQueryHistoryManager(connectionManager);
         routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager);
 
         for (String grp : mockRoutingGroups) {
-            addMockBackends(grp, NUM_BACKENDS, 0);
+            addMockBackends(grp, NUM_BACKENDS);
         }
     }
 
@@ -76,8 +74,7 @@ public class TestTrinoQueueLengthRoutingTable
         clusterRunningMap = HashBasedTable.create();
     }
 
-    private void addMockBackends(String groupName, int numBackends,
-            int queueLengthDistributiveFactor)
+    private void addMockBackends(String groupName, int numBackends)
     {
         String backend = null;
 

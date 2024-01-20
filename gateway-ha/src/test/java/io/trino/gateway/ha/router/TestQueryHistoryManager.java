@@ -34,9 +34,7 @@ public class TestQueryHistoryManager
     public void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        queryHistoryManager = new HaQueryHistoryManager(connectionManager)
-        {
-        };
+        queryHistoryManager = new HaQueryHistoryManager(connectionManager);
     }
 
     @Test
