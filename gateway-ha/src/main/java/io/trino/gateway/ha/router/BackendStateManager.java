@@ -14,9 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
-import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import jakarta.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,14 +24,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 
 public class BackendStateManager
 {
-    @Nullable
-    private final BackendStateConfiguration configuration;
-
     private final Map<String, ClusterStats> clusterStats;
 
-    public BackendStateManager(BackendStateConfiguration configuration)
+    public BackendStateManager()
     {
-        this.configuration = configuration;
         this.clusterStats = new HashMap<>();
     }
 
@@ -45,11 +39,6 @@ public class BackendStateManager
         state.put("QUEUED", stats.getQueuedQueryCount());
         state.put("RUNNING", stats.getRunningQueryCount());
         return new BackendState(name, state);
-    }
-
-    public BackendStateConfiguration getBackendStateConfiguration()
-    {
-        return this.configuration;
     }
 
     public void updateStates(String clusterId, ClusterStats stats)

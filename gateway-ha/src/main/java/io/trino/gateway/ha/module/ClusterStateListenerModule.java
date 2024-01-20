@@ -23,7 +23,6 @@ import io.trino.gateway.ha.clustermonitor.HealthCheckObserver;
 import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
-import io.trino.gateway.ha.config.NotifierConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingManager;
 
@@ -53,7 +52,6 @@ public class ClusterStateListenerModule
             BackendStateManager backendStateManager)
     {
         observers = new ArrayList<>();
-        NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
         observers.add(new HealthCheckObserver(mgr));
         observers.add(new ClusterStatsObserver(backendStateManager));
 
