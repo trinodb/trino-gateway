@@ -36,7 +36,6 @@ public class LbFormAuthManager
     /**
      * Cookie key to pass the token.
      */
-    private final FormAuthConfiguration configuration;
     private final LbKeyProvider lbKeyProvider;
     Map<String, UserConfiguration> presetUsers;
     private LdapConfiguration ldapConfiguration;
@@ -45,7 +44,6 @@ public class LbFormAuthManager
     public LbFormAuthManager(FormAuthConfiguration configuration,
             Map<String, UserConfiguration> presetUsers)
     {
-        this.configuration = configuration;
         this.presetUsers = presetUsers;
 
         if (configuration != null) {

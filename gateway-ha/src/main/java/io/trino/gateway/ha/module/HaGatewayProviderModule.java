@@ -87,7 +87,6 @@ public class HaGatewayProviderModule
                 new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
 
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
-        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
 
         oauthManager = getOAuthManager(configuration);
         formAuthManager = getFormAuthManager(configuration);
@@ -95,7 +94,7 @@ public class HaGatewayProviderModule
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(),
                 presetUsers);
         authenticationFilter = getAuthFilter(configuration);
-        backendStateConnectionManager = new BackendStateManager(configuration.getBackendState());
+        backendStateConnectionManager = new BackendStateManager();
         extraWhitelistPaths = configuration.getExtraWhitelistPaths();
     }
 
