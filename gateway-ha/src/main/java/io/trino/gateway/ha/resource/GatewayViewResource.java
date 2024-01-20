@@ -100,7 +100,7 @@ public class GatewayViewResource
                 .getAllBackends()
                 .stream()
                 .map(backendStateManager::getBackendState)
-                .collect(Collectors.toMap(s -> s.getName(), s -> s));
+                .collect(Collectors.toMap(s -> s.name(), s -> s));
 
         gatewayView.setBackendStates(backendStates);
 
