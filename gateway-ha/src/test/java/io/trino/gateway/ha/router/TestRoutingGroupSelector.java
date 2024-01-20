@@ -27,8 +27,6 @@ import java.util.stream.Stream;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -55,12 +53,12 @@ public class TestRoutingGroupSelector
 
         // If the header is present the routing group is the value of that header.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("batch_backend");
-        assertEquals("batch_backend",
-                RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest));
+        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest))
+                .isEqualTo("batch_backend");
 
         // If the header is not present just return null.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn(null);
-        assertNull(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest));
+        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest)).isNull();
     }
 
     @ParameterizedTest
@@ -73,8 +71,8 @@ public class TestRoutingGroupSelector
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertEquals("etl",
-                routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
+                .isEqualTo("etl");
     }
 
     @ParameterizedTest
@@ -89,8 +87,8 @@ public class TestRoutingGroupSelector
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
-        assertEquals("etl-special",
-                routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
+                .isEqualTo("etl-special");
     }
 
     @ParameterizedTest
@@ -105,7 +103,7 @@ public class TestRoutingGroupSelector
         // should return no match
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
-        assertNull(routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isNull();
     }
 
     @Test
@@ -131,8 +129,8 @@ public class TestRoutingGroupSelector
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertEquals("etl",
-                routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
+                .isEqualTo("etl");
 
         fw = new FileWriter(file, UTF_8);
         fw.write(
@@ -146,8 +144,8 @@ public class TestRoutingGroupSelector
         assertThat(file.setLastModified(lastModifed + 1000)).isTrue();
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertEquals("etl2",
-                routingGroupSelector.findRoutingGroup(mockRequest));
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
+                .isEqualTo("etl2");
         file.deleteOnExit();
     }
 }

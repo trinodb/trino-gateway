@@ -21,8 +21,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestHaRoutingManager
@@ -60,14 +59,14 @@ public class TestHaRoutingManager
         }
 
         //Keep only 1st backend as healthy, mark all the others as unhealthy
-        assertTrue(!backendManager.getAllActiveBackends().isEmpty());
+        assertThat(backendManager.getAllActiveBackends()).isNotEmpty();
 
         for (int i = 1; i < numBackends; i++) {
             backend = groupName + i;
             haRoutingManager.upateBackEndHealth(backend, false);
         }
 
-        assertEquals("test_group0.trino.example.com",
-                haRoutingManager.provideBackendForRoutingGroup(groupName, ""));
+        assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, ""))
+                .isEqualTo("test_group0.trino.example.com");
     }
 }

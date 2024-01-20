@@ -34,8 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestTrinoQueueLengthRoutingTable
@@ -203,15 +202,15 @@ public class TestTrinoQueueLengthRoutingTable
                 //    + " Distribution: " + routingDistribution.toString());
                 if (numBk > 1) {
                     if (routingDistribution.containsKey(mockRoutingGroup + (numBk - 1))) {
-                        assertTrue(routingDistribution.get(mockRoutingGroup + (numBk - 1))
-                                <= Math.ceil(numRequests / numBk));
+                        assertThat(routingDistribution.get(mockRoutingGroup + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                                .isTrue();
                     }
                     else {
-                        assertEquals(numRequests, routingDistribution.values().stream().mapToInt(Integer::intValue).sum());
+                        assertThat(routingDistribution.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(numRequests);
                     }
                 }
                 else {
-                    assertEquals(Integer.valueOf(numRequests), routingDistribution.get(mockRoutingGroup + '0'));
+                    assertThat(routingDistribution.get(mockRoutingGroup + '0')).isEqualTo(Integer.valueOf(numRequests));
                 }
             }
         }
@@ -234,11 +233,11 @@ public class TestTrinoQueueLengthRoutingTable
                 //    + routingTable.getInternalWeightedRoutingTable(mockRoutingGroup).toString()
                 //    + " Distribution: " + routingDistribution.toString());
                 if (numBk > 2 && routingDistribution.containsKey(mockRoutingGroup + (numBk - 1))) {
-                    assertTrue(routingDistribution.get(mockRoutingGroup + (numBk - 1))
-                            <= Math.ceil(numRequests / numBk));
+                    assertThat(routingDistribution.get(mockRoutingGroup + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                            .isTrue();
                 }
                 else {
-                    assertEquals(numRequests, routingDistribution.values().stream().mapToInt(Integer::intValue).sum());
+                    assertThat(routingDistribution.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(numRequests);
                 }
             }
         }
@@ -254,14 +253,14 @@ public class TestTrinoQueueLengthRoutingTable
         // Validate always routed to  cluster with lowest user queue
         registerBackEndsWithUserQueue(mockRoutingGroup, numBackends, Arrays.asList(1, 2));
         for (int i = 0; i < queryVolume; i++) {
-            assertEquals(mockRoutingGroup + "0", routingTable.getEligibleBackEnd(mockRoutingGroup, mockUser));
+            assertThat(routingTable.getEligibleBackEnd(mockRoutingGroup, mockUser)).isEqualTo(mockRoutingGroup + "0");
         }
 
         // Case 2: Not all user queue counts Present.
         // Validate always routed to cluster with zero queue length i.e. the missing cluster.
         registerBackEndsWithUserQueue(mockRoutingGroup, numBackends, List.of(1));
         for (int i = 0; i < queryVolume; i++) {
-            assertEquals(mockRoutingGroup + "1", routingTable.getEligibleBackEnd(mockRoutingGroup, mockUser));
+            assertThat(routingTable.getEligibleBackEnd(mockRoutingGroup, mockUser)).isEqualTo(mockRoutingGroup + "1");
         }
 
         // Case 3: All user queue counts Present but equal
@@ -277,7 +276,7 @@ public class TestTrinoQueueLengthRoutingTable
         double expectedUpperBound = (queryVolume / numBackends) * (1 + variance);
 
         for (Integer c : counts.values()) {
-            assertTrue(c >= expectedLowerBound && c <= expectedUpperBound);
+            assertThat(c >= expectedLowerBound && c <= expectedUpperBound).isTrue();
         }
 
         // Case 4: NO user queue lengths present
@@ -289,7 +288,7 @@ public class TestTrinoQueueLengthRoutingTable
             counts.put(cluster, counts.getOrDefault(cluster, 0) + 1);
         }
         for (Integer c : counts.values()) {
-            assertTrue(c >= expectedLowerBound && c <= expectedUpperBound);
+            assertThat(c >= expectedLowerBound && c <= expectedUpperBound).isTrue();
         }
 
         // Case 5: Null or empty users
@@ -301,7 +300,7 @@ public class TestTrinoQueueLengthRoutingTable
             counts.put(cluster, counts.getOrDefault(cluster, 0) + 1);
         }
         for (Integer c : counts.values()) {
-            assertTrue(c >= expectedLowerBound && c <= expectedUpperBound);
+            assertThat(c >= expectedLowerBound && c <= expectedUpperBound).isTrue();
         }
     }
 
@@ -325,10 +324,10 @@ public class TestTrinoQueueLengthRoutingTable
                 if (numBk > 1) {
                     // With equal weights, the algorithm randomly chooses from the list. Check that the
                     // distribution spans atleast half of the routing group.
-                    assertTrue(routingDistribution.size() >= clusterQueueMap.row(mockRoutingGroup).size() / 2);
+                    assertThat(routingDistribution.size() >= clusterQueueMap.row(mockRoutingGroup).size() / 2).isTrue();
                 }
                 else {
-                    assertEquals(Integer.valueOf(numRequests), routingDistribution.get(mockRoutingGroup + '0'));
+                    assertThat(routingDistribution.get(mockRoutingGroup + '0')).isEqualTo(Integer.valueOf(numRequests));
                 }
             }
         }
@@ -354,11 +353,11 @@ public class TestTrinoQueueLengthRoutingTable
         + " Distribution: " + routingDistribution.toString());
         */
                 if (numBk > 2 && routingDistribution.containsKey(mockRoutingGroup + (numBk - 1))) {
-                    assertTrue(routingDistribution.get(mockRoutingGroup + (numBk - 1))
-                            <= Math.ceil(numRequests / numBk));
+                    assertThat(routingDistribution.get(mockRoutingGroup + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                            .isTrue();
                 }
                 else {
-                    assertEquals(numRequests, routingDistribution.values().stream().mapToInt(Integer::intValue).sum());
+                    assertThat(routingDistribution.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(numRequests);
                 }
             }
         }
@@ -383,15 +382,15 @@ public class TestTrinoQueueLengthRoutingTable
             //+ " Distribution: " + routingDistribution.toString());
             if (numBk > 1) {
                 if (routingDistribution.containsKey(grp + (numBk - 1))) {
-                    assertTrue(routingDistribution.get(grp + (numBk - 1))
-                            <= Math.ceil(numRequests / numBk));
+                    assertThat(routingDistribution.get(grp + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                            .isTrue();
                 }
                 else {
-                    assertEquals(numRequests, routingDistribution.values().stream().mapToInt(Integer::intValue).sum());
+                    assertThat(routingDistribution.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(numRequests);
                 }
             }
             else {
-                assertEquals(Integer.valueOf(numRequests), routingDistribution.get(grp + '0'));
+                assertThat(routingDistribution.get(grp + '0')).isEqualTo(Integer.valueOf(numRequests));
             }
         }
     }
@@ -450,8 +449,8 @@ public class TestTrinoQueueLengthRoutingTable
 
         System.out.println("Total Requests :" + numBatches * numRequests
                 + " distribution :" + totalDistribution);
-        assertTrue(totalDistribution.get(mockRoutingGroup + (numBk - 1))
-                <= (numBatches * numRequests / numBk));
+        assertThat(totalDistribution.get(mockRoutingGroup + (numBk - 1)) <= (numBatches * numRequests / numBk))
+                .isTrue();
         scheduler.shutdown();
     }
 }

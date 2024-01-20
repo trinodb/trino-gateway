@@ -29,10 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
@@ -85,7 +82,7 @@ public class LbLdapClientTest
                     .thenReturn(null);
 
             //Success case
-            assertTrue(lbLdapClient.authenticate(user, password));
+            assertThat(lbLdapClient.authenticate(user, password)).isTrue();
 
             Mockito
                     .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
@@ -95,7 +92,7 @@ public class LbLdapClientTest
                     .thenReturn(new LbLdapClientTest.DummyPasswordWarning());
 
             //Warning case
-            assertTrue(lbLdapClient.authenticate(user, password));
+            assertThat(lbLdapClient.authenticate(user, password)).isTrue();
 
             Mockito
                     .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
@@ -105,7 +102,7 @@ public class LbLdapClientTest
                     .thenThrow(PasswordException.class);
 
             //failure case
-            assertFalse(lbLdapClient.authenticate(user, password));
+            assertThat(lbLdapClient.authenticate(user, password)).isFalse();
 
             Mockito
                     .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
@@ -117,7 +114,7 @@ public class LbLdapClientTest
         catch (PasswordException ex) {
             log.error("This should not fail");
             //Force the test to fail
-            assertFalse(false);
+            assertThat(false).isFalse();
         }
     }
 
@@ -143,7 +140,7 @@ public class LbLdapClientTest
         String ret = lbLdapClient.getMemberOf(user);
 
         log.info("ret is {}", ret);
-        assertEquals("Admin,User", ret);
+        assertThat(ret).isEqualTo("Admin,User");
 
         org.mockito.Mockito
                 .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
@@ -154,7 +151,7 @@ public class LbLdapClientTest
                 .thenReturn(null);
 
         //failure case
-        assertNotEquals("Admin,User", lbLdapClient.getMemberOf(user));
+        assertThat(lbLdapClient.getMemberOf(user)).isNotEqualTo("Admin,User");
     }
 
     class DummyPasswordWarning

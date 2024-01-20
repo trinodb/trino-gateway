@@ -30,9 +30,8 @@ import org.mockito.Mockito;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLbFilter
@@ -111,8 +110,8 @@ public class TestLbFilter
                 .setSecurityContext(secContextCaptor.capture());
 
         // Checks authorization for authenticated principal
-        assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
-        assertFalse(secContextCaptor.getValue().isUserInRole("ADMIN"));
+        assertThat(secContextCaptor.getValue().isUserInRole("USER")).isTrue();
+        assertThat(secContextCaptor.getValue().isUserInRole("ADMIN")).isFalse();
     }
 
     @Test
@@ -152,15 +151,15 @@ public class TestLbFilter
                 .setSecurityContext(secContextCaptor.capture());
 
         // Checks authorization for authenticated principal
-        assertTrue(secContextCaptor.getValue().isUserInRole("USER"));
-        assertTrue(secContextCaptor.getValue().isUserInRole("ADMIN"));
+        assertThat(secContextCaptor.getValue().isUserInRole("USER")).isTrue();
+        assertThat(secContextCaptor.getValue().isUserInRole("ADMIN")).isTrue();
     }
 
     @Test
     public void testMissingAuthenticationToken()
             throws WebApplicationException
     {
-        assertThrows(WebApplicationException.class, () -> {
+        assertThatThrownBy(() -> {
             AuthorizationConfiguration configuration = new AuthorizationConfiguration();
 
             MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
@@ -181,6 +180,6 @@ public class TestLbFilter
 
             // Exception is thrown when the authentication fails
             lbFilter.filter(requestContext);
-        });
+        }).isInstanceOf(WebApplicationException.class);
     }
 }
