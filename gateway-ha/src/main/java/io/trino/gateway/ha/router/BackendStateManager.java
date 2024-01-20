@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -20,9 +21,8 @@ import jakarta.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
 public class BackendStateManager
 {
@@ -57,53 +57,12 @@ public class BackendStateManager
         clusterStats.put(clusterId, stats);
     }
 
-    public static class BackendState
+    public record BackendState(String name, Map<String, Integer> state)
     {
-        private final String name;
-        private final Map<String, Integer> state;
-
-        public BackendState(String name, Map<String, Integer> state)
+        public BackendState
         {
-            this.name = name;
-            this.state = state;
-        }
-
-        public String getName()
-        {
-            return this.name;
-        }
-
-        public Map<String, Integer> getState()
-        {
-            return this.state;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            BackendState that = (BackendState) o;
-            return Objects.equals(name, that.name) && Objects.equals(state, that.state);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(name, state);
-        }
-
-        @Override
-        public String toString()
-        {
-            return toStringHelper(this)
-                    .add("name", name)
-                    .add("state", state)
-                    .toString();
+            requireNonNull(name, "name is null");
+            state = ImmutableMap.copyOf(requireNonNull(state, "state is null"));
         }
     }
 }

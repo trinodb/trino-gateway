@@ -73,7 +73,7 @@ public class PublicResource
                     .getBackendByName(name)
                     .map(backendStateManager::getBackendState)
                     .orElseThrow();
-            return Response.ok(state.getState()).build();
+            return Response.ok(state.state()).build();
         }
         catch (NoSuchElementException e) {
             return Response.status(404).build();
