@@ -69,7 +69,7 @@ public interface ResourceGroupsManager
     class ResourceGroupsDetail
             implements Comparable<ResourceGroupsDetail>
     {
-        @Nonnull private long resourceGroupId;
+        private long resourceGroupId;
         @Nonnull private String name;
 
         /* OPTIONAL POLICY CONTROLS */
@@ -80,8 +80,8 @@ public interface ResourceGroupsManager
 
         /* REQUIRED QUOTAS */
         @Nonnull private String softMemoryLimit;
-        @Nonnull private int maxQueued;
-        @Nonnull private int hardConcurrencyLimit;
+        private int maxQueued;
+        private int hardConcurrencyLimit;
 
         /* OPTIONAL QUOTAS */
         private Integer softConcurrencyLimit;
@@ -91,7 +91,7 @@ public interface ResourceGroupsManager
 
         public ResourceGroupsDetail() {}
 
-        public ResourceGroupsDetail(@Nonnull long resourceGroupId, @Nonnull String name, @Nonnull String softMemoryLimit, @Nonnull int maxQueued, @Nonnull int hardConcurrencyLimit)
+        public ResourceGroupsDetail(long resourceGroupId, @Nonnull String name, @Nonnull String softMemoryLimit, int maxQueued, int hardConcurrencyLimit)
         {
             this.resourceGroupId = resourceGroupId;
             this.name = name;
@@ -111,12 +111,12 @@ public interface ResourceGroupsManager
             }
         }
 
-        public @Nonnull long getResourceGroupId()
+        public long getResourceGroupId()
         {
             return this.resourceGroupId;
         }
 
-        public void setResourceGroupId(@Nonnull long resourceGroupId)
+        public void setResourceGroupId(long resourceGroupId)
         {
             this.resourceGroupId = resourceGroupId;
         }
@@ -181,22 +181,22 @@ public interface ResourceGroupsManager
             this.softMemoryLimit = softMemoryLimit;
         }
 
-        public @Nonnull int getMaxQueued()
+        public int getMaxQueued()
         {
             return this.maxQueued;
         }
 
-        public void setMaxQueued(@Nonnull int maxQueued)
+        public void setMaxQueued(int maxQueued)
         {
             this.maxQueued = maxQueued;
         }
 
-        public @Nonnull int getHardConcurrencyLimit()
+        public int getHardConcurrencyLimit()
         {
             return this.hardConcurrencyLimit;
         }
 
-        public void setHardConcurrencyLimit(@Nonnull int hardConcurrencyLimit)
+        public void setHardConcurrencyLimit(int hardConcurrencyLimit)
         {
             this.hardConcurrencyLimit = hardConcurrencyLimit;
         }
@@ -296,8 +296,8 @@ public interface ResourceGroupsManager
     class SelectorsDetail
             implements Comparable<SelectorsDetail>
     {
-        @Nonnull private long resourceGroupId;
-        @Nonnull private long priority;
+        private long resourceGroupId;
+        private long priority;
 
         private String userRegex;
         private String sourceRegex;
@@ -308,7 +308,7 @@ public interface ResourceGroupsManager
 
         public SelectorsDetail() {}
 
-        public SelectorsDetail(@Nonnull long resourceGroupId, @Nonnull long priority)
+        public SelectorsDetail(long resourceGroupId, long priority)
         {
             this.resourceGroupId = resourceGroupId;
             this.priority = priority;
@@ -325,22 +325,22 @@ public interface ResourceGroupsManager
             }
         }
 
-        public @Nonnull long getResourceGroupId()
+        public long getResourceGroupId()
         {
             return this.resourceGroupId;
         }
 
-        public void setResourceGroupId(@Nonnull long resourceGroupId)
+        public void setResourceGroupId(long resourceGroupId)
         {
             this.resourceGroupId = resourceGroupId;
         }
 
-        public @Nonnull long getPriority()
+        public long getPriority()
         {
             return this.priority;
         }
 
-        public void setPriority(@Nonnull long priority)
+        public void setPriority(long priority)
         {
             this.priority = priority;
         }
