@@ -17,7 +17,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
@@ -36,13 +35,8 @@ import static org.mockito.Mockito.when;
 @TestInstance(PER_CLASS)
 public class TestTcpChecks
 {
-    public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
-    public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
-
     @Test
     public void testTcpRuleCheck()
-            throws
-            IOException
     {
         String host = "localhost";
         int port = 8888;
@@ -54,17 +48,14 @@ public class TestTcpChecks
         when(mockRequest.getAttribute("connectionChecker")).thenReturn(checker);
 
         String rulesFile = "src/test/resources/rules/routing_rules_tcp_connection.yml";
-        RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(rulesFile);
+        RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesFile);
 
         assertEquals("cli", routingGroupSelector.findRoutingGroup(mockRequest));
     }
 
     @Test
-    public void testConnectionCheckerSucess()
-            throws
-            IOException,
-            InterruptedException
+    public void testConnectionCheckerSuccess()
+            throws Exception
     {
         // Test successful connection check
         int checkInterval = 1000; //in ms
@@ -73,20 +64,18 @@ public class TestTcpChecks
         doReturn(mock(Socket.class)).when(check).makeSocket("abc", 1111);
         assertEquals(ConnectionCheck.TCP_CHECK_SUCCESS, check.tcpCheck());
 
-        // If our inteval to check the request is 1000ms then connection check is needed
+        // If our interval to check the request is 1000ms then connection check is needed
         TimeUnit.SECONDS.sleep(2);
         assertTrue(check.isCheckNeeded());
 
-        // If the inerval to check 1000 ms then we won't need a check
+        // If the interval to check 1000 ms then we won't need a check
         TimeUnit.MILLISECONDS.sleep(100);
         assertFalse(check.isCheckNeeded());
     }
 
     @Test
     public void testConnectionCheckerFailures()
-            throws
-            IOException,
-            java.lang.InterruptedException
+            throws Exception
     {
         int checkInterval = 1000; //in ms
         ConnectionChecker checker = new ConnectionChecker();
