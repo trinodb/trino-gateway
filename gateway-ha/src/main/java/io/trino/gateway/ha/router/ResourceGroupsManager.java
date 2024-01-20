@@ -23,16 +23,13 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 
 public interface ResourceGroupsManager
 {
-    ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
-            @Nullable String routingGroupDatabase);
+    ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup, @Nullable String routingGroupDatabase);
 
     List<ResourceGroupsDetail> readAllResourceGroups(@Nullable String routingGroupDatabase);
 
-    List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId,
-            @Nullable String routingGroupDatabase);
+    List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId, @Nullable String routingGroupDatabase);
 
-    ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup,
-            @Nullable String routingGroupDatabase);
+    ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup, @Nullable String routingGroupDatabase);
 
     void deleteResourceGroup(long resourceGroupId, @Nullable String routingGroupDatabase);
 
@@ -42,21 +39,17 @@ public interface ResourceGroupsManager
 
     List<SelectorsDetail> readSelector(long resourceGroupId, @Nullable String routingGrouoDatabase);
 
-    SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector,
-            @Nullable String routingGroupDatabase);
+    SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector, @Nullable String routingGroupDatabase);
 
     void deleteSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase);
 
-    GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail,
-            @Nullable String routingGroupDatabase);
+    GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail, @Nullable String routingGroupDatabase);
 
     List<GlobalPropertiesDetail> readAllGlobalProperties(@Nullable String routingGroupDatabase);
 
-    List<GlobalPropertiesDetail> readGlobalProperty(String name,
-            @Nullable String routingGroupDatabase);
+    List<GlobalPropertiesDetail> readGlobalProperty(String name, @Nullable String routingGroupDatabase);
 
-    GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty,
-            @Nullable String routingGroupDatabase);
+    GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty, @Nullable String routingGroupDatabase);
 
     void deleteGlobalProperty(String name, @Nullable String routingGroupDatabase);
 
@@ -70,7 +63,8 @@ public interface ResourceGroupsManager
             implements Comparable<ResourceGroupsDetail>
     {
         private long resourceGroupId;
-        @Nonnull private String name;
+        @Nonnull
+        private String name;
 
         /* OPTIONAL POLICY CONTROLS */
         private Long parent;
@@ -79,7 +73,8 @@ public interface ResourceGroupsManager
         private Integer schedulingWeight;
 
         /* REQUIRED QUOTAS */
-        @Nonnull private String softMemoryLimit;
+        @Nonnull
+        private String softMemoryLimit;
         private int maxQueued;
         private int hardConcurrencyLimit;
 
@@ -121,7 +116,8 @@ public interface ResourceGroupsManager
             this.resourceGroupId = resourceGroupId;
         }
 
-        public @Nonnull String getName()
+        @Nonnull
+        public String getName()
         {
             return this.name;
         }
@@ -171,7 +167,8 @@ public interface ResourceGroupsManager
             this.schedulingWeight = schedulingWeight;
         }
 
-        public @Nonnull String getSoftMemoryLimit()
+        @Nonnull
+        public String getSoftMemoryLimit()
         {
             return this.softMemoryLimit;
         }
@@ -438,7 +435,8 @@ public interface ResourceGroupsManager
     class GlobalPropertiesDetail
             implements Comparable<GlobalPropertiesDetail>
     {
-        @Nonnull private String name;
+        @Nonnull
+        private String name;
         private String value;
 
         public GlobalPropertiesDetail() {}
@@ -454,7 +452,8 @@ public interface ResourceGroupsManager
             return 0;
         }
 
-        public @Nonnull String getName()
+        @Nonnull
+        public String getName()
         {
             return this.name;
         }
@@ -506,10 +505,13 @@ public interface ResourceGroupsManager
     class ExactSelectorsDetail
             implements Comparable<ExactSelectorsDetail>
     {
-        @Nonnull private String resourceGroupId;
-        @Nonnull private String updateTime;
+        @Nonnull
+        private String resourceGroupId;
+        @Nonnull
+        private String updateTime;
 
-        @Nonnull private String source;
+        @Nonnull
+        private String source;
         private String environment;
         private String queryType;
 
@@ -528,7 +530,8 @@ public interface ResourceGroupsManager
             return 0;
         }
 
-        public @Nonnull String getResourceGroupId()
+        @Nonnull
+        public String getResourceGroupId()
         {
             return this.resourceGroupId;
         }
@@ -538,7 +541,8 @@ public interface ResourceGroupsManager
             this.resourceGroupId = resourceGroupId;
         }
 
-        public @Nonnull String getUpdateTime()
+        @Nonnull
+        public String getUpdateTime()
         {
             return this.updateTime;
         }
@@ -548,7 +552,8 @@ public interface ResourceGroupsManager
             this.updateTime = updateTime;
         }
 
-        public @Nonnull String getSource()
+        @Nonnull
+        public String getSource()
         {
             return this.source;
         }
