@@ -66,6 +66,13 @@ driver and the Trino REST API for cluster and node health information.
 Typically, this means that Trino versions 354 and higher should work, however
 newer Trino versions are strongly recommended.
 
+Trino-derived projects and platforms may work if the Trino JDBC driver and the
+REST API are supported. For example, Starburst Galaxy and Starburst Enterprise
+are known to work. Trino deployments with the Helm chart and other means on
+various cloud platforms, such as Amazon EKS also work. However Amazon Athena
+does not work since it uses alternative, custom protocols and lacks the concept
+of individual clusters.
+
 ## Configuration
 
 After downloading or building the JAR, rename it to `gateway-ha.jar`,
