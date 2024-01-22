@@ -81,8 +81,8 @@
                 <td> ${bc.routingGroup}</td>
                 <td class="active_${bc.active?c}"> ${bc.active?c} </td>
                 <#if backendStates?keys?size != 0 && backendStates[bc.name]??>
-                    <td>${backendStates[bc.name].state["QUEUED"]}<td>
-                    <td>${backendStates[bc.name].state["RUNNING"]}<td>
+                    <td>${backendStates[bc.name].state()["QUEUED"]}<td>
+                    <td>${backendStates[bc.name].state()["RUNNING"]}<td>
                 </#if>
             </tr>
         </#list>
