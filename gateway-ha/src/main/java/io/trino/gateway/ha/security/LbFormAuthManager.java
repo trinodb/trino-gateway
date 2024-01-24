@@ -94,7 +94,7 @@ public class LbFormAuthManager
         try {
             DecodedJWT jwt = JWT.decode(idToken);
 
-            if (LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer())) {
+            if (LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.empty())) {
                 return Optional.of(jwt.getClaims());
             }
         }

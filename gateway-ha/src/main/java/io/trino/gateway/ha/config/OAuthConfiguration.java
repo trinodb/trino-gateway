@@ -26,8 +26,9 @@ public class OAuthConfiguration
     private List<String> scopes;
     private String redirectUrl;
     private String userIdField;
+    private List<String> audiences;
 
-    public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField)
+    public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField, List<String> audiences)
     {
         this.issuer = issuer;
         this.clientId = clientId;
@@ -38,6 +39,7 @@ public class OAuthConfiguration
         this.scopes = scopes;
         this.redirectUrl = redirectUrl;
         this.userIdField = userIdField;
+        this.audiences = audiences;
     }
 
     public OAuthConfiguration() {}
@@ -130,5 +132,15 @@ public class OAuthConfiguration
     public void setUserIdField(String userIdField)
     {
         this.userIdField = userIdField;
+    }
+
+    public List<String> getAudiences()
+    {
+        return this.audiences;
+    }
+
+    public void setAudiences(List<String> audiences)
+    {
+        this.audiences = audiences;
     }
 }
