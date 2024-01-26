@@ -30,3 +30,8 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
+      - uses: docker/setup-qemu-action@v2
+        with:
+          platforms: amd64,arm64,ppc64le
+      - name: Build and Test Docker Image
+        run: docker/build.sh
