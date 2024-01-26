@@ -15,8 +15,7 @@ package io.trino.gateway.baseapp;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
-
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 public class MetricRegistryModule
         extends AbstractModule
