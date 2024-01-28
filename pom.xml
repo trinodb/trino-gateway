@@ -120,7 +120,8 @@
                     <failOnWarning>false</failOnWarning>
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
-                        <arg>-Xplugin:ErrorProne</arg>
+                        <arg>-Xplugin:ErrorProne \
+                            -Xep:UnusedVariable:ERROR</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>

@@ -83,10 +83,10 @@ public class TrinoQueueLengthRoutingTable
      */
     private int getWeightForMaxQueueCluster(LinkedHashMap<String, Integer> sortedByQueueLength)
     {
-        int queueSum = 0;
-        int numBuckets = 1;
-        int equalDistribution = 0;
-        int calculatedWtMaxQueue = 0;
+        int queueSum;
+        int numBuckets;
+        int equalDistribution;
+        int calculatedWtMaxQueue;
 
         numBuckets = sortedByQueueLength.size();
         queueSum = sortedByQueueLength.values().stream().mapToInt(Integer::intValue).sum();
@@ -133,12 +133,8 @@ public class TrinoQueueLengthRoutingTable
     {
         synchronized (lockObject) {
             int sum = 0;
-            int queueSum = 0;
             int weight;
             int numBuckets = 1;
-            int equalDistribution = 0;
-            int smallestQueueLn = 0;
-            int lastButOneQueueLn = 0;
             int maxQueueLn = 0;
             int calculatedWtMaxQueue = 0;
 
@@ -171,7 +167,6 @@ public class TrinoQueueLengthRoutingTable
                                 (e1, e2) -> e1, LinkedHashMap::new));
 
                 numBuckets = sortedByQueueLength.size();
-                queueSum = sortedByQueueLength.values().stream().mapToInt(Integer::intValue).sum();
 
                 Object[] queueLengths = sortedByQueueLength.values().toArray();
                 Object[] clusterNames = sortedByQueueLength.keySet().toArray();

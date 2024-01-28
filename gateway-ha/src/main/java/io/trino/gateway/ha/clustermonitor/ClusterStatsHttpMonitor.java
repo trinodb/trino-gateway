@@ -65,8 +65,7 @@ public class ClusterStatsHttpMonitor
         }
 
         try {
-            HashMap<String, Object> result = null;
-            result = new ObjectMapper().readValue(response, HashMap.class);
+            HashMap<String, Object> result = new ObjectMapper().readValue(response, HashMap.class);
 
             clusterStats.setNumWorkerNodes((int) result.get("activeWorkers"));
             clusterStats.setQueuedQueryCount((int) result.get("queuedQueries"));
