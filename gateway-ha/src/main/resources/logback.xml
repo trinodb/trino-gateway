@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+
+<configuration>
+    <import class="ch.qos.logback.core.ConsoleAppender" />
+    <import class="ch.qos.logback.core.filter.EvaluatorFilter" />
+
+    <appender name="STDOUT" class="ConsoleAppender">
+        <filter class="EvaluatorFilter">
+            <evaluator>
+                <expression>event.getMessage().contains("Authorization")</expression>
+            </evaluator>
+            <onMatch>DENY</onMatch>
+        </filter>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} -%kvp- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>

@@ -101,6 +101,14 @@ public abstract class BaseApp<T extends AppConfiguration>
     }
 
     /**
+     * Overrides the default dropwizard logging framework and let it fall back to logback
+     */
+    @Override
+    protected void bootstrapLogging()
+    {
+    }
+
+    /**
      * When the application runs, this is called after the bundles are run.
      *
      * <p>You generally don't want to override this but if you do, make sure to call up into super to

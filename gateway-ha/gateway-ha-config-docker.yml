@@ -45,14 +45,4 @@ managedApps:
 
 # Logging settings.
 logging:
-  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: INFO
-
-  # Logger-specific levels.
-  loggers:
-    io.trino: DEBUG
-
-  appenders:
-    - type: console
-      filterFactories:
-        - type: Log-filter-factory
+  type: external
