@@ -25,16 +25,26 @@ public final class SessionCookie
 
     public static NewCookie getTokenCookie(String token)
     {
-        return new NewCookie(OAUTH_ID_TOKEN,
-                token, "/", "", "",
-                60 * 60 * 24, true);
+        return new NewCookie.Builder(OAUTH_ID_TOKEN)
+                .value(token)
+                .path("/")
+                .domain("")
+                .comment("")
+                .maxAge(60 * 60 * 24)
+                .secure(true)
+                .build();
     }
 
     public static Response logOut()
     {
-        NewCookie cookie = new NewCookie(OAUTH_ID_TOKEN,
-                "logout", "/", "", "",
-                0, true);
+        NewCookie cookie = new NewCookie.Builder(OAUTH_ID_TOKEN)
+                .value("logout")
+                .path("/")
+                .domain("")
+                .comment("")
+                .maxAge(0)
+                .secure(true)
+                .build();
         return Response.ok("You are logged out successfully.")
                 .cookie(cookie)
                 .build();
