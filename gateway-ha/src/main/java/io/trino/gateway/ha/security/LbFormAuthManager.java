@@ -38,7 +38,6 @@ public class LbFormAuthManager
      */
     private final LbKeyProvider lbKeyProvider;
     Map<String, UserConfiguration> presetUsers;
-    private LdapConfiguration ldapConfiguration;
     private final LbLdapClient lbLdapClient;
 
     public LbFormAuthManager(FormAuthConfiguration configuration,

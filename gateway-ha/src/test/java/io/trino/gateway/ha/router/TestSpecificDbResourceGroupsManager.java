@@ -62,8 +62,7 @@ public class TestSpecificDbResourceGroupsManager
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("80%");
 
-        ResourceGroupsDetail newResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
-                specificDb);
+        resourceGroupManager.createResourceGroup(resourceGroup, specificDb);
     }
 
     @Test
