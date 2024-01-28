@@ -135,7 +135,6 @@ public class TestTrinoQueueLengthRoutingTable
         int mockRunningLength = 0;
         String backend;
 
-        Map<String, Integer> queueLengths = new HashMap<>();
         Map<String, Integer> runningLengths = new HashMap<>();
         Table<String, String, Integer> userClusterQueue = HashBasedTable.create();
 
