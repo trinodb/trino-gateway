@@ -52,6 +52,7 @@
         <dep.activejdbc.version>2.3</dep.activejdbc.version>
         <dep.apache.commons.version>3.13.0</dep.apache.commons.version>
         <dep.apache.httpcomponents>4.5.13</dep.apache.httpcomponents>
+        <dep.bouncycastle.version>1.70</dep.bouncycastle.version>
         <dep.dropwizard.version>4.0.5</dep.dropwizard.version>
         <dep.ehcache.version>3.8.1</dep.ehcache.version>
         <dep.h2.version>1.4.192</dep.h2.version>
