@@ -228,6 +228,11 @@
             <version>${dep.ehcache.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+        </dependency>
+
         <!--db -->
         <dependency>
             <groupId>org.javalite</groupId>
