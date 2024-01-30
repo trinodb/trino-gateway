@@ -190,15 +190,11 @@ public class TestTrinoQueueLengthRoutingTable
                 resetBackends(mockRoutingGroup, numBk, queueDistribution, runningDistribution);
                 Map<String, Integer> routingDistribution = routeQueries(mockRoutingGroup, numRequests);
 
-                // Useful for debugging
-                //System.out.println("Input :" + clusterQueueMap.toString() + " Num of Requests:"
-                //    + numRequests
-                //    + " Internal Routing table: "
-                //    + routingTable.getInternalWeightedRoutingTable(mockRoutingGroup).toString()
-                //    + " Distribution: " + routingDistribution.toString());
                 if (numBk > 1) {
                     if (routingDistribution.containsKey(mockRoutingGroup + (numBk - 1))) {
                         assertThat(routingDistribution.get(mockRoutingGroup + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                                .as("Input: %s, Num of Requests: %s, Internal Routing table: %s, Distribution: %s",
+                                        clusterQueueMap, numRequests, routingTable.getInternalWeightedRoutingTable(mockRoutingGroup), routingDistribution)
                                 .isTrue();
                     }
                     else {
@@ -222,14 +218,10 @@ public class TestTrinoQueueLengthRoutingTable
 
                 Map<String, Integer> routingDistribution = routeQueries(mockRoutingGroup, numRequests);
 
-                // Useful Debugging Info
-                //System.out.println("Input :" + clusterQueueMap.toString() + " Num of Requests:"
-                //    + numRequests
-                //    + " Internal Routing table: "
-                //    + routingTable.getInternalWeightedRoutingTable(mockRoutingGroup).toString()
-                //    + " Distribution: " + routingDistribution.toString());
                 if (numBk > 2 && routingDistribution.containsKey(mockRoutingGroup + (numBk - 1))) {
                     assertThat(routingDistribution.get(mockRoutingGroup + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                            .as("Input: %s, Num of Requests: %s, Internal Routing table: %s, Distribution: %s",
+                                    clusterQueueMap, numRequests, routingTable.getInternalWeightedRoutingTable(mockRoutingGroup), routingDistribution)
                             .isTrue();
                 }
                 else {
@@ -310,17 +302,13 @@ public class TestTrinoQueueLengthRoutingTable
                 resetBackends(mockRoutingGroup, numBk, queueDistribution, runningDistribution);
                 Map<String, Integer> routingDistribution = routeQueries(mockRoutingGroup, numRequests);
 
-                //Useful Debugging Info
-                //System.out.println("Input :" + clusterQueueMap.toString() + " Num of Requests:" +
-                //numRequests
-                //+ " Internal Routing table: " + routingTable.getInternalWeightedRoutingTable
-                //(mockRoutingGroup).toString()
-                //+ " Distribution: " + routingDistribution.toString());
-
                 if (numBk > 1) {
                     // With equal weights, the algorithm randomly chooses from the list. Check that the
                     // distribution spans atleast half of the routing group.
-                    assertThat(routingDistribution.size() >= clusterQueueMap.row(mockRoutingGroup).size() / 2).isTrue();
+                    assertThat(routingDistribution.size() >= clusterQueueMap.row(mockRoutingGroup).size() / 2)
+                            .as("Input: %s, Num of Requests: %s, Internal Routing table: %s, Distribution: %s",
+                                    clusterQueueMap, numRequests, routingTable.getInternalWeightedRoutingTable(mockRoutingGroup), routingDistribution)
+                            .isTrue();
                 }
                 else {
                     assertThat(routingDistribution.get(mockRoutingGroup + '0')).isEqualTo(Integer.valueOf(numRequests));
@@ -370,15 +358,11 @@ public class TestTrinoQueueLengthRoutingTable
             resetBackends(grp, numBk, queueDistribution, 0);
             Map<String, Integer> routingDistribution = routeQueries(grp, numRequests);
 
-            // Useful for debugging
-            //System.out.println("Input :" + clusterQueueMap.toString() + " Num of Requests:" +
-            //numRequests
-            //+ " Internal Routing table: " + routingTable.getInternalWeightedRoutingTable
-            //(grp).toString()
-            //+ " Distribution: " + routingDistribution.toString());
             if (numBk > 1) {
                 if (routingDistribution.containsKey(grp + (numBk - 1))) {
                     assertThat(routingDistribution.get(grp + (numBk - 1)) <= Math.ceil(numRequests / numBk))
+                            .as("Input: %s, Num of Requests: %s, Internal Routing table: %s, Distribution: %s",
+                                    clusterQueueMap, numRequests, routingTable.getInternalWeightedRoutingTable(grp), routingDistribution)
                             .isTrue();
                 }
                 else {
@@ -443,9 +427,8 @@ public class TestTrinoQueueLengthRoutingTable
             Thread.sleep(270);
         }
 
-        System.out.println("Total Requests :" + numBatches * numRequests
-                + " distribution :" + totalDistribution);
         assertThat(totalDistribution.get(mockRoutingGroup + (numBk - 1)) <= (numBatches * numRequests / numBk))
+                .as("Total Requests: %s, distribution: %s", numBatches * numRequests, totalDistribution)
                 .isTrue();
         scheduler.shutdown();
     }
