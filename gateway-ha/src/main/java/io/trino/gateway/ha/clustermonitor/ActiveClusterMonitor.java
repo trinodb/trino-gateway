@@ -38,7 +38,6 @@ public class ActiveClusterMonitor
 
     private final List<TrinoClusterStatsObserver> clusterStatsObservers;
     private final GatewayBackendManager gatewayBackendManager;
-    private final int connectionTimeout;
     private final int taskDelayMin;
     private final ClusterStatsMonitor clusterStatsMonitor;
     private volatile boolean monitorActive = true;
@@ -54,11 +53,9 @@ public class ActiveClusterMonitor
     {
         this.clusterStatsObservers = clusterStatsObservers;
         this.gatewayBackendManager = gatewayBackendManager;
-        this.connectionTimeout = monitorConfiguration.getConnectionTimeout();
         this.taskDelayMin = monitorConfiguration.getTaskDelayMin();
         this.clusterStatsMonitor = clusterStatsMonitor;
-        log.info("Running cluster monitor with connection timeout of {} and task delay of {}",
-                connectionTimeout, taskDelayMin);
+        log.info("Running cluster monitor with task delay of {}", taskDelayMin);
     }
 
     /**
