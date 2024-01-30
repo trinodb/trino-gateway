@@ -14,12 +14,11 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.dropwizard.lifecycle.Managed;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,7 @@ public class ActiveClusterMonitor
 {
     public static final int MONITOR_TASK_DELAY_MIN = 1;
     public static final int DEFAULT_THREAD_POOL_SIZE = 20;
-    private static final Logger log = LoggerFactory.getLogger(ActiveClusterMonitor.class);
+    private static final Logger log = Logger.get(ActiveClusterMonitor.class);
 
     private final List<TrinoClusterStatsObserver> clusterStatsObservers;
     private final GatewayBackendManager gatewayBackendManager;
@@ -54,7 +53,7 @@ public class ActiveClusterMonitor
         this.gatewayBackendManager = gatewayBackendManager;
         this.taskDelayMin = monitorConfiguration.getTaskDelayMin();
         this.clusterStatsMonitor = clusterStatsMonitor;
-        log.info("Running cluster monitor with task delay of {}", taskDelayMin);
+        log.info("Running cluster monitor with task delay of %d", taskDelayMin);
     }
 
     /**
@@ -88,13 +87,13 @@ public class ActiveClusterMonitor
                             }
                         }
                         catch (Exception e) {
-                            log.error("Error performing backend monitor tasks", e);
+                            log.error(e, "Error performing backend monitor tasks");
                         }
                         try {
                             Thread.sleep(TimeUnit.MINUTES.toMillis(taskDelayMin));
                         }
                         catch (Exception e) {
-                            log.error("Error with monitor task", e);
+                            log.error(e, "Error with monitor task");
                         }
                     }
                 });

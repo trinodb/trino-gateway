@@ -25,3 +25,6 @@ managedApps:
 
 extraWhitelistPaths:
   - "/v1/custom"
+
+logging:
+  type: external
