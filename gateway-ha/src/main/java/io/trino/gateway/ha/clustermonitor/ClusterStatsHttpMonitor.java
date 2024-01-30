@@ -44,11 +44,13 @@ public class ClusterStatsHttpMonitor
     private static final Logger log = LoggerFactory.getLogger(ClusterStatsHttpMonitor.class);
     private static final String SESSION_USER = "sessionUser";
 
-    private final BackendStateConfiguration backendStateConfiguration;
+    private final String username;
+    private final String password;
 
     public ClusterStatsHttpMonitor(BackendStateConfiguration backendStateConfiguration)
     {
-        this.backendStateConfiguration = backendStateConfiguration;
+        username = backendStateConfiguration.getUsername();
+        password = backendStateConfiguration.getPassword();
     }
 
     @Override
@@ -111,8 +113,8 @@ public class ClusterStatsHttpMonitor
         UiApiCookieJar cookieJar = new UiApiCookieJar();
         OkHttpClient client = new OkHttpClient.Builder().cookieJar(cookieJar).build();
         RequestBody formBody = new FormBody.Builder()
-                .add("username", backendStateConfiguration.getUsername())
-                .add("password", backendStateConfiguration.getPassword())
+                .add("username", username)
+                .add("password", password)
                 .build();
         Request loginRequest = new Request.Builder()
                 .url(HttpUrl.parse(loginUrl))
@@ -155,7 +157,7 @@ public class ClusterStatsHttpMonitor
                 case HttpStatus.UNAUTHORIZED_401:
                     log.info("Unauthorized to fetch cluster stats");
                     log.debug("username: {}, targetUrl: {}, cookieStore: {}",
-                            backendStateConfiguration.getUsername(),
+                            username,
                             targetUrl,
                             client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl)));
                     return null;

@@ -20,6 +20,7 @@ import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
+import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
@@ -39,6 +40,9 @@ public class ClusterStatsMonitorModule
     public ClusterStatsMonitor getClusterStatsMonitor()
     {
         ClusterStatsConfiguration clusterStatsConfig = config.getClusterStatsConfiguration();
+        if (config.getBackendState() == null) {
+            return new NoopClusterStatsMonitor();
+        }
         if (clusterStatsConfig.isUseApi()) {
             return new ClusterStatsHttpMonitor(config.getBackendState());
         }
