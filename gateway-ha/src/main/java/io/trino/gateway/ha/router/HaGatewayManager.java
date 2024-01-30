@@ -14,12 +14,11 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
 import org.jdbi.v3.core.Jdbi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayManager
         implements GatewayBackendManager
 {
-    private static final Logger log = LoggerFactory.getLogger(HaGatewayManager.class);
+    private static final Logger log = Logger.get(HaGatewayManager.class);
 
     private final GatewayBackendDao dao;
 
@@ -61,7 +60,7 @@ public class HaGatewayManager
             return upcast(proxyBackendList);
         }
         catch (Exception e) {
-            log.info("Error fetching all backends: {}", e.getLocalizedMessage());
+            log.info("Error fetching all backends: %s", e.getLocalizedMessage());
         }
         return ImmutableList.of();
     }

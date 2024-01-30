@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.proxyserver;
 
+import io.airlift.log.Logger;
 import jakarta.servlet.DispatcherType;
 import org.eclipse.jetty.http.HttpScheme;
 import org.eclipse.jetty.proxy.ConnectHandler;
@@ -25,8 +26,6 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -38,7 +37,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class ProxyServer
         implements Closeable
 {
-    private static final Logger log = LoggerFactory.getLogger(ProxyServer.class);
+    private static final Logger log = Logger.get(ProxyServer.class);
     private final Server server;
     private final ProxyServletImpl proxy;
     private final ProxyHandler proxyHandler;
@@ -135,7 +134,7 @@ public class ProxyServer
             this.server.start();
         }
         catch (Exception e) {
-            log.error("Error starting proxy server", e);
+            log.error(e, "Error starting proxy server");
             throw new IllegalStateException(e);
         }
     }
@@ -147,7 +146,7 @@ public class ProxyServer
             this.server.stop();
         }
         catch (Exception e) {
-            log.error("Could not close the proxy server", e);
+            log.error(e, "Could not close the proxy server");
         }
     }
 }

@@ -14,13 +14,12 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.airlift.log.Logger;
 
 public class HaRoutingManager
         extends RoutingManager
 {
-    private static final Logger log = LoggerFactory.getLogger(HaRoutingManager.class);
+    private static final Logger log = Logger.get(HaRoutingManager.class);
     QueryHistoryManager queryHistoryManager;
 
     public HaRoutingManager(
@@ -36,7 +35,7 @@ public class HaRoutingManager
         String backend;
         backend = queryHistoryManager.getBackendForQueryId(queryId);
         if (Strings.isNullOrEmpty(backend)) {
-            log.debug("Unable to find backend mapping for [{}]. Searching for suitable backend", queryId);
+            log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
             backend = super.findBackendForUnknownQueryId(queryId);
         }
         return backend;

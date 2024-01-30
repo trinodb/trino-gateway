@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.proxyserver;
 
+import io.airlift.log.Logger;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.HttpClient;
@@ -23,15 +24,13 @@ import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 public class ProxyServletImpl
         extends ProxyServlet.Transparent
 {
-    private static final Logger log = LoggerFactory.getLogger(ProxyServletImpl.class);
+    private static final Logger log = Logger.get(ProxyServletImpl.class);
     private ProxyHandler proxyHandler;
     private ProxyServerConfiguration serverConfig;
 
@@ -113,10 +112,7 @@ public class ProxyServletImpl
             Callback callback)
     {
         try {
-            if (this._log.isDebugEnabled()) {
-                this._log.debug(
-                        "[{}] proxying content to downstream: [{}] bytes", this.getRequestId(request), length);
-            }
+            log.debug("[%d] proxying content to downstream: [%d] bytes", this.getRequestId(request), length);
             if (this.proxyHandler != null) {
                 proxyHandler.postConnectionHook(request, response, buffer, offset, length, callback);
             }

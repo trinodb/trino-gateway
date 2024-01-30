@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.Call;
@@ -26,8 +27,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.eclipse.jetty.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -41,7 +40,7 @@ import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_LOGIN_PA
 public class ClusterStatsHttpMonitor
         implements ClusterStatsMonitor
 {
-    private static final Logger log = LoggerFactory.getLogger(ClusterStatsHttpMonitor.class);
+    private static final Logger log = Logger.get(ClusterStatsHttpMonitor.class);
     private static final String SESSION_USER = "sessionUser";
 
     private final String username;
@@ -61,7 +60,7 @@ public class ClusterStatsHttpMonitor
         // Fetch Cluster level Stats.
         String response = queryCluster(backend, UI_API_STATS_PATH);
         if (Strings.isNullOrEmpty(response)) {
-            log.error("Received null/empty response for {}", UI_API_STATS_PATH);
+            log.error("Received null/empty response for %s", UI_API_STATS_PATH);
             return clusterStats.build();
         }
 
@@ -79,14 +78,14 @@ public class ClusterStatsHttpMonitor
                     .routingGroup(backend.getRoutingGroup());
         }
         catch (Exception e) {
-            log.error("Error parsing cluster stats from [{}]", response, e);
+            log.error(e, "Error parsing cluster stats from [%s]", response);
         }
 
         // Fetch User Level Stats.
         Map<String, Integer> clusterUserStats = new HashMap<>();
         response = queryCluster(backend, UI_API_QUEUED_LIST_PATH);
         if (Strings.isNullOrEmpty(response)) {
-            log.error("Received null/empty response for {}", UI_API_QUEUED_LIST_PATH);
+            log.error("Received null/empty response for %s", UI_API_QUEUED_LIST_PATH);
             return clusterStats.build();
         }
         try {
@@ -101,7 +100,7 @@ public class ClusterStatsHttpMonitor
             }
         }
         catch (Exception e) {
-            log.error("Error parsing cluster user stats", e);
+            log.error(e, "Error parsing cluster user stats");
         }
         return clusterStats.userQueuedCount(clusterUserStats).build();
     }
@@ -122,7 +121,7 @@ public class ClusterStatsHttpMonitor
         Call call = client.newCall(loginRequest);
 
         try (Response res = call.execute()) {
-            log.info("login request received response code {}", res.code());
+            log.info("login request received response code %d", res.code());
             return client;
         }
         catch (IOException e) {
@@ -154,7 +153,7 @@ public class ClusterStatsHttpMonitor
                     return res.body().string();
                 case HttpStatus.UNAUTHORIZED_401:
                     log.info("Unauthorized to fetch cluster stats");
-                    log.debug("username: {}, targetUrl: {}, cookieStore: {}",
+                    log.debug("username: %s, targetUrl: %s, cookieStore: %s",
                             username,
                             targetUrl,
                             client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl)));

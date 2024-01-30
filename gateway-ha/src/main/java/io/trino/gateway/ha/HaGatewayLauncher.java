@@ -13,10 +13,17 @@
  */
 package io.trino.gateway.ha;
 
+import io.airlift.configuration.ConfigurationFactory;
+import io.airlift.log.Logging;
+import io.airlift.log.LoggingConfiguration;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.core.setup.Bootstrap;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+
+import java.util.Map;
+
+import static io.airlift.configuration.ConfigurationLoader.getSystemProperties;
 
 public class HaGatewayLauncher
         extends BaseApp<HaGatewayConfiguration>
@@ -37,6 +44,13 @@ public class HaGatewayLauncher
     public static void main(String[] args)
             throws Exception
     {
+        Logging.initialize();
+        Map<String, String> properties = getSystemProperties();
+        ConfigurationFactory configurationFactory = new ConfigurationFactory(properties);
+        LoggingConfiguration configuration = configurationFactory.build(LoggingConfiguration.class);
+        Logging logging = Logging.initialize();
+        logging.configure(configuration);
+
         /* base package is scanned for any Resource class to be loaded by default. */
         String basePackage = "io.trino";
         new HaGatewayLauncher(basePackage).run(args);

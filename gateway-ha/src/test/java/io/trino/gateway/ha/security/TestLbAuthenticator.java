@@ -16,6 +16,7 @@ package io.trino.gateway.ha.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.collect.ImmutableMap;
+import io.airlift.log.Logger;
 import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
@@ -28,8 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestLbAuthenticator
 {
-    private static final Logger log = LoggerFactory.getLogger(TestLbAuthenticator.class);
+    private static final Logger log = Logger.get(TestLbAuthenticator.class);
 
     private static final String USER = "username";
     private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
@@ -140,7 +139,7 @@ public class TestLbAuthenticator
     {
         Response response = logOut();
         NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
-        log.info("value {}", cookie.getValue());
+        log.info("value %s", cookie.getValue());
         assertThat(cookie.getValue()).isEqualTo("logout");
     }
 
