@@ -13,14 +13,13 @@
  */
 package io.trino.gateway.ha.notifier;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.NotifierConfiguration;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Properties;
@@ -31,7 +30,7 @@ import static java.util.Objects.requireNonNullElse;
 public class EmailNotifier
         implements Notifier
 {
-    private static final Logger log = LoggerFactory.getLogger(EmailNotifier.class);
+    private static final Logger log = Logger.get(EmailNotifier.class);
     private final NotifierConfiguration notifierConfiguration;
     private final Properties props;
 
@@ -82,7 +81,7 @@ public class EmailNotifier
                                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(r));
                             }
                             catch (Exception e) {
-                                log.error("Recipient email [" + e + "] could not be added", e);
+                                log.error(e, "Recipient email [%s] could not be added", r);
                             }
                         });
                 message.setSubject(subject);
@@ -100,16 +99,16 @@ public class EmailNotifier
                     transport.sendMessage(message, message.getAllRecipients());
                 }
                 catch (Exception e) {
-                    log.error("Error creating email transport client", e);
+                    log.error(e, "Error creating email transport client");
                 }
-                log.debug("Sent message [{}] successfully.", content);
+                log.debug("Sent message [%s] successfully.", content);
             }
             catch (Exception e) {
-                log.error("Error sending alert", e);
+                log.error(e, "Error sending alert");
             }
         }
         else {
-            log.warn("No recipients configured to send app notification [{}]", content);
+            log.warn("No recipients configured to send app notification [%s]", content);
         }
     }
 }

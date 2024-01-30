@@ -13,11 +13,10 @@
  */
 package io.trino.gateway.ha.security;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
@@ -26,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestLbAuthorizer
 {
-    private static final Logger log = LoggerFactory.getLogger(TestLbAuthorizer.class);
+    private static final Logger log = Logger.get(TestLbAuthorizer.class);
 
     private static final String USER = "username";
     private static final String ADMIN_ROLE = "ADMIN";
@@ -73,7 +72,7 @@ public class TestLbAuthorizer
 
     static void assertBadPattern(String role)
     {
-        log.info("Configured bad regex pattern for role [{}]", role);
+        log.info("Configured bad regex pattern for role [%s]", role);
         try {
             assertNotMatch(role);
         }

@@ -13,13 +13,12 @@
  */
 package io.trino.gateway.proxyserver;
 
+import io.airlift.log.Logger;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -33,7 +32,7 @@ import java.util.zip.GZIPInputStream;
 /* Order of control => rewriteTarget, preConnectionHook, postConnectionHook. */
 public class ProxyHandler
 {
-    private static final Logger log = LoggerFactory.getLogger(ProxyHandler.class);
+    private static final Logger log = Logger.get(ProxyHandler.class);
 
     protected String rewriteTarget(HttpServletRequest request)
     {

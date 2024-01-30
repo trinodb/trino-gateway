@@ -15,6 +15,7 @@ package io.trino.gateway.ha;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import okhttp3.MediaType;
@@ -24,8 +25,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.javalite.activejdbc.Base;
 import org.jdbi.v3.core.Jdbi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -40,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class HaGatewayTestUtils
 {
-    private static final Logger log = LoggerFactory.getLogger(HaGatewayTestUtils.class);
+    private static final Logger log = Logger.get(HaGatewayTestUtils.class);
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final Random RANDOM = new Random();
 
@@ -90,7 +89,7 @@ public class HaGatewayTestUtils
         FileWriter fw = new FileWriter(target, UTF_8);
         fw.append(configStr);
         fw.flush();
-        log.info("Test Gateway Config \n[{}]", configStr);
+        log.info("Test Gateway Config \n[%s]", configStr);
         TestConfig testConfig = new TestConfig(target.getAbsolutePath(), tempH2DbDir.getAbsolutePath());
         seedRequiredData(testConfig);
         return testConfig;

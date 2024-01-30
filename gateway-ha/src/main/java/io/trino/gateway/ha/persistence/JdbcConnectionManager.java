@@ -13,14 +13,13 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
 import org.javalite.activejdbc.Base;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 
 public class JdbcConnectionManager
 {
-    private static final Logger log = LoggerFactory.getLogger(JdbcConnectionManager.class);
+    private static final Logger log = Logger.get(JdbcConnectionManager.class);
 
     private final Jdbi jdbi;
     private final DataStoreConfiguration configuration;

@@ -16,12 +16,11 @@ package io.trino.gateway.ha.router;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.HttpMethod;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -43,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class RoutingManager
 {
     private static final Random RANDOM = new Random();
-    private static final Logger log = LoggerFactory.getLogger(RoutingManager.class);
+    private static final Logger log = Logger.get(RoutingManager.class);
     private final LoadingCache<String, String> queryIdBackendCache;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
@@ -120,14 +119,14 @@ public abstract class RoutingManager
             backendAddress = queryIdBackendCache.get(queryId);
         }
         catch (ExecutionException e) {
-            log.error("Exception while loading queryId from cache {}", e.getLocalizedMessage());
+            log.error("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return backendAddress;
     }
 
     public void upateBackEndHealth(String backendId, Boolean value)
     {
-        log.info("backend {} isHealthy {}", backendId, value);
+        log.info("backend %s isHealthy %s", backendId, value);
         backendToHealth.put(backendId, value);
     }
 
@@ -171,7 +170,7 @@ public abstract class RoutingManager
                 if (entry.getValue().isDone()) {
                     int responseCode = entry.getValue().get();
                     if (responseCode == 200) {
-                        log.info("Found query [{}] on backend [{}]", queryId, entry.getKey());
+                        log.info("Found query [%s] on backend [%s]", queryId, entry.getKey());
                         setBackendForQueryId(queryId, entry.getKey());
                         return entry.getKey();
                     }
@@ -179,7 +178,7 @@ public abstract class RoutingManager
             }
         }
         catch (Exception e) {
-            log.warn("Query id [{}] not found", queryId);
+            log.warn("Query id [%s] not found", queryId);
         }
         // Fallback on first active backend if queryId mapping not found.
         return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
