@@ -66,7 +66,7 @@
         <dep.postgresql.version>42.6.0</dep.postgresql.version>
         <dep.reflections.version>0.9.10</dep.reflections.version>
         <dep.trino.version>433</dep.trino.version>
-        <dep.wiremock.version>3.0.1</dep.wiremock.version>
+        <dep.wiremock.version>3.3.1</dep.wiremock.version>
 
     </properties>
 
