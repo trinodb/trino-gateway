@@ -16,10 +16,9 @@ package io.trino.gateway.ha.router;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -47,7 +46,7 @@ import java.util.stream.Collectors;
 public class TrinoQueueLengthRoutingTable
         extends HaRoutingManager
 {
-    private static final Logger log = LoggerFactory.getLogger(TrinoQueueLengthRoutingTable.class);
+    private static final Logger log = Logger.get(TrinoQueueLengthRoutingTable.class);
     private static final Random RANDOM = new Random();
     private static final int MIN_WT = 1;
     private static final int MAX_WT = 100;
@@ -141,19 +140,19 @@ public class TrinoQueueLengthRoutingTable
             weightedDistributionRouting.clear();
             routingGroupWeightSum.clear();
 
-            log.debug("Computing Weights for Queue Map :[{}] ", queueLengthMap.toString());
+            log.debug("Computing Weights for Queue Map :[%s] ", queueLengthMap);
 
             for (String routingGroup : queueLengthMap.keySet()) {
                 sum = 0;
                 TreeMap<Integer, String> weightsMap = new TreeMap<>();
 
                 if (queueLengthMap.get(routingGroup).size() == 0) {
-                    log.warn("No active clusters in routingGroup : [{}]. Continue to "
+                    log.warn("No active clusters in routingGroup : [%s]. Continue to "
                             + "process rest of routing table ", routingGroup);
                     continue;
                 }
                 else if (queueLengthMap.get(routingGroup).size() == 1) {
-                    log.debug("Routing Group: [{}] has only 1 active backend.", routingGroup);
+                    log.debug("Routing Group: [%s] has only 1 active backend.", routingGroup);
                     weightedDistributionRouting.put(routingGroup,
                             new TreeMap<>(ImmutableMap.of(MAX_WT, queueLengthMap.get(routingGroup).keys().nextElement())));
                     routingGroupWeightSum.put(routingGroup, MAX_WT);
@@ -192,7 +191,7 @@ public class TrinoQueueLengthRoutingTable
 
             if (log.isDebugEnabled()) {
                 for (String rg : weightedDistributionRouting.keySet()) {
-                    log.debug("Routing Table for : [{}] is [{}]", rg,
+                    log.debug("Routing Table for : [%s] is [%s]", rg,
                             weightedDistributionRouting.get(rg).toString());
                 }
             }
@@ -209,8 +208,8 @@ public class TrinoQueueLengthRoutingTable
     {
         synchronized (lockObject) {
             if (clusterQueueLengthMap.containsKey(routingGroup)) {
-                log.debug("Update routing table for routing group : [{}]"
-                        + " with active backends : [{}]", routingGroup, backends.toString());
+                log.debug("Update routing table for routing group : [%s]"
+                        + " with active backends : [%s]", routingGroup, backends.toString());
                 Collection<String> knownBackends = new HashSet<String>();
                 knownBackends.addAll(clusterQueueLengthMap.get(routingGroup).keySet());
 
@@ -238,7 +237,7 @@ public class TrinoQueueLengthRoutingTable
             Table<String, String, Integer> updatedUserQueueLengthMap)
     {
         synchronized (lockObject) {
-            log.debug("Update Routing table with new cluster queue lengths : [{}]",
+            log.debug("Update Routing table with new cluster queue lengths : [%s]",
                     updatedQueueLengthMap.toString());
             clusterQueueLengthMap.clear();
             userClusterQueueLengthMap.clear();
@@ -262,8 +261,8 @@ public class TrinoQueueLengthRoutingTable
 
                 if (minQueueLen == maxQueueLen && updatedQueueLengthMap.row(grp).size() > 1
                         && updatedRunningLengthMap.containsRow(grp)) {
-                    log.info("Queue lengths equal: {} for all clusters in the group {}."
-                                    + " Falling back to Running Counts : {}", maxQueueLen, grp,
+                    log.info("Queue lengths equal: %s for all clusters in the group %s."
+                                    + " Falling back to Running Counts : %s", maxQueueLen, grp,
                             updatedRunningLengthMap.row(grp));
                     queueMap.putAll(updatedRunningLengthMap.row(grp));
                 }
@@ -320,7 +319,7 @@ public class TrinoQueueLengthRoutingTable
                 }
                 // If all clusters have the same queue count, then fallback to the older weighted logic.
                 if (!Strings.isNullOrEmpty(leastQueuedCluster) && !minQueueCount.equals(maxQueueCount)) {
-                    log.debug("{} routing to:{}. userQueueCount:{}", user, leastQueuedCluster, minQueueCount);
+                    log.debug("%s routing to:%s. userQueueCount:%s", user, leastQueuedCluster, minQueueCount);
 
                     return leastQueuedCluster;
                 }
@@ -357,7 +356,7 @@ public class TrinoQueueLengthRoutingTable
 
         updateRoutingTable(routingGroup, proxyMap.keySet());
         String clusterId = getEligibleBackEnd(routingGroup, user);
-        log.debug("Routing to eligible backend : [{}] for routing group: [{}]",
+        log.debug("Routing to eligible backend : [%s] for routing group: [%s]",
                 clusterId, routingGroup);
 
         if (clusterId != null) {

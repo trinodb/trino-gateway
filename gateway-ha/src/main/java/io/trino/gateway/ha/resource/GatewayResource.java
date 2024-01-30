@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
@@ -25,8 +26,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 @Produces(MediaType.APPLICATION_JSON)
 public class GatewayResource
 {
-    private static final Logger log = LoggerFactory.getLogger(GatewayResource.class);
+    private static final Logger log = Logger.get(GatewayResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
 
@@ -73,7 +72,7 @@ public class GatewayResource
             this.gatewayBackendManager.deactivateBackend(name);
         }
         catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error(e, e.getMessage());
             return throwError(e);
         }
         return Response.ok().build();
@@ -87,7 +86,7 @@ public class GatewayResource
             this.gatewayBackendManager.activateBackend(name);
         }
         catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             return throwError(e);
         }
         return Response.ok().build();

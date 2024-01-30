@@ -14,10 +14,9 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,7 +34,7 @@ import java.util.concurrent.TimeoutException;
 public class ClusterStatsJdbcMonitor
         implements ClusterStatsMonitor
 {
-    private static final Logger log = LoggerFactory.getLogger(ClusterStatsJdbcMonitor.class);
+    private static final Logger log = Logger.get(ClusterStatsJdbcMonitor.class);
 
     private final Properties properties; // TODO Avoid using a mutable field
 
@@ -69,7 +68,7 @@ public class ClusterStatsJdbcMonitor
             properties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
         }
         catch (MalformedURLException e) {
-            log.error("could not parse backend url {} ", url);
+            log.error("could not parse backend url %s ", url);
             return clusterStats.build(); // TODO Invalid configuration should fail
         }
 
@@ -89,10 +88,10 @@ public class ClusterStatsJdbcMonitor
                     .build();
         }
         catch (TimeoutException e) {
-            log.error("timed out fetching status for {} backend", url, e);
+            log.error(e, "timed out fetching status for %s backend", url);
         }
         catch (Exception e) {
-            log.error("could not fetch status for {} backend", url, e);
+            log.error(e, "could not fetch status for %s backend", url);
         }
         return clusterStats.build();
     }

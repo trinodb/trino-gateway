@@ -13,9 +13,9 @@
  */
 package io.trino.gateway;
 
+import io.airlift.log.Logger;
+import io.airlift.log.Logging;
 import io.trino.gateway.ha.HaGatewayLauncher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
@@ -31,6 +31,9 @@ public final class TrinoGatewayRunner
     public static void main(String[] args)
             throws Exception
     {
+        Logging.initialize();
+        Logger log = Logger.get(TrinoGatewayRunner.class);
+
         TrinoContainer trino1 = new TrinoContainer("trinodb/trino:395");
         trino1.setPortBindings(List.of("8081:8080"));
         trino1.start();
@@ -58,7 +61,6 @@ public final class TrinoGatewayRunner
 
         HaGatewayLauncher.main(new String[]{"server", "gateway-ha/gateway-ha-config.yml"});
 
-        Logger log = LoggerFactory.getLogger(TrinoGatewayRunner.class);
         log.info("======== SERVER STARTED ========");
     }
 }

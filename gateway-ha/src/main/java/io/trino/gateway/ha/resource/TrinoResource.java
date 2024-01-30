@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
@@ -28,8 +29,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +44,7 @@ import static java.util.Objects.requireNonNull;
 public class TrinoResource
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(TrinoResource.class);
+    private static final Logger log = Logger.get(TrinoResource.class);
 
     private final ResourceGroupsManager resourceGroupsManager;
 
@@ -69,7 +68,7 @@ public class TrinoResource
             return Response.ok(newResourceGroup).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }
@@ -108,7 +107,7 @@ public class TrinoResource
             return Response.ok(updatedResourceGroup).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }
@@ -137,7 +136,7 @@ public class TrinoResource
             return Response.ok(updatedSelector).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }
@@ -179,7 +178,7 @@ public class TrinoResource
             return Response.ok(updatedSelector).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }
@@ -198,7 +197,7 @@ public class TrinoResource
             resourceGroupsManager.deleteSelector(selector, useSchema);
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
         }
         return Response.ok().build();
     }
@@ -218,7 +217,7 @@ public class TrinoResource
             return Response.ok(newGlobalProperty).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }
@@ -257,7 +256,7 @@ public class TrinoResource
             return Response.ok(updatedGlobalProperty).build();
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e);
             throw new WebApplicationException(e);
         }
     }

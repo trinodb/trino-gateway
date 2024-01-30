@@ -13,15 +13,14 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.log.Logger;
 import io.dropwizard.configuration.ConfigurationException;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class LdapConfiguration
 {
-    private static final Logger log = LoggerFactory.getLogger(LdapConfiguration.class);
+    private static final Logger log = Logger.get(LdapConfiguration.class);
     private String ldapHost;
     private Integer ldapPort;
     private boolean useTls;
@@ -73,11 +72,11 @@ public class LdapConfiguration
                             .build(new java.io.File(path));
         }
         catch (java.io.IOException e) {
-            log.error("Error loading configuration file", e);
+            log.error(e, "Error loading configuration file");
             throw new RuntimeException(e);
         }
         catch (ConfigurationException e) {
-            log.error("Error loading configuration file", e);
+            log.error(e, "Error loading configuration file");
             throw new RuntimeException(e);
         }
         return configuration;
