@@ -89,6 +89,12 @@ various cloud platforms, such as Amazon EKS also work. However Amazon Athena
 does not work since it uses alternative, custom protocols and lacks the concept
 of individual clusters.
 
+You also have to update `config.properties` with 
+```commandline
+http-server.process-forwarded=true
+```
+
+
 ## Configuration
 
 After downloading or building the JAR, rename it to `gateway-ha.jar`,
