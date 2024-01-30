@@ -17,6 +17,7 @@ import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -28,8 +29,6 @@ import jakarta.ws.rs.HttpMethod;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.util.Callback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -77,7 +76,7 @@ public class QueryIdCachingProxyHandler
     private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(QueryIdCachingProxyHandler.class);
+    private static final Logger log = Logger.get(QueryIdCachingProxyHandler.class);
 
     private final RoutingManager routingManager;
     private final RoutingGroupSelector routingGroupSelector;
@@ -109,7 +108,7 @@ public class QueryIdCachingProxyHandler
         }
         String queryId = null;
 
-        log.debug("trying to extract query id from  path [{}] or queryString [{}]", path, queryParams);
+        log.debug("trying to extract query id from  path [%s] or queryString [%s]", path, queryParams);
         if (path.startsWith(V1_STATEMENT_PATH) || path.startsWith(V1_QUERY_PATH)) {
             String[] tokens = path.split("/");
             if (tokens.length >= 4) {
@@ -136,7 +135,7 @@ public class QueryIdCachingProxyHandler
                 queryId = matcher.group(1);
             }
         }
-        log.debug("query id in url [{}]", queryId);
+        log.debug("query id in url [%s]", queryId);
         return queryId;
     }
 
@@ -152,7 +151,7 @@ public class QueryIdCachingProxyHandler
                     hostName.append(":").append(backendUri.getPort());
                 }
                 String overrideHostName = hostName.toString();
-                log.debug("Incoming Request Host header : [{}], proxy request host header : [{}]",
+                log.debug("Incoming Request Host header : [%s], proxy request host header : [%s]",
                         request.getHeader(HOST_HEADER), overrideHostName);
 
                 proxyRequest.headers(headers -> headers.add(HOST_HEADER, overrideHostName));
@@ -171,7 +170,7 @@ public class QueryIdCachingProxyHandler
         String trinoUser = request.getHeader(USER_HEADER);
 
         if (!isNullOrEmpty(trinoUser)) {
-            log.info("user from {}", USER_HEADER);
+            log.info("user from %s", USER_HEADER);
             return trinoUser;
         }
 
@@ -228,7 +227,7 @@ public class QueryIdCachingProxyHandler
             }
         }
         catch (Exception e) {
-            log.error("Error extracting query payload from request", e);
+            log.error(e, "Error extracting query payload from request");
         }
 
         return extractQueryIdIfPresent(path, queryParams);
@@ -243,13 +242,13 @@ public class QueryIdCachingProxyHandler
             try {
                 String requestBody = CharStreams.toString(request.getReader());
                 log.info(
-                        "Processing request endpoint: [{}], payload: [{}]",
+                        "Processing request endpoint: [%s], payload: [%s]",
                         request.getRequestURI(),
                         requestBody);
                 debugLogHeaders(request);
             }
             catch (Exception e) {
-                log.warn("Error fetching the request payload", e);
+                log.warn(e, "Error fetching the request payload");
             }
         }
 
@@ -298,7 +297,7 @@ public class QueryIdCachingProxyHandler
 
     private void logRewrite(String newBackend, HttpServletRequest request)
     {
-        log.info("Rerouting [{}://{}:{}{}{}]--> [{}]",
+        log.info("Rerouting [%s://%s:%s%s%s]--> [%s]",
                 request.getScheme(),
                 request.getRemoteHost(),
                 request.getServerPort(),
@@ -331,7 +330,7 @@ public class QueryIdCachingProxyHandler
         if (!isNullOrEmpty(queryId)) {
             return routingManager.findBackendForQueryId(queryId);
         }
-        log.error("No backend found for queryId {}", queryId);
+        log.error("No backend found for queryId %s", queryId);
         return getBackendFromRoutingGroup(request);
     }
 
@@ -361,10 +360,10 @@ public class QueryIdCachingProxyHandler
                 else {
                     output = new String(buffer);
                 }
-                log.debug("For Request [{}] got Response output [{}]", request.getRequestURI(), output);
+                log.debug("For Request [%s] got Response output [%s]", request.getRequestURI(), output);
 
                 QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request);
-                log.debug("Extracting Proxy destination : [{}] for request : [{}]",
+                log.debug("Extracting Proxy destination : [%s] for request : [%s]",
                         queryDetail.getBackendUrl(), request.getRequestURI());
 
                 if (response.getStatus() == HttpStatus.OK_200) {
@@ -375,17 +374,17 @@ public class QueryIdCachingProxyHandler
                         routingManager.setBackendForQueryId(
                                 queryDetail.getQueryId(), queryDetail.getBackendUrl());
                         log.debug(
-                                "QueryId [{}] mapped with proxy [{}]",
+                                "QueryId [%s] mapped with proxy [%s]",
                                 queryDetail.getQueryId(),
                                 queryDetail.getBackendUrl());
                     }
                     else {
-                        log.debug("QueryId [{}] could not be cached", queryDetail.getQueryId());
+                        log.debug("QueryId [%s] could not be cached", queryDetail.getQueryId());
                     }
                 }
                 else {
                     log.error(
-                            "Non OK HTTP Status code with response [{}] , Status code [{}]",
+                            "Non OK HTTP Status code with response [%s] , Status code [%s]",
                             output,
                             response.getStatus());
                 }
@@ -393,11 +392,11 @@ public class QueryIdCachingProxyHandler
                 queryHistoryManager.submitQueryDetail(queryDetail);
             }
             else {
-                log.debug("SKIPPING For {}", requestPath);
+                log.debug("SKIPPING For %s", requestPath);
             }
         }
         catch (Exception e) {
-            log.error("Error in proxying falling back to super call", e);
+            log.error(e, "Error in proxying falling back to super call");
         }
         super.postConnectionHook(request, response, buffer, offset, length, callback);
     }

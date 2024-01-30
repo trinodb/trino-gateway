@@ -105,6 +105,14 @@ configuration YAML file.
 
 Find more information in the [routing rules documentation](routing-rules.md).
 
+### Configure logging
+
+Path to `log.properties` must be set via `log.levels-file` JVM options
+like `-Dlog.levels-file=etc/log.properties`.
+
+Use the `log.*` properties from the [Trino logging properties
+documentation](https://trino.io/docs/current/admin/properties-logging.html) for further configuration.
+
 ### Proxying additional paths
 
 By default, Trino Gateway only proxies requests to paths starting with

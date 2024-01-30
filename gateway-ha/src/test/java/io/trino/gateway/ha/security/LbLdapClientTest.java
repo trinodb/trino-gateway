@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.security;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
@@ -26,8 +27,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
@@ -36,7 +35,7 @@ import static org.mockito.Mockito.eq;
 @ExtendWith(MockitoExtension.class)
 public class LbLdapClientTest
 {
-    private static final Logger log = LoggerFactory.getLogger(LbLdapClientTest.class);
+    private static final Logger log = Logger.get(LbLdapClientTest.class);
     @Mock
     LdapConnectionTemplate ldapConnectionTemplate;
     @Spy
@@ -135,7 +134,7 @@ public class LbLdapClientTest
         //Success case
         String ret = lbLdapClient.getMemberOf(user);
 
-        log.info("ret is {}", ret);
+        log.info("ret is %s", ret);
         assertThat(ret).isEqualTo("Admin,User");
 
         org.mockito.Mockito

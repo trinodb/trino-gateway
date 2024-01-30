@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.security;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
@@ -27,14 +28,12 @@ import org.apache.directory.ldap.client.template.EntryMapper;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.PasswordWarning;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class LbLdapClient
 {
-    private static final Logger log = LoggerFactory.getLogger(LbLdapClient.class);
+    private static final Logger log = Logger.get(LbLdapClient.class);
     private LdapConnectionTemplate ldapConnectionTemplate;
     private LdapConfiguration config;
     private UserEntryMapper userRecordEntryMapper;
@@ -85,12 +84,12 @@ public class LbLdapClient
                             password.toCharArray());
 
             if (passwordWarning != null) {
-                log.warn("password warning {}", passwordWarning);
+                log.warn("password warning %s", passwordWarning);
                 return true;
             }
         }
         catch (PasswordException exception) {
-            log.error("Failed to authenticate {}", exception.getResultCode());
+            log.error("Failed to authenticate %s", exception.getResultCode());
             return false;
         }
         log.info("Authenticated successfully");
@@ -111,7 +110,7 @@ public class LbLdapClient
         String memberOf = "";
         if (list != null && !list.isEmpty()) {
             memberOf = list.listIterator().next().getMemberOf();
-            log.debug("Member of {}", memberOf);
+            log.debug("Member of %s", memberOf);
         }
         return memberOf;
     }

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
@@ -32,8 +33,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,7 +47,7 @@ import static java.util.Objects.requireNonNull;
 public class EntityEditorResource
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(EntityEditorResource.class);
+    private static final Logger log = Logger.get(EntityEditorResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
     private final ResourceGroupsManager resourceGroupsManager;
@@ -87,7 +86,7 @@ public class EntityEditorResource
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
-                    log.info("Setting up the backend {} with healthy state", backend.getName());
+                    log.info("Setting up the backend %s with healthy state", backend.getName());
                     routingManager.upateBackEndHealth(backend.getName(), true);
                     break;
                 case RESOURCE_GROUP:
@@ -112,7 +111,7 @@ public class EntityEditorResource
             }
         }
         catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error(e, e.getMessage());
             throw new WebApplicationException(e);
         }
         return Response.ok().build();

@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.airlift.log.Logger;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jeasy.rules.api.Facts;
 import org.jeasy.rules.api.Rules;
@@ -20,7 +21,6 @@ import org.jeasy.rules.api.RulesEngine;
 import org.jeasy.rules.core.DefaultRulesEngine;
 import org.jeasy.rules.mvel.MVELRuleFactory;
 import org.jeasy.rules.support.reader.YamlRuleDefinitionReader;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
 import java.nio.file.Files;
@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class RuleReloadingRoutingGroupSelector
         implements RoutingGroupSelector
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(RuleReloadingRoutingGroupSelector.class);
+    private static final Logger log = Logger.get(RuleReloadingRoutingGroupSelector.class);
     private final RulesEngine rulesEngine = new DefaultRulesEngine();
     private final MVELRuleFactory ruleFactory = new MVELRuleFactory(new YamlRuleDefinitionReader());
     private final String rulesConfigPath;
@@ -55,8 +55,8 @@ public class RuleReloadingRoutingGroupSelector
             lastUpdatedTime = attr.lastModifiedTime().toMillis();
         }
         catch (Exception e) {
-            log.error("Error opening rules configuration file, using "
-                    + "routing group header as default.", e);
+            log.error(e, "Error opening rules configuration file, using "
+                    + "routing group header as default.");
         }
     }
 
@@ -66,7 +66,7 @@ public class RuleReloadingRoutingGroupSelector
         try {
             BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
                     BasicFileAttributes.class);
-            log.debug("File modified time: " + attr.lastModifiedTime() + ". lastUpdatedTime: " + lastUpdatedTime);
+            log.debug("File modified time: %s. lastUpdatedTime: %s", attr.lastModifiedTime(), lastUpdatedTime);
             if (attr.lastModifiedTime().toMillis() > lastUpdatedTime) {
                 Lock writeLock = readWriteLock.writeLock();
                 writeLock.lock();
@@ -74,7 +74,7 @@ public class RuleReloadingRoutingGroupSelector
                     if (attr.lastModifiedTime().toMillis() > lastUpdatedTime) {
                         // This check is performed again to prevent parsing the rules twice in case another
                         // thread finds the condition true and acquires the lock before this one
-                        log.info("Updating rules to file modified at {}", attr.lastModifiedTime());
+                        log.info("Updating rules to file modified at %s", attr.lastModifiedTime());
                         rules = ruleFactory.createRules(
                                 new FileReader(rulesConfigPath, UTF_8));
                         lastUpdatedTime = attr.lastModifiedTime().toMillis();
@@ -99,8 +99,8 @@ public class RuleReloadingRoutingGroupSelector
             return result.get("routingGroup");
         }
         catch (Exception e) {
-            log.error("Error opening rules configuration file, using "
-                    + "routing group header as default.", e);
+            log.error(e, "Error opening rules configuration file, using "
+                    + "routing group header as default.");
             // Invalid rules could lead to perf problems as every thread goes into the writeLock
             // block until the issue is resolved
         }

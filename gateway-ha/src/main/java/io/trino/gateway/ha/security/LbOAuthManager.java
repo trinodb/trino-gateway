@@ -22,14 +22,13 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.OAuthConfiguration;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URL;
@@ -45,7 +44,7 @@ import static java.lang.String.format;
 
 public class LbOAuthManager
 {
-    private static final Logger log = LoggerFactory.getLogger(LbOAuthManager.class);
+    private static final Logger log = Logger.get(LbOAuthManager.class);
     /**
      * Cookie key to pass the token.
      */
@@ -145,7 +144,7 @@ public class LbOAuthManager
             }
         }
         catch (Exception exc) {
-            log.error("Could not validate token or get claims from it.", exc);
+            log.error(exc, "Could not validate token or get claims from it.");
         }
         return Optional.empty();
     }

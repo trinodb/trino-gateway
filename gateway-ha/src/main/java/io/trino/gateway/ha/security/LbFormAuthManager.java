@@ -18,14 +18,13 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import io.airlift.log.Logger;
 import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +34,7 @@ import java.util.stream.Stream;
 
 public class LbFormAuthManager
 {
-    private static final Logger log = LoggerFactory.getLogger(LbFormAuthManager.class);
+    private static final Logger log = Logger.get(LbFormAuthManager.class);
     /**
      * Cookie key to pass the token.
      */
@@ -106,7 +105,7 @@ public class LbFormAuthManager
             }
         }
         catch (Exception exc) {
-            log.error("Could not validate token or get claims from it.", exc);
+            log.error(exc, "Could not validate token or get claims from it.");
         }
         return Optional.empty();
     }
