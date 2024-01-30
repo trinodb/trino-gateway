@@ -40,9 +40,9 @@ import java.util.stream.Collectors;
  * its queue length. This manager listens to updates on cluster queue length as recorded by the
  * {@link ActiveClusterMonitor}
  * Ideally where ever a modification is made to the the list of backends(adding, removing) this
- * routing manager should get notified & updated.
+ * routing manager should get notified and updated.
  * Currently updates are made only on heart beats from
- * {@link ActiveClusterMonitor} & during routing requests.
+ * {@link ActiveClusterMonitor} and during routing requests.
  */
 public class TrinoQueueLengthRoutingTable
         extends HaRoutingManager
