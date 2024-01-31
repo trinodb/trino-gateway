@@ -60,7 +60,7 @@
         <dep.mockito.version>5.8.0</dep.mockito.version>
         <dep.mysqlconnector.version>8.0.17</dep.mysqlconnector.version>
         <dep.okhttp.version>3.14.9</dep.okhttp.version>
-        <dep.postgresql.version>42.6.0</dep.postgresql.version>
+        <dep.postgresql.version>42.7.1</dep.postgresql.version>
         <dep.reflections.version>0.9.10</dep.reflections.version>
         <dep.trino.version>433</dep.trino.version>
         <dep.wiremock.version>3.3.1</dep.wiremock.version>
