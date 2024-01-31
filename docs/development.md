@@ -36,7 +36,7 @@
 ## Build requirements
 
 * Mac OS X or Linux
-* Java 17+, 64-bit
+* Java 21+, 64-bit
 * Docker
 
 #### Running Trino Gateway in your IDE
@@ -54,7 +54,7 @@ or execute the following command:
 
 #### Locally
 
-This project requires Java 17. Note that higher version of Java have not been
+This project requires Java 21. Note that higher version of Java have not been
 verified and may run into unexpected issues.
 
 Run `./mvnw clean install` to build `trino-gateway`. VM options required for
