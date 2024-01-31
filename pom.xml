@@ -42,7 +42,6 @@
         <project.build.targetJdk>17</project.build.targetJdk>
 
         <air.java.version>17</air.java.version>
-        <air.check.skip-duplicate-finder>true</air.check.skip-duplicate-finder>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
 
