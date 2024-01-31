@@ -57,7 +57,6 @@
         <dep.jakarta.annotations.version>2.1.1</dep.jakarta.annotations.version>
         <dep.jakarta.mail.version>2.0.0</dep.jakarta.mail.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
-        <dep.jetty.version>11.0.15</dep.jetty.version>
         <dep.mockito.version>5.8.0</dep.mockito.version>
         <dep.mysqlconnector.version>8.0.17</dep.mysqlconnector.version>
         <dep.okhttp.version>3.9.0</dep.okhttp.version>
@@ -82,14 +81,6 @@
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-dependencies</artifactId>
                 <version>${dep.dropwizard.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
-                <version>${dep.jetty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
