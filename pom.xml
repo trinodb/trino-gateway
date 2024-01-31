@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>147</version>
+        <version>149</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -55,6 +55,7 @@
         <dep.bouncycastle.version>1.70</dep.bouncycastle.version>
         <dep.dropwizard.version>4.0.5</dep.dropwizard.version>
         <dep.ehcache.version>3.8.1</dep.ehcache.version>
+        <dep.errorprone.version>2.23.0</dep.errorprone.version>
         <dep.h2.version>1.4.192</dep.h2.version>
         <dep.jakarta.annotations.version>2.1.1</dep.jakarta.annotations.version>
         <dep.jakarta.mail.version>2.0.0</dep.jakarta.mail.version>
@@ -75,7 +76,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>239</version>
+                <version>240</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
