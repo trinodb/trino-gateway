@@ -80,6 +80,14 @@ all the required artifacts:
 ./build.sh -r 4
 ```
 
+Set the environment variable `TRINO_GATEWAY_BASE_IMAGE` to use a specific base image
+to build Trino Gateway image.
+
+```bash
+export TRINO_GATEWAY_BASE_IMAGE=<image>
+./build.sh
+```
+
 ## Getting Help
 
 Join the Trino community [Slack](https://trino.io/slack.html).

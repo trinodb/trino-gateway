@@ -12,8 +12,8 @@
 # limitations under the License.
 
 # syntax=docker/dockerfile:1
-
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS jdk-download
+ARG TRINO_GATEWAY_BASE_IMAGE
+FROM ${TRINO_GATEWAY_BASE_IMAGE} AS jdk-download
 ARG JDK_DOWNLOAD_LINK
 ARG JDK_VERSION
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_VERSION}"
@@ -26,8 +26,7 @@ RUN \
     mkdir -p "${JAVA_HOME}" && \
     curl -#LfS "${JDK_DOWNLOAD_LINK}" | tar -zx --strip 1 -C "${JAVA_HOME}"
 
-# Use ubi9 minimal as it's more secure
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+FROM ${TRINO_GATEWAY_BASE_IMAGE}
 WORKDIR /opt/trino
 
 ARG JDK_VERSION
