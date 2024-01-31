@@ -26,9 +26,11 @@ server:
   applicationConnectors:
     - type: http
       port: 8090
+      useForwardedHeaders: true
   adminConnectors:
     - type: http
       port: 8091
+      useForwardedHeaders: true
 
 # This can be adjusted based on the coordinator state
 monitor:
