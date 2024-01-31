@@ -8,9 +8,11 @@ server:
   applicationConnectors:
     - type: http
       port: 9081
+      useForwardedHeaders: true
   adminConnectors:
     - type: http
       port: 9082
+      useForwardedHeaders: true
 
 dataStore:
   #This stores the URLs of backend Trino servers and query history
