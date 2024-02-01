@@ -136,7 +136,7 @@ public class QueryIdCachingProxyHandler
                 log.debug("Incoming Request Host header : [{}], proxy request host header : [{}]",
                         request.getHeader(HOST_HEADER), overrideHostName);
 
-                proxyRequest.header(HOST_HEADER, overrideHostName);
+                proxyRequest.headers(headers -> headers.add(HOST_HEADER, overrideHostName));
             }
             catch (URISyntaxException e) {
                 log.warn(e.toString());
