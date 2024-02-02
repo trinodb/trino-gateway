@@ -56,7 +56,7 @@ public class TestTrinoQueueLengthRoutingTable
     public void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        backendManager = new HaGatewayManager(connectionManager);
+        backendManager = new HaGatewayManager(connectionManager.getJdbi());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
         routingTable = new TrinoQueueLengthRoutingTable(backendManager, historyManager);
 
