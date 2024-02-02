@@ -17,6 +17,7 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
 import io.trino.gateway.ha.persistence.dao.ResourceGroups;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalProperties;
+import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalPropertiesDao;
 import io.trino.gateway.ha.persistence.dao.Selectors;
 import jakarta.annotation.Nullable;
 
@@ -260,14 +261,7 @@ public class HaResourceGroupsManager
     public GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroupsGlobalProperties.create(
-                    new ResourceGroupsGlobalProperties(), globalPropertyDetail);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getDao(routingGroupDatabase).insert(globalPropertyDetail.getName(), globalPropertyDetail.getValue());
         return globalPropertyDetail;
     }
 
@@ -278,15 +272,8 @@ public class HaResourceGroupsManager
     public List<GlobalPropertiesDetail> readAllGlobalProperties(
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<ResourceGroupsGlobalProperties> globalPropertyList =
-                    ResourceGroupsGlobalProperties.findAll();
-            return ResourceGroupsGlobalProperties.upcast(globalPropertyList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<ResourceGroupsGlobalProperties> globalPropertyList = getDao(routingGroupDatabase).findAll();
+        return upcast(globalPropertyList);
     }
 
     /**
@@ -296,15 +283,8 @@ public class HaResourceGroupsManager
     public List<GlobalPropertiesDetail> readGlobalProperty(String name,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<ResourceGroupsGlobalProperties> globalPropertyList =
-                    ResourceGroupsGlobalProperties.where("name = ?", name);
-            return ResourceGroupsGlobalProperties.upcast(globalPropertyList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<ResourceGroupsGlobalProperties> globalPropertyList = getDao(routingGroupDatabase).findByName(name);
+        return upcast(globalPropertyList);
     }
 
     /**
@@ -314,20 +294,14 @@ public class HaResourceGroupsManager
     public GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroupsGlobalProperties model =
-                    ResourceGroupsGlobalProperties.findFirst("name = ?", globalProperty.getName());
+        ResourceGroupsGlobalPropertiesDao dao = getDao(routingGroupDatabase);
+        ResourceGroupsGlobalProperties model = dao.findFirstByName(globalProperty.getName());
 
-            if (model == null) {
-                ResourceGroupsGlobalProperties.create(new ResourceGroupsGlobalProperties(), globalProperty);
-            }
-            else {
-                ResourceGroupsGlobalProperties.update(model, globalProperty);
-            }
+        if (model == null) {
+            dao.insert(globalProperty.getName(), globalProperty.getValue());
         }
-        finally {
-            connectionManager.close();
+        else {
+            dao.update(globalProperty.getName(), globalProperty.getValue());
         }
         return globalProperty;
     }
@@ -338,13 +312,7 @@ public class HaResourceGroupsManager
     @Override
     public void deleteGlobalProperty(String name, @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroupsGlobalProperties.delete("name = ?", name);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getDao(routingGroupDatabase).deleteByName(name);
     }
 
     /**
@@ -425,5 +393,23 @@ public class HaResourceGroupsManager
             return "= '" + detail + "'";
         }
         return "= " + detail;
+    }
+
+    private ResourceGroupsGlobalPropertiesDao getDao(@Nullable String routingGroupDatabase)
+    {
+        return connectionManager.getJdbi(routingGroupDatabase).onDemand(ResourceGroupsGlobalPropertiesDao.class);
+    }
+
+    private static List<GlobalPropertiesDetail> upcast(List<ResourceGroupsGlobalProperties> globalPropertiesList)
+    {
+        List<GlobalPropertiesDetail> globalProperties = new ArrayList<>();
+        for (ResourceGroupsGlobalProperties dao : globalPropertiesList) {
+            GlobalPropertiesDetail globalPropertiesDetail = new GlobalPropertiesDetail();
+            globalPropertiesDetail.setName(dao.name());
+            globalPropertiesDetail.setValue(dao.value());
+
+            globalProperties.add(globalPropertiesDetail);
+        }
+        return globalProperties;
     }
 }
