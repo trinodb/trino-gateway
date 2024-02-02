@@ -34,10 +34,10 @@ public class BackendStateManager
     public BackendState getBackendState(ProxyBackendConfiguration backend)
     {
         String name = backend.getName();
-        ClusterStats stats = clusterStats.getOrDefault(backend.getName(), new ClusterStats());
+        ClusterStats stats = clusterStats.getOrDefault(backend.getName(), ClusterStats.builder(name).build());
         Map<String, Integer> state = new HashMap<>();
-        state.put("QUEUED", stats.getQueuedQueryCount());
-        state.put("RUNNING", stats.getRunningQueryCount());
+        state.put("QUEUED", stats.queuedQueryCount());
+        state.put("RUNNING", stats.runningQueryCount());
         return new BackendState(name, state);
     }
 

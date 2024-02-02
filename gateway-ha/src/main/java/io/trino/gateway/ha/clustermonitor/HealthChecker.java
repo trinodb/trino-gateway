@@ -32,14 +32,14 @@ public class HealthChecker
     public void observe(List<ClusterStats> clustersStats)
     {
         for (ClusterStats clusterStats : clustersStats) {
-            if (!clusterStats.isHealthy()) {
+            if (!clusterStats.healthy()) {
                 notifyUnhealthyCluster(clusterStats);
             }
             else {
-                if (clusterStats.getQueuedQueryCount() > MAX_THRESHOLD_QUEUED_QUERY_COUNT) {
+                if (clusterStats.queuedQueryCount() > MAX_THRESHOLD_QUEUED_QUERY_COUNT) {
                     notifyForTooManyQueuedQueries(clusterStats);
                 }
-                if (clusterStats.getNumWorkerNodes() < 1) {
+                if (clusterStats.numWorkerNodes() < 1) {
                     notifyForNoWorkers(clusterStats);
                 }
             }
@@ -49,19 +49,19 @@ public class HealthChecker
     private void notifyUnhealthyCluster(ClusterStats clusterStats)
     {
         notifier.sendNotification(String.format("%s - Cluster unhealthy",
-                        clusterStats.getClusterId()),
+                        clusterStats.clusterId()),
                 clusterStats.toString());
     }
 
     private void notifyForTooManyQueuedQueries(ClusterStats clusterStats)
     {
         notifier.sendNotification(String.format("%s - Too many queued queries",
-                clusterStats.getClusterId()), clusterStats.toString());
+                clusterStats.clusterId()), clusterStats.toString());
     }
 
     private void notifyForNoWorkers(ClusterStats clusterStats)
     {
         notifier.sendNotification(String.format("%s - Number of workers",
-                clusterStats.getClusterId()), clusterStats.toString());
+                clusterStats.clusterId()), clusterStats.toString());
     }
 }

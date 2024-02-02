@@ -42,17 +42,17 @@ public class TrinoQueueLengthChecker
         Table<String, String, Integer> userClusterQueuedCount = HashBasedTable.create();
 
         for (ClusterStats stat : stats) {
-            if (!stat.isHealthy()) {
+            if (!stat.healthy()) {
                 // Skip if the cluster isn't healthy
                 continue;
             }
-            clusterQueueMap.put(stat.getRoutingGroup(), stat.getClusterId(), stat.getQueuedQueryCount());
-            clusterRunningMap.put(stat.getRoutingGroup(), stat.getClusterId(), stat.getRunningQueryCount());
+            clusterQueueMap.put(stat.routingGroup(), stat.clusterId(), stat.queuedQueryCount());
+            clusterRunningMap.put(stat.routingGroup(), stat.clusterId(), stat.runningQueryCount());
 
             // Create inverse map from user -> {cluster-> count}
-            if (stat.getUserQueuedCount() != null && !stat.getUserQueuedCount().isEmpty()) {
-                for (Map.Entry<String, Integer> queueCount : stat.getUserQueuedCount().entrySet()) {
-                    userClusterQueuedCount.put(queueCount.getKey(), stat.getClusterId(), queueCount.getValue());
+            if (stat.userQueuedCount() != null && !stat.userQueuedCount().isEmpty()) {
+                for (Map.Entry<String, Integer> queueCount : stat.userQueuedCount().entrySet()) {
+                    userClusterQueuedCount.put(queueCount.getKey(), stat.clusterId(), queueCount.getValue());
                 }
             }
         }

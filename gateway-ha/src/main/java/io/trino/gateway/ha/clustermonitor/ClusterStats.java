@@ -13,168 +13,114 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Map;
-import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.util.Objects.requireNonNull;
 
-public class ClusterStats
+public record ClusterStats(
+        String clusterId,
+        int runningQueryCount,
+        int queuedQueryCount,
+        int blockedQueryCount,
+        int numWorkerNodes,
+        boolean healthy,
+        String proxyTo,
+        String externalUrl,
+        String routingGroup,
+        Map<String, Integer> userQueuedCount)
 {
-    private int runningQueryCount;
-    private int queuedQueryCount;
-    private int blockedQueryCount;
-    private int numWorkerNodes;
-    private boolean healthy;
-    private String clusterId;
-    private String proxyTo;
-    private String externalUrl;
-    private String routingGroup;
-    private Map<String, Integer> userQueuedCount;
-
-    public ClusterStats() {}
-
-    public int getRunningQueryCount()
+    public static Builder builder(String clusterId)
     {
-        return this.runningQueryCount;
+        return new Builder(clusterId);
     }
 
-    public void setRunningQueryCount(int runningQueryCount)
+    public static final class Builder
     {
-        this.runningQueryCount = runningQueryCount;
-    }
+        private final String clusterId;
+        private int runningQueryCount;
+        private int queuedQueryCount;
+        private int blockedQueryCount;
+        private int numWorkerNodes;
+        private boolean healthy;
+        private String proxyTo;
+        private String externalUrl;
+        private String routingGroup;
+        private Map<String, Integer> userQueuedCount;
 
-    public int getQueuedQueryCount()
-    {
-        return this.queuedQueryCount;
-    }
-
-    public void setQueuedQueryCount(int queuedQueryCount)
-    {
-        this.queuedQueryCount = queuedQueryCount;
-    }
-
-    public int getBlockedQueryCount()
-    {
-        return this.blockedQueryCount;
-    }
-
-    public void setBlockedQueryCount(int blockedQueryCount)
-    {
-        this.blockedQueryCount = blockedQueryCount;
-    }
-
-    public int getNumWorkerNodes()
-    {
-        return this.numWorkerNodes;
-    }
-
-    public void setNumWorkerNodes(int numWorkerNodes)
-    {
-        this.numWorkerNodes = numWorkerNodes;
-    }
-
-    public boolean isHealthy()
-    {
-        return this.healthy;
-    }
-
-    public void setHealthy(boolean healthy)
-    {
-        this.healthy = healthy;
-    }
-
-    public String getClusterId()
-    {
-        return this.clusterId;
-    }
-
-    public void setClusterId(String clusterId)
-    {
-        this.clusterId = clusterId;
-    }
-
-    public String getProxyTo()
-    {
-        return this.proxyTo;
-    }
-
-    public void setProxyTo(String proxyTo)
-    {
-        this.proxyTo = proxyTo;
-    }
-
-    public String getExternalUrl()
-    {
-        return this.externalUrl;
-    }
-
-    public void setExternalUrl(String externalUrl)
-    {
-        this.externalUrl = externalUrl;
-    }
-
-    public String getRoutingGroup()
-    {
-        return this.routingGroup;
-    }
-
-    public void setRoutingGroup(String routingGroup)
-    {
-        this.routingGroup = routingGroup;
-    }
-
-    public Map<String, Integer> getUserQueuedCount()
-    {
-        return this.userQueuedCount;
-    }
-
-    public void setUserQueuedCount(Map<String, Integer> userQueuedCount)
-    {
-        this.userQueuedCount = userQueuedCount;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) {
-            return true;
+        private Builder(String clusterId)
+        {
+            this.clusterId = requireNonNull(clusterId, "clusterId is null");
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+
+        public Builder runningQueryCount(int runningQueryCount)
+        {
+            this.runningQueryCount = runningQueryCount;
+            return this;
         }
-        ClusterStats stats = (ClusterStats) o;
-        return runningQueryCount == stats.runningQueryCount &&
-                queuedQueryCount == stats.queuedQueryCount &&
-                blockedQueryCount == stats.blockedQueryCount &&
-                numWorkerNodes == stats.numWorkerNodes &&
-                healthy == stats.healthy &&
-                Objects.equals(clusterId, stats.clusterId) &&
-                Objects.equals(proxyTo, stats.proxyTo) &&
-                Objects.equals(externalUrl, stats.externalUrl) &&
-                Objects.equals(routingGroup, stats.routingGroup) &&
-                Objects.equals(userQueuedCount, stats.userQueuedCount);
-    }
 
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(runningQueryCount, queuedQueryCount, blockedQueryCount, numWorkerNodes, healthy, clusterId, proxyTo, externalUrl, routingGroup, userQueuedCount);
-    }
+        public Builder queuedQueryCount(int queuedQueryCount)
+        {
+            this.queuedQueryCount = queuedQueryCount;
+            return this;
+        }
 
-    @Override
-    public String toString()
-    {
-        return toStringHelper(this)
-                .add("runningQueryCount", runningQueryCount)
-                .add("queuedQueryCount", queuedQueryCount)
-                .add("blockedQueryCount", blockedQueryCount)
-                .add("numWorkerNodes", numWorkerNodes)
-                .add("healthy", healthy)
-                .add("clusterId", clusterId)
-                .add("proxyTo", proxyTo)
-                .add("externalUrl", externalUrl)
-                .add("routingGroup", routingGroup)
-                .add("userQueuedCount", userQueuedCount)
-                .toString();
+        public Builder blockedQueryCount(int blockedQueryCount)
+        {
+            this.blockedQueryCount = blockedQueryCount;
+            return this;
+        }
+
+        public Builder numWorkerNodes(int numWorkerNodes)
+        {
+            this.numWorkerNodes = numWorkerNodes;
+            return this;
+        }
+
+        public Builder healthy(boolean healthy)
+        {
+            this.healthy = healthy;
+            return this;
+        }
+
+        public Builder proxyTo(String proxyTo)
+        {
+            this.proxyTo = proxyTo;
+            return this;
+        }
+
+        public Builder externalUrl(String externalUrl)
+        {
+            this.externalUrl = externalUrl;
+            return this;
+        }
+
+        public Builder routingGroup(String routingGroup)
+        {
+            this.routingGroup = routingGroup;
+            return this;
+        }
+
+        public Builder userQueuedCount(Map<String, Integer> userQueuedCount)
+        {
+            this.userQueuedCount = ImmutableMap.copyOf(userQueuedCount);
+            return this;
+        }
+
+        public ClusterStats build()
+        {
+            return new ClusterStats(
+                    clusterId,
+                    runningQueryCount,
+                    queuedQueryCount,
+                    blockedQueryCount,
+                    numWorkerNodes,
+                    healthy,
+                    proxyTo,
+                    externalUrl,
+                    routingGroup,
+                    userQueuedCount);
+        }
     }
 }
