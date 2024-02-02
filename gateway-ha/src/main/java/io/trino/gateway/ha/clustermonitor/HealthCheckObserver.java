@@ -29,7 +29,7 @@ public class HealthCheckObserver
     public void observe(java.util.List<ClusterStats> clustersStats)
     {
         for (ClusterStats clusterStats : clustersStats) {
-            routingManager.upateBackEndHealth(clusterStats.getClusterId(), clusterStats.isHealthy());
+            routingManager.upateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
             routingManager.updateBackEndHealthDB(clusterStats);
         }
     }

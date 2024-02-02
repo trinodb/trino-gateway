@@ -133,8 +133,8 @@ public abstract class RoutingManager
 
     public void updateBackEndHealthDB(ClusterStats stats)
     {
-        String name = stats.getClusterId();
-        if (stats.isHealthy()) {
+        String name = stats.clusterId();
+        if (stats.healthy()) {
             gatewayBackendManager.activateBackend(name);
         }
         else {
