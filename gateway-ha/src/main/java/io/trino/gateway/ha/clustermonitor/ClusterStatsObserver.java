@@ -31,7 +31,7 @@ public class ClusterStatsObserver
     public void observe(List<ClusterStats> clustersStats)
     {
         for (ClusterStats clusterStats : clustersStats) {
-            backendStateManager.updateStates(clusterStats.getClusterId(), clusterStats);
+            backendStateManager.updateStates(clusterStats.clusterId(), clusterStats);
         }
     }
 }

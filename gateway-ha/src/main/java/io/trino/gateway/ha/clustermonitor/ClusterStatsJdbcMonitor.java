@@ -57,8 +57,7 @@ public class ClusterStatsJdbcMonitor
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
         String url = backend.getProxyTo();
-        ClusterStats clusterStats = new ClusterStats();
-        clusterStats.setClusterId(backend.getName());
+        ClusterStats.Builder clusterStats = ClusterStats.builder(backend.getName());
         String jdbcUrl;
         try {
             URL parsedUrl = new URL(url);
@@ -71,7 +70,7 @@ public class ClusterStatsJdbcMonitor
         }
         catch (MalformedURLException e) {
             log.error("could not parse backend url {} ", url);
-            return clusterStats; // TODO Invalid configuration should fail
+            return clusterStats.build(); // TODO Invalid configuration should fail
         }
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties)) {
@@ -83,10 +82,11 @@ public class ClusterStatsJdbcMonitor
             while (rs.next()) {
                 partialState.put(rs.getString("state"), rs.getInt("count"));
             }
-            clusterStats.setHealthy(true);
-            clusterStats.setQueuedQueryCount(partialState.getOrDefault("QUEUED", 0));
-            clusterStats.setRunningQueryCount(partialState.getOrDefault("RUNNING", 0));
-            return clusterStats;
+            return clusterStats
+                    .healthy(true)
+                    .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
+                    .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
+                    .build();
         }
         catch (TimeoutException e) {
             log.error("timed out fetching status for {} backend", url, e);
@@ -94,6 +94,6 @@ public class ClusterStatsJdbcMonitor
         catch (Exception e) {
             log.error("could not fetch status for {} backend", url, e);
         }
-        return clusterStats;
+        return clusterStats.build();
     }
 }

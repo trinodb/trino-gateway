@@ -56,27 +56,28 @@ public class ClusterStatsHttpMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        ClusterStats clusterStats = new ClusterStats();
-        clusterStats.setClusterId(backend.getName());
+        ClusterStats.Builder clusterStats = ClusterStats.builder(backend.getName());
 
         // Fetch Cluster level Stats.
         String response = queryCluster(backend, UI_API_STATS_PATH);
         if (Strings.isNullOrEmpty(response)) {
             log.error("Received null/empty response for {}", UI_API_STATS_PATH);
-            return clusterStats;
+            return clusterStats.build();
         }
 
         try {
             HashMap<String, Object> result = new ObjectMapper().readValue(response, HashMap.class);
 
-            clusterStats.setNumWorkerNodes((int) result.get("activeWorkers"));
-            clusterStats.setQueuedQueryCount((int) result.get("queuedQueries"));
-            clusterStats.setRunningQueryCount((int) result.get("runningQueries"));
-            clusterStats.setBlockedQueryCount((int) result.get("blockedQueries"));
-            clusterStats.setHealthy(clusterStats.getNumWorkerNodes() > 0);
-            clusterStats.setProxyTo(backend.getProxyTo());
-            clusterStats.setExternalUrl(backend.getExternalUrl());
-            clusterStats.setRoutingGroup(backend.getRoutingGroup());
+            int activeWorkers = (int) result.get("activeWorkers");
+            clusterStats
+                    .numWorkerNodes(activeWorkers)
+                    .queuedQueryCount((int) result.get("queuedQueries"))
+                    .runningQueryCount((int) result.get("runningQueries"))
+                    .blockedQueryCount((int) result.get("blockedQueries"))
+                    .healthy(activeWorkers > 0)
+                    .proxyTo(backend.getProxyTo())
+                    .externalUrl(backend.getExternalUrl())
+                    .routingGroup(backend.getRoutingGroup());
         }
         catch (Exception e) {
             log.error("Error parsing cluster stats from [{}]", response, e);
@@ -87,7 +88,7 @@ public class ClusterStatsHttpMonitor
         response = queryCluster(backend, UI_API_QUEUED_LIST_PATH);
         if (Strings.isNullOrEmpty(response)) {
             log.error("Received null/empty response for {}", UI_API_QUEUED_LIST_PATH);
-            return clusterStats;
+            return clusterStats.build();
         }
         try {
             List<Map<String, Object>> queries = new ObjectMapper().readValue(response,
@@ -103,9 +104,7 @@ public class ClusterStatsHttpMonitor
         catch (Exception e) {
             log.error("Error parsing cluster user stats", e);
         }
-        clusterStats.setUserQueuedCount(clusterUserStats);
-
-        return clusterStats;
+        return clusterStats.userQueuedCount(clusterUserStats).build();
     }
 
     private OkHttpClient acquireClientWithCookie(String loginUrl)

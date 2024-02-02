@@ -21,8 +21,6 @@ public class NoopClusterStatsMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        ClusterStats clusterStats = new ClusterStats();
-        clusterStats.setClusterId(backend.getName());
-        return clusterStats;
+        return ClusterStats.builder(backend.getName()).build();
     }
 }
