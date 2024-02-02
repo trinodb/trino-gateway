@@ -48,7 +48,7 @@ public class TestSpecificDbResourceGroupsManager
                 new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
                 "sa", "org.h2.Driver", 4);
-        Jdbi jdbi = Jdbi.create(jdbcUrl);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
