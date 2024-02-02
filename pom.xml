@@ -44,28 +44,6 @@
         <air.java.version>17</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
-
-        <!-- dependency versions -->
-        <dep.activejdbc.version>2.3</dep.activejdbc.version>
-        <dep.apache.commons.version>3.13.0</dep.apache.commons.version>
-        <dep.apache.httpcomponents>4.5.13</dep.apache.httpcomponents>
-        <dep.bouncycastle.version>1.70</dep.bouncycastle.version>
-        <dep.dropwizard.version>4.0.6</dep.dropwizard.version>
-        <dep.ehcache.version>3.8.1</dep.ehcache.version>
-        <dep.errorprone.version>2.24.1</dep.errorprone.version>
-        <dep.h2.version>1.4.192</dep.h2.version>
-        <dep.jakarta.annotations.version>2.1.1</dep.jakarta.annotations.version>
-        <dep.jakarta.mail.version>2.0.0</dep.jakarta.mail.version>
-        <dep.jdbi.version>3.44.0</dep.jdbi.version>
-        <dep.jeasy.version>4.1.0</dep.jeasy.version>
-        <dep.mockito.version>5.8.0</dep.mockito.version>
-        <dep.mysqlconnector.version>8.0.33</dep.mysqlconnector.version>
-        <dep.okhttp.version>3.14.9</dep.okhttp.version>
-        <dep.postgresql.version>42.7.1</dep.postgresql.version>
-        <dep.reflections.version>0.9.10</dep.reflections.version>
-        <dep.trino.version>433</dep.trino.version>
-        <dep.wiremock.version>3.3.1</dep.wiremock.version>
-
     </properties>
 
     <dependencyManagement>
@@ -81,7 +59,7 @@
             <dependency>
                 <groupId>io.dropwizard</groupId>
                 <artifactId>dropwizard-dependencies</artifactId>
-                <version>${dep.dropwizard.version}</version>
+                <version>4.0.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -103,7 +81,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>${dep.apache.commons.version}</version>
+                <version>3.13.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
