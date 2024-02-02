@@ -83,7 +83,7 @@ public class HaGatewayProviderModule
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
         connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(connectionManager);
+        gatewayBackendManager = new HaGatewayManager(jdbi);
         queryHistoryManager = new HaQueryHistoryManager(jdbi);
         routingManager =
                 new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
