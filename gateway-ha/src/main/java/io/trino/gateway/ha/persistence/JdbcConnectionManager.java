@@ -51,6 +51,17 @@ public class JdbcConnectionManager
         return jdbi;
     }
 
+    public Jdbi getJdbi(@Nullable String routingGroupDatabase)
+    {
+        if (routingGroupDatabase == null) {
+            return jdbi;
+        }
+
+        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword())
+                .installPlugin(new SqlObjectPlugin())
+                .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
+    }
+
     public void open()
     {
         this.open(null);
@@ -58,10 +69,7 @@ public class JdbcConnectionManager
 
     public void open(@Nullable String routingGroupDatabase)
     {
-        String jdbcUrl = configuration.getJdbcUrl();
-        if (routingGroupDatabase != null) {
-            jdbcUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf('/') + 1) + routingGroupDatabase;
-        }
+        String jdbcUrl = buildJdbcUrl(routingGroupDatabase);
         log.debug("Jdbc url is " + jdbcUrl);
         Base.open(
                 configuration.getDriver(),
@@ -69,6 +77,15 @@ public class JdbcConnectionManager
                 configuration.getUser(),
                 configuration.getPassword());
         log.debug("Connection opened");
+    }
+
+    private String buildJdbcUrl(@Nullable String routingGroupDatabase)
+    {
+        String jdbcUrl = configuration.getJdbcUrl();
+        if (routingGroupDatabase != null) {
+            jdbcUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf('/') + 1) + routingGroupDatabase;
+        }
+        return jdbcUrl;
     }
 
     public void close()
