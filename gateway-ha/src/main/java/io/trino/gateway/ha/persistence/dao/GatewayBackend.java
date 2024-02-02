@@ -13,66 +13,25 @@
  */
 package io.trino.gateway.ha.persistence.dao;
 
-import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.javalite.activejdbc.Model;
-import org.javalite.activejdbc.annotations.Cached;
-import org.javalite.activejdbc.annotations.IdName;
-import org.javalite.activejdbc.annotations.Table;
+import org.jdbi.v3.core.mapper.reflect.ColumnName;
+import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import static java.util.Objects.requireNonNull;
 
-@Table("gateway_backend")
-@IdName("name")
-@Cached
-public class GatewayBackend
-        extends Model
+public record GatewayBackend(String name, String routingGroup, String backendUrl, String externalUrl, boolean active)
 {
-    private static final String name = "name";
-    private static final String routingGroup = "routing_group";
-    private static final String backendUrl = "backend_url";
-    private static final String externalUrl = "external_url";
-    private static final String active = "active";
-
-    public static List<ProxyBackendConfiguration> upcast(List<GatewayBackend> gatewayBackendList)
+    @JdbiConstructor
+    public GatewayBackend(
+            @ColumnName("name") String name,
+            @ColumnName("routing_group") String routingGroup,
+            @ColumnName("backend_url") String backendUrl,
+            @ColumnName("external_url") String externalUrl,
+            @ColumnName("active") boolean active)
     {
-        List<ProxyBackendConfiguration> proxyBackendConfigurations = new ArrayList<>();
-        for (GatewayBackend model : gatewayBackendList) {
-            ProxyBackendConfiguration backendConfig = new ProxyBackendConfiguration();
-            backendConfig.setActive(model.getBoolean(active));
-            backendConfig.setRoutingGroup(model.getString(routingGroup));
-            backendConfig.setProxyTo(model.getString(backendUrl));
-            backendConfig.setExternalUrl(model.getString(externalUrl));
-            backendConfig.setName(model.getString(name));
-            proxyBackendConfigurations.add(backendConfig);
-        }
-        return proxyBackendConfigurations;
-    }
-
-    public static void update(GatewayBackend model, ProxyBackendConfiguration backend)
-    {
-        model
-                .set(name, backend.getName())
-                .set(routingGroup, backend.getRoutingGroup())
-                .set(backendUrl, backend.getProxyTo())
-                .set(externalUrl, backend.getExternalUrl())
-                .set(active, backend.isActive())
-                .saveIt();
-    }
-
-    public static void create(GatewayBackend model, ProxyBackendConfiguration backend)
-    {
-        create(
-                        name,
-                        backend.getName(),
-                        routingGroup,
-                        backend.getRoutingGroup(),
-                        backendUrl,
-                        backend.getProxyTo(),
-                        externalUrl,
-                        backend.getExternalUrl(),
-                        active,
-                        backend.isActive())
-                .insert();
+        this.name = requireNonNull(name, "name is null");
+        this.routingGroup = requireNonNull(routingGroup, "routingGroup is null");
+        this.backendUrl = requireNonNull(backendUrl, "backendUrl is null");
+        this.externalUrl = requireNonNull(externalUrl, "externalUrl is null");
+        this.active = active;
     }
 }
