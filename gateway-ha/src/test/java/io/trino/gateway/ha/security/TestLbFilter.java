@@ -62,9 +62,6 @@ public class TestLbFilter
         // Set authorization manager with membership
         authorizationManager = Mockito.mock(AuthorizationManager.class);
         Mockito
-                .when(authorizationManager.searchMemberOf(USER))
-                .thenReturn(MEMBER_OF);
-        Mockito
                 .when(authorizationManager.getPrivileges(USER))
                 .thenReturn(MEMBER_OF);
 

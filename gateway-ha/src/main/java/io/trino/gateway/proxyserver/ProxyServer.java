@@ -14,7 +14,6 @@
 package io.trino.gateway.proxyserver;
 
 import jakarta.servlet.DispatcherType;
-import jakarta.servlet.Filter;
 import org.eclipse.jetty.http.HttpScheme;
 import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -128,11 +127,6 @@ public class ProxyServer
                 new ServletContextHandler(proxyConnectHandler, "/", ServletContextHandler.SESSIONS);
         this.context.addServlet(proxyServlet, "/*");
         this.context.addFilter(RequestFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
-    }
-
-    public void addFilter(Class<? extends Filter> filterClass, String pathSpec)
-    {
-        this.context.addFilter(filterClass, pathSpec, EnumSet.allOf(DispatcherType.class));
     }
 
     public void start()
