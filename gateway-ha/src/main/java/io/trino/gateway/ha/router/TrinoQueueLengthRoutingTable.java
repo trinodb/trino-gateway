@@ -293,18 +293,6 @@ public class TrinoQueueLengthRoutingTable
     }
 
     /**
-     * A convienience method to get a peak into the state of the routing manager.
-     */
-    public Map<String, Integer> getInternalClusterQueueLength(String routingGroup)
-    {
-        if (!clusterQueueLengthMap.containsKey(routingGroup)) {
-            return null;
-        }
-
-        return clusterQueueLengthMap.get(routingGroup);
-    }
-
-    /**
      * Find the cluster with least user queue else fall back to overall cluster weight based routing.
      */
     public String getEligibleBackEnd(String routingGroup, String user)

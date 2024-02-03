@@ -75,20 +75,4 @@ public class ExactMatchSourceSelectors
 
         model.insert();
     }
-
-    /**
-     * Update existing exactMatchSourceSelector.
-     */
-    public static void update(
-            ExactMatchSourceSelectors model, ExactSelectorsDetail exactSelectorsDetail)
-    {
-        model.set(resourceGroupId, exactSelectorsDetail.getResourceGroupId());
-        model.set(updateTime, exactSelectorsDetail.getUpdateTime());
-
-        model.set(source, exactSelectorsDetail.getSource());
-        model.set(environment, exactSelectorsDetail.getEnvironment());
-        model.set(queryType, exactSelectorsDetail.getQueryType());
-
-        model.saveIt();
-    }
 }

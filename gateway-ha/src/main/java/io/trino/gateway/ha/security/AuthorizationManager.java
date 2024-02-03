@@ -37,17 +37,6 @@ public class AuthorizationManager
         }
     }
 
-    /**
-     * Searches in LDAP for what groups a user is member of.
-     *
-     * @param sub claim
-     * @return an optional membersOf for the input user
-     */
-    public Optional<String> searchMemberOf(String sub)
-    {
-        return Optional.empty();
-    }
-
     public Optional<String> getPrivileges(String username)
     {
         //check the preset users
