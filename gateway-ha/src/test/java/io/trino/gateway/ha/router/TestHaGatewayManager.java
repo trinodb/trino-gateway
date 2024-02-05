@@ -16,19 +16,13 @@ package io.trino.gateway.ha.router;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.TestMethodOrder;
-
-import java.util.List;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestHaGatewayManager
 {
@@ -42,8 +36,7 @@ public class TestHaGatewayManager
     }
 
     @Test
-    @Order(1)
-    public void testAddBackend()
+    public void testGatewayManager()
     {
         ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
         backend.setActive(true);
@@ -53,61 +46,41 @@ public class TestHaGatewayManager
         backend.setExternalUrl("adhoc1.trino.gateway.io");
         ProxyBackendConfiguration updated = haGatewayManager.addBackend(backend);
         assertThat(updated).isEqualTo(backend);
-    }
 
-    @Test
-    @Order(2)
-    public void testGetBackends()
-    {
-        List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-        assertThat(backends).hasSize(1);
+        // Get backends
+        assertThat(haGatewayManager.getAllBackends()).hasSize(1);
+        assertThat(haGatewayManager.getActiveBackends("adhoc")).hasSize(1);
+        assertThat(haGatewayManager.getActiveBackends("unknown")).isEmpty();
+        assertThat(haGatewayManager.getActiveAdhocBackends()).hasSize(1);
 
-        backends = haGatewayManager.getActiveBackends("adhoc");
-        assertThat(backends).hasSize(1);
+        // Update a backend
+        ProxyBackendConfiguration adhoc = new ProxyBackendConfiguration();
+        adhoc.setActive(false);
+        adhoc.setRoutingGroup("adhoc");
+        adhoc.setName("new-adhoc1");
+        adhoc.setProxyTo("adhoc1.trino.gateway.io");
+        adhoc.setExternalUrl("adhoc1.trino.gateway.io");
+        haGatewayManager.updateBackend(adhoc);
+        assertThat(haGatewayManager.getActiveBackends("adhoc")).hasSize(1);
+        assertThat(haGatewayManager.getAllBackends())
+                .extracting(ProxyBackendConfiguration::getRoutingGroup)
+                .containsExactly("adhoc", "adhoc");
 
-        backends = haGatewayManager.getActiveBackends("unknown");
-        assertThat(backends).isEmpty();
+        adhoc.setActive(false);
+        adhoc.setRoutingGroup("etl");
+        adhoc.setName("adhoc1");
+        adhoc.setProxyTo("adhoc2.trino.gateway.io");
+        adhoc.setExternalUrl("adhoc2.trino.gateway.io");
+        haGatewayManager.updateBackend(adhoc);
+        assertThat(haGatewayManager.getActiveBackends("adhoc")).isEmpty();
+        assertThat(haGatewayManager.getAllBackends())
+                .extracting(ProxyBackendConfiguration::getRoutingGroup)
+                .containsExactly("adhoc", "etl");
 
-        backends = haGatewayManager.getActiveAdhocBackends();
-        assertThat(backends).hasSize(1);
-    }
-
-    @Test
-    @Order(3)
-    public void testUpdateBackend()
-    {
-        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
-        backend.setActive(false);
-        backend.setRoutingGroup("adhoc");
-        backend.setName("new-adhoc1");
-        backend.setProxyTo("adhoc1.trino.gateway.io");
-        backend.setExternalUrl("adhoc1.trino.gateway.io");
-        haGatewayManager.updateBackend(backend);
-        List<ProxyBackendConfiguration> backends = haGatewayManager.getActiveBackends("adhoc");
-        assertThat(backends).hasSize(1);
-
-        backend.setActive(false);
-        backend.setRoutingGroup("etl");
-        backend.setName("adhoc1");
-        backend.setProxyTo("adhoc2.trino.gateway.io");
-        backend.setExternalUrl("adhoc2.trino.gateway.io");
-        haGatewayManager.updateBackend(backend);
-        backends = haGatewayManager.getActiveBackends("adhoc");
-        assertThat(backends).isEmpty();
-        backends = haGatewayManager.getAllBackends();
-        assertThat(backends).hasSize(2);
-        assertThat(backends.get(1).getRoutingGroup()).isEqualTo("etl");
-    }
-
-    @Test
-    @Order(4)
-    public void testDeleteBackend()
-    {
-        List<ProxyBackendConfiguration> backends = haGatewayManager.getAllBackends();
-        assertThat(backends).hasSize(2);
-        assertThat(backends.get(1).getRoutingGroup()).isEqualTo("etl");
-        haGatewayManager.deleteBackend(backends.get(0).getName());
-        backends = haGatewayManager.getAllBackends();
-        assertThat(backends).hasSize(1);
+        // Delete a backend
+        haGatewayManager.deleteBackend("adhoc1");
+        assertThat(haGatewayManager.getAllBackends())
+                .extracting(ProxyBackendConfiguration::getRoutingGroup)
+                .containsExactly("adhoc");
     }
 }
