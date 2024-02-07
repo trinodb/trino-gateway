@@ -1,80 +1,53 @@
-# Trino Gateway Docker Image
+# Trino Gateway Docker image
 
-## About the Container
+The Docker image of Trino Gateway is designed for the following use cases:
 
-This Docker image is designed to:
+* Manual usage in front of Trino clusters by mounting in a configuration file
+* Automated usage with an orchestration system like Kubernetes to simplify
+  deployment
 
-* be spun up in front of Trino clusters by mounting in a configuration file
-* simplify deployment into an orchestration system
+## Build requirements
 
-## Quickstart
-
-### Dependencies
-
-This docker build process requires:
+This docker build process requires the following software:
 
 * [Docker Compose V2](https://docs.docker.com/compose/)
 * jq
 
-### Run the Trino Gateway server
+# Building a custom Docker image
 
-You can launch the Trino Gateway and relevant dependencies through docker for testing purposes.
+Use the following steps to build a Docker image from your local Trino Gateway
+codebase
+
+First, run the [Maven build in the project root](../docs/development.md).
+
+Then build the image for your desired processor architecture in the `docker` directory:
 
 ```bash
-# Replace these variables to match your test requirements
-# Ex: You may be locally building the docker image so something like
-# `trino-gateway:5-SNAPSHOT-amd64` might be what you're expecting
-TEST_GATEWAY_IMAGE="trinodb/trino-gateway:latest"
-TEST_PLATFORM="amd64"
-
-TRINO_GATEWAY_IMAGE=${TEST_GATEWAY_IMAGE} DOCKER_DEFAULT_PLATFORM=${TEST_PLATFORM} \
-    docker compose -f minimal-compose.yml \
-    up --wait
+./build.sh -a arm64
 ```
 
-This will wait until docker has spun up the services and the gateway is healthy.
-If the service doesn't come up successfully you can attempt to debug it by pulling the logs:
-```
-docker compose -f minimal-compose.yml logs gateway
-```
-
-The Trino Gateway server is now running on `localhost:8080` (the default port).
-
-### Verify it Runs
-
-Now that the gateway is up and running, here's a sample query that shows the backends configured:
-```bash
-curl localhost:8080/api/public/backends
-```
-
-Or, visit it in your browser by opening http://localhost:8080
-
-## Configuration
-
-Configuration is expected to be mounted to the exact path of `/opt/trino/gateway-ha-config.yml`.
-If it is not mounted then the gateway will fail to initialize.
-
-## Health Checking
-
-By default the container health checking is done by the [/usr/lib/trino/bin/health-check](./bin/health-check)
-script which simply expects a 2XX response from the server at `/api/public/backends`.
-
-## Building a custom Docker image
-
-To build an image for a locally modified version of Trino Gateway, run the Maven
-build as normal for the `gateway-ha` modules, then build the image:
+By default, the scripts builds all valid processor architectures `amd64`,
+`arm64`, and `ppc64le`:
 
 ```bash
 ./build.sh
 ```
 
-The Docker build process will print the ID of the image, which will also
-be tagged with `trino-gateway:xxx-SNAPSHOT-yyy`, where `xxx-SNAPSHOT` is the version
-number of the Trino Maven build and `-yyy` is the platform the image was built for.
+The Docker build process prints the ID of the built image. It also tags the
+image with `trino-gateway:xxx-SNAPSHOT-yyy`, where `xxx-SNAPSHOT` is the version
+number and`-yyy` is the processor architecture:
 
-To build an image for a specific released version of Trino Gateway,
-specify the `-r` option, and the build script will download
-all the required artifacts:
+```bash
+$ docker images
+REPOSITORY                     TAG                  IMAGE ID       CREATED          SIZE
+trino-gateway                  6-SNAPSHOT-ppc64le   a72b750d2745   33 seconds ago   547MB
+trino-gateway                  6-SNAPSHOT-arm64     bc5e8b0db63c   35 seconds ago   523MB
+trino-gateway                  6-SNAPSHOT-amd64     6c066fa5b0c5   36 seconds ago   518MB
+...
+```
+
+To build an image for a specific, already released version of Trino Gateway, use
+the `-r` option. The build script downloads all the required artifacts:
 
 ```bash
 ./build.sh -r 4
@@ -88,6 +61,95 @@ export TRINO_GATEWAY_BASE_IMAGE=<image>
 ./build.sh
 ```
 
-## Getting Help
+Use the `-h` option for further help.
 
-Join the Trino community [Slack](https://trino.io/slack.html).
+### Run Trino Gateway
+
+You can launch Trino Gateway and required PostgreSQL for testing purposes with
+the following command examples using `docker compose`.
+
+Use a locally-built image on a ARM-based machine, such as a Macbook laptop.
+
+```shell
+export TRINO_GATEWAY_IMAGE="trino-gateway:6-SNAPSHOT-arm64"
+```
+
+Use a locally-built image on a AMD64-based machine, such as a typical Windows
+or Linux desktop or laptop.
+
+```shell
+export TRINO_GATEWAY_IMAGE="trino-gateway:6-SNAPSHOT-amd64"
+```
+
+Use a published image from Docker Hub.
+
+```shell
+export TRINO_GATEWAY_IMAGE="trinodb/trino-gateway:latest"
+```
+
+The release process publishes images for Trino Gateway 6 and newer to Docker Hub.
+
+Next set the image and platform:
+
+Start Trino Gateway and its PostgreSQL backend database, and wait until the 
+health check is successful:
+
+```bash
+docker compose up --wait
+```
+
+Inspect the logs for progress and troubleshooting:
+
+```bash
+docker compose logs trino-gateway
+```
+
+Typically your operating system automatically sets the default Docker platform
+value. In some cases it can be useful to explicitly set it.
+
+For example, on ARM64-based MacOS you can set it to use `linux` because it 
+otherwise is potentially set to `darwin` and there are no PostgreSQL images 
+available for `darwin` and this can prevent starting the Trino Gateway with
+docker compose.
+
+```shell
+export DOCKER_DEFAULT_PLATFORM="linux/arm64"
+```
+
+You can also set platform without operating system identifier:
+
+```shell 
+export DOCKER_DEFAULT_PLATFORM="amd64"
+```
+
+### Running
+
+Once everything is up and running, you can use the REST API to show the
+configured backends:
+
+```bash
+curl localhost:8080/api/public/backends
+```
+
+The Trino Gateway is available at [http://localhost:8080](http://localhost:8080).
+
+The PostgreSQL backend database for Trino Gateway runs on `localhost:5432`. You
+can query it for troubleshooting and other purposes using the credentials and
+details found in the `postgres-backend-compose.yml` file.
+
+## Configuration
+
+The image uses the configuration file `gateway-ha/gateway-ha-config-docker.yml`
+from the project checkout, and mounts it at `/opt/trino/gateway-ha-config.yml`.
+
+## Health check
+
+By default the container health check uses the file `docker/bin/health-check`
+mounted at `/usr/lib/trino/bin/health-check`. The scripts expects a 2XX response
+from the server at `/api/public/backends`.
+
+## Release
+
+After the container images are built locally, a maintainer can login to
+Docker Hub and use the `release-docker.sh` script to publish the locally built
+images.

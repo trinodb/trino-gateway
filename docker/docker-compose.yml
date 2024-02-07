@@ -1,9 +1,9 @@
 version: "3.4"
 services:
-  gateway:
+  trino-gateway:
     extends:
-      file: ./gateway-compose.yml
-      service: gateway
+      file: ./trino-gateway-compose.yml
+      service: trino-gateway
     healthcheck:
       interval: 5s
       timeout: 5s
