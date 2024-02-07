@@ -70,22 +70,8 @@ java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=
 
 #### In Docker
 
-From the root of the directory run the following commands to build the jar, docker image, and then spin it up:
-
-```
-./mvnw clean install
-
-# Note - Feel free to change the architecture and version being targeted
-# Without specifying a release version with '-r' it'll default to the current snapshot
-PLATFORM="amd64"
-bash docker/build.sh -a ${PLATFORM}
-
-# This grabs the version from the pom but you can manually specify it instead
-TRINO_GATEWAY_VERSION=$("./mvnw" -f "pom.xml" --quiet help:evaluate -Dexpression=project.version -DforceStdout)
-TRINO_GATEWAY_IMAGE="trino-gateway:${TRINO_GATEWAY_VERSION}-${PLATFORM}" docker compose -f docker/minimal-compose.yml up -d
-```
-
-The [config file found here](/gateway-ha/gateway-ha-config-docker.yml) is mounted into the container.
+Follow the [separate instructions for building the container and running Trino 
+Gateway with docker compose](../docker/README.md)
 
 #### Common Run Failures
 

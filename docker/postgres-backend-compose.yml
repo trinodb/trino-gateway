@@ -14,7 +14,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
       interval: 10s
       timeout: 3s
-      retries: 3
+      retries: 10
     volumes:
       - target: /docker-entrypoint-initdb.d/1-gateway-ha-persistence-postgres.sql
         source: ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql

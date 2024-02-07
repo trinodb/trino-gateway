@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -xeuo pipefail
+set -euo pipefail
 
 usage() {
     cat <<EOF 1>&2
@@ -23,6 +23,8 @@ SOURCE_DIR="${SCRIPT_DIR}/.."
 ARCHITECTURES=(amd64 arm64 ppc64le)
 TRINO_GATEWAY_VERSION=
 JDK_VERSION=$(cat "${SOURCE_DIR}/.java-version")
+# necessary to allow version parsing from the pom file
+MVNW_VERBOSE=false
 
 while getopts ":a:h:r:j:" o; do
     case "${o}" in
@@ -93,14 +95,14 @@ function temurin_jdk_link() {
 check_environment
 
 if [ -n "$TRINO_GATEWAY_VERSION" ]; then
-    echo "🎣 Downloading gateway server artifact for release version ${TRINO_GATEWAY_VERSION}"
+    echo "🎣 Downloading Trino Gateway server artifact for release version ${TRINO_GATEWAY_VERSION}"
     "${SOURCE_DIR}/mvnw" -C dependency:get -Dtransitive=false -Dartifact="io.trino.gateway:gateway-ha:${TRINO_GATEWAY_VERSION}:jar:jar-with-dependencies"
     local_repo=$("${SOURCE_DIR}/mvnw" -B help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
     trino_gateway_ha="$local_repo/io/trino/gateway/gateway-ha/${TRINO_GATEWAY_VERSION}/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
     chmod +x "$trino_gateway_ha"
 else
     TRINO_GATEWAY_VERSION=$("${SOURCE_DIR}/mvnw" -f "${SOURCE_DIR}/pom.xml" --quiet help:evaluate -Dexpression=project.version -DforceStdout)
-    echo "🎯 Using currently built artifacts from the gateway-ha module and version ${TRINO_GATEWAY_VERSION}"
+    echo "🎯 Using currently built artifacts from the gateway-ha module with version ${TRINO_GATEWAY_VERSION}"
     trino_gateway_ha="${SOURCE_DIR}/gateway-ha/target/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
 fi
 
@@ -140,7 +142,7 @@ source container-test.sh
 for arch in "${ARCHITECTURES[@]}"; do
     # TODO: remove when https://github.com/multiarch/qemu-user-static/issues/128 is fixed
     if [[ "$arch" != "ppc64le" ]]; then
-        test_container "${TAG_PREFIX}-$arch" "linux/$arch" "${SCRIPT_DIR}/minimal-compose.yml" "gateway" "postgres"
+        test_container "${TAG_PREFIX}-$arch" "linux/$arch" "${SCRIPT_DIR}/docker-compose.yml" "trino-gateway" "postgres"
     fi
     docker image inspect -f '🚀 Built {{.RepoTags}} {{.Id}}' "${TAG_PREFIX}-$arch"
 done
