@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 public class ActiveClusterMonitor
         implements Managed
 {
-    public static final int BACKEND_CONNECT_TIMEOUT_SECONDS = 15;
     public static final int MONITOR_TASK_DELAY_MIN = 1;
     public static final int DEFAULT_THREAD_POOL_SIZE = 20;
     private static final Logger log = LoggerFactory.getLogger(ActiveClusterMonitor.class);

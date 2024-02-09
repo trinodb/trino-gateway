@@ -17,20 +17,9 @@ import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 
 public class MonitorConfiguration
 {
-    private int connectionTimeout = ActiveClusterMonitor.BACKEND_CONNECT_TIMEOUT_SECONDS;
     private int taskDelayMin = ActiveClusterMonitor.MONITOR_TASK_DELAY_MIN;
 
     public MonitorConfiguration() {}
-
-    public int getConnectionTimeout()
-    {
-        return this.connectionTimeout;
-    }
-
-    public void setConnectionTimeout(int connectionTimeout)
-    {
-        this.connectionTimeout = connectionTimeout;
-    }
 
     public int getTaskDelayMin()
     {
