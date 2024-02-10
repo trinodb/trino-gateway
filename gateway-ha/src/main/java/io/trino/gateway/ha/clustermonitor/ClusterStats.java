@@ -23,7 +23,6 @@ public record ClusterStats(
         String clusterId,
         int runningQueryCount,
         int queuedQueryCount,
-        int blockedQueryCount,
         int numWorkerNodes,
         boolean healthy,
         String proxyTo,
@@ -41,7 +40,6 @@ public record ClusterStats(
         private final String clusterId;
         private int runningQueryCount;
         private int queuedQueryCount;
-        private int blockedQueryCount;
         private int numWorkerNodes;
         private boolean healthy;
         private String proxyTo;
@@ -63,12 +61,6 @@ public record ClusterStats(
         public Builder queuedQueryCount(int queuedQueryCount)
         {
             this.queuedQueryCount = queuedQueryCount;
-            return this;
-        }
-
-        public Builder blockedQueryCount(int blockedQueryCount)
-        {
-            this.blockedQueryCount = blockedQueryCount;
             return this;
         }
 
@@ -114,7 +106,6 @@ public record ClusterStats(
                     clusterId,
                     runningQueryCount,
                     queuedQueryCount,
-                    blockedQueryCount,
                     numWorkerNodes,
                     healthy,
                     proxyTo,
