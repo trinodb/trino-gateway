@@ -73,7 +73,6 @@ public class ClusterStatsHttpMonitor
                     .numWorkerNodes(activeWorkers)
                     .queuedQueryCount((int) result.get("queuedQueries"))
                     .runningQueryCount((int) result.get("runningQueries"))
-                    .blockedQueryCount((int) result.get("blockedQueries"))
                     .healthy(activeWorkers > 0)
                     .proxyTo(backend.getProxyTo())
                     .externalUrl(backend.getExternalUrl())
