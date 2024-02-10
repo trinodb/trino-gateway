@@ -25,6 +25,9 @@ public class NotifierConfiguration
     private String smtpPassword;
     private String sender;
     private List<String> recipients;
+    private String gatewayInstance = "Trino";
+    private String customContent;
+    private boolean enabled;
 
     public NotifierConfiguration() {}
 
@@ -106,5 +109,35 @@ public class NotifierConfiguration
     public void setRecipients(List<String> recipients)
     {
         this.recipients = recipients;
+    }
+
+    public String getGatewayInstance()
+    {
+        return gatewayInstance;
+    }
+
+    public void setGatewayInstance(String gatewayInstance)
+    {
+        this.gatewayInstance = gatewayInstance;
+    }
+
+    public String getCustomContent()
+    {
+        return customContent;
+    }
+
+    public void setCustomContent(String customContent)
+    {
+        this.customContent = customContent;
+    }
+
+    public boolean isEnabled()
+    {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
     }
 }
