@@ -10,12 +10,12 @@ A load balancer / proxy / gateway for Trino
 |-----|------|---------|-------------|
 | additionalVolumes | list | `[]` |  |
 | affinity | object | `{}` |  |
-| backendDatabase.host | string | `"localhost"` |  |
-| backendDatabase.password | string | `"root"` |  |
-| backendDatabase.port | int | `3306` |  |
+| backendDatabase.host | string | `nil` |  |
+| backendDatabase.password | string | `nil` |  |
+| backendDatabase.port | string | `nil` |  |
 | backendDatabase.schema | string | `"gateway"` |  |
 | backendDatabase.type | string | `"postgres"` |  |
-| backendDatabase.user | string | `"root"` |  |
+| backendDatabase.user | string | `nil` |  |
 | backendState.password | string | `nil` |  |
 | backendState.ssl | bool | `false` |  |
 | backendState.username | string | `nil` |  |
@@ -42,8 +42,8 @@ A load balancer / proxy / gateway for Trino
 | gateway.tls.keystorePassword | string | `""` |  |
 | gateway.tls.keystorePath | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.repository | string | `"hub.talkdeskapp.com/talkdesk/trino-gateway"` |  |
-| image.tag | string | `"PR-414-105eef64"` |  |
+| image.repository | string | `nil` |  |
+| image.tag | string | `nil` |  |
 | imagePullSecrets | list | `[]` |  |
 | monitor.connectionTimeout | int | `15` |  |
 | nameOverride | string | `""` |  |
