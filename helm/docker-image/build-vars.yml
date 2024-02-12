@@ -1,0 +1,4 @@
+platforms:
+  - linux/amd64
+tags:
+  - talkdesk/trino-gateway:5

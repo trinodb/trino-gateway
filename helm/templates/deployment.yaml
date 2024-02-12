@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gateway.fullname" . }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "gateway.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: db-bootstrap
+          image: "{{ .Values.bootstrap.image.repository }}:{{ .Values.bootstrap.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if eq .Values.backendDatabase.type "postgres" }}
+          command: ["/bin/sh", "-c", "PGPASSWORD=$(DB_PASSWORD) psql -h {{ .Values.backendDatabase.host }} -U $(DB_USER) -d {{ .Values.backendDatabase.schema }} < /tmp/bootstrap/script/gateway-ha-persistence-postgres.sql"]
+          {{- else if eq .Values.backendDatabase.type "mysql" }}
+          command: ["/bin/sh", "-c", "MYSQL_PWD=$(DB_PASSWORD) mysql -h {{ .Values.backendDatabase.host }} -u $(DB_USER) -D {{ .Values.backendDatabase.schema }} < /tmp/bootstrap/script/gateway-ha-persistence.sql"]
+          {{- end}}
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: database
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database
+                  key: password
+          volumeMounts:
+          - name: db-bootstrap
+            mountPath: /tmp/bootstrap/script
+          - name: database
+            mountPath: /tmp/bootstrap/credentials
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: request-port
+              containerPort: {{ .Values.gateway.requestPort }}
+              protocol: TCP
+            - name: app-port
+              containerPort: {{ .Values.gateway.appPort }}
+              protocol: TCP
+            - name: admin-port
+              containerPort: {{ .Values.gateway.adminPort }}
+              protocol: TCP
+          env:
+            - name: REQUEST_ROUTER_PORT
+              value: "{{ .Values.gateway.requestPort }}"
+            - name: APPLICATION_CONNECTOR_PORT
+              value: "{{ .Values.gateway.appPort }}"
+            - name: ADMIN_CONNECTOR_PORT
+              value: "{{ .Values.gateway.adminPort }}"
+            - name: JDBC_URL
+              {{- if eq .Values.backendDatabase.type "postgres" }}
+              value: jdbc:postgresql://{{ .Values.backendDatabase.host }}:{{ .Values.backendDatabase.port }}/{{ .Values.backendDatabase.schema }}
+              {{- else if eq .Values.backendDatabase.type "mysql" }}
+              value: jdbc:mysql://{{ .Values.backendDatabase.host }}:{{ .Values.backendDatabase.port }}/{{ .Values.backendDatabase.schema }}
+              {{- end}}
+            - name: JDBC_DRIVER
+              {{- if eq .Values.backendDatabase.type "postgres" }}
+              value: org.postgresql.Driver
+              {{- else if eq .Values.backendDatabase.type "mysql" }}
+              value: com.mysql.cj.jdbc.Driver
+              {{- end}}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: database
+                  key: user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database
+                  key: password
+            - name: LOG_LEVEL
+              value: {{ .Values.gateway.log.level }}
+            - name: LOG_LEVEL_LOGGERS
+              value: {{ .Values.gateway.loggers.level }}
+            - name: QUERY_HISTORY_SIZE
+              value: "{{ .Values.gateway.queryHistorySize }}"
+            - name: TLS_ENABLED
+              value: {{ .Values.gateway.tls.enabled | quote }}
+            - name: KEYSTORE_PATH
+              value: {{ .Values.gateway.tls.keystorePath }}
+            - name: KEYSTORE_PASSWORD
+              value: {{ .Values.gateway.tls.keystorePassword }}
+            - name: ROUTING_RULES_ENABLED
+              value: {{ .Values.gateway.routingRules.enabled | quote }}
+            - name: ROUTING_RULES_CONFIG_PATH
+              value: {{ .Values.gateway.routingRules.configPath }}
+            - name: HEALTHCHECK_CONNECTION_TIMEOUT
+              value: "{{ .Values.monitor.connectionTimeout }}"
+            - name: BACKEND_STATE_USERNAME
+              value: {{ .Values.backendState.username}}
+            - name: BACKEND_STATE_PASSWORD
+              value: {{ .Values.backendState.password}}
+            - name: BACKEND_STATE_SSL
+              value: {{ .Values.backendState.ssl | quote }}
+            - name: EXTRA_JVM_OPTIONS
+              value: {{ .Values.extraJvmOptions }}
+            {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- range .Values.secretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: db-bootstrap
+          configMap:
+            name: db-bootstrap
+        {{- range .Values.secretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

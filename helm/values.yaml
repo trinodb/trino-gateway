@@ -1,0 +1,92 @@
+bootstrap:
+  image:
+    #must be postgres or mysql
+    repository: postgres
+    pullPolicy: IfNotPresent
+    tag: 16.1-bullseye
+
+image:
+  repository:
+  pullPolicy: IfNotPresent
+  tag:
+
+gateway:
+  requestPort: 8080
+  appPort: 8090
+  adminPort: 8091
+  loggers:
+    level: INFO
+  log:
+    level: INFO
+  tls:
+    enabled: false
+    keystorePath: ""
+    keystorePassword: ""
+  routingRules:
+    enabled: false
+    configPath: ""
+  queryHistorySize: 1000
+  rerouteRequestsToApplication: true
+  ingress:
+    annotations: {}
+    ingressClassName: ""
+    host:
+      request:
+      admin:
+      app:
+
+securityConf: ""
+
+backendState:
+  username:
+  password:
+  ssl: false
+
+backendDatabase:
+  #type must be postgres or mysql
+  type: postgres
+  host: 
+  port:
+  schema: gateway
+  user:
+  password:
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  requestPort: 8080
+  appPort: 8090
+  adminPort: 8091
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+monitor:
+  connectionTimeout: 15
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+secretMounts: []
+  # - name: database
+  #   path: /opt/gateway/database
+  #   secretName: database
+
+additionalVolumes: []
+
+extraJvmOptions: ""
+
+secretsExtra: []
+  # - name: a
+  #   value:
+  # - name: b
+  #   value:

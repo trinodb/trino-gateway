@@ -1,0 +1,6 @@
+apiVersion: v2
+appVersion: 0.0.1
+description: A load balancer / proxy / gateway for Trino
+name: trino-gateway
+type: application
+version: "5"
