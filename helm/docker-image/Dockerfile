@@ -12,7 +12,6 @@ RUN set -eux && \
     apt-get -qq update && apt-get --no-install-recommends --no-install-suggests -yqq install curl && \
     curl --silent --location --retry 3 -o /tmp/gateway-ha.jar https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/$GATEWAY_VERSION/gateway-ha-$GATEWAY_VERSION-jar-with-dependencies.jar && \
     curl --silent --location --retry 3 https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz | tar xz -C /usr/bin && \
-    curl --silent --location --retry 3 -o /tmp/gateway-ha-persistence-postgres.sql https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql
 
 FROM ${FROM_REPO}:${FROM_TAG} as target
 
