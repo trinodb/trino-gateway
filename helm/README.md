@@ -12,7 +12,7 @@ A load balancer / proxy / gateway for Trino
 | affinity | object | `{}` |  |
 | backendDatabase.host | string | `nil` |  |
 | backendDatabase.password | string | `nil` |  |
-| backendDatabase.port | string | `nil` |  |
+| backendDatabase.port | int | `5432` |  |
 | backendDatabase.schema | string | `"gateway"` |  |
 | backendDatabase.type | string | `"postgres"` |  |
 | backendDatabase.user | string | `nil` |  |
@@ -21,7 +21,8 @@ A load balancer / proxy / gateway for Trino
 | backendState.username | string | `nil` |  |
 | bootstrap.image.pullPolicy | string | `"IfNotPresent"` |  |
 | bootstrap.image.repository | string | `"postgres"` |  |
-| bootstrap.image.tag | string | `"16.1-bullseye"` |  |
+| bootstrap.image.tag | string | `nil` |  |
+| configMap | list | `[]` |  |
 | extraJvmOptions | string | `""` |  |
 | fullnameOverride | string | `""` |  |
 | gateway.adminPort | int | `8091` |  |
@@ -33,9 +34,10 @@ A load balancer / proxy / gateway for Trino
 | gateway.ingress.ingressClassName | string | `""` |  |
 | gateway.log.level | string | `"INFO"` |  |
 | gateway.loggers.level | string | `"INFO"` |  |
+| gateway.queryHistoryHoursRetention | int | `24` |  |
 | gateway.queryHistorySize | int | `1000` |  |
 | gateway.requestPort | int | `8080` |  |
-| gateway.rerouteRequestsToApplication | bool | `true` |  |
+| gateway.routingRules.config | object | `{}` |  |
 | gateway.routingRules.configPath | string | `""` |  |
 | gateway.routingRules.enabled | bool | `false` |  |
 | gateway.tls.enabled | bool | `false` |  |

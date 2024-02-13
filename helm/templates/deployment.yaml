@@ -100,6 +100,8 @@ spec:
               value: {{ .Values.gateway.loggers.level }}
             - name: QUERY_HISTORY_SIZE
               value: "{{ .Values.gateway.queryHistorySize }}"
+            - name: QUERY_HISTORY_HOURS_RETENTION
+              value: "{{ .Values.gateway.queryHistoryHoursRetention }}"
             - name: TLS_ENABLED
               value: {{ .Values.gateway.tls.enabled | quote }}
             - name: KEYSTORE_PATH
@@ -131,6 +133,10 @@ spec:
               mountPath: {{ .path }}
               readOnly: true
             {{- end }}
+            {{- range .Values.configMap }}
+            - name: {{ .name }}
+              mountPath: {{ .path }}
+            {{- end }}
       volumes:
         - name: db-bootstrap
           configMap:
@@ -139,6 +145,11 @@ spec:
         - name: {{ .name }}
           secret:
             secretName: {{ .secretName }}
+        {{- end }}
+        {{- range .Values.configMap }}
+        - name: {{ .name }}
+          configMap:
+            name: {{ .name }}
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

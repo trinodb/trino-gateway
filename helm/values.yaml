@@ -3,7 +3,7 @@ bootstrap:
     #must be postgres or mysql
     repository: postgres
     pullPolicy: IfNotPresent
-    tag: 16.1-bullseye
+    tag:
 
 image:
   repository:
@@ -25,8 +25,22 @@ gateway:
   routingRules:
     enabled: false
     configPath: ""
+    config: {} #https://github.com/trinodb/trino-gateway/blob/main/docs/routing-rules.md
+      # routing_rules.yml: |-
+      #   ---
+      #   name: "airflow"
+      #   description: "if query from airflow, route to etl group"
+      #   condition: 'request.getHeader("X-Trino-Source") == "airflow"'
+      #   actions:
+      #     - 'result.put("routingGroup", "etl")'
+      #   ---
+      #   name: "airflow special"
+      #   description: "if query from airflow with special label, route to etl-special group"
+      #   condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=special"'
+      #   actions:
+      #     - 'result.put("routingGroup", "etl-special")'
   queryHistorySize: 1000
-  rerouteRequestsToApplication: true
+  queryHistoryHoursRetention: 24
   ingress:
     annotations: {}
     ingressClassName: ""
@@ -46,9 +60,9 @@ backendDatabase:
   #type must be postgres or mysql
   type: postgres
   host: 
-  port:
+  port: 5432
   schema: gateway
-  user:
+  user: 
   password:
 
 securityContext:
@@ -80,6 +94,10 @@ secretMounts: []
   # - name: database
   #   path: /opt/gateway/database
   #   secretName: database
+
+configMap: []
+  # - name: routing-rules
+  #   path: /opt/gateway/routing_rules
 
 additionalVolumes: []
 

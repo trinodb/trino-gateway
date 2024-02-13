@@ -13,7 +13,7 @@ dataStore:
   user: {{ default .Env.DB_USER "" }}
   password: {{ default .Env.DB_PASSWORD "" }}
   driver: {{ default .Env.JDBC_DRIVER "" }}
-  queryHistoryHoursRetention: 24
+  queryHistoryHoursRetention: {{ default .Env.QUERY_HISTORY_HOURS_RETENTION "" }}
 
 backendState:
   username: {{ default .Env.BACKEND_STATE_USERNAME "lb_query" }}

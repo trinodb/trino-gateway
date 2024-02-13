@@ -1,0 +1,13 @@
+{{- if .Values.gateway.routingRules.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gateway.fullname" . }}-routing-rules
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+data:
+{{- range $key, $value := .Values.gateway.routingRules.config }}
+  {{$key }}: |-
+    {{- $value | nindent 4 }}
+{{- end }}
+{{- end }}
