@@ -1,4 +1,6 @@
 bootstrap:
+  configMap:
+   enabled: true
   image:
     #must be postgres or mysql
     repository: postgres

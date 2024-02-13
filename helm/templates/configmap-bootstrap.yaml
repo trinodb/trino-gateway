@@ -1,4 +1,5 @@
 ---
+{{- if .Values.bootstrap.configMap.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -164,3 +165,4 @@ data:
         PRIMARY KEY (environment, source, query_type),
         UNIQUE (source, environment, query_type, resource_group_id)
     );
+{{- end }}

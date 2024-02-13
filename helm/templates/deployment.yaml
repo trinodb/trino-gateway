@@ -45,8 +45,10 @@ spec:
                   name: database
                   key: password
           volumeMounts:
+          {{- if .Values.bootstrap.configMap.enabled }}
           - name: db-bootstrap
             mountPath: /tmp/bootstrap/script
+          {{- end }}
           - name: database
             mountPath: /tmp/bootstrap/credentials
       containers:
@@ -138,9 +140,11 @@ spec:
               mountPath: {{ .path }}
             {{- end }}
       volumes:
+        {{- if .Values.bootstrap.configMap.enabled }}
         - name: db-bootstrap
           configMap:
             name: db-bootstrap
+        {{- end }}
         {{- range .Values.secretMounts }}
         - name: {{ .name }}
           secret:

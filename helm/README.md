@@ -4,7 +4,24 @@
 
 A load balancer / proxy / gateway for Trino
 
+
+## Bootstrap database
+
+By default the chart uses a configMap with sql script + public postgres/mysql images <br />
+If you want to add sql script in a customised docker imagem:
+
+- disable the configMap by change the values
+
+```
+bootstrap:
+  configMap:
+   enabled: false
+```
+
+- add the script to dockerfile: https://github.com/trinodb/trino-gateway/blob/main/docs/installation.md
+
 ## Values
+
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -19,6 +36,7 @@ A load balancer / proxy / gateway for Trino
 | backendState.password | string | `nil` |  |
 | backendState.ssl | bool | `false` |  |
 | backendState.username | string | `nil` |  |
+| bootstrap.configMap.enabled | bool | `true` |  |
 | bootstrap.image.pullPolicy | string | `"IfNotPresent"` |  |
 | bootstrap.image.repository | string | `"postgres"` |  |
 | bootstrap.image.tag | string | `nil` |  |
