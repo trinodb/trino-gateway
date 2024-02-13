@@ -35,9 +35,7 @@
 
 The scripts from this quickstart guide set up a local environment consisting of
 two Trino servers and a PostgreSQL database running in Docker, and a Trino
-Gateway server running in the host operating system. If you are using a Mac and
-have the `brew` package manager installed, this script attempts to install
-`psql`, if not you must install `psql` through other means.
+Gateway server running in the host operating system. 
 
 ## Start Trino Gateway server
 
@@ -50,32 +48,32 @@ PostgreSQL database at localhost:5432.
 ```shell
 #!/usr/bin/env sh
 
-VERSION=4
+VERSION=6
 
-#Get the Gateway Jar
-curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
-
-#Start the persistence DB
-if ! $(command -v psql >/dev/null); then
-    if ! $(command -v brew >/dev/null); then
-        echo 'Please install psql and rerun';
-        exit 1
-    else
-        brew install libpq
-    fi
+#Check and get the Gateway Jar
+if [[ -f "gateway-ha.jar" ]]; then
+    echo "Found gateway-har.jar file in current directory."
+else
+    echo "Failed to find gateway-ha.jar in current directory. Fetching version $VERSION from Maven Central repository."
+    curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
 fi
 
-export PGPASSWORD=mysecretpassword
-docker run --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
-#make sure the DB has time to initialize
-sleep 5
+#Check if DB is running
+if docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
+    echo "PostgreSQL database container 'localhost-postgres' is already running. Only starting Trino Gateway."
+else
+    echo "PostgreSQL database container 'localhost-postgres' is not running. Proceeding to initialize and run database server."
+    export PGPASSWORD=mysecretpassword
+    docker run -v ./gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql:/tmp/gateway-ha-persistence-postgres.sql --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
+    #Make sure the DB has time to initialize
+    sleep 5
 
-#Initialize the DB
-curl https://raw.githubusercontent.com/trinodb/trino-gateway/main/gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql > ./gateway-ha-persistence-postgres.sql 
-psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
-psql  -U postgres -h localhost -d gateway -f ./gateway-ha-persistence-postgres.sql 
+    #Initialize the DB
+    docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
+    docker exec local-postgres psql -U postgres -h localhost -d gateway -f /tmp/gateway-ha-persistence-postgres.sql
+fi
 
-#Start the DB
+#Start Trino Gateway server.
 java -Xmx1g --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar ./gateway-ha.jar server ./quickstart-config.yaml
 ```
 
