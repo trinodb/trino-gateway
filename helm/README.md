@@ -22,7 +22,6 @@ bootstrap:
 
 ## Values
 
-
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | additionalVolumes | list | `[]` |  |
