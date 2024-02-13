@@ -35,9 +35,7 @@
 
 The scripts from this quickstart guide set up a local environment consisting of
 two Trino servers and a PostgreSQL database running in Docker, and a Trino
-Gateway server running in the host operating system. If you are using a Mac and
-have the `brew` package manager installed, this script attempts to install
-`psql`, if not you must install `psql` through other means.
+Gateway server running in the host operating system. 
 
 ## Start Trino Gateway server
 
@@ -47,36 +45,49 @@ at http://localhost:9080, the application service at http://localhost:9081,
 and the Admin service at http://localhost:9082. It also starts a dockerized
 PostgreSQL database at localhost:5432.
 
+To start the server, copy the script below to a temporary directory 
+under the project root folder, and run it at the temporary directory.
+It will copy necessary files to current directory, which consists of the following:
+- gateway-ha.jar
+- gateway-ha-persistence-postgres.sql
+- quickstart-config.yaml
+
 ```shell
 #!/usr/bin/env sh
 
-VERSION=4
+VERSION=7
 
-#Get the Gateway Jar
-curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
-
-#Start the persistence DB
-if ! $(command -v psql >/dev/null); then
-    if ! $(command -v brew >/dev/null); then
-        echo 'Please install psql and rerun';
-        exit 1
-    else
-        brew install libpq
-    fi
+#Check and get the Gateway Jar
+if [[ -f "gateway-ha.jar" ]]; then
+    echo "Found gateway-har.jar file in current directory."
+else
+    echo "Failed to find gateway-ha.jar in current directory. Fetching version $VERSION from Maven Central repository."
+    curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
 fi
 
-export PGPASSWORD=mysecretpassword
-docker run --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
-#make sure the DB has time to initialize
-sleep 5
+# Copy necessary files to current directory
+cp ../docs/quickstart-config.yaml ./quickstart-config.yaml
+cp ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql ./gateway-ha-persistence-postgres.sql
 
-#Initialize the DB
-curl https://raw.githubusercontent.com/trinodb/trino-gateway/main/gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql > ./gateway-ha-persistence-postgres.sql 
-psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
-psql  -U postgres -h localhost -d gateway -f ./gateway-ha-persistence-postgres.sql 
+#Check if DB is running
+if docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
+    echo "PostgreSQL database container 'localhost-postgres' is already running. Only starting Trino Gateway."
+else
+    echo "PostgreSQL database container 'localhost-postgres' is not running. Proceeding to initialize and run database server."
+    export PGPASSWORD=mysecretpassword
+    docker run -v "$(pwd)"/gateway-ha-persistence-postgres.sql:/tmp/gateway-ha-persistence-postgres.sql --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
+    #Make sure the DB has time to initialize
+    sleep 5
 
-#Start the DB
+    #Initialize the DB
+    docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
+    docker exec local-postgres psql -U postgres -h localhost -d gateway -f /tmp/gateway-ha-persistence-postgres.sql
+fi
+
+
+#Start Trino Gateway server.
 java -Xmx1g --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar ./gateway-ha.jar server ./quickstart-config.yaml
+
 ```
 
 You can clean up by running
@@ -90,7 +101,7 @@ kill -5 $(jps | grep gateway-ha.jar | cut -d' ' -f1)
 
 This following script starts two dockerized Trino servers at 
 http://localhost:8081 and http://localhost:8082. It then adds them as backends
-to the Trino  Gateway server started by the preceding script.
+to the Trino Gateway server started by the preceding script.
 
 ```shell
 #!/usr/bin/env sh
