@@ -62,7 +62,7 @@ backendDatabase:
   host: 
   port: 5432
   schema: gateway
-  user: 
+  user:
   password:
 
 securityContext:
