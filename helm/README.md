@@ -8,7 +8,7 @@ A load balancer / proxy / gateway for Trino
 ## Bootstrap database
 
 By default the chart uses a configMap with sql script + public postgres/mysql images <br />
-If you want to add sql script in a customised docker imagem:
+If you want to include the sql script in a customised docker imagem:
 
 - disable the configMap by change the values
 
