@@ -96,6 +96,16 @@ spec:
                 secretKeyRef:
                   name: database
                   key: password
+            - name: BACKEND_STATE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  key: username
+            - name: BACKEND_STATE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend
+                  key: password
             - name: LOG_LEVEL
               value: {{ .Values.gateway.log.level }}
             - name: LOG_LEVEL_LOGGERS
@@ -116,10 +126,6 @@ spec:
               value: {{ .Values.gateway.routingRules.configPath }}
             - name: HEALTHCHECK_CONNECTION_TIMEOUT
               value: "{{ .Values.monitor.connectionTimeout }}"
-            - name: BACKEND_STATE_USERNAME
-              value: {{ .Values.backendState.username}}
-            - name: BACKEND_STATE_PASSWORD
-              value: {{ .Values.backendState.password}}
             - name: BACKEND_STATE_SSL
               value: {{ .Values.backendState.ssl | quote }}
             - name: EXTRA_JVM_OPTIONS
