@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.module;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.dropwizard.core.setup.Environment;
@@ -26,13 +27,11 @@ import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingManager;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClusterStateListenerModule
         extends AppModule<HaGatewayConfiguration, Environment>
 {
-    List<TrinoClusterStatsObserver> observers;
     MonitorConfiguration monitorConfig;
 
     public ClusterStateListenerModule(HaGatewayConfiguration config, Environment env)
@@ -51,11 +50,10 @@ public class ClusterStateListenerModule
             RoutingManager mgr,
             BackendStateManager backendStateManager)
     {
-        observers = new ArrayList<>();
-        observers.add(new HealthCheckObserver(mgr));
-        observers.add(new ClusterStatsObserver(backendStateManager));
-
-        return observers;
+        return ImmutableList.<TrinoClusterStatsObserver>builder()
+                .add(new HealthCheckObserver(mgr))
+                .add(new ClusterStatsObserver(backendStateManager))
+                .build();
     }
 
     @Provides
