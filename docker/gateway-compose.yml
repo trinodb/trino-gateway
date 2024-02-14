@@ -2,7 +2,6 @@ version: "3.4"
 services:
   gateway:
     image: ${TRINO_GATEWAY_IMAGE:-trinodb/trino-gateway:latest}
-    restart: always
     depends_on:
       postgres:
         condition: service_healthy
