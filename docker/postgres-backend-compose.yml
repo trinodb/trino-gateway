@@ -2,7 +2,6 @@ version: "3.4"
 services:
   postgres:
     image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres}
-    restart: always
     environment:
       - PGPORT=5432
       - POSTGRES_PASSWORD=P0stG&es
