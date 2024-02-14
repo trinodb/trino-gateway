@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
-import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.ws.rs.GET;
@@ -23,8 +22,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.util.NoSuchElementException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -53,30 +50,16 @@ public class PublicResource
     @Path("/backends/{name}")
     public Response getBackend(@PathParam("name") String name)
     {
-        try {
-            ProxyBackendConfiguration backend = gatewayBackendManager
-                    .getBackendByName(name)
-                    .orElseThrow();
-            return Response.ok(backend).build();
-        }
-        catch (NoSuchElementException e) {
-            return Response.status(404).build();
-        }
+        return gatewayBackendManager.getBackendByName(name).map(Response::ok)
+                .orElseGet(() -> Response.status(404)).build();
     }
 
     @GET
     @Path("/backends/{name}/state")
     public Response getBackendState(@PathParam("name") String name)
     {
-        try {
-            BackendStateManager.BackendState state = gatewayBackendManager
-                    .getBackendByName(name)
-                    .map(backendStateManager::getBackendState)
-                    .orElseThrow();
-            return Response.ok(state.state()).build();
-        }
-        catch (NoSuchElementException e) {
-            return Response.status(404).build();
-        }
+        return gatewayBackendManager.getBackendByName(name).map(backendStateManager::getBackendState)
+                .map(state -> Response.ok(state.state()).build())
+                .orElseGet(() -> Response.status(404).build());
     }
 }
