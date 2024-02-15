@@ -5,6 +5,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    platform: linux
     healthcheck:
       interval: 10s
       timeout: 5s
