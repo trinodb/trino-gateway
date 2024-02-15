@@ -1,0 +1,4 @@
+site_name: Trino Gateway
+theme:
+  name: material
+  logo: assets/logos/trino-gateway-v.png
