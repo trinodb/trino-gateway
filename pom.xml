@@ -44,6 +44,7 @@
         <air.java.version>17</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
+        <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
     </properties>
 
     <dependencyManagement>
