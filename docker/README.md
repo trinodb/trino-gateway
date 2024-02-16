@@ -147,9 +147,3 @@ from the project checkout, and mounts it at `/opt/trino/gateway-ha-config.yml`.
 By default the container health check uses the file `docker/bin/health-check`
 mounted at `/usr/lib/trino/bin/health-check`. The scripts expects a 2XX response
 from the server at `/api/public/backends`.
-
-## Release
-
-After the container images are built locally, a maintainer can login to
-Docker Hub and use the `release-docker.sh` script to publish the locally built
-images.
