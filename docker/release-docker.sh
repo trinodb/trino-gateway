@@ -7,7 +7,9 @@ REPO=trinodb/trino-gateway
 IMAGE=trino-gateway:$VERSION
 TARGET=$REPO:$VERSION
 
-docker/build.sh -r "$VERSION"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+$SCRIPT_DIR/build.sh -r "$VERSION"
 
 architectures=(amd64 arm64 ppc64le)
 

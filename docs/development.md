@@ -109,3 +109,42 @@ for more details.
 
 Want to help build Trino Gateway? Check out our [contributing
 documentation](../.github/CONTRIBUTING.md)
+
+
+## Release process
+
+A full release process consists of the following steps:
+
+Merge the pull request for the release notes and pull the changes locally:
+
+```shell
+cd trino-gateway
+git checkout main
+git pull
+```
+
+Run a Maven release build:
+
+```shell
+./mvnw clean release:prepare release:perform
+```
+
+A successful release build performs the necessary commits, and pushes the
+binaries to Maven Central staging.
+
+Close and release the staging repository, and wait until the sync to Central is
+completed. Confirm the presence of the artifacts at
+[https://repo.maven.apache.org/maven2/io/trino/gateway/gateway-ha/](https://repo.maven.apache.org/maven2/io/trino/gateway/gateway-ha/).
+
+Ensure that you are logged into Docker Hub  with suitable permissions, and run
+the container release script with the version  number that was just released, 
+for example `6`:
+
+```shell
+docker/release-docker.sh 6
+```
+
+Once completed, verify the availability at
+[https://hub.docker.com/r/trinodb/trino-gateway](https://hub.docker.com/r/trinodb/trino-gateway).
+
+Announce the release on Trino Slack and LinkedIn.
