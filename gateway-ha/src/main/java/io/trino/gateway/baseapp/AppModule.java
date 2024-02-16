@@ -18,6 +18,7 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.server.SimpleServerFactory;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.jetty.HttpsConnectorFactory;
 
 import java.util.stream.Stream;
 
@@ -46,19 +47,15 @@ public abstract class AppModule<T extends AppConfiguration, E>
                         .map(SimpleServerFactory::getConnector);
 
         return connectors
-              .filter(connector -> connector instanceof HttpConnectorFactory || connector instanceof HttpsConnectorFactory)
-              .map(connector -> {
-                  if (connector instanceof HttpConnectorFactory) {
-                      return ((HttpConnectorFactory) connector).getPort();
-                  } else if (connector instanceof HttpsConnectorFactory) {
-                      return ((HttpsConnectorFactory) connector).getPort();
-                  } else {
-                      throw new IllegalStateException("Unknown connector type");
-                  }
-              })
-              .mapToInt(Integer::intValue)
-              .findFirst()
-              .orElseThrow(IllegalStateException::new);
+                .filter(connector -> connector instanceof HttpConnectorFactory)
+                .mapToInt(connector -> {
+                    if (connector instanceof HttpsConnectorFactory httpsConnectorFactory) {
+                        return httpsConnectorFactory.getPort();
+                    }
+                    return ((HttpConnectorFactory) connector).getPort();
+                })
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
     }
 
     public T getConfiguration()
