@@ -15,7 +15,6 @@ package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.common.collect.ImmutableMap;
 import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
@@ -68,11 +67,6 @@ public class TestLbAuthenticator
         Mockito
                 .when(authentication.getUserIdField())
                 .thenReturn("sub");
-
-        DecodedJWT jwt = Mockito.mock(DecodedJWT.class);
-        Mockito
-                .when(jwt.getIssuer())
-                .thenReturn("not-self-issuer");
 
         LbPrincipal principal = new LbPrincipal(USER, MEMBER_OF);
 
