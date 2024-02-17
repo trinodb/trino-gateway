@@ -74,8 +74,7 @@ public class RuleReloadingRoutingGroupSelector
                     if (attr.lastModifiedTime().toMillis() > lastUpdatedTime) {
                         // This check is performed again to prevent parsing the rules twice in case another
                         // thread finds the condition true and acquires the lock before this one
-                        log.info(String.format("Updating rules to file modified at %s",
-                                attr.lastModifiedTime()));
+                        log.info("Updating rules to file modified at {}", attr.lastModifiedTime());
                         rules = ruleFactory.createRules(
                                 new FileReader(rulesConfigPath, UTF_8));
                         lastUpdatedTime = attr.lastModifiedTime().toMillis();

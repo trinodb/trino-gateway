@@ -24,6 +24,8 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.String.format;
+
 public class HaResourceGroupsManager
         implements ResourceGroupsManager
 {
@@ -199,7 +201,7 @@ public class HaResourceGroupsManager
         try {
             connectionManager.open(routingGroupDatabase);
             String query =
-                    String.format(
+                    format(
                             "resource_group_id %s and priority %s "
                                     + "and user_regex %s and source_regex %s "
                                     + "and query_type %s and client_tags %s "
@@ -235,7 +237,7 @@ public class HaResourceGroupsManager
         try {
             connectionManager.open(routingGroupDatabase);
             String query =
-                    String.format(
+                    format(
                             "resource_group_id %s and priority %s "
                                     + "and user_regex %s and source_regex %s "
                                     + "and query_type %s and client_tags %s "
