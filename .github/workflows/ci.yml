@@ -36,4 +36,5 @@ jobs:
         with:
           platforms: amd64,arm64,ppc64le
       - name: Build and Test Docker Image
+        if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'with-images')
         run: docker/build.sh
