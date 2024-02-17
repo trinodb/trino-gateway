@@ -17,6 +17,8 @@ import io.trino.gateway.ha.notifier.Notifier;
 
 import java.util.List;
 
+import static java.lang.String.format;
+
 public class HealthChecker
         implements TrinoClusterStatsObserver
 {
@@ -48,20 +50,16 @@ public class HealthChecker
 
     private void notifyUnhealthyCluster(ClusterStats clusterStats)
     {
-        notifier.sendNotification(String.format("%s - Cluster unhealthy",
-                        clusterStats.clusterId()),
-                clusterStats.toString());
+        notifier.sendNotification(format("%s - Cluster unhealthy", clusterStats.clusterId()), clusterStats.toString());
     }
 
     private void notifyForTooManyQueuedQueries(ClusterStats clusterStats)
     {
-        notifier.sendNotification(String.format("%s - Too many queued queries",
-                clusterStats.clusterId()), clusterStats.toString());
+        notifier.sendNotification(format("%s - Too many queued queries", clusterStats.clusterId()), clusterStats.toString());
     }
 
     private void notifyForNoWorkers(ClusterStats clusterStats)
     {
-        notifier.sendNotification(String.format("%s - Number of workers",
-                clusterStats.clusterId()), clusterStats.toString());
+        notifier.sendNotification(format("%s - Number of workers", clusterStats.clusterId()), clusterStats.toString());
     }
 }

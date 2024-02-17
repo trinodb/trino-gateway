@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
+import static java.lang.String.format;
+
 public class ConnectionChecker
 {
     private static final Logger log = LoggerFactory.getLogger(ConnectionChecker.class);
@@ -31,8 +33,7 @@ public class ConnectionChecker
     ConnectionCheck getChecker(String server, int port, int interval,
             int failcount, int disableDuration)
     {
-        String key = String.format("%s-%d-%d-%d-%d",
-                server, port, interval, failcount, disableDuration);
+        String key = format("%s-%d-%d-%d-%d", server, port, interval, failcount, disableDuration);
         log.info("key is {}", key);
         ConnectionCheck obj = connectionChecks.get(key);
 

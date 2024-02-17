@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static java.lang.String.format;
+
 public class LbOAuthManager
 {
     private static final Logger log = LoggerFactory.getLogger(LbOAuthManager.class);
@@ -83,11 +85,8 @@ public class LbOAuthManager
                 .request()
                 .post(Entity.form(form));
 
-        if (tokenResponse.getStatusInfo()
-                .getFamily() != Response.Status.Family.SUCCESSFUL) {
-            String message = String.format("token response failed with code %d - %s",
-                    tokenResponse.getStatus(),
-                    tokenResponse.readEntity(String.class));
+        if (tokenResponse.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+            String message = format("token response failed with code %d - %s", tokenResponse.getStatus(), tokenResponse.readEntity(String.class));
             log.error(message);
             return Response.status(500).entity(message).build();
         }
@@ -111,7 +110,7 @@ public class LbOAuthManager
         String clientId = oauthConfig.getClientId();
         String redirectUrl = oauthConfig.getRedirectUrl();
         String scopes = String.join("+", oauthConfig.getScopes());
-        String url = String.format(
+        String url = format(
                 "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
                 authorizationEndpoint, clientId, redirectUrl, scopes);
 

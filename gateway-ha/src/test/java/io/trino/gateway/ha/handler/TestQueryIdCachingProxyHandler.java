@@ -23,6 +23,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -57,14 +58,13 @@ public class TestQueryIdCachingProxyHandler
         String backendServer = "trinocluster";
         String backendPort = "80";
         HttpServletRequest mockServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(mockServletRequest.getHeader("proxytarget")).thenReturn(String.format("http://%s"
-                + ":%s", backendServer, backendPort));
+        Mockito.when(mockServletRequest.getHeader("proxytarget")).thenReturn(format("http://%s:%s", backendServer, backendPort));
         HttpClient httpClient = new HttpClient();
         Request proxyRequest = httpClient.newRequest("http://localhost:80");
         QueryIdCachingProxyHandler.setForwardedHostHeaderOnProxyRequest(mockServletRequest,
                 proxyRequest);
         assertThat(proxyRequest.getHeaders().get("Host"))
-                .isEqualTo(String.format("%s:%s", backendServer, backendPort));
+                .isEqualTo(format("%s:%s", backendServer, backendPort));
     }
 
     @Test

@@ -120,7 +120,7 @@ public class TestLbFilter
         configuration.setUser(MEMBER_OF.orElseThrow());
 
         MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
-        headers.addFirst(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", ID_TOKEN));
+        headers.addFirst(HttpHeaders.AUTHORIZATION, "Bearer " + ID_TOKEN);
 
         Mockito
                 .when(requestContext.getCookies())
