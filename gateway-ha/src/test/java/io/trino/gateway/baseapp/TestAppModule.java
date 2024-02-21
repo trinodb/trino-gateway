@@ -1,4 +1,3 @@
-package io.trino.gateway.baseapp;
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +11,21 @@ package io.trino.gateway.baseapp;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.trino.gateway.baseapp;
+
 import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestAppModule
 {
     @Test
@@ -44,7 +43,7 @@ public class TestAppModule
 
         int port = appModule.getApplicationPort();
 
-        assertEquals(8090, port);
+        assertThat(port).isEqualTo(8090);
     }
 
     @Test
@@ -60,6 +59,6 @@ public class TestAppModule
 
         AppModule<AppConfiguration, Environment> appModule = new AppModule<>(appConfiguration, environment) {};
 
-        assertThrows(IllegalStateException.class, appModule::getApplicationPort);
+        assertThatThrownBy(appModule::getApplicationPort).isInstanceOf(IllegalStateException.class);
     }
 }
