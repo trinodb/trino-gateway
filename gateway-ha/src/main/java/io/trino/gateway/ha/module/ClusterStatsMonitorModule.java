@@ -18,6 +18,7 @@ import com.google.inject.Singleton;
 import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
 import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
@@ -41,13 +42,13 @@ public class ClusterStatsMonitorModule
     {
         ClusterStatsConfiguration clusterStatsConfig = config.getClusterStatsConfiguration();
         if (config.getBackendState() == null) {
-            return new NoopClusterStatsMonitor();
+            return new ClusterStatsInfoApiMonitor();
         }
-        if (clusterStatsConfig.isUseApi()) {
-            return new ClusterStatsHttpMonitor(config.getBackendState());
-        }
-        else {
-            return new ClusterStatsJdbcMonitor(config.getBackendState());
-        }
+        return switch (clusterStatsConfig.getMonitorType()) {
+            case INFO_API -> new ClusterStatsInfoApiMonitor();
+            case UI_API -> new ClusterStatsHttpMonitor(config.getBackendState());
+            case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState());
+            case NOOP -> new NoopClusterStatsMonitor();
+        };
     }
 }

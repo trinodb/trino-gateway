@@ -15,12 +15,8 @@ dataStore:
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
 
-backendState:
-  username: lb_query
-  ssl: false
-
 clusterStatsConfiguration:
-  useApi: true
+  monitorType: INFO_API
 
 server:
   applicationConnectors:
