@@ -22,11 +22,7 @@ dataStore:
   driver: org.postgresql.Driver
 
 clusterStatsConfiguration:
-  useApi: true
-
-backendState:
-  username: gateway
-  ssl: false
+  monitorType: INFO_API
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule

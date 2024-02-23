@@ -13,19 +13,10 @@
  */
 package io.trino.gateway.ha.config;
 
-public class ClusterStatsConfiguration
+public enum ClusterStatsMonitorType
 {
-    private ClusterStatsMonitorType monitorType;
-
-    public ClusterStatsConfiguration() {}
-
-    public ClusterStatsMonitorType getMonitorType()
-    {
-        return monitorType;
-    }
-
-    public void setMonitorType(ClusterStatsMonitorType monitorType)
-    {
-        this.monitorType = monitorType;
-    }
+    NOOP,
+    INFO_API,
+    UI_API,
+    JDBC
 }
