@@ -56,6 +56,12 @@ public class TestClusterStatsMonitor
         testClusterStatsMonitor(ClusterStatsJdbcMonitor::new);
     }
 
+    @Test
+    public void testInfoApiMonitor()
+    {
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor());
+    }
+
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
     {
         BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
