@@ -60,7 +60,19 @@ public class QueryIdCachingProxyHandler
     public static final String SOURCE_HEADER = "X-Trino-Source";
     public static final String HOST_HEADER = "Host";
     private static final int QUERY_TEXT_LENGTH_FOR_HISTORY = 200;
-    private static final Pattern QUERY_ID_PATTERN = Pattern.compile(".*[/=?](\\d+_\\d+_\\d+_\\w+).*");
+    /**
+     * This regular expression matches query ids as they appear in the path of a URL. The query id must be preceded
+     * by a "/". A query id is defined as three groups of digits separated by underscores, with a final group
+     * consisting of any alphanumeric characters.
+     */
+    private static final Pattern QUERY_ID_PATH_PATTERN = Pattern.compile(".*/(\\d+_\\d+_\\d+_\\w+).*");
+    /**
+     * This regular expression matches query ids as they appear in the query parameters of a URL. The query id is
+     * defined as in QUERY_TEXT_LENGTH_FOR_HISTORY. The query id must either be at the beginning of the query parameter
+     * string, or be preceded by %2F (a URL-encoded "/"), or  "query_id=", with or without the underscore and any
+     * capitalization.
+     */
+    private static final Pattern QUERY_ID_PARAM_PATTERN = Pattern.compile(".*(?:%2F|(?i)query_?id(?-i)=|^)(\\d+_\\d+_\\d+_\\w+).*");
 
     private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
@@ -113,7 +125,13 @@ public class QueryIdCachingProxyHandler
             }
         }
         else if (path.startsWith(TRINO_UI_PATH)) {
-            Matcher matcher = QUERY_ID_PATTERN.matcher(path);
+            Matcher matcher = QUERY_ID_PATH_PATTERN.matcher(path);
+            if (matcher.matches()) {
+                queryId = matcher.group(1);
+            }
+        }
+        if (!isNullOrEmpty(queryParams)) {
+            Matcher matcher = QUERY_ID_PARAM_PATTERN.matcher(queryParams);
             if (matcher.matches()) {
                 queryId = matcher.group(1);
             }

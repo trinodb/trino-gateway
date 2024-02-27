@@ -23,6 +23,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.extractQueryIdIfPresent;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,22 +34,31 @@ public class TestQueryIdCachingProxyHandler
     public void testExtractQueryIdFromUrl()
             throws IOException
     {
-        String[] paths = {
-                "/ui/api/query/20200416_160256_03078_6b4yt",
-                "/ui/api/query/20200416_160256_03078_6b4yt?bogus_fictional_param",
-                "/ui/api/query?query_id=20200416_160256_03078_6b4yt",
-                "/ui/api/query.html?20200416_160256_03078_6b4yt"};
-        for (String path : paths) {
-            String queryId = QueryIdCachingProxyHandler.extractQueryIdIfPresent(path, null);
-            assertThat(queryId).isEqualTo("20200416_160256_03078_6b4yt");
-        }
-        String[] nonPaths = {
-                "/ui/api/query/myOtherThing",
-                "/ui/api/query/20200416_blah?bogus_fictional_param"};
-        for (String path : nonPaths) {
-            String queryId = QueryIdCachingProxyHandler.extractQueryIdIfPresent(path, null);
-            assertThat(queryId).isNull();
-        }
+        assertThat(extractQueryIdIfPresent("/v1/statement/executing/20200416_160256_03078_6b4yt/ya7e884929c67cdf86207a80e7a77ab2166fa2e7b/1368", null))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/v1/statement/queued/20200416_160256_03078_6b4yt/y0d7620a6941e78d3950798a1085383234258a566/1", null))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/ui/api/query/20200416_160256_03078_6b4yt", null))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/ui/api/query/20200416_160256_03078_6b4yt/killed", null))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/ui/api/query/20200416_160256_03078_6b4yt/preempted", null))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/v1/query/20200416_160256_03078_6b4yt", "pretty"))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/ui/troubleshooting", "queryId=20200416_160256_03078_6b4yt"))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/ui/query.html", "20200416_160256_03078_6b4yt"))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/login", "redirect=%2Fui%2Fapi%2Fquery%2F20200416_160256_03078_6b4yt"))
+                .isEqualTo("20200416_160256_03078_6b4yt");
+
+        assertThat(extractQueryIdIfPresent("/ui/api/query/myOtherThing", null))
+                .isNull();
+        assertThat(extractQueryIdIfPresent("/ui/api/query/20200416_blah", "bogus_fictional_param"))
+                .isNull();
+        assertThat(extractQueryIdIfPresent("/ui/", "lang=en&p=1&id=0_1_2_a"))
+                .isNull();
     }
 
     @Test
