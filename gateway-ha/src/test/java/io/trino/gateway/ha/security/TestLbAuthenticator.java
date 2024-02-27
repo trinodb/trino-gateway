@@ -20,6 +20,8 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.domain.Result;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,7 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -103,7 +106,7 @@ public class TestLbAuthenticator
                 "user1", new UserConfiguration("priv1, priv2", "pass1"),
                 "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
-        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, new HashMap<>());
 
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isTrue();
@@ -117,7 +120,7 @@ public class TestLbAuthenticator
     public void testNoLdapNoPresetUsers()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
     }
@@ -126,7 +129,7 @@ public class TestLbAuthenticator
     public void testWrongLdapConfig()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
     }
@@ -156,12 +159,15 @@ public class TestLbAuthenticator
                 "user1", new UserConfiguration("priv1, priv2", "pass1"),
                 "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
-        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers);
-        Response response = lbFormAuthManager.processLoginForm("user1", "pass1");
-        NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
-        String value = cookie.getValue();
-        assertThat(value != null && value.length() > 0).isTrue();
-        log.info(cookie.getValue());
-        JWT.decode(value);
+        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
+        RestLoginRequest restLoginRequest = new RestLoginRequest();
+        restLoginRequest.setUsername("user1");
+        restLoginRequest.setPassword("pass1");
+        Result<?> r = lbFormAuthManager.processRESTLogin(restLoginRequest);
+        assertThat(Result.isSuccess(r)).isTrue();
+        Map data = (Map) r.getData();
+        String token = (String) data.get("token");
+        log.info(token);
+        JWT.decode(token);
     }
 }

@@ -30,7 +30,8 @@ public class HaGatewayConfiguration
     private RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
     private AuthenticationConfiguration authentication;
     private AuthorizationConfiguration authorization;
-    private Map<String, UserConfiguration> presetUsers = new HashMap();
+    private Map<String, UserConfiguration> presetUsers = new HashMap<>();
+    private Map<String, String> pagePermissions = new HashMap<>();
     private BackendStateConfiguration backendState;
     private ClusterStatsConfiguration clusterStatsConfiguration;
     private List<String> extraWhitelistPaths = new ArrayList<>();
@@ -115,6 +116,16 @@ public class HaGatewayConfiguration
     public void setPresetUsers(Map<String, UserConfiguration> presetUsers)
     {
         this.presetUsers = presetUsers;
+    }
+
+    public Map<String, String> getPagePermissions()
+    {
+        return this.pagePermissions;
+    }
+
+    public void setPagePermissions(Map<String, String> pagePermissions)
+    {
+        this.pagePermissions = pagePermissions;
     }
 
     public BackendStateConfiguration getBackendState()

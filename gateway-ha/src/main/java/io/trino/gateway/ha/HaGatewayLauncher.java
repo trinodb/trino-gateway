@@ -15,7 +15,6 @@ package io.trino.gateway.ha;
 
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.core.setup.Bootstrap;
-import io.dropwizard.views.common.ViewBundle;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
@@ -31,8 +30,8 @@ public class HaGatewayLauncher
     public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap)
     {
         super.initialize(bootstrap);
-        bootstrap.addBundle(new ViewBundle<>());
-        bootstrap.addBundle(new AssetsBundle("/assets", "/assets", null, "assets"));
+        bootstrap.addBundle(new AssetsBundle("/static/assets", "/assets", null, "assets"));
+        bootstrap.addBundle(new AssetsBundle("/static", "/logo.svg", "logo.svg", "logo.svg"));
     }
 
     public static void main(String[] args)

@@ -26,6 +26,7 @@ public class NoopAuthenticator
     public Optional<LbPrincipal> authenticate(String credentials)
             throws AuthenticationException
     {
-        return Optional.of(new LbPrincipal("user", Optional.empty()));
+        // If authentication is not configured, the default is 'ADMIN_USER_API'.
+        return Optional.of(new LbPrincipal("user", Optional.of("ADMIN_USER_API")));
     }
 }
