@@ -126,6 +126,21 @@
                     </dependency>
                 </dependencies>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <rules combine.children="append">
+                        <RestrictImports>
+                            <reason>Use AssertJ assertions instead of JUnit</reason>
+                            <bannedImports>
+                                <bannedImport>org.junit.jupiter.api.Assertions.*</bannedImport>
+                            </bannedImports>
+                        </RestrictImports>
+                    </rules>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
