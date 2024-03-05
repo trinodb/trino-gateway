@@ -1,20 +1,39 @@
 version: "3.4"
 services:
   trino-gateway:
-    extends:
-      file: ./trino-gateway-compose.yml
-      service: trino-gateway
+    image: ${TRINO_GATEWAY_IMAGE:-trinodb/trino-gateway:latest}
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       interval: 5s
       timeout: 5s
       retries: 60
       start_period: 20s
+    ports:
+      - "8080:8080"
+    volumes:
+      - target: /opt/trino/gateway-ha-config.yml
+        source: ../gateway-ha/gateway-ha-config-docker.yml
+        type: bind
+
   postgres:
-    extends:
-      file: ./postgres-backend-compose.yml
-      service: postgres
+    image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres}
+    environment:
+      - PGPORT=5432
+      - POSTGRES_PASSWORD=P0stG&es
+      - POSTGRES_DB=trino_gateway_db
+      - POSTGRES_USER=trino_gateway_db_admin
+    ports:
+      - "5432:5432"
     healthcheck:
+      # Need user and database name to check PostgreSQL server status
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
       interval: 1s
       timeout: 1s
       retries: 60
       start_period: 10s
+    volumes:
+      - target: /docker-entrypoint-initdb.d/1-gateway-ha-persistence-postgres.sql
+        source: ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql
+        type: bind
