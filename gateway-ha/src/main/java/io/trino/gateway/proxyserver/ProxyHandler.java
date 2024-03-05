@@ -112,7 +112,7 @@ public class ProxyHandler
 
     protected boolean isCompressed(final byte[] compressed)
     {
-        return (compressed[0] == (byte) (GZIPInputStream.GZIP_MAGIC))
+        return (compressed[0] == (byte) GZIPInputStream.GZIP_MAGIC)
                 && (compressed[1] == (byte) (GZIPInputStream.GZIP_MAGIC >> 8));
     }
 }
