@@ -97,6 +97,7 @@
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:UnnecessaryParentheses:ERROR \
                             -Xep:UnusedVariable:ERROR</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
