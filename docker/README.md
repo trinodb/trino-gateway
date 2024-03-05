@@ -135,7 +135,7 @@ The Trino Gateway is available at [http://localhost:8080](http://localhost:8080)
 
 The PostgreSQL backend database for Trino Gateway runs on `localhost:5432`. You
 can query it for troubleshooting and other purposes using the credentials and
-details found in the `postgres-backend-compose.yml` file.
+details found in the `docker-compose.yml` file.
 
 ## Configuration
 
