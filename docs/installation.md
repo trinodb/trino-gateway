@@ -70,7 +70,7 @@ Trino Gateway requires a MySQL or PostgreSQL database.
 
 Use the following scripts to initialize the database:
 
-* [gateway-ha-persistence.sql](../gateway-ha/src/main/resources/gateway-ha-persistence.sql) for MySQL
+* [gateway-ha-persistence-mysql.sql](../gateway-ha/src/main/resources/gateway-ha-persistence-mysql.sql) for MySQL
 * [gateway-ha-persistence-postgres.sql](../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql) for PostgreSQL
 
 The files are also included in the JAR file.

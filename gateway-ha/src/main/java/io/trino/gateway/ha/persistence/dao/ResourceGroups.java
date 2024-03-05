@@ -28,7 +28,7 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDet
 @BelongsTo(parent = ResourceGroups.class, foreignKeyName = "parent")
 @HasMany(child = ResourceGroups.class, foreignKeyName = "parent")
 @IdName("resource_group_id")
-@Table("resource_groups") // located in gateway-ha-persistence.sql
+@Table("resource_groups") // located in gateway-ha-persistence-*.sql
 @Cached
 public class ResourceGroups
         extends Model

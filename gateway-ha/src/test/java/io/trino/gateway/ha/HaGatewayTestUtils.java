@@ -53,7 +53,7 @@ public class HaGatewayTestUtils
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         connectionManager.open();
-        Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence.sql"));
+        Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"));
         connectionManager.close();
     }
 

@@ -24,7 +24,7 @@ import java.util.List;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ExactSelectorsDetail;
 
 @CompositePK({"environment", "source", "query_type"})
-@Table("exact_match_source_selectors") // located in gateway-ha-persistence.sql
+@Table("exact_match_source_selectors") // located in gateway-ha-persistence-*.sql
 @Cached
 public class ExactMatchSourceSelectors
         extends Model
