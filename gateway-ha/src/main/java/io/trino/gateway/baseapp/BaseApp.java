@@ -258,7 +258,7 @@ public abstract class BaseApp<T extends AppConfiguration>
     {
         environment
                 .jersey()
-                .register(new AuthDynamicFeature((injector.getInstance(AuthFilter.class))));
+                .register(new AuthDynamicFeature(injector.getInstance(AuthFilter.class)));
         logger.info("op=register type=auth filter item={}", AuthFilter.class);
         environment.jersey().register(RolesAllowedDynamicFeature.class);
     }
