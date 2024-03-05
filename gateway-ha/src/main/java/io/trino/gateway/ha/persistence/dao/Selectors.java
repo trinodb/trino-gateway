@@ -26,7 +26,7 @@ import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 
 @BelongsTo(parent = ResourceGroups.class, foreignKeyName = "resource_group_id")
 @IdName("resource_group_id")
-@Table("selectors") // located in gateway-ha-persistence.sql
+@Table("selectors") // located in gateway-ha-persistence-*.sql
 @Cached
 public class Selectors
         extends Model
