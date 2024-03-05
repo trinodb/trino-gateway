@@ -18,6 +18,7 @@
         <li><a href="gateway-api.md">Gateway API</a></li>
         <li><a href="resource-groups-api.md">Resource groups API</a></li>
         <li><a href="routing-rules.md">Routing rules</a></li>
+        <li><a href="routing-logic.md">Routing logic</a></li>
       </ul>
     </td>
     <td>
