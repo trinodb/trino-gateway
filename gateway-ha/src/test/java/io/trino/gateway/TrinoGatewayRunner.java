@@ -51,8 +51,8 @@ public final class TrinoGatewayRunner
         mysql.withUsername("root");
         mysql.withPassword("root123");
         mysql.withDatabaseName("trinogateway");
-        mysql.withCopyFileToContainer(forClasspathResource("gateway-ha-persistence.sql"), "/docker-entrypoint-initdb.d/1-gateway-ha-persistence.sql");
-        mysql.withCopyFileToContainer(forClasspathResource("add_backends.sql"), "/docker-entrypoint-initdb.d/2-add_backends.sql");
+        mysql.withCopyFileToContainer(forClasspathResource("gateway-ha-persistence-mysql.sql"), "/docker-entrypoint-initdb.d/1-gateway-ha-persistence-mysql.sql");
+        mysql.withCopyFileToContainer(forClasspathResource("add_backends_mysql.sql"), "/docker-entrypoint-initdb.d/2-add_backends_mysql.sql");
         mysql.setPortBindings(List.of("3306:3306"));
         mysql.start();
 
