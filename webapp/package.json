@@ -1,0 +1,41 @@
+{
+  "name": "trino-gateway",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@douyinfe/semi-icons": "^2.47.1",
+    "@douyinfe/semi-icons-lab": "^2.47.1",
+    "@douyinfe/semi-illustrations": "^2.47.1",
+    "@douyinfe/semi-ui": "^2.47.1",
+    "echarts": "^5.4.3",
+    "js-cookie": "^3.0.5",
+    "moment": "^2.29.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "sass": "^1.69.5",
+    "zustand": "^4.3.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "eslint": "^8.53.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0",
+    "vite-plugin-svgr": "^4.2.0",
+    "@types/echarts": "^4.9.22",
+    "@types/js-cookie": "^3.0.6"
+  }
+}

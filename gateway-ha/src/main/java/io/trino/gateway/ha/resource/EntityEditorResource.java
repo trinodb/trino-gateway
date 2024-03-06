@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import io.dropwizard.views.common.View;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
@@ -31,20 +30,15 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 import static java.util.Objects.requireNonNull;
@@ -66,13 +60,6 @@ public class EntityEditorResource
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
-    }
-
-    @GET
-    @Produces(MediaType.TEXT_HTML)
-    public EntityView entityUi(@Context SecurityContext securityContext)
-    {
-        return new EntityView("/template/entity-view.ftl", securityContext);
     }
 
     @GET
@@ -150,54 +137,5 @@ public class EntityEditorResource
             default:
         }
         return Response.ok(ImmutableList.of()).build();
-    }
-
-    public static class EntityView
-            extends View
-    {
-        private String displayName;
-
-        protected EntityView(String templateName, SecurityContext securityContext)
-        {
-            super(templateName, Charset.defaultCharset());
-            setDisplayName(securityContext.getUserPrincipal().getName());
-        }
-
-        public String getDisplayName()
-        {
-            return this.displayName;
-        }
-
-        public void setDisplayName(String displayName)
-        {
-            this.displayName = displayName;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            EntityView that = (EntityView) o;
-            return Objects.equals(displayName, that.displayName);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(displayName);
-        }
-
-        @Override
-        public String toString()
-        {
-            return toStringHelper(this)
-                    .add("displayName", displayName)
-                    .toString();
-        }
     }
 }

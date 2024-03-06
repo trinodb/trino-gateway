@@ -1,0 +1,181 @@
+.header {
+  align-self: stretch;
+  height: 60px;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99;
+
+  .navigationHeaderLogo {
+    height: 50px;
+    width: 50px;
+  }
+
+  .dIV {
+    align-items: center;
+    column-gap: 16px;
+    display: inline-flex;
+    flex-shrink: 0;
+
+    .semiIconsBell {
+      font-size: 20px;
+      color: var(--semi-color-text-2);
+    }
+
+    .avatar {
+      height: 32px;
+      width: 32px;
+    }
+  }
+}
+
+.sider {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  .collapsed {
+    display: flex;
+    //Two 8-margin
+    width: calc(100% - 16px);
+    cursor: pointer;
+    background-color: var(--semi-color-nav-bg);
+    position: absolute;
+    bottom: 0;
+    height: 40px;
+    align-items: center;
+  }
+
+  .nav::-webkit-scrollbar {
+    display: none;
+    //Hide scrollbars
+  }
+
+  .nav {
+    height: 100vh;
+    padding-top: 60px;
+    overflow-y: auto;
+
+    .icon {
+      height: 20px;
+      width: 20px;
+    }
+  }
+}
+
+.content {
+  margin-top: 60px;
+  align-items: flex-start;
+  display: flex;
+  flex-basis: 0;
+  flex-direction: column;
+  padding: 20px;
+  row-gap: 24px;
+  flex-grow: 1;
+  transition: margin-left 0.3s ease;
+}
+
+.userProfile {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  row-gap: 22px;
+  flex-shrink: 0;
+  padding-top: 40px;
+
+  .banner {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+
+    .frame4159 {
+      align-items: center;
+      display: flex;
+      row-gap: 0;
+
+      .avatar {
+        height: 72px;
+        width: 72px;
+      }
+    }
+
+    .name {
+      align-items: center;
+      display: inline-flex;
+      flex-direction: column;
+      text-align: center;
+
+      .richardHendricks {
+        color: var(--semi-color-text-0);
+        font-size: 20px;
+        font-weight: 600;
+        vertical-align: top;
+        flex-shrink: 0;
+      }
+
+      .aRichardHendricks {
+        color: var(--semi-color-text-2);
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 16px;
+        vertical-align: top;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .main {
+    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    padding: 0 38px 0 24px;
+    row-gap: 12px;
+    align-self: stretch;
+    text-align: left;
+    letter-spacing: -0.14px;
+
+    .descriptions {
+      align-items: flex-start;
+      display: inline-flex;
+      flex-direction: column;
+      row-gap: 16px;
+      flex-shrink: 0;
+
+      .frame4152 {
+        align-items: center;
+        column-gap: 12px;
+        display: inline-flex;
+        flex-shrink: 0;
+
+        .semiIconsMapPin {
+          font-size: 24px;
+          color: var(--semi-color-disabled-text);
+        }
+
+        .value {
+          color: var(--semi-color-text-0);
+          font-size: 14px;
+          min-width: 61px;
+          vertical-align: top;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .tags {
+      align-items: flex-start;
+      column-gap: 8px;
+      display: inline-flex;
+      flex-shrink: 0;
+
+      .tag,
+      .tag1,
+      .tag2 {
+        height: 24px;
+        margin-right: 5px;
+      }
+    }
+  }
+}

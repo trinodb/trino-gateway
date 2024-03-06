@@ -22,13 +22,16 @@ import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import jakarta.ws.rs.core.Response;
+import io.trino.gateway.ha.domain.Result;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class LbFormAuthManager
 {
@@ -37,13 +40,16 @@ public class LbFormAuthManager
      * Cookie key to pass the token.
      */
     private final LbKeyProvider lbKeyProvider;
-    Map<String, UserConfiguration> presetUsers;
+    private final Map<String, UserConfiguration> presetUsers;
+    private final Map<String, String> pagePermissions;
     private final LbLdapClient lbLdapClient;
 
     public LbFormAuthManager(FormAuthConfiguration configuration,
-            Map<String, UserConfiguration> presetUsers)
+            Map<String, UserConfiguration> presetUsers,
+            Map<String, String> pagePermissions)
     {
         this.presetUsers = presetUsers;
+        this.pagePermissions = pagePermissions;
 
         if (configuration != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
@@ -66,17 +72,19 @@ public class LbFormAuthManager
         return "sub";
     }
 
-    public Response processLoginForm(String username, String password)
+    /**
+     * Login REST API
+     *
+     * @param loginForm {@link RestLoginRequest}
+     * @return token
+     */
+    public Result<?> processRESTLogin(RestLoginRequest loginForm)
     {
-        if (authenticate(new BasicCredentials(username, password))) {
-            String token = getSelfSignedToken(username);
-            return Response.status(302).location(URI.create("/"))
-                    .cookie(SessionCookie.getTokenCookie(token))
-                    .build();
+        if (authenticate(new BasicCredentials(loginForm.getUsername(), loginForm.getPassword()))) {
+            String token = getSelfSignedToken(loginForm.getUsername());
+            return Result.ok(Map.of("token", token));
         }
-
-        return Response.status(302).location(URI.create("/"))
-                .build();
+        return Result.fail("Authentication failed.");
     }
 
     /**
@@ -142,5 +150,18 @@ public class LbFormAuthManager
         }
 
         return false;
+    }
+
+    public List<String> processPagePermissions(List<String> roles)
+    {
+        for (String role : roles) {
+            String value = pagePermissions.get(role);
+            if (value == null) {
+                return Collections.emptyList();
+            }
+        }
+        return roles.stream()
+            .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
+            .distinct().toList();
     }
 }

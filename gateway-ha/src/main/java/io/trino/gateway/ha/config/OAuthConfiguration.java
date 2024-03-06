@@ -27,6 +27,7 @@ public class OAuthConfiguration
     private String redirectUrl;
     private String userIdField;
     private List<String> audiences;
+    private String redirectWebUrl;
 
     public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField, List<String> audiences)
     {
@@ -142,5 +143,15 @@ public class OAuthConfiguration
     public void setAudiences(List<String> audiences)
     {
         this.audiences = audiences;
+    }
+
+    public String getRedirectWebUrl()
+    {
+        return this.redirectWebUrl;
+    }
+
+    public void setRedirectWebUrl(String redirectWebUrl)
+    {
+        this.redirectWebUrl = redirectWebUrl;
     }
 }
