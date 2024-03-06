@@ -85,16 +85,14 @@ public class HaGatewayProviderModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi);
         queryHistoryManager = new HaQueryHistoryManager(jdbi);
-        routingManager =
-                new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
+        routingManager = new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
 
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
         formAuthManager = getFormAuthManager(configuration);
 
-        authorizationManager = new AuthorizationManager(configuration.getAuthorization(),
-                presetUsers);
+        authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         authenticationFilter = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
         extraWhitelistPaths = configuration.getExtraWhitelistPaths();
@@ -103,9 +101,8 @@ public class HaGatewayProviderModule
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
     {
         AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-        if (authenticationConfiguration != null
-                && authenticationConfiguration.getOauth() != null) {
-            return new LbOAuthManager(authenticationConfiguration.getOauth());
+        if (authenticationConfiguration != null && authenticationConfiguration.getOauth() != null) {
+            return new LbOAuthManager(authenticationConfiguration.getOauth(), configuration.getPagePermissions());
         }
         return null;
     }
@@ -113,10 +110,9 @@ public class HaGatewayProviderModule
     private LbFormAuthManager getFormAuthManager(HaGatewayConfiguration configuration)
     {
         AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-        if (authenticationConfiguration != null
-                && authenticationConfiguration.getForm() != null) {
+        if (authenticationConfiguration != null && authenticationConfiguration.getForm() != null) {
             return new LbFormAuthManager(authenticationConfiguration.getForm(),
-                    configuration.getPresetUsers());
+                    configuration.getPresetUsers(), configuration.getPagePermissions());
         }
         return null;
     }
@@ -128,8 +124,7 @@ public class HaGatewayProviderModule
         String defaultType = config.getDefaultType();
         if (oauthManager != null) {
             authFilters.add(new LbFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new LbAuthenticator(oauthManager,
-                            authorizationManager))
+                    .setAuthenticator(new LbAuthenticator(oauthManager, authorizationManager))
                     .setAuthorizer(authorizer)
                     .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
                     .setPrefix("Bearer")
@@ -138,16 +133,14 @@ public class HaGatewayProviderModule
 
         if (formAuthManager != null) {
             authFilters.add(new LbFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new FormAuthenticator(formAuthManager,
-                            authorizationManager))
+                    .setAuthenticator(new FormAuthenticator(formAuthManager, authorizationManager))
                     .setAuthorizer(authorizer)
                     .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
                     .setPrefix("Bearer")
                     .buildAuthFilter());
 
             authFilters.add(new BasicCredentialAuthFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new ApiAuthenticator(formAuthManager,
-                            authorizationManager))
+                    .setAuthenticator(new ApiAuthenticator(formAuthManager, authorizationManager))
                     .setAuthorizer(authorizer)
                     .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
                     .setPrefix("Basic")

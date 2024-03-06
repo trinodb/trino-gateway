@@ -14,22 +14,28 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
-import io.dropwizard.views.common.View;
+import io.trino.gateway.ha.domain.Result;
+import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
-import io.trino.gateway.ha.security.SessionCookie;
+import io.trino.gateway.ha.security.LbPrincipal;
 import jakarta.annotation.Nullable;
-import jakarta.ws.rs.FormParam;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
-import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -45,14 +51,17 @@ public class LoginResource
         this.formAuthManager = formAuthManager;
     }
 
+    @POST
     @Path("sso")
-    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response login()
     {
         if (oauthManager == null) {
             throw new WebApplicationException("OAuth configuration is not setup");
         }
-        return oauthManager.getAuthorizationCode();
+        String authorizationUrl = oauthManager.getAuthorizationCode();
+        return Response.ok(Result.ok("Ok", authorizationUrl)).build();
     }
 
     @Path("oidc/callback")
@@ -66,42 +75,73 @@ public class LoginResource
     }
 
     @POST
-    @Path("login_form")
-    public Response processLoginForm(
-            @FormParam("username") String userName,
-            @FormParam("password") String password)
-    {
-        if (formAuthManager == null) {
-            throw new WebApplicationException("Form authentication is not setup");
-        }
-        return formAuthManager.processLoginForm(userName, password);
-    }
-
-    @GET
     @Path("login")
-    @Produces(MediaType.TEXT_HTML)
-    public LoginResource.LoginForm loginFormUi()
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response processRESTLogin(RestLoginRequest loginForm)
     {
         if (formAuthManager == null) {
+            if (oauthManager == null) {
+                return Response.ok(Result.ok(Map.of("token", loginForm.getUsername()))).build();
+            }
             throw new WebApplicationException("Form authentication is not setup");
         }
-
-        return new LoginResource.LoginForm("/template/login-form.ftl");
+        Result<?> r = formAuthManager.processRESTLogin(loginForm);
+        return Response.ok(r).build();
     }
 
+    @POST
     @Path("logout")
-    @GET
-    public Response logOut()
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response processRESTLogin()
     {
-        return SessionCookie.logOut();
+        return Response.ok(Result.ok()).build();
     }
 
-    public static class LoginForm
-            extends View
+    @POST
+    @RolesAllowed("USER")
+    @Path("userinfo")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response restUserinfo(@Context SecurityContext securityContext)
     {
-        protected LoginForm(String templateName)
-        {
-            super(templateName, Charset.defaultCharset());
+        LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
+        List<String> roles = List.of(principal.getMemberOf().orElse("").split("_"));
+        List<String> pagePermissions;
+        if (formAuthManager != null) {
+            pagePermissions = formAuthManager.processPagePermissions(roles);
         }
+        else if (oauthManager != null) {
+            pagePermissions = oauthManager.processPagePermissions(roles);
+        }
+        else {
+            pagePermissions = Collections.emptyList();
+        }
+        Map<String, Object> resMap = Map.of(
+                "roles", roles,
+                "permissions", pagePermissions,
+                "userId", principal.getName(),
+                "userName", principal.getName());
+        return Response.ok(Result.ok(resMap)).build();
+    }
+
+    @POST
+    @Path("loginType")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response loginType()
+    {
+        String loginType;
+        if (formAuthManager != null) {
+            loginType = "form";
+        }
+        else if (oauthManager != null) {
+            loginType = "oauth";
+        }
+        else {
+            loginType = "none";
+        }
+        return Response.ok(Result.ok("Ok", loginType)).build();
     }
 }
