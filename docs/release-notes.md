@@ -49,7 +49,7 @@
 * Add support for OAuth 2 audience use. (https://github.com/trinodb/trino-gateway/pull/164)
 * Add quickstart scripts and documentation. (https://github.com/trinodb/trino-gateway/pull/110)
 * Add project logo. (https://github.com/trinodb/trino-gateway/pull/111)
-* Prevent ignoring HTTP header configuration. (https://github.com/trinodb/trino-gateway/issue/100)
+* Prevent ignoring HTTP header configuration. (https://github.com/trinodb/trino-gateway/issues/100)
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/168)
 
