@@ -70,7 +70,7 @@ public class TestResourceGroupsManager
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(1);
 
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
         assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
         assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(20);
         assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(200);
@@ -83,7 +83,7 @@ public class TestResourceGroupsManager
     public void testUpdateResourceGroup()
     {
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
-        resourceGroup.setResourceGroupId(0L);
+        resourceGroup.setResourceGroupId(1L);
         resourceGroup.setName("admin");
         resourceGroup.setHardConcurrencyLimit(50);
         resourceGroup.setMaxQueued(50);
@@ -96,7 +96,7 @@ public class TestResourceGroupsManager
 
         /* Update resourceGroups that do not exist yet.
          *  In this case, new resourceGroups should be created. */
-        resourceGroup.setResourceGroupId(1L);
+        resourceGroup.setResourceGroupId(2L);
         resourceGroup.setName("localization-eng");
         resourceGroup.setHardConcurrencyLimit(50);
         resourceGroup.setMaxQueued(70);
@@ -118,14 +118,14 @@ public class TestResourceGroupsManager
 
         assertThat(resourceGroups).hasSize(3); // updated 2 non-existing groups, so count should be 3
 
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
         assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
         assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(50);
         assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(50);
         assertThat(resourceGroups.get(0).getJmxExport()).isEqualTo(Boolean.FALSE);
         assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("20%");
 
-        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(1L);
+        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(2L);
         assertThat(resourceGroups.get(1).getName()).isEqualTo("localization-eng");
         assertThat(resourceGroups.get(1).getHardConcurrencyLimit()).isEqualTo(50);
         assertThat(resourceGroups.get(1).getMaxQueued()).isEqualTo(70);
@@ -141,15 +141,15 @@ public class TestResourceGroupsManager
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(3);
 
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
-        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(1L);
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
+        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(2L);
         assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(3L);
 
         resourceGroupManager.deleteResourceGroup(resourceGroups.get(1).getResourceGroupId(), null);
         resourceGroups = resourceGroupManager.readAllResourceGroups(null);
 
         assertThat(resourceGroups).hasSize(2);
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
         assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(3L);
     }
 
@@ -158,7 +158,7 @@ public class TestResourceGroupsManager
     public void testCreateSelector()
     {
         SelectorsDetail selector = new SelectorsDetail();
-        selector.setResourceGroupId(0L);
+        selector.setResourceGroupId(1L);
         selector.setPriority(0L);
         selector.setUserRegex("data-platform-admin");
         selector.setSourceRegex("admin");
@@ -178,7 +178,7 @@ public class TestResourceGroupsManager
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
 
         assertThat(selectors).hasSize(1);
-        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(1L);
         assertThat(selectors.get(0).getPriority()).isEqualTo(0L);
         assertThat(selectors.get(0).getUserRegex()).isEqualTo("data-platform-admin");
         assertThat(selectors.get(0).getSourceRegex()).isEqualTo("admin");
@@ -193,7 +193,7 @@ public class TestResourceGroupsManager
     {
         SelectorsDetail selector = new SelectorsDetail();
 
-        selector.setResourceGroupId(0L);
+        selector.setResourceGroupId(1L);
         selector.setPriority(0L);
         selector.setUserRegex("data-platform-admin_updated");
         selector.setSourceRegex("admin_updated");
@@ -246,7 +246,7 @@ public class TestResourceGroupsManager
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(3);
-        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(0L);
+        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(1L);
         resourceGroupManager.deleteSelector(selectors.get(0), null);
         selectors = resourceGroupManager.readAllSelectors(null);
 

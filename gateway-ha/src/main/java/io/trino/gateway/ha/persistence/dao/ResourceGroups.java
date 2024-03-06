@@ -90,7 +90,6 @@ public class ResourceGroups
      */
     public static void create(ResourceGroups model, ResourceGroupsDetail resourceGroupDetail)
     {
-        model.set(resourceGroupId, resourceGroupDetail.getResourceGroupId());
         model.set(name, resourceGroupDetail.getName());
 
         model.set(parent, resourceGroupDetail.getParent());

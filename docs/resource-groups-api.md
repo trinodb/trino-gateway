@@ -111,12 +111,12 @@ curl -X POST http://localhost:8080/trino/resourcegroup/delete/{INSERT_ID_HERE}
 
 ## Add a selector
 
-To add a single selector, specify all relevant fields in the body. Resource
-group id should not be specified since the database should autoincrement it.
+To add a single selector, specify all relevant fields in the body.
 
 ```$xslt
 curl -X POST http://localhost:8080/trino/selector/create \
  -d '{
+        "resourceGroupId": 1, \
         "priority": 1, \
         "userRegex": "selector1", \
         "sourceRegex": "resourcegroup1", \
