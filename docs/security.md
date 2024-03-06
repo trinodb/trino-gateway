@@ -60,6 +60,7 @@ authentication:
     authorizationEndpoint:
     jwkEndpoint:
     redirectUrl:
+    redirectWebUrl: 
     userIdField:
     scopes:
       - s1
@@ -89,15 +90,16 @@ authentication:
 
 The authentication happens with the pre-defined users from the configuration
 file. To define the preset user use the following section.
+Please note that 'privileges' can only be a combination of 'ADMIN', 'USER', and 'API', with '_' used for segmentation.
 
 ```
 presetUsers:
   user1:
     password: <password>
-    privileges: "lb_admin, lb_user"
+    privileges: ADMIN_USER
   user2:
     password: <password>
-    privileges: "lb_api"
+    privileges: API
 ```
 
 Also provide a random key pair in RSA format.
@@ -146,9 +148,9 @@ LDAP Authorization is also supported by adding user attribute configs in file.
 ```
 # Roles should be in regex format
 authorization:
-  admin: 'lb_admin'
-  user: 'lb_user'
-  api: 'lb_api'
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
   ldapConfigPath: '<ldap_config_path>'
 ```
 
