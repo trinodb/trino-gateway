@@ -13,10 +13,15 @@
  */
 package io.trino.gateway.ha.persistence.dao;
 
+import org.jdbi.v3.core.mapper.MapMapper;
+import org.jdbi.v3.sqlobject.customizer.Bind;
+import org.jdbi.v3.sqlobject.customizer.Define;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
+import org.jdbi.v3.sqlobject.statement.UseRowMapper;
 
 import java.util.List;
+import java.util.Map;
 
 public interface QueryHistoryDao
 {
@@ -40,6 +45,32 @@ public interface QueryHistoryDao
             WHERE query_id = :queryId
             """)
     String findBackendUrlByQueryId(String queryId);
+
+    @SqlQuery("""
+            SELECT * FROM query_history
+            WHERE 1 = 1 <condition>
+            ORDER BY created DESC
+            LIMIT :limit
+            OFFSET :offset
+            """)
+    List<QueryHistory> pageQueryHistory(@Define("condition") String condition, @Bind("limit") int limit, @Bind("offset") int offset);
+
+    @SqlQuery("""
+            SELECT count(1) FROM query_history
+            WHERE 1 = 1 <condition>
+            """)
+    Long count(@Define("condition") String condition);
+
+    @SqlQuery("""
+            SELECT CONCAT(FLOOR(created / 1000 / 60)) AS minute,
+                   backend_url AS backend_url,
+                   COUNT(1) AS query_count
+            FROM query_history
+            WHERE created > :created
+            GROUP BY minute, backend_url
+            """)
+    @UseRowMapper(MapMapper.class)
+    List<Map<String, Object>> findDistribution(long created);
 
     @SqlUpdate("""
             INSERT INTO query_history (query_id, query_text, backend_url, user_name, source, created)

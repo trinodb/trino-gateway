@@ -13,12 +13,22 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.base.Strings;
+import io.trino.gateway.ha.domain.TableData;
+import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
+import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import io.trino.gateway.ha.util.PageUtil;
 import org.jdbi.v3.core.Jdbi;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -83,5 +93,44 @@ public class HaQueryHistoryManager
     public String getBackendForQueryId(String queryId)
     {
         return dao.findBackendUrlByQueryId(queryId);
+    }
+
+    @Override
+    public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
+    {
+        int start = PageUtil.getStart(query.getPage(), query.getSize());
+        String condition = "";
+        if (!Strings.isNullOrEmpty(query.getUser())) {
+            condition += " and user_name = '" + query.getUser() + "'";
+        }
+        if (!Strings.isNullOrEmpty(query.getBackendUrl())) {
+            condition += " and backend_url = '" + query.getBackendUrl() + "'";
+        }
+        if (!Strings.isNullOrEmpty(query.getQueryId())) {
+            condition += " and query_id = '" + query.getQueryId() + "'";
+        }
+        List<QueryHistory> histories = dao.pageQueryHistory(condition, query.getSize(), start);
+        List<QueryDetail> rows = upcast(histories);
+        Long total = dao.count(condition);
+        return TableData.build(rows, total);
+    }
+
+    @Override
+    public List<DistributionResponse.LineChart> findDistribution(Long ts)
+    {
+        List<Map<String, Object>> results = dao.findDistribution(ts);
+        List<DistributionResponse.LineChart> resList = new ArrayList<>();
+        for (Map<String, Object> model : results) {
+            DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
+            long minute = Long.parseLong(model.get("minute").toString());
+            Instant instant = Instant.ofEpochSecond(minute * 60L);
+            LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+            lineChart.setMinute(dateTime.format(formatter));
+            lineChart.setQueryCount(Long.parseLong(model.get("query_count").toString()));
+            lineChart.setBackendUrl(model.get("backend_url").toString());
+            resList.add(lineChart);
+        }
+        return resList;
     }
 }

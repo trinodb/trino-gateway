@@ -17,6 +17,7 @@
     <properties>
         <environments>development</environments>
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
+        <frontend.project.name>webapp</frontend.project.name>
 
         <!-- dependency versions -->
         <dep.activejdbc.version>2.3</dep.activejdbc.version>
@@ -206,11 +207,6 @@
                     <artifactId>jakarta.servlet-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views</artifactId>
         </dependency>
 
         <dependency>
@@ -550,6 +546,69 @@
                     <!-- necessary for integration tests, also see /.mvn/jvm.config -->
                     <argLine>--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED</argLine>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy static</id>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <outputDirectory>src/main/resources/static</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../${frontend.project.name}/dist</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.12.1</version>
+                <configuration>
+                    <workingDirectory>${project.basedir}/../${frontend.project.name}</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install node and pnpm</id>
+                        <goals>
+                            <goal>install-node-and-pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>v18.9.1</nodeVersion>
+                            <pnpmVersion>8.6.12</pnpmVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>install</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>install --ignore-scripts</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
