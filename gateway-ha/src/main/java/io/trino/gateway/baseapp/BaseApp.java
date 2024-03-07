@@ -51,9 +51,7 @@ import java.util.Set;
  * #addModules} method.
  *
  * <p>Packages supplied in the constructor will be scanned for Resources, Tasks, Providers,
- * Healthchecks and Managed classes, and added to the environment. If you need to add anything to
- * the environment, or access the Injector at run time, you can use the {@link #applicationAtRun}
- * method.
+ * Healthchecks and Managed classes, and added to the environment.
  *
  * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
  * injection.
@@ -65,7 +63,6 @@ public abstract class BaseApp<T extends AppConfiguration>
 
     private final Reflections reflections;
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
-    private Injector injector;
 
     protected BaseApp(String... basePackages)
     {
@@ -107,10 +104,6 @@ public abstract class BaseApp<T extends AppConfiguration>
     /**
      * When the application runs, this is called after the bundles are run.
      *
-     * <p>You generally don't want to override this but if you do, make sure to call up into super to
-     * allow the app to configure its Guice wiring correctly and apply anything you set up in {@link
-     * #applicationAtRun}.
-     *
      * @param configuration the parsed {@link Configuration} object
      * @param environment the application's {@link Environment}
      * @throws Exception if something goes wrong
@@ -120,34 +113,16 @@ public abstract class BaseApp<T extends AppConfiguration>
             throws Exception
     {
         ((DefaultServerFactory) configuration.getServerFactory()).setRequestLogFactory(new GatewayRequestLogFactory());
-        this.injector = configureGuice(configuration, environment);
-        logger.info("op=configure_guice injector=%s", injector);
-        applicationAtRun(configuration, environment, injector);
-        logger.info("op=configure_app_custom completed");
+        configureGuice(configuration, environment);
     }
 
-    /**
-     * Access the Dropwizard {@link Environment} and/or the Guice {@link Injector} when the
-     * application is run. Override it to add providers, resources, etc. for your application as an
-     * alternative to accessing {@link #run} .
-     *
-     * @param configuration the app configuration
-     * @param environment the Dropwizard {@link Environment}
-     * @param injector the Guice {@link Injector}
-     */
-    protected void applicationAtRun(T configuration, Environment environment, Injector injector)
-    {
-    }
-
-    private Injector configureGuice(T configuration, Environment environment)
-            throws Exception
+    private void configureGuice(T configuration, Environment environment)
     {
         appModules.add(new MetricRegistryModule(environment.metrics()));
         appModules.addAll(addModules(configuration, environment));
         Injector injector = Guice.createInjector(appModules.build());
         injector.injectMembers(this);
         registerWithInjector(configuration, environment, injector);
-        return injector;
     }
 
     private void registerWithInjector(T configuration, Environment environment, Injector injector)
