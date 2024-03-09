@@ -28,7 +28,6 @@
     </properties>
 
     <dependencies>
-
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
@@ -504,6 +503,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
@@ -542,21 +542,6 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <configuration>
-                            <ignoredDependencies>
-                                <ignoredDependency>joda-time:joda-time</ignoredDependency>
-                            </ignoredDependencies>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- maven shade plugin -->
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
