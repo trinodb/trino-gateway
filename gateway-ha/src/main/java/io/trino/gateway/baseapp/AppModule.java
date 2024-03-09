@@ -33,9 +33,6 @@ public abstract class AppModule<T extends AppConfiguration, E>
         this.environment = env;
     }
 
-    @Override
-    protected void configure() {}
-
     protected int getApplicationPort()
     {
         Stream<ConnectorFactory> connectors =
