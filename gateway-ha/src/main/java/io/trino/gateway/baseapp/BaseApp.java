@@ -24,7 +24,6 @@ import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.DefaultServerFactory;
-import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
@@ -89,17 +88,6 @@ public abstract class BaseApp<T extends AppConfiguration>
 
     @Override // Using Airlift logger
     protected void bootstrapLogging() {}
-
-    /**
-     * Initializes the application bootstrap.
-     *
-     * @param bootstrap the application bootstrap
-     */
-    @Override
-    public void initialize(Bootstrap<T> bootstrap)
-    {
-        super.initialize(bootstrap);
-    }
 
     /**
      * When the application runs, this is called after the bundles are run.
