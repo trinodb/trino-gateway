@@ -160,7 +160,7 @@ public class LbFormAuthManager
             }
         }
         return roles.stream()
-            .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
-            .distinct().toList();
+                .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
+                .distinct().toList();
     }
 }
