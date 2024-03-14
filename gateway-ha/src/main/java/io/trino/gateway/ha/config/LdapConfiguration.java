@@ -37,10 +37,22 @@ public class LdapConfiguration
     private Integer poolMinIdle;
     private boolean poolTestOnBorrow;
 
-    public LdapConfiguration(String ldapHost, Integer ldapPort, boolean useTls, boolean useSsl, String ldapAdminBindDn,
-                             String ldapUserBaseDn, String ldapUserSearch, String ldapGroupMemberAttribute,
-                             String ldapAdminPassword, String ldapTrustStorePath, String ldapTrustStorePassword,
-                             Integer poolMaxIdle, Integer poolMaxTotal, Integer poolMinIdle, boolean poolTestOnBorrow)
+    public LdapConfiguration(
+            String ldapHost,
+            Integer ldapPort,
+            boolean useTls,
+            boolean useSsl,
+            String ldapAdminBindDn,
+            String ldapUserBaseDn,
+            String ldapUserSearch,
+            String ldapGroupMemberAttribute,
+            String ldapAdminPassword,
+            String ldapTrustStorePath,
+            String ldapTrustStorePassword,
+            Integer poolMaxIdle,
+            Integer poolMaxTotal,
+            Integer poolMinIdle,
+            boolean poolTestOnBorrow)
     {
         this.ldapHost = ldapHost;
         this.ldapPort = ldapPort;
