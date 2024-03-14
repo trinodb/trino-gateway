@@ -67,8 +67,11 @@ public class GatewayWebAppResource
     private final ResourceGroupsManager resourceGroupsManager;
 
     @Inject
-    public GatewayWebAppResource(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
-                                 BackendStateManager backendStateManager, ResourceGroupsManager resourceGroupsManager)
+    public GatewayWebAppResource(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager,
+            BackendStateManager backendStateManager,
+            ResourceGroupsManager resourceGroupsManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
@@ -105,8 +108,7 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/findQueryHistory")
-    public Response findQueryHistory(QueryHistoryRequest query,
-                                     @Context SecurityContext securityContext)
+    public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
         LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
         String[] roles = principal.getMemberOf().orElse("").split("_");

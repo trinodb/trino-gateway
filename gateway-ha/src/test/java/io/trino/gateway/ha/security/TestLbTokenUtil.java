@@ -42,17 +42,17 @@ public class TestLbTokenUtil
     public void setup()
     {
         lbKeyProvider = new LbKeyProvider(new SelfSignKeyPairConfiguration(
-            requireNonNull(getClass().getClassLoader().getResource(rsaPrivateKey)).getFile(),
-            requireNonNull(getClass().getClassLoader().getResource(rsaPublicKey)).getFile()));
+                requireNonNull(getClass().getClassLoader().getResource(rsaPrivateKey)).getFile(),
+                requireNonNull(getClass().getClassLoader().getResource(rsaPublicKey)).getFile()));
         Map<String, Object> headers = java.util.Map.of("alg", "RS256");
         Algorithm algorithm = Algorithm.RSA256(lbKeyProvider.getRsaPublicKey(),
                 lbKeyProvider.getRsaPrivateKey());
         idToken = JWT.create()
-            .withHeader(headers)
-            .withIssuer(SessionCookie.SELF_ISSUER_ID)
-            .withSubject("test")
-            .withAudience("test.com")
-            .sign(algorithm);
+                .withHeader(headers)
+                .withIssuer(SessionCookie.SELF_ISSUER_ID)
+                .withSubject("test")
+                .withAudience("test.com")
+                .sign(algorithm);
         jwt = JWT.decode(idToken);
     }
 
