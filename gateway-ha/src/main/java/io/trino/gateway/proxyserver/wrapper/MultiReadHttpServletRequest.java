@@ -34,7 +34,7 @@ import java.util.Map;
 public class MultiReadHttpServletRequest
         extends HttpServletRequestWrapper
 {
-    private byte[] content;
+    private final byte[] content;
     private final Map<String, String> headerMap = new HashMap<>();
 
     public static void copy(InputStream in, OutputStream out)

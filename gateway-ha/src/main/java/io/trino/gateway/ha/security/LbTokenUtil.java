@@ -31,9 +31,7 @@ public final class LbTokenUtil
      * Cookie key to pass the token.
      */
 
-    private LbTokenUtil()
-    {
-    }
+    private LbTokenUtil() {}
 
     public static boolean validateToken(String idToken, RSAPublicKey publicKey, String issuer, Optional<List<String>> audiences)
     {
@@ -45,9 +43,7 @@ public final class LbTokenUtil
             }
 
             Algorithm algorithm = Algorithm.RSA256(publicKey, null);
-            Verification verification =
-                    JWT.require(algorithm)
-                        .withIssuer(issuer);
+            Verification verification = JWT.require(algorithm).withIssuer(issuer);
 
             audiences.ifPresent(auds -> verification.withAnyOfAudience(auds.toArray(new String[0])));
 
