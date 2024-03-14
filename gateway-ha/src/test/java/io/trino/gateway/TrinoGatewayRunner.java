@@ -59,7 +59,7 @@ public final class TrinoGatewayRunner
         mysql.setPortBindings(List.of("3306:3306"));
         mysql.start();
 
-        HaGatewayLauncher.main(new String[]{"server", "gateway-ha/gateway-ha-config.yml"});
+        HaGatewayLauncher.main(new String[] {"server", "gateway-ha/gateway-ha-config.yml"});
 
         log.info("======== SERVER STARTED ========");
     }
