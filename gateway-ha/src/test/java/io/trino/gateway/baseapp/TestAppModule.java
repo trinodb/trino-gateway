@@ -16,6 +16,7 @@ package io.trino.gateway.baseapp;
 import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.jetty.HttpsConnectorFactory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -29,11 +30,29 @@ import static org.mockito.Mockito.when;
 public class TestAppModule
 {
     @Test
-    public void testGetApplicationPort()
+    public void testGetApplicationPortHttp()
     {
         AppConfiguration mockConfig = Mockito.mock(AppConfiguration.class);
         DefaultServerFactory mockServerFactory = Mockito.mock(DefaultServerFactory.class);
         HttpConnectorFactory mockConnector = Mockito.mock(HttpConnectorFactory.class);
+
+        when(mockConfig.getServerFactory()).thenReturn(mockServerFactory);
+        when(mockServerFactory.getApplicationConnectors()).thenReturn(List.of(mockConnector));
+        when(mockConnector.getPort()).thenReturn(8090);
+
+        AppModule<AppConfiguration, Object> appModule = new AppModule<>(mockConfig, new Object()) {};
+
+        int port = appModule.getApplicationPort();
+
+        assertThat(port).isEqualTo(8090);
+    }
+
+    @Test
+    public void testGetApplicationPortHttps()
+    {
+        AppConfiguration mockConfig = Mockito.mock(AppConfiguration.class);
+        DefaultServerFactory mockServerFactory = Mockito.mock(DefaultServerFactory.class);
+        HttpsConnectorFactory mockConnector = Mockito.mock(HttpsConnectorFactory.class);
 
         when(mockConfig.getServerFactory()).thenReturn(mockServerFactory);
         when(mockServerFactory.getApplicationConnectors()).thenReturn(List.of(mockConnector));

@@ -44,7 +44,6 @@ public abstract class AppModule<T extends AppConfiguration, E>
                         .map(SimpleServerFactory::getConnector);
 
         return connectors
-                .filter(connector -> connector instanceof HttpConnectorFactory)
                 .mapToInt(connector -> {
                     if (connector instanceof HttpsConnectorFactory httpsConnectorFactory) {
                         return httpsConnectorFactory.getPort();
