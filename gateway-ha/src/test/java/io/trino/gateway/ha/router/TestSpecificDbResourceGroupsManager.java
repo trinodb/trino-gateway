@@ -70,6 +70,9 @@ public class TestSpecificDbResourceGroupsManager
     @Test
     public void testReadSpecificDbResourceGroupCauseException()
     {
+        // Cache could hit across different db url in activejdbc
+        // This manually clear the cache
+        org.javalite.activejdbc.cache.QueryCache.instance().purgeTableCache("resource_groups");
         assertThatThrownBy(() -> resourceGroupManager.readAllResourceGroups("abcd"))
                 .isInstanceOf(Exception.class);
     }
