@@ -18,6 +18,7 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectorsDao;
 import io.trino.gateway.ha.persistence.dao.ResourceGroups;
+import io.trino.gateway.ha.persistence.dao.ResourceGroupsDao;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalProperties;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalPropertiesDao;
 import io.trino.gateway.ha.persistence.dao.Selectors;
@@ -50,13 +51,7 @@ public class HaResourceGroupsManager
     public ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroups.create(new ResourceGroups(), resourceGroup);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getResourceGroupsDao(routingGroupDatabase).insert(resourceGroup);
         return resourceGroup;
     }
 
@@ -68,14 +63,8 @@ public class HaResourceGroupsManager
     @Override
     public List<ResourceGroupsDetail> readAllResourceGroups(@Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<ResourceGroups> resourceGroupList = ResourceGroups.findAll();
-            return ResourceGroups.upcast(resourceGroupList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<ResourceGroups> resourceGroups = getResourceGroupsDao(routingGroupDatabase).findAll();
+        return upcastResourceGroups(resourceGroups);
     }
 
     /**
@@ -87,15 +76,8 @@ public class HaResourceGroupsManager
     public List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<ResourceGroups> resourceGroup =
-                    ResourceGroups.where("resource_group_id = ?", resourceGroupId);
-            return ResourceGroups.upcast(resourceGroup);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<ResourceGroups> resourceGroups = getResourceGroupsDao(routingGroupDatabase).findById(resourceGroupId);
+        return upcastResourceGroups(resourceGroups);
     }
 
     /**
@@ -107,21 +89,13 @@ public class HaResourceGroupsManager
     public ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroups model =
-                    ResourceGroups.findFirst("resource_group_id = ?",
-                            resourceGroup.getResourceGroupId());
-
-            if (model == null) {
-                ResourceGroups.create(new ResourceGroups(), resourceGroup);
-            }
-            else {
-                ResourceGroups.update(model, resourceGroup);
-            }
+        ResourceGroupsDao dao = getResourceGroupsDao(routingGroupDatabase);
+        ResourceGroups model = dao.findFirstById(resourceGroup.getResourceGroupId());
+        if (model == null) {
+            dao.insert(resourceGroup);
         }
-        finally {
-            connectionManager.close();
+        else {
+            dao.update(resourceGroup);
         }
         return resourceGroup;
     }
@@ -132,13 +106,7 @@ public class HaResourceGroupsManager
     @Override
     public void deleteResourceGroup(long resourceGroupId, @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            ResourceGroups.delete("resource_group_id = ?", resourceGroupId);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getResourceGroupsDao(routingGroupDatabase).deleteById(resourceGroupId);
     }
 
     /**
@@ -304,6 +272,11 @@ public class HaResourceGroupsManager
         return connectionManager.getJdbi(routingGroupDatabase).onDemand(SelectorsDao.class);
     }
 
+    private ResourceGroupsDao getResourceGroupsDao(@Nullable String routingGroupDatabase)
+    {
+        return connectionManager.getJdbi(routingGroupDatabase).onDemand(ResourceGroupsDao.class);
+    }
+
     private ResourceGroupsGlobalPropertiesDao getDao(@Nullable String routingGroupDatabase)
     {
         return connectionManager.getJdbi(routingGroupDatabase).onDemand(ResourceGroupsGlobalPropertiesDao.class);
@@ -346,6 +319,33 @@ public class HaResourceGroupsManager
             selectorDetail.setClientTags(selectors.clientTags());
             selectorDetail.setSelectorResourceEstimate(selectors.selectorResourceEstimate());
             builder.add(selectorDetail);
+        }
+        return builder.build();
+    }
+
+    private static List<ResourceGroupsDetail> upcastResourceGroups(List<ResourceGroups> resourceGroupList)
+    {
+        ImmutableList.Builder<ResourceGroupsDetail> builder = new ImmutableList.Builder<>();
+        for (ResourceGroups resourceGroups : resourceGroupList) {
+            ResourceGroupsDetail resourceGroupDetail = new ResourceGroupsDetail();
+            resourceGroupDetail.setResourceGroupId(resourceGroups.resourceGroupId());
+            resourceGroupDetail.setName(resourceGroups.name());
+
+            resourceGroupDetail.setParent(resourceGroups.parent());
+            resourceGroupDetail.setJmxExport(resourceGroups.jmxExport());
+            resourceGroupDetail.setSchedulingPolicy(resourceGroups.schedulingPolicy());
+            resourceGroupDetail.setSchedulingWeight(resourceGroups.schedulingWeight());
+
+            resourceGroupDetail.setSoftMemoryLimit(resourceGroups.softMemoryLimit());
+            resourceGroupDetail.setMaxQueued(resourceGroups.maxQueued());
+            resourceGroupDetail.setHardConcurrencyLimit(resourceGroups.hardConcurrencyLimit());
+
+            resourceGroupDetail.setSoftConcurrencyLimit(resourceGroups.softConcurrencyLimit());
+            resourceGroupDetail.setSoftCpuLimit(resourceGroups.softCpuLimit());
+            resourceGroupDetail.setHardCpuLimit(resourceGroups.hardCpuLimit());
+            resourceGroupDetail.setEnvironment(resourceGroups.environment());
+
+            builder.add(resourceGroupDetail);
         }
         return builder.build();
     }
