@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
+import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectorsDao;
 import io.trino.gateway.ha.persistence.dao.ResourceGroups;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalProperties;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalPropertiesDao;
@@ -24,16 +25,19 @@ import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.lang.String.format;
 
 public class HaResourceGroupsManager
         implements ResourceGroupsManager
 {
     private final JdbcConnectionManager connectionManager;
+    private final ExactMatchSourceSelectorsDao exactMatchSourceSelectorsDao;
 
     public HaResourceGroupsManager(JdbcConnectionManager connectionManager)
     {
         this.connectionManager = connectionManager;
+        this.exactMatchSourceSelectorsDao = connectionManager.getJdbi().onDemand(ExactMatchSourceSelectorsDao.class);
     }
 
     /**
@@ -324,13 +328,7 @@ public class HaResourceGroupsManager
     public ExactSelectorsDetail createExactMatchSourceSelector(
             ExactSelectorsDetail exactSelectorDetail)
     {
-        try {
-            connectionManager.open();
-            ExactMatchSourceSelectors.create(new ExactMatchSourceSelectors(), exactSelectorDetail);
-        }
-        finally {
-            connectionManager.close();
-        }
+        exactMatchSourceSelectorsDao.insert(exactSelectorDetail);
         return exactSelectorDetail;
     }
 
@@ -340,15 +338,10 @@ public class HaResourceGroupsManager
     @Override
     public List<ExactSelectorsDetail> readExactMatchSourceSelector()
     {
-        try {
-            connectionManager.open();
-            List<ExactMatchSourceSelectors> exactMatchSourceSelectorList =
-                    ExactMatchSourceSelectors.findAll();
-            return ExactMatchSourceSelectors.upcast(exactMatchSourceSelectorList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<ExactMatchSourceSelectors> exactMatchSourceSelectors = exactMatchSourceSelectorsDao.findAll();
+        return exactMatchSourceSelectors.stream()
+                .map(HaResourceGroupsManager::upcastExactSelectors)
+                .collect(toImmutableList());
     }
 
     /**
@@ -358,32 +351,8 @@ public class HaResourceGroupsManager
     public ExactSelectorsDetail getExactMatchSourceSelector(
             ExactSelectorsDetail exactSelectorDetail)
     {
-        try {
-            connectionManager.open();
-            ExactMatchSourceSelectors model =
-                    ExactMatchSourceSelectors.findFirst(
-                            "resource_group_id = ? and update_time = ? "
-                                    + "and source = ? and environment = ? and query_type = ?",
-                            exactSelectorDetail.getResourceGroupId(),
-                            exactSelectorDetail.getUpdateTime(),
-                            exactSelectorDetail.getSource(),
-                            exactSelectorDetail.getEnvironment(),
-                            exactSelectorDetail.getQueryType());
-
-            List<ExactMatchSourceSelectors> exactMatchSourceSelectorList = new ArrayList();
-            exactMatchSourceSelectorList.add(model);
-
-            if (model == null) {
-                return null;
-            }
-            else {
-                ExactMatchSourceSelectors.upcast(exactMatchSourceSelectorList);
-            }
-        }
-        finally {
-            connectionManager.close();
-        }
-        return exactSelectorDetail;
+        ExactMatchSourceSelectors exactSelector = exactMatchSourceSelectorsDao.findFirst(exactSelectorDetail);
+        return upcastExactSelectors(exactSelector);
     }
 
     public String getMatchingString(Object detail)
@@ -413,5 +382,16 @@ public class HaResourceGroupsManager
             globalProperties.add(globalPropertiesDetail);
         }
         return globalProperties;
+    }
+
+    private static ExactSelectorsDetail upcastExactSelectors(ExactMatchSourceSelectors exactMatchSourceSelector)
+    {
+        ExactSelectorsDetail exactSelectorDetail = new ExactSelectorsDetail();
+        exactSelectorDetail.setResourceGroupId(exactMatchSourceSelector.resourceGroupId());
+        exactSelectorDetail.setUpdateTime(exactMatchSourceSelector.updateTime());
+        exactSelectorDetail.setSource(exactMatchSourceSelector.source());
+        exactSelectorDetail.setEnvironment(exactMatchSourceSelector.environment());
+        exactSelectorDetail.setQueryType(exactMatchSourceSelector.queryType());
+        return exactSelectorDetail;
     }
 }
