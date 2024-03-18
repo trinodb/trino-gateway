@@ -105,7 +105,8 @@ configuration YAML file.
 
 Find more information in the [routing rules documentation](routing-rules.md).
 
-### Configure logging
+
+### Configure logging <a name="logging">
 
 Path to `log.properties` must be set via `log.levels-file` JVM options
 like `-Dlog.levels-file=etc/log.properties`.
