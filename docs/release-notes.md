@@ -33,14 +33,28 @@
 
 # Release notes
 
+## Trino Gateway 7 (21  Mar 2024)
+
+[JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar),
+Docker container `trinodb/trino-gateway:7`
+
+* Replace user interface with a new modern UI. ([#116](https://github.com/trinodb/trino-gateway/pull/116))
+* Improve logging configurability. Users must update to the 
+  [new logging configuration](./installation.md#logging). ([#260](https://github.com/trinodb/trino-gateway/pull/260))
+* Improve Trino cluster health check performance and remove authentication requirement 
+  by using the `v1/info` endpoint. ([#264](https://github.com/trinodb/trino-gateway/pull/264))
+* Fix query id tracking based on request querystring parsing. ([#265](https://github.com/trinodb/trino-gateway/pull/265))
+
+[Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A7+is%3Aclosed)
+
 ## Trino Gateway 6 (16 Feb 2024)
 
-[gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar)
+[JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar),
+Docker container `trinodb/trino-gateway:6`
 
 * Add Docker container build, publishing, and usage setup and instructions. ([#86](https://github.com/trinodb/trino-gateway/issues/86))
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A6+is%3Aclosed)
-
 
 ## Trino Gateway 5 (24 Jan 2024)
 
