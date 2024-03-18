@@ -6,6 +6,11 @@ The Docker image of Trino Gateway is designed for the following use cases:
 * Automated usage with an orchestration system like Kubernetes to simplify
   deployment
 
+## Production setup
+
+The healthcheck configurations in the `docker-compose` file is for suitable for development and testing purposes only.
+Change the configuration for your production deployment based on the workload and your specific requirements.
+
 ## Build requirements
 
 This docker build process requires the following software:
