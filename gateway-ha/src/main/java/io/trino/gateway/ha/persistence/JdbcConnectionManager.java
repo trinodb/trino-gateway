@@ -17,7 +17,6 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
-import org.javalite.activejdbc.Base;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
@@ -61,23 +60,6 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
-    public void open()
-    {
-        this.open(null);
-    }
-
-    public void open(@Nullable String routingGroupDatabase)
-    {
-        String jdbcUrl = buildJdbcUrl(routingGroupDatabase);
-        log.debug("Jdbc url is " + jdbcUrl);
-        Base.open(
-                configuration.getDriver(),
-                jdbcUrl,
-                configuration.getUser(),
-                configuration.getPassword());
-        log.debug("Connection opened");
-    }
-
     private String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
@@ -85,12 +67,6 @@ public class JdbcConnectionManager
             jdbcUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf('/') + 1) + routingGroupDatabase;
         }
         return jdbcUrl;
-    }
-
-    public void close()
-    {
-        Base.close();
-        log.debug("Connection closed");
     }
 
     private void startCleanUps()
