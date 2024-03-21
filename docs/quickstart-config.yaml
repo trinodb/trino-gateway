@@ -32,3 +32,6 @@ modules:
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
+
+logging:
+    type: external
