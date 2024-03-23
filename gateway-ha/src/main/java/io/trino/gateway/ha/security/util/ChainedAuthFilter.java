@@ -11,52 +11,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.security;
+package io.trino.gateway.ha.security.util;
 
 import jakarta.annotation.Priority;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.core.SecurityContext;
 
 import java.io.IOException;
-import java.security.Principal;
-import java.util.Optional;
+import java.util.List;
 
 import static jakarta.ws.rs.Priorities.AUTHENTICATION;
+import static java.util.Objects.requireNonNull;
 
 @Priority(AUTHENTICATION)
-public class NoopFilter
+public class ChainedAuthFilter
         implements ContainerRequestFilter
 {
+    private final List<ContainerRequestFilter> filters;
+
+    public ChainedAuthFilter(List<ContainerRequestFilter> filters)
+    {
+        this.filters = requireNonNull(filters);
+    }
+
     @Override
-    public void filter(final ContainerRequestContext requestContext)
+    public void filter(ContainerRequestContext containerRequestContext)
             throws IOException
     {
-        requestContext.setSecurityContext(new SecurityContext()
-        {
-            @Override
-            public Principal getUserPrincipal()
-            {
-                return new LbPrincipal("user", Optional.of("ADMIN_USER_API"));
+        for (ContainerRequestFilter filter : filters) {
+            try {
+                filter.filter(containerRequestContext);
+                return;
             }
-
-            @Override
-            public boolean isUserInRole(String role)
-            {
-                return true;
+            catch (Exception ignored) {
             }
-
-            @Override
-            public boolean isSecure()
-            {
-                return requestContext.getSecurityContext().isSecure();
-            }
-
-            @Override
-            public String getAuthenticationScheme()
-            {
-                return SecurityContext.BASIC_AUTH;
-            }
-        });
+        }
+        throw new ForbiddenException("Authentication error");
     }
 }
