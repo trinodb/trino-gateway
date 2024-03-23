@@ -91,11 +91,11 @@ public class TestLbFilter
                 authorizationManager);
 
         LbAuthorizer authorizer = new LbAuthorizer(configuration);
-        LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-                .setAuthenticator(authenticator)
-                .setAuthorizer(authorizer)
-                .setPrefix("Bearer")
-                .buildAuthFilter();
+        LbFilter lbFilter = new LbFilter(
+                authenticator,
+                authorizer,
+                "Bearer",
+                new LbUnauthorizedHandler(""));
         ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
                 .forClass(SecurityContext.class);
 
@@ -132,11 +132,11 @@ public class TestLbFilter
                 oauthManager,
                 authorizationManager);
         LbAuthorizer authorizer = new LbAuthorizer(configuration);
-        LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-                .setAuthenticator(authenticator)
-                .setAuthorizer(authorizer)
-                .setPrefix("Bearer")
-                .buildAuthFilter();
+        LbFilter lbFilter = new LbFilter(
+                authenticator,
+                authorizer,
+                "Bearer",
+                new LbUnauthorizedHandler(""));
         ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
                 .forClass(SecurityContext.class);
 
@@ -169,11 +169,11 @@ public class TestLbFilter
                     oauthManager,
                     authorizationManager);
             LbAuthorizer authorizer = new LbAuthorizer(configuration);
-            LbFilter<LbPrincipal> lbFilter = new LbFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(authenticator)
-                    .setAuthorizer(authorizer)
-                    .setPrefix("Bearer")
-                    .buildAuthFilter();
+            LbFilter lbFilter = new LbFilter(
+                    authenticator,
+                    authorizer,
+                    "Bearer",
+                    new LbUnauthorizedHandler(""));
 
             // Exception is thrown when the authentication fails
             lbFilter.filter(requestContext);

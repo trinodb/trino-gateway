@@ -20,8 +20,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import io.airlift.log.Logger;
-import io.dropwizard.auth.AuthDynamicFeature;
-import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.server.DefaultServerFactory;
@@ -41,6 +39,7 @@ import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
+import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.lang.reflect.Constructor;
@@ -226,8 +225,8 @@ public abstract class BaseApp
     {
         environment
                 .jersey()
-                .register(new AuthDynamicFeature(injector.getInstance(AuthFilter.class)));
-        logger.info("op=register type=auth filter item=%s", AuthFilter.class);
+                .register(injector.getInstance(ResourceSecurityDynamicFeature.class));
+        logger.info("op=register type=auth filter item=%s", ResourceSecurityDynamicFeature.class);
         environment.jersey().register(RolesAllowedDynamicFeature.class);
     }
 }

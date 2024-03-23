@@ -15,54 +15,42 @@ package io.trino.gateway.ha.security;
 
 import io.trino.gateway.ha.security.util.AuthenticationException;
 import io.trino.gateway.ha.security.util.Authorizer;
-import io.trino.gateway.ha.security.util.IdTokenAuthenticator;
-import jakarta.annotation.Nullable;
+import io.trino.gateway.ha.security.util.BasicCredentials;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.SecurityContext;
 
+import java.io.IOException;
 import java.security.Principal;
-import java.util.Optional;
 
+import static io.trino.gateway.ha.security.util.BasicCredentials.extractBasicAuthCredentials;
 import static jakarta.ws.rs.Priorities.AUTHENTICATION;
 import static java.util.Objects.requireNonNull;
 
 @Priority(AUTHENTICATION)
-public class LbFilter
+public class BasicAuthFilter
         implements ContainerRequestFilter
 {
-    private final IdTokenAuthenticator idTokenAuthenticator;
+    private final ApiAuthenticator apiAuthenticator;
     private final Authorizer lbAuthorizer;
-    private final String prefix;
     private final LbUnauthorizedHandler lbUnauthorizedHandler;
 
-    public LbFilter(IdTokenAuthenticator idTokenAuthenticator, Authorizer lbAuthorizer, String prefix, LbUnauthorizedHandler lbUnauthorizedHandler)
+    public BasicAuthFilter(ApiAuthenticator apiAuthenticator, Authorizer lbAuthorizer, LbUnauthorizedHandler lbUnauthorizedHandler)
     {
-        this.idTokenAuthenticator = requireNonNull(idTokenAuthenticator, "idTokenAuthenticator is null");
-        this.lbAuthorizer = requireNonNull(lbAuthorizer, "lbAuthorizer is null");
-        this.prefix = requireNonNull(prefix, "prefix is null");
+        this.apiAuthenticator = requireNonNull(apiAuthenticator);
+        this.lbAuthorizer = requireNonNull(lbAuthorizer);
         this.lbUnauthorizedHandler = requireNonNull(lbUnauthorizedHandler, "lbUnauthorizedHandler is null");
     }
 
-    /**
-     * Filters requests by checking for the token cookie and authorization header,
-     * and authenticates the user using the filter's authenticator.
-     */
-    public void filter(final ContainerRequestContext requestContext)
-            throws WebApplicationException
+    @Override
+    public void filter(ContainerRequestContext requestContext)
+            throws IOException
     {
-        // Checks for cookie, if not find then search for authorization header
         try {
-            String idToken = Optional
-                    .ofNullable(requestContext.getCookies().get(SessionCookie.OAUTH_ID_TOKEN))
-                    .map(Cookie::getValue)
-                    .orElse(getToken(requestContext.getHeaders().getFirst(HttpHeaders.AUTHORIZATION)));
-
-            LbPrincipal principal = idTokenAuthenticator.authenticate(idToken)
+            BasicCredentials basicCredentials = extractBasicAuthCredentials(requestContext);
+            LbPrincipal principal = apiAuthenticator.authenticate(basicCredentials)
                     .orElseThrow(() -> new AuthenticationException("Authentication error"));
             requestContext.setSecurityContext(new SecurityContext()
             {
@@ -94,31 +82,5 @@ public class LbFilter
         catch (Exception e) {
             throw new WebApplicationException(lbUnauthorizedHandler.buildResponse());
         }
-    }
-
-    /**
-     * Parses a value of the `Authorization` header in the form of `Bearer a892bf3e284da9bb40648ab10`.
-     *
-     * @param header the value of the `Authorization` header
-     * @return a token
-     */
-    @Nullable
-    private String getToken(String header)
-    {
-        if (header == null) {
-            return null;
-        }
-
-        final int space = header.indexOf(' ');
-        if (space <= 0) {
-            return null;
-        }
-
-        final String method = header.substring(0, space);
-        if (!prefix.equalsIgnoreCase(method)) {
-            return null;
-        }
-
-        return header.substring(space + 1);
     }
 }
