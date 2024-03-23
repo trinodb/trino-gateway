@@ -158,22 +158,6 @@
 
         <dependency>
             <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-auth</artifactId>
-            <exclusions>
-                <exclusion>
-                    <!-- pulls in 2.0.1.MR -->
-                    <groupId>jakarta.inject</groupId>
-                    <artifactId>jakarta.inject-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.servlet</groupId>
-                    <artifactId>jakarta.servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
             <exclusions>
                 <exclusion>

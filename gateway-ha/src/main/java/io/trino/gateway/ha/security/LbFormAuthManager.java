@@ -19,12 +19,12 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.airlift.log.Logger;
-import io.dropwizard.auth.basic.BasicCredentials;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
+import io.trino.gateway.ha.security.util.BasicCredentials;
 
 import java.util.Collections;
 import java.util.List;
@@ -137,15 +137,15 @@ public class LbFormAuthManager
     public boolean authenticate(BasicCredentials credentials)
     {
         if (lbLdapClient != null
-                && lbLdapClient.authenticate(credentials.getUsername(),
-                credentials.getPassword())) {
+                && lbLdapClient.authenticate(credentials.username(),
+                credentials.password())) {
             return true;
         }
 
         if (presetUsers != null) {
-            UserConfiguration user = presetUsers.get(credentials.getUsername());
+            UserConfiguration user = presetUsers.get(credentials.username());
             return user != null
-                    && user.password().equals(credentials.getPassword());
+                    && user.password().equals(credentials.password());
         }
 
         return false;
