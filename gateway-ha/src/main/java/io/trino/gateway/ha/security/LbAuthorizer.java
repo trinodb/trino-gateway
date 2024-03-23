@@ -14,13 +14,13 @@
 package io.trino.gateway.ha.security;
 
 import io.airlift.log.Logger;
-import io.dropwizard.auth.Authorizer;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import io.trino.gateway.ha.security.util.Authorizer;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
 public class LbAuthorizer
-        implements Authorizer<LbPrincipal>
+        implements Authorizer
 {
     private static final Logger log = Logger.get(LbAuthorizer.class);
     private final AuthorizationConfiguration configuration;
