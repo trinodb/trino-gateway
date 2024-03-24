@@ -13,13 +13,13 @@
  */
 package io.trino.gateway.ha.security;
 
-import io.dropwizard.auth.AuthenticationException;
-import io.dropwizard.auth.Authenticator;
+import io.trino.gateway.ha.security.util.AuthenticationException;
+import io.trino.gateway.ha.security.util.IdTokenAuthenticator;
 
 import java.util.Optional;
 
 public class FormAuthenticator
-        implements Authenticator<String, LbPrincipal>
+        implements IdTokenAuthenticator
 {
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;

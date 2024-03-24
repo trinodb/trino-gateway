@@ -11,20 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.security;
+package io.trino.gateway.ha.security.util;
 
-import io.trino.gateway.ha.security.util.Authorizer;
+import io.trino.gateway.ha.security.LbPrincipal;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
-public class NoopAuthorizer
-        implements Authorizer
+public interface Authorizer
 {
-    @Override
-    public boolean authorize(LbPrincipal principal,
-            String role,
-            @Nullable ContainerRequestContext ctx)
-    {
-        return true;
-    }
+    boolean authorize(LbPrincipal principal, String role, @Nullable ContainerRequestContext ctx);
 }

@@ -14,12 +14,9 @@
 package io.trino.gateway.ha.module;
 
 import com.codahale.metrics.Meter;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.dropwizard.auth.AuthFilter;
-import io.dropwizard.auth.Authorizer;
-import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
-import io.dropwizard.auth.chained.ChainedAuthFilter;
 import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
@@ -42,23 +39,25 @@ import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
+import io.trino.gateway.ha.security.BasicAuthFilter;
 import io.trino.gateway.ha.security.FormAuthenticator;
 import io.trino.gateway.ha.security.LbAuthenticator;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFilter;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
-import io.trino.gateway.ha.security.LbPrincipal;
 import io.trino.gateway.ha.security.LbUnauthorizedHandler;
-import io.trino.gateway.ha.security.NoopAuthenticator;
 import io.trino.gateway.ha.security.NoopAuthorizer;
 import io.trino.gateway.ha.security.NoopFilter;
+import io.trino.gateway.ha.security.util.Authorizer;
+import io.trino.gateway.ha.security.util.ChainedAuthFilter;
+import io.trino.gateway.ha.security.util.ResourceSecurityDynamicFeature;
 import io.trino.gateway.proxyserver.ProxyHandler;
 import io.trino.gateway.proxyserver.ProxyServer;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
+import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -74,7 +73,7 @@ public class HaGatewayProviderModule
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
     private final BackendStateManager backendStateConnectionManager;
-    private final AuthFilter authenticationFilter;
+    private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final List<String> extraWhitelistPaths;
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
@@ -93,7 +92,7 @@ public class HaGatewayProviderModule
         formAuthManager = getFormAuthManager(configuration);
 
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
-        authenticationFilter = getAuthFilter(configuration);
+        resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
         extraWhitelistPaths = configuration.getExtraWhitelistPaths();
     }
@@ -117,37 +116,32 @@ public class HaGatewayProviderModule
         return null;
     }
 
-    private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config,
-            Authorizer<LbPrincipal> authorizer)
+    private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config, Authorizer authorizer)
     {
-        List<AuthFilter> authFilters = new ArrayList<>();
+        ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
         String defaultType = config.getDefaultType();
         if (oauthManager != null) {
-            authFilters.add(new LbFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new LbAuthenticator(oauthManager, authorizationManager))
-                    .setAuthorizer(authorizer)
-                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-                    .setPrefix("Bearer")
-                    .buildAuthFilter());
+            authFilters.add(new LbFilter(
+                    new LbAuthenticator(oauthManager, authorizationManager),
+                    authorizer,
+                    "Bearer",
+                    new LbUnauthorizedHandler(defaultType)));
         }
 
         if (formAuthManager != null) {
-            authFilters.add(new LbFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new FormAuthenticator(formAuthManager, authorizationManager))
-                    .setAuthorizer(authorizer)
-                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-                    .setPrefix("Bearer")
-                    .buildAuthFilter());
+            authFilters.add(new LbFilter(
+                    new FormAuthenticator(formAuthManager, authorizationManager),
+                    authorizer,
+                    "Bearer",
+                    new LbUnauthorizedHandler(defaultType)));
 
-            authFilters.add(new BasicCredentialAuthFilter.Builder<LbPrincipal>()
-                    .setAuthenticator(new ApiAuthenticator(formAuthManager, authorizationManager))
-                    .setAuthorizer(authorizer)
-                    .setUnauthorizedHandler(new LbUnauthorizedHandler(defaultType))
-                    .setPrefix("Basic")
-                    .buildAuthFilter());
+            authFilters.add(new BasicAuthFilter(
+                    new ApiAuthenticator(formAuthManager, authorizationManager),
+                    authorizer,
+                    new LbUnauthorizedHandler(defaultType)));
         }
 
-        return new ChainedAuthFilter(authFilters);
+        return new ChainedAuthFilter(authFilters.build());
     }
 
     protected ProxyHandler getProxyHandler()
@@ -175,22 +169,19 @@ public class HaGatewayProviderModule
                 extraWhitelistPaths);
     }
 
-    protected AuthFilter getAuthFilter(HaGatewayConfiguration configuration)
+    protected ResourceSecurityDynamicFeature getAuthFilter(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
-        Authorizer<LbPrincipal> authorizer = (authorizationConfig != null)
+        Authorizer authorizer = (authorizationConfig != null)
                 ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
 
         AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
 
         if (authenticationConfig != null) {
-            return getAuthenticationFilters(authenticationConfig, authorizer);
+            return new ResourceSecurityDynamicFeature(getAuthenticationFilters(authenticationConfig, authorizer));
         }
 
-        return new NoopFilter.Builder<LbPrincipal>()
-                .setAuthenticator(new NoopAuthenticator())
-                .setAuthorizer(authorizer)
-                .buildAuthFilter();
+        return new ResourceSecurityDynamicFeature(new NoopFilter());
     }
 
     @Provides
@@ -280,9 +271,9 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public AuthFilter getAuthenticationFilter()
+    public ResourceSecurityDynamicFeature getResourceSecurityDynamicFeature()
     {
-        return authenticationFilter;
+        return resourceSecurityDynamicFeature;
     }
 
     @Provides

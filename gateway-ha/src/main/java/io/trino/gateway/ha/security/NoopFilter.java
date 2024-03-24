@@ -13,45 +13,50 @@
  */
 package io.trino.gateway.ha.security;
 
-import io.dropwizard.auth.AuthFilter;
 import jakarta.annotation.Priority;
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Optional;
 
-@Priority(Priorities.AUTHENTICATION)
-public class NoopFilter<P extends Principal>
-        extends AuthFilter<String, P>
+import static jakarta.ws.rs.Priorities.AUTHENTICATION;
+
+@Priority(AUTHENTICATION)
+public class NoopFilter
+        implements ContainerRequestFilter
 {
-    public NoopFilter()
-    {
-    }
-
     @Override
     public void filter(final ContainerRequestContext requestContext)
             throws IOException
     {
-        try {
-            if (!authenticate(requestContext, "", SecurityContext.BASIC_AUTH)) {
-                throw new Exception();
-            }
-        }
-        catch (Exception e) {
-            throw new WebApplicationException(unauthorizedHandler.buildResponse(prefix, realm));
-        }
-    }
-
-    public static class Builder<P extends Principal>
-            extends AuthFilterBuilder<String, P, NoopFilter<P>>
-    {
-        @Override
-        protected NoopFilter<P> newInstance()
+        requestContext.setSecurityContext(new SecurityContext()
         {
-            return new NoopFilter<>();
-        }
+            @Override
+            public Principal getUserPrincipal()
+            {
+                return new LbPrincipal("user", Optional.of("ADMIN_USER_API"));
+            }
+
+            @Override
+            public boolean isUserInRole(String role)
+            {
+                return true;
+            }
+
+            @Override
+            public boolean isSecure()
+            {
+                return requestContext.getSecurityContext().isSecure();
+            }
+
+            @Override
+            public String getAuthenticationScheme()
+            {
+                return SecurityContext.BASIC_AUTH;
+            }
+        });
     }
 }

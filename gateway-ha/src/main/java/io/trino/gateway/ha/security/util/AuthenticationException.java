@@ -11,22 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.security;
+package io.trino.gateway.ha.security.util;
 
-import io.dropwizard.auth.AuthenticationException;
-import io.dropwizard.auth.Authenticator;
-
-import java.util.Optional;
-
-public class NoopAuthenticator
-        implements Authenticator<String,
-        LbPrincipal>
+public class AuthenticationException
+        extends Exception
 {
-    @Override
-    public Optional<LbPrincipal> authenticate(String credentials)
-            throws AuthenticationException
+    public AuthenticationException(String message)
     {
-        // If authentication is not configured, the default is 'ADMIN_USER_API'.
-        return Optional.of(new LbPrincipal("user", Optional.of("ADMIN_USER_API")));
+        super(message);
     }
 }

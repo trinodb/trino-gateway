@@ -13,14 +13,12 @@
  */
 package io.trino.gateway.ha.security;
 
-import io.dropwizard.auth.AuthenticationException;
-import io.dropwizard.auth.Authenticator;
-import io.dropwizard.auth.basic.BasicCredentials;
+import io.trino.gateway.ha.security.util.AuthenticationException;
+import io.trino.gateway.ha.security.util.BasicCredentials;
 
 import java.util.Optional;
 
 public class ApiAuthenticator
-        implements Authenticator<BasicCredentials, LbPrincipal>
 {
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
@@ -32,13 +30,12 @@ public class ApiAuthenticator
         this.authorizationManager = authorizationManager;
     }
 
-    @Override
     public Optional<LbPrincipal> authenticate(BasicCredentials credentials)
             throws AuthenticationException
     {
         if (formAuthManager.authenticate(credentials)) {
-            return Optional.of(new LbPrincipal(credentials.getUsername(),
-                    authorizationManager.getPrivileges(credentials.getUsername())));
+            return Optional.of(new LbPrincipal(credentials.username(),
+                    authorizationManager.getPrivileges(credentials.username())));
         }
         return Optional.empty();
     }
