@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.baseapp;
 
-import com.codahale.metrics.health.HealthCheck;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -27,7 +26,6 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
-import io.dropwizard.servlets.tasks.Task;
 import io.trino.gateway.ha.log.GatewayRequestLogFactory;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
@@ -49,8 +47,8 @@ import java.util.Set;
  * <p>To use it, create a subclass and provide a list of modules you want to use with the {@link
  * #addModules} method.
  *
- * <p>Packages supplied in the constructor will be scanned for Resources, Tasks, Providers,
- * Healthchecks and Managed classes, and added to the environment.
+ * <p>Packages supplied in the constructor will be scanned for Resources, Providers, and Managed
+ * classes, and added to the environment.
  *
  * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
  * injection.
@@ -117,9 +115,7 @@ public abstract class BaseApp<T extends AppConfiguration>
     {
         logger.info("op=register_start configuration=%s", configuration.toString());
         registerAuthFilters(environment, injector);
-        registerHealthChecks(environment, injector);
         registerProviders(environment, injector);
-        registerTasks(environment, injector);
         addManagedApps(configuration, environment, injector);
         registerResources(environment, injector);
         logger.info("op=register_end configuration=%s", configuration.toString());
@@ -180,26 +176,6 @@ public abstract class BaseApp<T extends AppConfiguration>
                             }
                         });
         return managedApps;
-    }
-
-    private void registerTasks(Environment environment, Injector injector)
-    {
-        final Set<Class<? extends Task>> classes = reflections.getSubTypesOf(Task.class);
-        classes.forEach(
-                c -> {
-                    environment.admin().addTask(injector.getInstance(c));
-                    logger.info("op=register type=task item=%s", c);
-                });
-    }
-
-    private void registerHealthChecks(Environment environment, Injector injector)
-    {
-        final Set<Class<? extends HealthCheck>> classes = reflections.getSubTypesOf(HealthCheck.class);
-        classes.forEach(
-                c -> {
-                    environment.healthChecks().register(c.getSimpleName(), injector.getInstance(c));
-                    logger.info("op=register type=healthcheck item=%s", c);
-                });
     }
 
     private void registerProviders(Environment environment, Injector injector)
