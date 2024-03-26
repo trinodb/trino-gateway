@@ -1,0 +1,112 @@
+bootstrap:
+  configMap:
+   enabled: true
+  image:
+    #must be postgres or mysql
+    repository: postgres
+    pullPolicy: IfNotPresent
+    tag:
+
+image:
+  repository:
+  pullPolicy: IfNotPresent
+  tag:
+
+gateway:
+  requestPort: 8080
+  appPort: 8090
+  adminPort: 8091
+  loggers:
+    level: INFO
+  log:
+    level: INFO
+  tls:
+    enabled: false
+    keystorePath: ""
+    keystorePassword: ""
+  routingRules:
+    enabled: false
+    configPath: ""
+    config: {} #https://github.com/trinodb/trino-gateway/blob/main/docs/routing-rules.md
+      # routing_rules.yml: |-
+      #   ---
+      #   name: "airflow"
+      #   description: "if query from airflow, route to etl group"
+      #   condition: 'request.getHeader("X-Trino-Source") == "airflow"'
+      #   actions:
+      #     - 'result.put("routingGroup", "etl")'
+      #   ---
+      #   name: "airflow special"
+      #   description: "if query from airflow with special label, route to etl-special group"
+      #   condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=special"'
+      #   actions:
+      #     - 'result.put("routingGroup", "etl-special")'
+  queryHistorySize: 1000
+  queryHistoryHoursRetention: 24
+  ingress:
+    annotations: {}
+    ingressClassName: ""
+    host:
+      request:
+      admin:
+      app:
+
+securityConf: ""
+
+backendState:
+  username:
+  password:
+  ssl: false
+
+backendDatabase:
+  #type must be postgres or mysql
+  type: postgres
+  host: 
+  port: 5432
+  schema: gateway
+  user:
+  password:
+
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+
+service:
+  type: ClusterIP
+  requestPort: 8080
+  appPort: 8090
+  adminPort: 8091
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+monitor:
+  connectionTimeout: 15
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+secretMounts: []
+  # - name: database
+  #   path: /opt/gateway/database
+  #   secretName: database
+
+configMap: []
+  # - name: routing-rules
+  #   path: /opt/gateway/routing_rules
+
+additionalVolumes: []
+
+extraJvmOptions: ""
+
+secretsExtra: []
+  # - name: a
+  #   value:
+  # - name: b
+  #   value:

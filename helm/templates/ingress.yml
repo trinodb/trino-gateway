@@ -1,0 +1,44 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "gateway.fullname" . }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+  {{- with .Values.gateway.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.gateway.ingress.ingressClassName }}
+  rules:
+    - host: {{ .Values.gateway.ingress.host.request | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name:  {{ include "gateway.fullname" . }}
+                port:
+                  number: {{ .Values.gateway.requestPort }}
+    - host: {{ .Values.gateway.ingress.host.admin | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name:  {{ include "gateway.fullname" . }}
+                port:
+                  number: {{ .Values.gateway.adminPort }}
+    - host: {{ .Values.gateway.ingress.host.app | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name:  {{ include "gateway.fullname" . }}
+                port:
+                  number: {{ .Values.gateway.appPort }}
