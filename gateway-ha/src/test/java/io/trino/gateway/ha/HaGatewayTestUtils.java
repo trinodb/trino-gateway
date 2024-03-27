@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -23,6 +21,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.javalite.activejdbc.Base;
 import org.jdbi.v3.core.Jdbi;
 
@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.util.Random;
 import java.util.Scanner;
 
+import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
+import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,16 +59,14 @@ public class HaGatewayTestUtils
     }
 
     public static void prepareMockBackend(
-            WireMockServer backend, String endPoint, String expectedResonse)
+            MockWebServer backend, int customBackendPort, String expectedResonse)
+            throws IOException
     {
-        backend.start();
-        backend.stubFor(
-                WireMock.post(endPoint)
-                        .willReturn(
-                                WireMock.aResponse()
-                                        .withBody(expectedResonse)
-                                        .withHeader("Content-Encoding", "plain")
-                                        .withStatus(200)));
+        backend.start(customBackendPort);
+        backend.enqueue(new MockResponse()
+                .setBody(expectedResonse)
+                .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
+                .setResponseCode(200));
     }
 
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
