@@ -43,6 +43,12 @@ application locally.
 Following are instructions for installing Trino Gateway for production
 environments.
 
+You also have to update `config.properties` with
+```commandline
+http-server.process-forwarded=true
+```
+
+
 ## Requirements
 
 Consider the following requirements for your Trino Gateway installation.
