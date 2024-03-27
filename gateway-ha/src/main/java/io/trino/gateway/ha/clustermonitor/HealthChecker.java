@@ -50,16 +50,50 @@ public class HealthChecker
 
     private void notifyUnhealthyCluster(ClusterStats clusterStats)
     {
-        notifier.sendNotification(format("%s - Cluster unhealthy", clusterStats.clusterId()), clusterStats.toString());
+        String clusterId = clusterStats.clusterId();
+        String subject = format("Cluster name '%s' is unhealthy", clusterId);
+        String content = buildContent(clusterStats);
+        notifier.sendNotification(subject, content);
     }
 
     private void notifyForTooManyQueuedQueries(ClusterStats clusterStats)
     {
-        notifier.sendNotification(format("%s - Too many queued queries", clusterStats.clusterId()), clusterStats.toString());
+        String clusterId = clusterStats.clusterId();
+        String subject = format("Cluster name '%s' has too many queued queries", clusterId);
+        String content = buildContent(clusterStats);
+        notifier.sendNotification(subject, content);
     }
 
     private void notifyForNoWorkers(ClusterStats clusterStats)
     {
-        notifier.sendNotification(format("%s - Number of workers", clusterStats.clusterId()), clusterStats.toString());
+        String clusterId = clusterStats.clusterId();
+        String subject = format("Cluster name '%s' has no workers running", clusterId);
+        String content = buildContent(clusterStats);
+        notifier.sendNotification(subject, content);
+    }
+
+    private String buildContent(ClusterStats clusterStats)
+    {
+        return format("""
+                Please check below information for the cluster:
+                Cluster Id : %s
+                Cluster Health : %s
+                Routing Group : %s
+                Number of Worker Nodes : %s
+                Running Queries : %s
+                Queued Queries : %s
+                User Queued Count : %s
+                Proxy To : %s
+                External URL : %s
+                """,
+                clusterStats.clusterId(),
+                clusterStats.healthy(),
+                clusterStats.routingGroup(),
+                clusterStats.numWorkerNodes(),
+                clusterStats.runningQueryCount(),
+                clusterStats.queuedQueryCount(),
+                clusterStats.userQueuedCount(),
+                clusterStats.proxyTo(),
+                clusterStats.externalUrl());
     }
 }

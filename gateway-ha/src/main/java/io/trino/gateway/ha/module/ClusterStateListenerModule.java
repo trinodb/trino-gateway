@@ -21,9 +21,12 @@ import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;
 import io.trino.gateway.ha.clustermonitor.HealthCheckObserver;
+import io.trino.gateway.ha.clustermonitor.HealthChecker;
 import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
+import io.trino.gateway.ha.config.NotifierConfiguration;
+import io.trino.gateway.ha.notifier.EmailNotifier;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingManager;
 
@@ -50,10 +53,14 @@ public class ClusterStateListenerModule
             RoutingManager mgr,
             BackendStateManager backendStateManager)
     {
-        return ImmutableList.<TrinoClusterStatsObserver>builder()
-                .add(new HealthCheckObserver(mgr))
-                .add(new ClusterStatsObserver(backendStateManager))
-                .build();
+        NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
+        ImmutableList.Builder<TrinoClusterStatsObserver> observerBuilder = ImmutableList.builder();
+        observerBuilder.add(new HealthCheckObserver(mgr));
+        observerBuilder.add(new ClusterStatsObserver(backendStateManager));
+        if (notifierConfiguration.isEnabled()) {
+            observerBuilder.add(new HealthChecker(new EmailNotifier(notifierConfiguration)));
+        }
+        return observerBuilder.build();
     }
 
     @Provides
