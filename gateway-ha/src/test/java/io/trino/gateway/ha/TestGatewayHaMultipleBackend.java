@@ -14,14 +14,14 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -43,8 +43,7 @@ public class TestGatewayHaMultipleBackend
     final int routerPort = 20000 + (int) (Math.random() * 1000);
     final int customBackendPort = 21000 + (int) (Math.random() * 1000);
 
-    private final WireMockServer customBackend =
-            new WireMockServer(WireMockConfiguration.options().port(customBackendPort));
+    private final MockWebServer customBackend = new MockWebServer();
 
     private final OkHttpClient httpClient = new OkHttpClient();
 
@@ -60,7 +59,7 @@ public class TestGatewayHaMultipleBackend
         int backend1Port = adhocTrino.getMappedPort(8080);
         int backend2Port = scheduledTrino.getMappedPort(8080);
 
-        HaGatewayTestUtils.prepareMockBackend(customBackend, CUSTOM_PATH, CUSTOM_RESPONSE);
+        HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, CUSTOM_RESPONSE);
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
@@ -94,6 +93,9 @@ public class TestGatewayHaMultipleBackend
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
         assertThat(response1.body().string()).isEqualTo(CUSTOM_RESPONSE);
+        RecordedRequest recordedRequest = customBackend.takeRequest();
+        assertThat(recordedRequest.getRequestLine()).contains("POST");
+        assertThat(recordedRequest.getPath()).isEqualTo(CUSTOM_PATH);
 
         Request request2 =
                 new Request.Builder()
