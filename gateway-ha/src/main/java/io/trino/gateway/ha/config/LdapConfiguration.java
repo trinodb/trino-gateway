@@ -36,6 +36,9 @@ public class LdapConfiguration
     private Integer poolMaxTotal;
     private Integer poolMinIdle;
     private boolean poolTestOnBorrow;
+    private String groupAdminRoleMap;
+    private String groupUserRoleMap;
+    private String groupApiRoleMap;
 
     public LdapConfiguration(
             String ldapHost,
@@ -52,7 +55,10 @@ public class LdapConfiguration
             Integer poolMaxIdle,
             Integer poolMaxTotal,
             Integer poolMinIdle,
-            boolean poolTestOnBorrow)
+            boolean poolTestOnBorrow,
+            String groupAdminRoleMap,
+            String groupUserRoleMap,
+            String groupApiRoleMap)
     {
         this.ldapHost = ldapHost;
         this.ldapPort = ldapPort;
@@ -69,6 +75,9 @@ public class LdapConfiguration
         this.poolMaxTotal = poolMaxTotal;
         this.poolMinIdle = poolMinIdle;
         this.poolTestOnBorrow = poolTestOnBorrow;
+        this.groupAdminRoleMap = groupAdminRoleMap;
+        this.groupUserRoleMap = groupUserRoleMap;
+        this.groupApiRoleMap = groupApiRoleMap;
     }
 
     public LdapConfiguration() {}
@@ -242,5 +251,35 @@ public class LdapConfiguration
     public void setPoolTestOnBorrow(boolean poolTestOnBorrow)
     {
         this.poolTestOnBorrow = poolTestOnBorrow;
+    }
+
+    public String getGroupAdminRoleMap()
+    {
+        return this.groupAdminRoleMap;
+    }
+
+    public void setGroupAdminRoleMap(String groupAdminRoleMap)
+    {
+        this.groupAdminRoleMap = groupAdminRoleMap;
+    }
+
+    public String getGroupUserRoleMap()
+    {
+        return this.groupUserRoleMap;
+    }
+
+    public void setGroupUserRoleMap(String groupUserRoleMap)
+    {
+        this.groupUserRoleMap = groupUserRoleMap;
+    }
+
+    public String getGroupApiRoleMap()
+    {
+        return this.groupApiRoleMap;
+    }
+
+    public void setGroupApiRoleMap(String groupApiRoleMap)
+    {
+        this.groupApiRoleMap = groupApiRoleMap;
     }
 }

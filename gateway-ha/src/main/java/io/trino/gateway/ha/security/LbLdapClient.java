@@ -29,6 +29,7 @@ import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.PasswordWarning;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LbLdapClient
@@ -107,12 +108,24 @@ public class LbLdapClient
                 attributes,
                 userRecordEntryMapper);
 
-        String memberOf = "";
+        String ldapGroups = "";
         if (list != null && !list.isEmpty()) {
-            memberOf = list.listIterator().next().getMemberOf();
-            log.debug("Member of %s", memberOf);
+            ldapGroups = list.listIterator().next().getMemberOf();
+            log.debug("LdapGroups: %s", ldapGroups);
         }
-        return memberOf;
+        ArrayList<String> memberOfArray = new ArrayList<String>();
+        if (ldapGroups.matches(config.getGroupAdminRoleMap())) {
+            memberOfArray.add("ADMIN");
+        }
+
+        if (ldapGroups.matches(config.getGroupUserRoleMap())) {
+            memberOfArray.add("USER");
+        }
+
+        if (ldapGroups.matches(config.getGroupApiRoleMap())) {
+            memberOfArray.add("API");
+        }
+        return String.join("_", memberOfArray);
     }
 
     public static class UserRecord

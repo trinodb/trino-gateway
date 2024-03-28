@@ -135,7 +135,7 @@ public class LbLdapClientTest
         String ret = lbLdapClient.getMemberOf(user);
 
         log.info("ret is %s", ret);
-        assertThat(ret).isEqualTo("Admin,User");
+        assertThat(ret).isEqualTo("ADMIN_USER");
 
         org.mockito.Mockito
                 .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
@@ -146,7 +146,7 @@ public class LbLdapClientTest
                 .thenReturn(null);
 
         //failure case
-        assertThat(lbLdapClient.getMemberOf(user)).isNotEqualTo("Admin,User");
+        assertThat(lbLdapClient.getMemberOf(user)).isNotEqualTo("ADMIN_USER");
     }
 
     class DummyPasswordWarning
