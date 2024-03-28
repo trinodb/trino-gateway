@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectorsDao;
@@ -20,13 +21,13 @@ import io.trino.gateway.ha.persistence.dao.ResourceGroups;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalProperties;
 import io.trino.gateway.ha.persistence.dao.ResourceGroupsGlobalPropertiesDao;
 import io.trino.gateway.ha.persistence.dao.Selectors;
+import io.trino.gateway.ha.persistence.dao.SelectorsDao;
 import jakarta.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static java.lang.String.format;
 
 public class HaResourceGroupsManager
         implements ResourceGroupsManager
@@ -149,13 +150,7 @@ public class HaResourceGroupsManager
     public SelectorsDetail createSelector(SelectorsDetail selector,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            Selectors.create(new Selectors(), selector);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getSelectorsDao(routingGroupDatabase).insert(selector);
         return selector;
     }
 
@@ -167,14 +162,8 @@ public class HaResourceGroupsManager
     @Override
     public List<SelectorsDetail> readAllSelectors(@Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<Selectors> selectorList = Selectors.findAll();
-            return Selectors.upcast(selectorList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<Selectors> selectorList = getSelectorsDao(routingGroupDatabase).findAll();
+        return upcastSelectors(selectorList);
     }
 
     /**
@@ -184,15 +173,8 @@ public class HaResourceGroupsManager
     public List<SelectorsDetail> readSelector(long resourceGroupId,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            List<Selectors> selectorList = Selectors.where("resource_group_id = ?",
-                    resourceGroupId);
-            return Selectors.upcast(selectorList);
-        }
-        finally {
-            connectionManager.close();
-        }
+        List<Selectors> selectorList = getSelectorsDao(routingGroupDatabase).findByResourceGroupId(resourceGroupId);
+        return upcastSelectors(selectorList);
     }
 
     /**
@@ -202,32 +184,13 @@ public class HaResourceGroupsManager
     public SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector,
             @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            String query =
-                    format(
-                            "resource_group_id %s and priority %s "
-                                    + "and user_regex %s and source_regex %s "
-                                    + "and query_type %s and client_tags %s "
-                                    + "and selector_resource_estimate %s",
-                            getMatchingString(selector.getResourceGroupId()),
-                            getMatchingString(selector.getPriority()),
-                            getMatchingString(selector.getUserRegex()),
-                            getMatchingString(selector.getSourceRegex()),
-                            getMatchingString(selector.getQueryType()),
-                            getMatchingString(selector.getClientTags()),
-                            getMatchingString(selector.getSelectorResourceEstimate()));
-            Selectors model = Selectors.findFirst(query);
-
-            if (model == null) {
-                Selectors.create(new Selectors(), updatedSelector);
-            }
-            else {
-                Selectors.update(model, updatedSelector);
-            }
+        SelectorsDao dao = getSelectorsDao(routingGroupDatabase);
+        Selectors model = dao.findFirst(selector);
+        if (model == null) {
+            dao.insert(updatedSelector);
         }
-        finally {
-            connectionManager.close();
+        else {
+            dao.update(selector, updatedSelector);
         }
         return updatedSelector;
     }
@@ -238,26 +201,7 @@ public class HaResourceGroupsManager
     @Override
     public void deleteSelector(SelectorsDetail selector, @Nullable String routingGroupDatabase)
     {
-        try {
-            connectionManager.open(routingGroupDatabase);
-            String query =
-                    format(
-                            "resource_group_id %s and priority %s "
-                                    + "and user_regex %s and source_regex %s "
-                                    + "and query_type %s and client_tags %s "
-                                    + "and selector_resource_estimate %s",
-                            getMatchingString(selector.getResourceGroupId()),
-                            getMatchingString(selector.getPriority()),
-                            getMatchingString(selector.getUserRegex()),
-                            getMatchingString(selector.getSourceRegex()),
-                            getMatchingString(selector.getQueryType()),
-                            getMatchingString(selector.getClientTags()),
-                            getMatchingString(selector.getSelectorResourceEstimate()));
-            Selectors.delete(query);
-        }
-        finally {
-            connectionManager.close();
-        }
+        getSelectorsDao(routingGroupDatabase).delete(selector);
     }
 
     /**
@@ -355,15 +299,9 @@ public class HaResourceGroupsManager
         return upcastExactSelectors(exactSelector);
     }
 
-    public String getMatchingString(Object detail)
+    private SelectorsDao getSelectorsDao(@Nullable String routingGroupDatabase)
     {
-        if (detail == null) {
-            return "IS NULL";
-        }
-        else if (detail.getClass().equals(String.class)) {
-            return "= '" + detail + "'";
-        }
-        return "= " + detail;
+        return connectionManager.getJdbi(routingGroupDatabase).onDemand(SelectorsDao.class);
     }
 
     private ResourceGroupsGlobalPropertiesDao getDao(@Nullable String routingGroupDatabase)
@@ -393,5 +331,22 @@ public class HaResourceGroupsManager
         exactSelectorDetail.setEnvironment(exactMatchSourceSelector.environment());
         exactSelectorDetail.setQueryType(exactMatchSourceSelector.queryType());
         return exactSelectorDetail;
+    }
+
+    private static List<SelectorsDetail> upcastSelectors(List<Selectors> selectorList)
+    {
+        ImmutableList.Builder<SelectorsDetail> builder = ImmutableList.builder();
+        for (Selectors selectors : selectorList) {
+            SelectorsDetail selectorDetail = new SelectorsDetail();
+            selectorDetail.setResourceGroupId(selectors.resourceGroupId());
+            selectorDetail.setPriority(selectors.priority());
+            selectorDetail.setUserRegex(selectors.userRegex());
+            selectorDetail.setSourceRegex(selectors.sourceRegex());
+            selectorDetail.setQueryType(selectors.queryType());
+            selectorDetail.setClientTags(selectors.clientTags());
+            selectorDetail.setSelectorResourceEstimate(selectors.selectorResourceEstimate());
+            builder.add(selectorDetail);
+        }
+        return builder.build();
     }
 }
