@@ -15,6 +15,7 @@ package io.trino.gateway.ha.persistence;
 
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.dao.CookieBackend;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
 import org.javalite.activejdbc.Base;
@@ -102,6 +103,24 @@ public class JdbcConnectionManager
                     jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
+                120,
+                TimeUnit.MINUTES);
+
+        executorService.scheduleWithFixedDelay(
+                () -> {
+                    log.info("Performing cookie cleanup task");
+                    try {
+                        this.open();
+                        CookieBackend.delete(
+                                CookieBackend.createdTimestamp + " < ?",
+                                System.currentTimeMillis() - TimeUnit.HOURS.toMillis(
+                                        this.configuration.getCookieHoursRetention()));
+                    }
+                    finally {
+                        this.close();
+                    }
+                },
+                2,
                 120,
                 TimeUnit.MINUTES);
     }

@@ -44,13 +44,16 @@ public abstract class RoutingManager
     private static final Random RANDOM = new Random();
     private static final Logger log = Logger.get(RoutingManager.class);
     private final LoadingCache<String, String> queryIdBackendCache;
+    private final LoadingCache<String, String> cookieBackendCache;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, Boolean> backendToHealth;
+    private CookieCacheManager cacheManager;
 
-    public RoutingManager(GatewayBackendManager gatewayBackendManager)
+    public RoutingManager(GatewayBackendManager gatewayBackendManager, CookieCacheManager cacheManager)
     {
         this.gatewayBackendManager = gatewayBackendManager;
+        this.cacheManager = cacheManager;
         queryIdBackendCache =
                 CacheBuilder.newBuilder()
                         .maximumSize(10000)
@@ -65,6 +68,20 @@ public abstract class RoutingManager
                                     }
                                 });
 
+        cookieBackendCache =
+                CacheBuilder.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterAccess(30, TimeUnit.MINUTES)
+                        .build(
+                                new CacheLoader<String, String>()
+                                {
+                                    @Override
+                                    public String load(String cookie)
+                                    {
+                                        return cacheManager.getBackendForCookie(cookie).orElseGet(() -> provideAdhocBackend(""));
+                                    }
+                                });
+
         this.backendToHealth = new ConcurrentHashMap<String, Boolean>();
     }
 
@@ -76,6 +93,17 @@ public abstract class RoutingManager
     public void setBackendForQueryId(String queryId, String backend)
     {
         queryIdBackendCache.put(queryId, backend);
+    }
+
+    public void setBackendForCookie(String cookie, String backend)
+    {
+        cacheManager.submitCookieBackend(cookie, backend);
+    }
+
+    public boolean removeCookie(String cookie)
+    {
+        cookieBackendCache.invalidate(cookie);
+        return cacheManager.removeCookie(cookie);
     }
 
     /**
@@ -122,6 +150,17 @@ public abstract class RoutingManager
             log.error("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return backendAddress;
+    }
+
+    public String findBackendForCookie(String cookie)
+    {
+        try {
+            return cookieBackendCache.get(cookie);
+        }
+        catch (ExecutionException e) {
+            log.error("Exception while loading cookie backend from cache %s", e.getLocalizedMessage());
+        }
+        return null;
     }
 
     public void upateBackEndHealth(String backendId, Boolean value)
@@ -180,6 +219,7 @@ public abstract class RoutingManager
         catch (Exception e) {
             log.warn("Query id [%s] not found", queryId);
         }
+
         // Fallback on first active backend if queryId mapping not found.
         return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
     }

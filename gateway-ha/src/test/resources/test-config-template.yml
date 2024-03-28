@@ -28,3 +28,10 @@ extraWhitelistPaths:
 
 logging:
   type: external
+
+cookiePaths:
+  - "/oauth2"
+  - "/oauth2/callback"
+
+removeCookiePaths:
+  - "/logout"

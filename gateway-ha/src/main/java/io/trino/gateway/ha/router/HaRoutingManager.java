@@ -23,9 +23,9 @@ public class HaRoutingManager
     QueryHistoryManager queryHistoryManager;
 
     public HaRoutingManager(
-            GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
+            GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, CookieCacheManager cacheManager)
     {
-        super(gatewayBackendManager);
+        super(gatewayBackendManager, cacheManager);
         this.queryHistoryManager = queryHistoryManager;
     }
 

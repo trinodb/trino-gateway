@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -38,6 +39,7 @@ public class ProxyServer
         implements Closeable
 {
     private static final Logger log = Logger.get(ProxyServer.class);
+    public static final String COOKIE_NAME = "TRINOGATEWAYSESSION";
     private final Server server;
     private final ProxyServletImpl proxy;
     private final ProxyHandler proxyHandler;
@@ -126,6 +128,9 @@ public class ProxyServer
                 new ServletContextHandler(proxyConnectHandler, "/", ServletContextHandler.SESSIONS);
         this.context.addServlet(proxyServlet, "/*");
         this.context.addFilter(RequestFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+
+        SessionHandler sessionHandler = context.getSessionHandler();
+        sessionHandler.setSessionCookie(COOKIE_NAME);
     }
 
     public void start()

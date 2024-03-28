@@ -29,6 +29,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -39,6 +43,11 @@ public class TestGatewayHaMultipleBackend
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
+
+    public static String oauthInitiatePath = "/oauth2";
+    public static String oauthCallbackPath = oauthInitiatePath + "/callback";
+    public static String oauthInitialResponse = "abc";
+    public static String oauthCallbackResponse = "xyz";
 
     final int routerPort = 20000 + (int) (Math.random() * 1000);
     final int customBackendPort = 21000 + (int) (Math.random() * 1000);
@@ -160,6 +169,58 @@ public class TestGatewayHaMultipleBackend
         assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[1].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[2].getExternalUrl()).isEqualTo("externalUrl");
+    }
+
+    @Test
+    public void testCookieBasedRouting()
+            throws IOException
+    {
+        // This simulates the Trino oauth handshake
+        HaGatewayTestUtils.addEndpoint(customBackend, oauthInitiatePath, oauthInitialResponse);
+        HaGatewayTestUtils.addEndpoint(customBackend, oauthCallbackPath, oauthCallbackResponse);
+
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .build();
+        String oauthInitiateBody = "anything";
+        RequestBody requestBody =
+                RequestBody.create(
+                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+
+        Request initiateRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthInitiatePath)
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "custom")
+                        .build();
+        Response initiateResponse = httpClient.newCall(initiateRequest).execute();
+        assertThat(isNullOrEmpty(initiateResponse.header("set-cookie"))).isFalse();
+
+        Request callbackRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + oauthCallbackPath)
+                        .post(requestBody)
+                        .addHeader("Cookie", initiateResponse.header("set-cookie"))
+                        .build();
+        Response callbackResponse = httpClient.newCall(callbackRequest).execute();
+        assertThat(callbackResponse.body().string()).isEqualTo(oauthCallbackResponse);
+
+        Request logoutRequest =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/logout")
+                        .post(requestBody)
+                        .addHeader("Cookie", initiateResponse.header("set-cookie"))
+                        .build();
+        Response logoutResponse = httpClient.newCall(logoutRequest).execute();
+
+        assertThat(isNullOrEmpty(logoutResponse.header("set-cookie"))).isFalse();
+
+        Response callbackAfterLogoutResponse = httpClient.newCall(callbackRequest).execute();
+        // The request to logout should clear the cookie, so it should now be ignored and the request
+        // routed to adhoc, which does not have the oauthCallbackPath
+        assertThat(callbackAfterLogoutResponse.code()).isEqualTo(404);
     }
 
     @AfterAll

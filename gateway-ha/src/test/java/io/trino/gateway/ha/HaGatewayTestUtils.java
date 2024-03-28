@@ -50,7 +50,7 @@ public class HaGatewayTestUtils
     public static void seedRequiredData(TestConfig testConfig)
     {
         String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, 4);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         connectionManager.open();
@@ -67,6 +67,18 @@ public class HaGatewayTestUtils
                 .setBody(expectedResonse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
+    }
+
+    public static void addEndpoint(
+            WireMockServer backend, String endPoint, String expectedResonse)
+    {
+        backend.stubFor(
+                WireMock.post(endPoint)
+                        .willReturn(
+                                WireMock.aResponse()
+                                        .withBody(expectedResonse)
+                                        .withHeader("Content-Encoding", "plain")
+                                        .withStatus(200)));
     }
 
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
@@ -130,6 +142,7 @@ public class HaGatewayTestUtils
                                 + ",\"routingGroup\": \""
                                 + routingGroup
                                 + "\"}");
+        log.info(requestBody.toString());
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/entity?entityType=GATEWAY_BACKEND")

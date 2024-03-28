@@ -35,6 +35,7 @@ public class RequestFilter
         // We need to convert the ServletRequest to MultiReadRequest, so that we can intercept later
         MultiReadHttpServletRequest multiReadRequest =
                 new MultiReadHttpServletRequest((HttpServletRequest) request);
+
         HttpServletResponseWrapper responseWrapper =
                 new HttpServletResponseWrapper((HttpServletResponse) response);
         chain.doFilter(multiReadRequest, responseWrapper);

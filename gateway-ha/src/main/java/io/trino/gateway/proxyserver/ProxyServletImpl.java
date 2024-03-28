@@ -89,13 +89,29 @@ public class ProxyServletImpl
     {
         String target = null;
         if (proxyHandler != null) {
-            target = proxyHandler.rewriteTarget(request);
+            target = proxyHandler.rewriteTarget(request, this.getRequestId(request));
         }
         if (target == null) {
             target = super.rewriteTarget(request);
         }
         log.debug("Target : " + target);
         return target;
+    }
+
+    @Override
+    protected void onServerResponseHeaders(
+            HttpServletRequest clientRequest,
+            HttpServletResponse proxyResponse,
+            Response serverResponse)
+    {
+        if (clientRequest.getCookies() == null) {
+            super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
+            return;
+        }
+
+        this.proxyHandler.removeCookie(clientRequest).ifPresent(cookie -> proxyResponse.addCookie(cookie));
+
+        super.onServerResponseHeaders(clientRequest, proxyResponse, serverResponse);
     }
 
     /**
@@ -114,7 +130,7 @@ public class ProxyServletImpl
         try {
             log.debug("[%d] proxying content to downstream: [%d] bytes", this.getRequestId(request), length);
             if (this.proxyHandler != null) {
-                proxyHandler.postConnectionHook(request, response, buffer, offset, length, callback);
+                proxyHandler.postConnectionHook(request, response, buffer, offset, length, callback, this.getRequestId(request));
             }
             else {
                 super.onResponseContent(request, response, proxyResponse, buffer, offset, length, callback);
