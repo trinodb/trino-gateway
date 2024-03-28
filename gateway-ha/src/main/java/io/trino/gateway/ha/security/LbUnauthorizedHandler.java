@@ -13,13 +13,11 @@
  */
 package io.trino.gateway.ha.security;
 
-import io.dropwizard.auth.UnauthorizedHandler;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 
 public class LbUnauthorizedHandler
-        implements UnauthorizedHandler
 {
     private final String redirectPath;
 
@@ -33,8 +31,7 @@ public class LbUnauthorizedHandler
         }
     }
 
-    @Override
-    public Response buildResponse(String prefix, String realm)
+    public Response buildResponse()
     {
         return Response.status(302).location(URI.create(redirectPath)).build();
     }
