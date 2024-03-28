@@ -24,7 +24,7 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestHaRoutingManager
+public class TestStochasticRoutingManager
 {
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
@@ -36,7 +36,7 @@ public class TestHaRoutingManager
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
-        haRoutingManager = new HaRoutingManager(backendManager, historyManager);
+        haRoutingManager = new StochasticRoutingManager(backendManager, historyManager);
     }
 
     @Test

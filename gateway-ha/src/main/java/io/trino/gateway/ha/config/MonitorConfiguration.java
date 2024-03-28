@@ -17,17 +17,17 @@ import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 
 public class MonitorConfiguration
 {
-    private int taskDelayMin = ActiveClusterMonitor.MONITOR_TASK_DELAY_MIN;
+    private int taskDelaySeconds = ActiveClusterMonitor.MONITOR_TASK_DELAY_SECONDS;
 
     public MonitorConfiguration() {}
 
-    public int getTaskDelayMin()
+    public int getTaskDelaySeconds()
     {
-        return this.taskDelayMin;
+        return this.taskDelaySeconds;
     }
 
-    public void setTaskDelayMin(int taskDelayMin)
+    public void setTaskDelaySeconds(int taskDelaySeconds)
     {
-        this.taskDelayMin = taskDelayMin;
+        this.taskDelaySeconds = taskDelaySeconds;
     }
 }

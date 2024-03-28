@@ -14,6 +14,7 @@
 package io.trino.gateway.baseapp;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MoreCollectors;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -27,6 +28,8 @@ import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.trino.gateway.ha.log.GatewayRequestLogFactory;
+import io.trino.gateway.ha.module.RouterBaseModule;
+import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -39,6 +42,7 @@ import org.reflections.util.FilterBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -60,6 +64,35 @@ public abstract class BaseApp<T extends AppConfiguration>
 
     private final Reflections reflections;
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
+
+    private AppModule newModule(String clazz, T configuration, Environment environment)
+    {
+        try {
+            logger.info("Trying to load module [%s]", clazz);
+            Object module =
+                    Class.forName(clazz)
+                            .getConstructor(configuration.getClass(), Environment.class)
+                            .newInstance(configuration, environment);
+            return ((AppModule) module);
+        }
+        catch (Exception e) {
+            logger.error(e, "Could not instantiate module [%s]", clazz);
+            onFatalError(e);
+        }
+        return null;
+    }
+
+    private void validateModules(List<AppModule> modules, T configuration, Environment environment)
+    {
+        Optional<AppModule> routerProvider = modules.stream()
+                .filter(module -> module instanceof RouterBaseModule)
+                .collect(MoreCollectors.toOptional());
+        if (routerProvider.isEmpty()) {
+            logger.warn("Router provider doesn't exist in the config, using the StochasticRoutingManagerProvider");
+            String clazz = StochasticRoutingManagerProvider.class.getCanonicalName();
+            modules.add(newModule(clazz, configuration, environment));
+        }
+    }
 
     protected BaseApp(String... basePackages)
     {
@@ -135,18 +168,11 @@ public abstract class BaseApp<T extends AppConfiguration>
             return modules;
         }
         for (String clazz : configuration.getModules()) {
-            try {
-                logger.info("Trying to load module [%s]", clazz);
-                Object ob =
-                        Class.forName(clazz)
-                                .getConstructor(configuration.getClass(), Environment.class)
-                                .newInstance(configuration, environment);
-                modules.add((AppModule) ob);
-            }
-            catch (Exception e) {
-                logger.error(e, "Could not instantiate module [%s]", clazz);
-            }
+            modules.add(newModule(clazz, configuration, environment));
         }
+
+        validateModules(modules, configuration, environment);
+
         return modules;
     }
 
