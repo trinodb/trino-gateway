@@ -14,6 +14,6 @@ poolMaxIdle: 8
 poolMaxTotal: 8
 poolMinIdle: 0
 poolTestOnBorrow: true
-groupAdminRoleMap: .*Admin.*
-groupUserRoleMap: .*User.*
-groupApiRoleMap: .*Api.*
+groupAdminRoleMap: (?s).*Admin.*
+groupUserRoleMap: (?s).*User.*
+groupApiRoleMap: (?s).*Api.*

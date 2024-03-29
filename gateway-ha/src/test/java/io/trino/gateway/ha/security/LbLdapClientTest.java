@@ -121,7 +121,7 @@ public class LbLdapClientTest
         String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
 
         java.util.ArrayList users = new java.util.ArrayList();
-        users.add(new LbLdapClient.UserRecord("Admin,User"));
+        users.add(new LbLdapClient.UserRecord("memberOf: cn=Admin,dc=example,dc=com\nmemberOf: cn=User,dc=example,dc=com"));
 
         Mockito
                 .when(ldapConnectionTemplate.search(eq(ldapConfig.getLdapUserBaseDn()),
