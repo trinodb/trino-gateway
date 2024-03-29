@@ -114,15 +114,17 @@ public class LbLdapClient
             log.debug("LdapGroups: %s", ldapGroups);
         }
         ArrayList<String> memberOfArray = new ArrayList<String>();
-        if (ldapGroups.matches(config.getGroupAdminRoleMap())) {
+        String groupAdminRoleMap = config.getGroupAdminRoleMap();
+        if (groupAdminRoleMap != null && ldapGroups.matches(groupAdminRoleMap)) {
             memberOfArray.add("ADMIN");
         }
-
-        if (ldapGroups.matches(config.getGroupUserRoleMap())) {
+        String groupUserRoleMap = config.getGroupUserRoleMap();
+        if (groupUserRoleMap != null && ldapGroups.matches(groupUserRoleMap)) {
             memberOfArray.add("USER");
         }
 
-        if (ldapGroups.matches(config.getGroupApiRoleMap())) {
+        String groupApiRoleMap = config.getGroupApiRoleMap();
+        if (groupApiRoleMap != null && ldapGroups.matches(groupApiRoleMap)) {
             memberOfArray.add("API");
         }
         return String.join("_", memberOfArray);

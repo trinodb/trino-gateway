@@ -18,6 +18,8 @@ import io.dropwizard.configuration.ConfigurationException;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
 
+import java.util.regex.Pattern;
+
 public class LdapConfiguration
 {
     private static final Logger log = Logger.get(LdapConfiguration.class);
@@ -78,6 +80,16 @@ public class LdapConfiguration
         this.groupAdminRoleMap = groupAdminRoleMap;
         this.groupUserRoleMap = groupUserRoleMap;
         this.groupApiRoleMap = groupApiRoleMap;
+        /* check for valid regex patterns at startup */
+        if (this.groupAdminRoleMap != null) {
+            Pattern.compile(this.groupAdminRoleMap);
+        }
+        if (this.groupUserRoleMap != null) {
+            Pattern.compile(this.groupUserRoleMap);
+        }
+        if (this.groupApiRoleMap != null) {
+            Pattern.compile(this.groupApiRoleMap);
+        }
     }
 
     public LdapConfiguration() {}
