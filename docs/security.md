@@ -130,20 +130,15 @@ authentication:
 
 ## Authorization
 
-Trino Gateway supports the following roles in regex string format:
+Trino Gateway supports the following roles in regex string format (for API calls):
 
 - admin : Allows access to the Editor tab, which can be used to configure the
   backends
-
 - user : Allows access to the rest of the website
-
 - api : Allows access to rest apis to configure the backends
 
-Users with attributes next to the role will be giving those privileges the
-users. You can use the preset users defined in the yaml file. 
+Users with attributes matching each role regex will be giving the privileges of that role (admin, user, or api) for Api calls. You can use the preset users defined in the yaml file.
 LDAP Authorization is also supported by adding user attribute configs in file.
-
-- Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for config details
 
 ```
 # Roles should be in regex format
@@ -154,8 +149,15 @@ authorization:
   ldapConfigPath: '<ldap_config_path>'
 ```
 
-The LDAP config file should have the following contents:
+**Caution:**
+The regex pattern matching for roles only works for API calls, and not on the webapp. 
+The webapp only supports ADMIN, USER, and API roles. 
+For instance, in the case that a user has `privileges: SUPER_USER_API` and the authorization section includes `admin: (.*)SUPER(.*)` the user will *not* have ADMIN role privileges in the webapp. 
 
+To match the behavior of the API with the webapp, just use the previous configuration example for the `authorization` section.
+
+### LDAP Authorization
+The LDAP config file should have the following contents:
 ```
   ldapHost: '<ldap sever>'
   ldapPort: <port>
@@ -172,4 +174,9 @@ The LDAP config file should have the following contents:
   poolMaxTotal: 8
   poolMinIdle: 0
   poolTestOnBorrow: true
+  groupAdminRoleMap: <regex to map group => role>
+  groupUserRoleMap: <regex to map group => role>
+  groupApiRoleMap: <regex to map group => role>
 ```
+The group mappings will grant ADMIN, USER, or API roles when the `groupMemberAttribute` of the user matches the corresponding regular expression.
+- Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for a configuration example
