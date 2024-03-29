@@ -94,7 +94,7 @@ public class TestGatewayHaMultipleBackend
         Response response1 = httpClient.newCall(request1).execute();
         assertThat(response1.body().string()).isEqualTo(CUSTOM_RESPONSE);
         RecordedRequest recordedRequest = customBackend.takeRequest();
-        assertThat(recordedRequest.getRequestLine()).contains("POST");
+        assertThat(recordedRequest.getMethod()).isEqualTo("POST");
         assertThat(recordedRequest.getPath()).isEqualTo(CUSTOM_PATH);
 
         Request request2 =
