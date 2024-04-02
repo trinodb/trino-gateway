@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.module;
 
-import com.codahale.metrics.Meter;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.dropwizard.auth.AuthFilter;
@@ -28,6 +27,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.QueryIdCachingProxyHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -133,10 +133,9 @@ public class HaGatewayProviderModule
     protected ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
                                          RoutingManager routingManager)
     {
-        Meter requestMeter =
-                getEnvironment()
-                        .metrics()
-                        .meter(getConfiguration().getRequestRouter().getName() + ".requests");
+        ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create(
+                getEnvironment(),
+                getConfiguration().getRequestRouter().getName() + ".requests");
 
         // By default, use routing group header to route
         RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
@@ -152,7 +151,7 @@ public class HaGatewayProviderModule
                 routingManager,
                 routingGroupSelector,
                 getApplicationPort(),
-                requestMeter,
+                proxyHandlerStats,
                 extraWhitelistPaths);
     }
 
