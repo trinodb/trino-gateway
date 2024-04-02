@@ -18,6 +18,7 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.server.SimpleServerFactory;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.jetty.HttpsConnectorFactory;
 
 import java.util.stream.Stream;
 
@@ -43,7 +44,9 @@ public abstract class AppModule<T extends AppConfiguration, E>
                         .map(SimpleServerFactory::getConnector);
 
         return connectors
-                .filter(connector -> connector.getClass().isAssignableFrom(HttpConnectorFactory.class))
+                .filter(connector ->
+                        connector.getClass().isAssignableFrom(HttpConnectorFactory.class) ||
+                        connector.getClass().isAssignableFrom(HttpsConnectorFactory.class))
                 .map(connector -> (HttpConnectorFactory) connector)
                 .mapToInt(HttpConnectorFactory::getPort)
                 .findFirst()
