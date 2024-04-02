@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.handler;
 
-import com.codahale.metrics.Meter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
@@ -82,7 +81,7 @@ public class QueryIdCachingProxyHandler
     private final RoutingGroupSelector routingGroupSelector;
     private final QueryHistoryManager queryHistoryManager;
 
-    private final Meter requestMeter;
+    private final ProxyHandlerStats proxyHandlerStats;
     private final List<String> extraWhitelistPaths;
     private final String applicationEndpoint;
 
@@ -91,9 +90,10 @@ public class QueryIdCachingProxyHandler
             RoutingManager routingManager,
             RoutingGroupSelector routingGroupSelector,
             int serverApplicationPort,
-            Meter requestMeter, List<String> extraWhitelistPaths)
+            ProxyHandlerStats proxyHandlerStats,
+            List<String> extraWhitelistPaths)
     {
-        this.requestMeter = requestMeter;
+        this.proxyHandlerStats = proxyHandlerStats;
         this.routingManager = routingManager;
         this.routingGroupSelector = routingGroupSelector;
         this.queryHistoryManager = queryHistoryManager;
@@ -238,7 +238,7 @@ public class QueryIdCachingProxyHandler
     {
         if (request.getMethod().equals(HttpMethod.POST)
                 && request.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
-            requestMeter.mark();
+            proxyHandlerStats.recordRequest();
             try {
                 String requestBody = CharStreams.toString(request.getReader());
                 log.info(
