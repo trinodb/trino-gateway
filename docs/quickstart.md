@@ -40,14 +40,16 @@ Gateway server running in the host operating system.
 ## Start Trino Gateway server
 
 The following script starts a Trino Gateway server using the 
-[Quickstart Configuration](quickstart-config.yaml) with the request service
+[Quickstart configuration](quickstart-config.yaml) with the request service
 at http://localhost:9080, the application service at http://localhost:9081,
 and the Admin service at http://localhost:9082. It also starts a dockerized
 PostgreSQL database at localhost:5432.
 
 To start the server, copy the script below to a temporary directory 
 under the project root folder, and run it at the temporary directory.
-It will copy necessary files to current directory, which consists of the following:
+
+It  copies the following, necessary files to current directory:
+
 - gateway-ha.jar
 - gateway-ha-persistence-postgres.sql
 - quickstart-config.yaml
@@ -57,7 +59,9 @@ It will copy necessary files to current directory, which consists of the followi
 
 VERSION=7
 
-#Check and get the Gateway Jar
+# Copy necessary files to current directory
+
+# Check and get the Gateway Jar
 if [[ -f "gateway-ha.jar" ]]; then
     echo "Found gateway-har.jar file in current directory."
 else
@@ -65,9 +69,19 @@ else
     curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
 fi
 
-# Copy necessary files to current directory
-cp ../docs/quickstart-config.yaml ./quickstart-config.yaml
-cp ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql ./gateway-ha-persistence-postgres.sql
+# Check and get the Config.yaml
+if [[ -f "quickstart-config.yaml" ]]; then
+    echo "Found quickstart-config.yaml file in current directory."
+else
+    cp ../docs/quickstart-config.yaml ./quickstart-config.yaml
+fi
+
+# Check and get the postgres.sql
+if [[ -f "gateway-ha-persistence-postgres.sql" ]]; then
+    echo "Found gateway-ha-persistence-postgres.sql file in current directory."
+else
+    cp ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql ./gateway-ha-persistence-postgres.sql
+fi
 
 #Check if DB is running
 if docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
@@ -87,7 +101,6 @@ fi
 
 #Start Trino Gateway server.
 java -Xmx1g --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar ./gateway-ha.jar server ./quickstart-config.yaml
-
 ```
 
 You can clean up by running
