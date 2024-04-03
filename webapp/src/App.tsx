@@ -3,7 +3,8 @@ import { ErrorBoundary } from './components/error';
 import {
   HashRouter as Router,
   Routes,
-  Route
+  Route,
+  Navigate
 } from "react-router-dom";
 import { Login } from './components/login';
 import { RootLayout as Layout } from './components/layout';
@@ -48,6 +49,8 @@ function Screen() {
             {routers.flatMap(router => {
               return hasPagePermission(router, access) ? [<Route {...router.routeProps} key={router.itemKey} />] : [];
             })}
+            {/* Landing page */}
+            <Route path="/" element={<Navigate to="/dashboard" />} />
             {/* Default page */}
             <Route path="*" element={<Home />} key={"*"} />
           </Routes>
