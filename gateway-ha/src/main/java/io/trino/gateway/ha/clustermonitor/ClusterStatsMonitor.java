@@ -18,4 +18,13 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 public interface ClusterStatsMonitor
 {
     ClusterStats monitor(ProxyBackendConfiguration backend);
+
+    static ClusterStats.Builder getClusterStatsBuilder(ProxyBackendConfiguration backend)
+    {
+        ClusterStats.Builder builder = ClusterStats.builder(backend.getName());
+        builder.proxyTo(backend.getProxyTo());
+        builder.externalUrl(backend.getExternalUrl());
+        builder.routingGroup(backend.getRoutingGroup());
+        return builder;
+    }
 }
