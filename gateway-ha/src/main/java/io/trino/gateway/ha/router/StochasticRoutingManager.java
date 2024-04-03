@@ -16,13 +16,13 @@ package io.trino.gateway.ha.router;
 import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 
-public class HaRoutingManager
+public class StochasticRoutingManager
         extends RoutingManager
 {
-    private static final Logger log = Logger.get(HaRoutingManager.class);
+    private static final Logger log = Logger.get(StochasticRoutingManager.class);
     QueryHistoryManager queryHistoryManager;
 
-    public HaRoutingManager(
+    public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
     {
         super(gatewayBackendManager);

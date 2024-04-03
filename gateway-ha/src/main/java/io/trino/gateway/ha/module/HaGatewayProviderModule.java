@@ -29,15 +29,8 @@ import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.handler.QueryIdCachingProxyHandler;
-import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
-import io.trino.gateway.ha.router.GatewayBackendManager;
-import io.trino.gateway.ha.router.HaGatewayManager;
-import io.trino.gateway.ha.router.HaQueryHistoryManager;
-import io.trino.gateway.ha.router.HaResourceGroupsManager;
-import io.trino.gateway.ha.router.HaRoutingManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
-import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
@@ -56,7 +49,6 @@ import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.proxyserver.ProxyHandler;
 import io.trino.gateway.proxyserver.ProxyServer;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
-import org.jdbi.v3.core.Jdbi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,11 +57,6 @@ import java.util.Map;
 public class HaGatewayProviderModule
         extends AppModule<HaGatewayConfiguration, Environment>
 {
-    private final ResourceGroupsManager resourceGroupsManager;
-    private final GatewayBackendManager gatewayBackendManager;
-    private final QueryHistoryManager queryHistoryManager;
-    private final RoutingManager routingManager;
-    private final JdbcConnectionManager connectionManager;
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
@@ -80,13 +67,6 @@ public class HaGatewayProviderModule
     public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
     {
         super(configuration, environment);
-        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
-        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(jdbi);
-        queryHistoryManager = new HaQueryHistoryManager(jdbi);
-        routingManager = new HaRoutingManager(gatewayBackendManager, queryHistoryManager);
-
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
@@ -150,7 +130,8 @@ public class HaGatewayProviderModule
         return new ChainedAuthFilter(authFilters);
     }
 
-    protected ProxyHandler getProxyHandler()
+    protected ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
+                                         RoutingManager routingManager)
     {
         Meter requestMeter =
                 getEnvironment()
@@ -167,8 +148,8 @@ public class HaGatewayProviderModule
         }
 
         return new QueryIdCachingProxyHandler(
-                getQueryHistoryManager(),
-                getRoutingManager(),
+                queryHistoryManager,
+                routingManager,
                 routingGroupSelector,
                 getApplicationPort(),
                 requestMeter,
@@ -195,7 +176,8 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public ProxyServer provideGateway()
+    public ProxyServer provideGateway(QueryHistoryManager queryHistoryManager,
+                                        RoutingManager routingManager)
     {
         ProxyServer gateway = null;
         if (getConfiguration().getRequestRouter() != null) {
@@ -216,45 +198,10 @@ public class HaGatewayProviderModule
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
             routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-            ProxyHandler proxyHandler = getProxyHandler();
+            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager);
             gateway = new ProxyServer(routerProxyConfig, proxyHandler);
         }
         return gateway;
-    }
-
-    @Provides
-    @Singleton
-    public ResourceGroupsManager getResourceGroupsManager()
-    {
-        return this.resourceGroupsManager;
-    }
-
-    @Provides
-    @Singleton
-    public GatewayBackendManager getGatewayBackendManager()
-    {
-        return this.gatewayBackendManager;
-    }
-
-    @Provides
-    @Singleton
-    public QueryHistoryManager getQueryHistoryManager()
-    {
-        return this.queryHistoryManager;
-    }
-
-    @Provides
-    @Singleton
-    public RoutingManager getRoutingManager()
-    {
-        return this.routingManager;
-    }
-
-    @Provides
-    @Singleton
-    public JdbcConnectionManager getConnectionManager()
-    {
-        return this.connectionManager;
     }
 
     @Provides
