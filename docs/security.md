@@ -173,3 +173,24 @@ The LDAP config file should have the following contents:
   poolMinIdle: 0
   poolTestOnBorrow: true
 ```
+
+## Web page permissions
+
+By default, all pages are accessible to all roles.
+To limit page access, you can set page permissions by pages 
+and `_` as separator field.
+
+The following pages are available:
+- `dashboard`
+- `cluster`
+- `resource-group`
+- `selector`
+- `history`
+
+```yaml
+# admin/api can access all pages, while user can only access dashboard/history
+pagePermissions:
+  admin: 
+  user: dashboard_history 
+  api: 
+```
