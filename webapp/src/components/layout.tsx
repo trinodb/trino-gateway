@@ -26,7 +26,7 @@ export const RootLayout = (props: {
     }
   }, [location]);
 
-  const lonout = () => {
+  const logout = () => {
     logoutApi({}).then(data => {
       console.log(data);
       access.updateToken("");
@@ -56,7 +56,11 @@ export const RootLayout = (props: {
                   className={styles.navigationHeaderLogo}
                 />
               ),
-              text: "Trino Gateway",
+              text: (
+                <Link to="/" style={{ textDecoration: "none" }}>
+                  Trino Gateway
+                </Link>
+              ),
             }}
             footer={
               <div className={styles.dIV}>
@@ -80,7 +84,7 @@ export const RootLayout = (props: {
                   render={
                     <Dropdown.Menu>
                       <Dropdown.Item onClick={() => { setUserProfile(true) }}>{Locale.Menu.Header.PersonalCenter}</Dropdown.Item>
-                      <Dropdown.Item onClick={lonout}>{Locale.Menu.Header.Logout}</Dropdown.Item>
+                      <Dropdown.Item onClick={logout}>{Locale.Menu.Header.Logout}</Dropdown.Item>
                     </Dropdown.Menu>
                   }
                 >
