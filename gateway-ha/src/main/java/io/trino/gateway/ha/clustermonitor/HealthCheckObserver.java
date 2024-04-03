@@ -28,9 +28,6 @@ public class HealthCheckObserver
     @Override
     public void observe(java.util.List<ClusterStats> clustersStats)
     {
-        for (ClusterStats clusterStats : clustersStats) {
-            routingManager.upateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
-            routingManager.updateBackEndHealthDB(clusterStats);
-        }
+        routingManager.upateBackEndStats(clustersStats);
     }
 }
