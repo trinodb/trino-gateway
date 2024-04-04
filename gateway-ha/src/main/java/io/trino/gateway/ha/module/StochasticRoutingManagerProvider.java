@@ -14,9 +14,7 @@
 package io.trino.gateway.ha.module;
 
 import com.google.inject.Provides;
-import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.StochasticRoutingManager;
 
@@ -25,11 +23,10 @@ public class StochasticRoutingManagerProvider
 {
     private final StochasticRoutingManager routingManager;
 
-    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration, Environment environment)
+    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
     {
-        super(configuration, environment);
-        routingManager = new StochasticRoutingManager(gatewayBackendManager,
-            (HaQueryHistoryManager) queryHistoryManager);
+        super(configuration);
+        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
     }
 
     @Provides
