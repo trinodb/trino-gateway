@@ -42,10 +42,13 @@ import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static java.lang.String.format;
 
 /**
  * Supports Guice in Dropwizard.
@@ -65,15 +68,24 @@ public abstract class BaseApp<T extends AppConfiguration>
     private static final Logger logger = Logger.get(BaseApp.class);
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
 
-    private AppModule newModule(String clazz, T configuration, Environment environment)
+    private Module newModule(String clazz, T configuration, Environment environment)
     {
         try {
             logger.info("Trying to load module [%s]", clazz);
-            Object module =
-                    Class.forName(clazz)
-                            .getConstructor(configuration.getClass(), Environment.class)
-                            .newInstance(configuration, environment);
-            return ((AppModule) module);
+            // Modules must have exactly one constructor. The signature must be either one:
+            // public Module constructor(HaGatewayConfiguration)
+            // public Module constructor(HaGatewayConfiguration, Environment)
+            Constructor<?>[] constructors = Class.forName(clazz).getConstructors();
+            if (constructors.length != 1) {
+                throw new RuntimeException(format("Failed to load module [%s]. Multiple constructors exist.", clazz));
+            }
+            Constructor<?> constructor = constructors[0];
+            Object module = switch (constructor.getParameterCount()) {
+                case 1 -> constructor.newInstance(configuration);
+                case 2 -> constructor.newInstance(configuration, environment);
+                default -> throw new RuntimeException(format("Failed to load module [%s]. Unsupported constructor.", clazz));
+            };
+            return ((Module) module);
         }
         catch (Exception e) {
             logger.error(e, "Could not instantiate module [%s]", clazz);
@@ -82,9 +94,9 @@ public abstract class BaseApp<T extends AppConfiguration>
         return null;
     }
 
-    private void validateModules(List<AppModule> modules, T configuration, Environment environment)
+    private void validateModules(List<Module> modules, T configuration, Environment environment)
     {
-        Optional<AppModule> routerProvider = modules.stream()
+        Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
                 .collect(MoreCollectors.toOptional());
         if (routerProvider.isEmpty()) {
@@ -137,9 +149,9 @@ public abstract class BaseApp<T extends AppConfiguration>
      * @param configuration the app configuration
      * @return a list of modules to be provisioned by Guice
      */
-    protected List<AppModule> addModules(T configuration, Environment environment)
+    protected List<Module> addModules(T configuration, Environment environment)
     {
-        List<AppModule> modules = new ArrayList<>();
+        List<Module> modules = new ArrayList<>();
         if (configuration.getModules() == null) {
             logger.warn("No modules to load.");
             return modules;
