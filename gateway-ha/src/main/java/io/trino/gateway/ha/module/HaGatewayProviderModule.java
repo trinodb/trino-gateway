@@ -13,14 +13,18 @@
  */
 package io.trino.gateway.ha.module;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.dropwizard.auth.AuthFilter;
 import io.dropwizard.auth.Authorizer;
 import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.auth.chained.ChainedAuthFilter;
+import io.dropwizard.core.server.DefaultServerFactory;
+import io.dropwizard.core.server.SimpleServerFactory;
 import io.dropwizard.core.setup.Environment;
-import io.trino.gateway.baseapp.AppModule;
+import io.dropwizard.jetty.ConnectorFactory;
+import io.dropwizard.jetty.HttpConnectorFactory;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -53,9 +57,12 @@ import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+
+import static java.util.Objects.requireNonNull;
 
 public class HaGatewayProviderModule
-        extends AppModule<HaGatewayConfiguration, Environment>
+        extends AbstractModule
 {
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
@@ -63,10 +70,13 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final AuthFilter authenticationFilter;
     private final List<String> extraWhitelistPaths;
+    private final HaGatewayConfiguration configuration;
+    private final Environment environment;
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
     {
-        super(configuration, environment);
+        this.configuration = requireNonNull(configuration, "configuration is null");
+        this.environment = requireNonNull(environment, "environment is null");
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
@@ -130,17 +140,17 @@ public class HaGatewayProviderModule
         return new ChainedAuthFilter(authFilters);
     }
 
-    protected ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
+    private ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
                                          RoutingManager routingManager)
     {
         ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create(
-                getEnvironment(),
-                getConfiguration().getRequestRouter().getName() + ".requests");
+                environment,
+                configuration.getRequestRouter().getName() + ".requests");
 
         // By default, use routing group header to route
         RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
         // Use rules engine if enabled
-        RoutingRulesConfiguration routingRulesConfig = getConfiguration().getRoutingRules();
+        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
             String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
             routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
@@ -155,7 +165,24 @@ public class HaGatewayProviderModule
                 extraWhitelistPaths);
     }
 
-    protected AuthFilter getAuthFilter(HaGatewayConfiguration configuration)
+    private int getApplicationPort()
+    {
+        Stream<ConnectorFactory> connectors =
+                configuration.getServerFactory() instanceof DefaultServerFactory
+                        ? ((DefaultServerFactory) configuration.getServerFactory())
+                        .getApplicationConnectors().stream()
+                        : Stream.of((SimpleServerFactory) configuration.getServerFactory())
+                        .map(SimpleServerFactory::getConnector);
+
+        return connectors
+                .filter(connector -> connector.getClass().isAssignableFrom(HttpConnectorFactory.class))
+                .map(connector -> (HttpConnectorFactory) connector)
+                .mapToInt(HttpConnectorFactory::getPort)
+                .findFirst()
+                .orElseThrow(IllegalStateException::new);
+    }
+
+    private AuthFilter getAuthFilter(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
         Authorizer<LbPrincipal> authorizer = (authorizationConfig != null)
@@ -179,9 +206,9 @@ public class HaGatewayProviderModule
                                         RoutingManager routingManager)
     {
         ProxyServer gateway = null;
-        if (getConfiguration().getRequestRouter() != null) {
+        if (configuration.getRequestRouter() != null) {
             // Setting up request router
-            RequestRouterConfiguration routerConfiguration = getConfiguration().getRequestRouter();
+            RequestRouterConfiguration routerConfiguration = configuration.getRequestRouter();
 
             ProxyServerConfiguration routerProxyConfig = new ProxyServerConfiguration();
             routerProxyConfig.setLocalPort(routerConfiguration.getPort());
