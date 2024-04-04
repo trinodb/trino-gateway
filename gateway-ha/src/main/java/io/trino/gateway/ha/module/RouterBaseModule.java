@@ -13,9 +13,8 @@
  */
 package io.trino.gateway.ha.module;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import io.dropwizard.core.setup.Environment;
-import io.trino.gateway.baseapp.AppModule;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -27,16 +26,15 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
 import org.jdbi.v3.core.Jdbi;
 
 public class RouterBaseModule
-        extends AppModule<HaGatewayConfiguration, Environment>
+        extends AbstractModule
 {
     final ResourceGroupsManager resourceGroupsManager;
     final GatewayBackendManager gatewayBackendManager;
     final QueryHistoryManager queryHistoryManager;
     final JdbcConnectionManager connectionManager;
 
-    public RouterBaseModule(HaGatewayConfiguration configuration, Environment environment)
+    public RouterBaseModule(HaGatewayConfiguration configuration)
     {
-        super(configuration, environment);
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
         connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
