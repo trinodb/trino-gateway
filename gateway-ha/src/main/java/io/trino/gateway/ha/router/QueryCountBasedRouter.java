@@ -14,6 +14,9 @@
 
 package io.trino.gateway.ha.router;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,14 +33,16 @@ public class QueryCountBasedRouter
         extends StochasticRoutingManager
 {
     private static final Logger log = LoggerFactory.getLogger(QueryCountBasedRouter.class);
+    @GuardedBy("this")
     private List<LocalStats> clusterStats;
 
-    List<LocalStats> clusterStats()
+    @VisibleForTesting
+    synchronized List<LocalStats> clusterStats()
     {
-        return clusterStats;
+        return ImmutableList.copyOf(clusterStats);
     }
 
-    class LocalStats
+    static class LocalStats
     {
         private int runningQueryCount;
         private int queuedQueryCount;
@@ -175,7 +180,7 @@ public class QueryCountBasedRouter
     // else we assume it would be scheduled immediately and we increment the stats for the running
     // queries
 
-    private Optional<LocalStats> getClusterToRoute(String user, String routingGroup)
+    private synchronized Optional<LocalStats> getClusterToRoute(String user, String routingGroup)
     {
         log.debug("sorting cluster stats for {} {}", user, routingGroup);
         List<LocalStats> filteredList = clusterStats.stream()
