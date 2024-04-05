@@ -56,6 +56,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
             <optional>true</optional>
@@ -145,11 +150,6 @@
 
         <dependency>
             <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-configuration</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
             <exclusions>
                 <exclusion>
@@ -162,11 +162,6 @@
                     <artifactId>jakarta.servlet-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-jackson</artifactId>
         </dependency>
 
         <dependency>
@@ -233,17 +228,13 @@
         </dependency>
 
         <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
 
         <!-- Prevent a ClassNotFoundException caused by io.dropwizard.jackson.Jackson:newObjectMapper
              calling findModules() indiscriminately-->
+        <!-- io.dropwizard.core.setup.Bootstrap also uses io.dropwizard.jackson.Jackson -->
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
