@@ -13,14 +13,17 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.airlift.log.Logger;
-import io.dropwizard.configuration.ConfigurationException;
-import io.dropwizard.configuration.YamlConfigurationFactory;
-import io.dropwizard.jackson.Jackson;
+
+import java.io.File;
+import java.io.IOException;
 
 public class LdapConfiguration
 {
     private static final Logger log = Logger.get(LdapConfiguration.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
     private String ldapHost;
     private Integer ldapPort;
     private boolean useTls;
@@ -77,17 +80,9 @@ public class LdapConfiguration
     {
         LdapConfiguration configuration = null;
         try {
-            configuration =
-                    new YamlConfigurationFactory<LdapConfiguration>(LdapConfiguration.class,
-                            null,
-                            Jackson.newObjectMapper(), "lb")
-                            .build(new java.io.File(path));
+            configuration = OBJECT_MAPPER.readValue(new File(path), LdapConfiguration.class);
         }
-        catch (java.io.IOException e) {
-            log.error(e, "Error loading configuration file");
-            throw new RuntimeException(e);
-        }
-        catch (ConfigurationException e) {
+        catch (IOException e) {
             log.error(e, "Error loading configuration file");
             throw new RuntimeException(e);
         }
