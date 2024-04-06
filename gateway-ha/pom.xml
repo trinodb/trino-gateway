@@ -18,6 +18,7 @@
         <environments>development</environments>
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
         <frontend.project.name>webapp</frontend.project.name>
+        <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
@@ -601,6 +602,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <arguments>install --ignore-scripts</arguments>
+                            <pnpmRegistryURL>${frontend.pnpmRegistryURL}</pnpmRegistryURL>
                         </configuration>
                     </execution>
                     <execution>
