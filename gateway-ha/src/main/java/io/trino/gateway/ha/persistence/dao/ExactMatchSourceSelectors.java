@@ -26,8 +26,8 @@ public record ExactMatchSourceSelectors(
 {
     public ExactMatchSourceSelectors
     {
-        requireNonNull(resourceGroupId);
-        requireNonNull(updateTime);
-        requireNonNull(source);
+        requireNonNull(resourceGroupId, "resourceGroupId is null");
+        requireNonNull(updateTime, "updateTime is null");
+        requireNonNull(source, "source is null");
     }
 }
