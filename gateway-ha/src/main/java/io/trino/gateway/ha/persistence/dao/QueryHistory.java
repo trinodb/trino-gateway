@@ -14,26 +14,23 @@
 package io.trino.gateway.ha.persistence.dao;
 
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
-import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import static java.util.Objects.requireNonNull;
 
-public record QueryHistory(String queryId, String queryText, String backendUrl, String userName, String source, long created)
+public record QueryHistory(
+        @ColumnName("query_id") String queryId,
+        @ColumnName("query_text") String queryText,
+        @ColumnName("backend_url") String backendUrl,
+        @ColumnName("user_name") String userName,
+        @ColumnName("source") String source,
+        @ColumnName("created") long created)
 {
-    @JdbiConstructor
-    public QueryHistory(
-            @ColumnName("query_id") String queryId,
-            @ColumnName("query_text") String queryText,
-            @ColumnName("backend_url") String backendUrl,
-            @ColumnName("user_name") String userName,
-            @ColumnName("source") String source,
-            @ColumnName("created") long created)
+    public QueryHistory
     {
-        this.queryId = requireNonNull(queryId, "queryId is null");
-        this.queryText = requireNonNull(queryText, "queryText is null");
-        this.backendUrl = requireNonNull(backendUrl, "backendUrl is null");
-        this.userName = requireNonNull(userName, "userName is null");
-        this.source = requireNonNull(source, "source is null");
-        this.created = created;
+        requireNonNull(queryId, "queryId is null");
+        requireNonNull(queryText, "queryText is null");
+        requireNonNull(backendUrl, "backendUrl is null");
+        requireNonNull(userName, "userName is null");
+        requireNonNull(source, "source is null");
     }
 }
