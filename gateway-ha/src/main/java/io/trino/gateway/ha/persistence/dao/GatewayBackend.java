@@ -14,24 +14,21 @@
 package io.trino.gateway.ha.persistence.dao;
 
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
-import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import static java.util.Objects.requireNonNull;
 
-public record GatewayBackend(String name, String routingGroup, String backendUrl, String externalUrl, boolean active)
+public record GatewayBackend(
+        @ColumnName("name") String name,
+        @ColumnName("routing_group") String routingGroup,
+        @ColumnName("backend_url") String backendUrl,
+        @ColumnName("external_url") String externalUrl,
+        @ColumnName("active") boolean active)
 {
-    @JdbiConstructor
-    public GatewayBackend(
-            @ColumnName("name") String name,
-            @ColumnName("routing_group") String routingGroup,
-            @ColumnName("backend_url") String backendUrl,
-            @ColumnName("external_url") String externalUrl,
-            @ColumnName("active") boolean active)
+    public GatewayBackend
     {
-        this.name = requireNonNull(name, "name is null");
-        this.routingGroup = requireNonNull(routingGroup, "routingGroup is null");
-        this.backendUrl = requireNonNull(backendUrl, "backendUrl is null");
-        this.externalUrl = requireNonNull(externalUrl, "externalUrl is null");
-        this.active = active;
+        requireNonNull(name, "name is null");
+        requireNonNull(routingGroup, "routingGroup is null");
+        requireNonNull(backendUrl, "backendUrl is null");
+        requireNonNull(externalUrl, "externalUrl is null");
     }
 }

@@ -17,11 +17,9 @@ import org.jdbi.v3.core.config.ConfigRegistry;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.mapper.RowMapperFactory;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
-import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import java.lang.reflect.Type;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class RecordAndAnnotatedConstructorMapper
         implements RowMapperFactory
@@ -29,15 +27,9 @@ public class RecordAndAnnotatedConstructorMapper
     @Override
     public Optional<RowMapper<?>> build(Type type, ConfigRegistry config)
     {
-        if ((type instanceof Class<?> clazz) && (clazz.isRecord() || hasJdbiConstructorMethod(clazz))) {
+        if ((type instanceof Class<?> clazz) && clazz.isRecord()) {
             return ConstructorMapper.factory(clazz).build(type, config);
         }
         return Optional.empty();
-    }
-
-    private boolean hasJdbiConstructorMethod(Class<?> clazz)
-    {
-        return Stream.of(clazz.getConstructors()).anyMatch(constructor -> (constructor.getAnnotation(JdbiConstructor.class) != null))
-                || Stream.of(clazz.getMethods()).anyMatch(method -> (method.getAnnotation(JdbiConstructor.class) != null));
     }
 }
