@@ -34,7 +34,7 @@ public record ResourceGroups(
 {
     public ResourceGroups
     {
-        requireNonNull(name);
-        requireNonNull(softMemoryLimit);
+        requireNonNull(name, "name is null");
+        requireNonNull(softMemoryLimit, "softMemoryLimit is null");
     }
 }

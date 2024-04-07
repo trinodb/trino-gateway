@@ -14,18 +14,16 @@
 package io.trino.gateway.ha.persistence.dao;
 
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
-import org.jdbi.v3.core.mapper.reflect.JdbiConstructor;
 
 import static java.util.Objects.requireNonNull;
 
-public record ResourceGroupsGlobalProperties(String name, String value)
+public record ResourceGroupsGlobalProperties(
+        @ColumnName("name") String name,
+        @ColumnName("value") String value)
 {
-    @JdbiConstructor
-    public ResourceGroupsGlobalProperties(
-            @ColumnName("name") String name,
-            @ColumnName("value") String value)
+    public ResourceGroupsGlobalProperties
     {
-        this.name = requireNonNull(name, "name is null");
-        this.value = requireNonNull(value, "value is null");
+        requireNonNull(name, "name is null");
+        requireNonNull(value, "value is null");
     }
 }
