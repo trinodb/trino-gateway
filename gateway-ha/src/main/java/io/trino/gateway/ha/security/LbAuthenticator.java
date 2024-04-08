@@ -48,6 +48,10 @@ public class LbAuthenticator
                 .map(c -> c.get(userIdField))
                 .map(Object::toString)
                 .map(s -> s.replace("\"", ""))
-                .map(sub -> new LbPrincipal(sub, authorizationManager.getPrivileges(sub)));
+                .map(sub -> {
+                    Optional<String> privileges = authorizationManager.getPrivileges(sub);
+                    Optional<String> roles = authorizationManager.parsePrivilegesToRoles(privileges);
+                    return new LbPrincipal(sub, privileges, roles);
+                });
     }
 }

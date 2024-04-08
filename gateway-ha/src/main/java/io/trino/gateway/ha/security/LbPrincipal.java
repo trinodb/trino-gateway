@@ -22,11 +22,13 @@ public class LbPrincipal
 {
     private final String name;
     private final Optional<String> memberOf;
+    private final Optional<String> roles;
 
-    public LbPrincipal(String name, Optional<String> memberOf)
+    public LbPrincipal(String name, Optional<String> memberOf, Optional<String> roles)
     {
         this.name = name;
         this.memberOf = memberOf;
+        this.roles = roles;
     }
 
     @Override
@@ -57,5 +59,10 @@ public class LbPrincipal
     public Optional<String> getMemberOf()
     {
         return this.memberOf;
+    }
+
+    public Optional<String> getRoles()
+    {
+        return this.roles;
     }
 }

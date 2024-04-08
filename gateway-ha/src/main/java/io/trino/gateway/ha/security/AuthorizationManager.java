@@ -24,6 +24,7 @@ public class AuthorizationManager
 {
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
+    private final LbLdapParser lbLdapParser;
 
     public AuthorizationManager(AuthorizationConfiguration configuration,
             Map<String, UserConfiguration> presetUsers)
@@ -31,9 +32,11 @@ public class AuthorizationManager
         this.presetUsers = presetUsers;
         if (configuration != null && configuration.getLdapConfigPath() != null) {
             lbLdapClient = new LbLdapClient(LdapConfiguration.load(configuration.getLdapConfigPath()));
+            lbLdapParser = new LbLdapParser(configuration);
         }
         else {
             lbLdapClient = null;
+            lbLdapParser = null;
         }
     }
 
@@ -50,5 +53,10 @@ public class AuthorizationManager
             privs = lbLdapClient.getMemberOf(username);
         }
         return Optional.ofNullable(privs);
+    }
+
+    public Optional<String> parsePrivilegesToRoles(Optional<String> privileges)
+    {
+        return privileges.map(lbLdapParser::parse);
     }
 }

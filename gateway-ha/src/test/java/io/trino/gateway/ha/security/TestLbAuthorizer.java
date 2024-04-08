@@ -41,7 +41,7 @@ public class TestLbAuthorizer
     public static void setup()
     {
         configuration = new AuthorizationConfiguration();
-        principal = new LbPrincipal(USER, Optional.of(PVFX_DATA_31));
+        principal = new LbPrincipal(USER, Optional.of(PVFX_DATA_31), Optional.of("USER"));
     }
 
     static void configureRole(String regex, String role)

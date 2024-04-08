@@ -111,7 +111,7 @@ public class GatewayWebAppResource
     public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
         LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
-        String[] roles = principal.getMemberOf().orElse("").split("_");
+        String[] roles = principal.getRoles().orElse("").split("_");
         if (!Arrays.asList(roles).contains("ADMIN")) {
             query.setUser(principal.getName());
         }

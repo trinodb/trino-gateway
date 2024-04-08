@@ -107,7 +107,7 @@ public class LoginResource
     public Response restUserinfo(@Context SecurityContext securityContext)
     {
         LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
-        List<String> roles = List.of(principal.getMemberOf().map(String::toLowerCase).orElse("").split("_"));
+        List<String> roles = List.of(principal.getRoles().orElse("").split("_"));
         List<String> pagePermissions;
         if (formAuthManager != null) {
             pagePermissions = formAuthManager.processPagePermissions(roles);

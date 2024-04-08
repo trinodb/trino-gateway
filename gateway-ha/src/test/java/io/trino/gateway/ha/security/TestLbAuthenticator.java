@@ -70,7 +70,7 @@ public class TestLbAuthenticator
                 .when(authentication.getUserIdField())
                 .thenReturn("sub");
 
-        LbPrincipal principal = new LbPrincipal(USER, MEMBER_OF);
+        LbPrincipal principal = new LbPrincipal(USER, MEMBER_OF, Optional.of("USER"));
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 

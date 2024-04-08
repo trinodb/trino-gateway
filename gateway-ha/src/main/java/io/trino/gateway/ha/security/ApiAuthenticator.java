@@ -37,8 +37,11 @@ public class ApiAuthenticator
             throws AuthenticationException
     {
         if (formAuthManager.authenticate(credentials)) {
+            Optional<String> privileges = authorizationManager.getPrivileges(credentials.getUsername());
+            Optional<String> roles = authorizationManager.parsePrivilegesToRoles(privileges);
             return Optional.of(new LbPrincipal(credentials.getUsername(),
-                    authorizationManager.getPrivileges(credentials.getUsername())));
+                    privileges,
+                    roles));
         }
         return Optional.empty();
     }
