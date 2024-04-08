@@ -14,8 +14,6 @@
 package io.trino.gateway.ha;
 
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.config.DataStoreConfiguration;
-import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -23,7 +21,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.javalite.activejdbc.Base;
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
@@ -50,12 +48,11 @@ public class HaGatewayTestUtils
     public static void seedRequiredData(TestConfig testConfig)
     {
         String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
-        connectionManager.open();
-        Base.exec(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"));
-        connectionManager.close();
+        try (Handle handle = jdbi.open()) {
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
+                    .execute();
+        }
     }
 
     public static void prepareMockBackend(

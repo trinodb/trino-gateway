@@ -178,5 +178,29 @@ The LDAP config file should have the following contents:
   groupUserRoleMap: <regex to map group => role>
   groupApiRoleMap: <regex to map group => role>
 ```
+
 The group mappings will grant ADMIN, USER, or API roles when the `groupMemberAttribute` of the user matches the corresponding regular expression.
 - Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for a configuration example
+
+
+## Web page permissions
+
+By default, all pages are accessible to all roles.
+To limit page access, you can set page permissions by pages 
+and `_` as separator field.
+
+The following pages are available:
+- `dashboard`
+- `cluster`
+- `resource-group`
+- `selector`
+- `history`
+
+```yaml
+# admin/api can access all pages, while user can only access dashboard/history
+pagePermissions:
+  admin: 
+  user: dashboard_history 
+  api: 
+```
+

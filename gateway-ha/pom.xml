@@ -18,13 +18,12 @@
         <environments>development</environments>
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
         <frontend.project.name>webapp</frontend.project.name>
+        <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
-        <dep.activejdbc.version>2.3</dep.activejdbc.version>
-        <dep.jdbi.version>3.44.0</dep.jdbi.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.8.0</dep.mockito.version>
-        <dep.okhttp3.version>3.14.9</dep.okhttp3.version>
+        <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
         <dep.mysqlconnector.version>8.0.33</dep.mysqlconnector.version>
     </properties>
 
@@ -54,6 +53,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_annotations</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -314,23 +319,14 @@
             <artifactId>jersey-server</artifactId>
         </dependency>
 
-        <!--db -->
-        <dependency>
-            <groupId>org.javalite</groupId>
-            <artifactId>activejdbc</artifactId>
-            <version>${dep.activejdbc.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-core</artifactId>
-            <version>${dep.jdbi.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.jdbi</groupId>
             <artifactId>jdbi3-sqlobject</artifactId>
-            <version>${dep.jdbi.version}</version>
         </dependency>
 
         <dependency>
@@ -349,18 +345,6 @@
             <groupId>org.jeasy</groupId>
             <artifactId>easy-rules-support</artifactId>
             <version>${dep.jeasy.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-            <version>0.9.10</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.code.findbugs</groupId>
-                    <artifactId>annotations</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -500,20 +484,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.javalite</groupId>
-                <artifactId>activejdbc-instrumentation</artifactId>
-                <version>${dep.activejdbc.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>instrument</goal>
-                        </goals>
-                        <phase>process-classes</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -620,6 +590,7 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <arguments>install --ignore-scripts</arguments>
+                            <pnpmRegistryURL>${frontend.pnpmRegistryURL}</pnpmRegistryURL>
                         </configuration>
                     </execution>
                     <execution>
@@ -632,23 +603,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.javalite</groupId>
-                <artifactId>db-migrator-maven-plugin</artifactId>
-                <version>${dep.activejdbc.version}</version>
-                <configuration>
-                    <configFile>${project.basedir}/src/migrations/database.properties</configFile>
-                    <environments>${environments}</environments>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>mysql</groupId>
-                        <artifactId>mysql-connector-java</artifactId>
-                        <version>${dep.mysqlconnector.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

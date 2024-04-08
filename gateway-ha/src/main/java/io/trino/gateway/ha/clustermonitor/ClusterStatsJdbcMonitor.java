@@ -56,7 +56,7 @@ public class ClusterStatsJdbcMonitor
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
         String url = backend.getProxyTo();
-        ClusterStats.Builder clusterStats = ClusterStats.builder(backend.getName());
+        ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         String jdbcUrl;
         try {
             URL parsedUrl = new URL(url);

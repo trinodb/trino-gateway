@@ -2,3 +2,6 @@ target/**
 **/target/**
 .idea/**
 *.iml
+/**/var/
+
+gateway-ha/**/static/**

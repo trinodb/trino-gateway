@@ -33,13 +33,13 @@ export type RouterItems = (RouterItem | SubRouterItem)[]
 
 export const routers: RouterItems = [
   {
-    itemKey: '',
+    itemKey: 'dashboard',
     text: Locale.Menu.Sider.Dashboard,
     icon: <IconIntro className={styles.icon} />,
     // Role.****
     roles: [],
     routeProps: {
-      path: '/',
+      path: '/dashboard',
       element: < Dashboard />
     },
   },

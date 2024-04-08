@@ -28,11 +28,6 @@ import static io.airlift.configuration.ConfigurationLoader.getSystemProperties;
 public class HaGatewayLauncher
         extends BaseApp<HaGatewayConfiguration>
 {
-    public HaGatewayLauncher(String... basePackages)
-    {
-        super(basePackages);
-    }
-
     @Override
     public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap)
     {
@@ -51,8 +46,6 @@ public class HaGatewayLauncher
         Logging logging = Logging.initialize();
         logging.configure(configuration);
 
-        /* base package is scanned for any Resource class to be loaded by default. */
-        String basePackage = "io.trino";
-        new HaGatewayLauncher(basePackage).run(args);
+        new HaGatewayLauncher().run(args);
     }
 }

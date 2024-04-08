@@ -55,8 +55,7 @@ public class ClusterStatsHttpMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        ClusterStats.Builder clusterStats = ClusterStats.builder(backend.getName());
-
+        ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         // Fetch Cluster level Stats.
         String response = queryCluster(backend, UI_API_STATS_PATH);
         if (Strings.isNullOrEmpty(response)) {

@@ -14,6 +14,8 @@
 package io.trino.gateway.baseapp;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.MoreCollectors;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -27,18 +29,22 @@ import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.trino.gateway.ha.log.GatewayRequestLogFactory;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.ext.Provider;
+import io.trino.gateway.ha.module.RouterBaseModule;
+import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
+import io.trino.gateway.ha.resource.EntityEditorResource;
+import io.trino.gateway.ha.resource.GatewayResource;
+import io.trino.gateway.ha.resource.GatewayViewResource;
+import io.trino.gateway.ha.resource.GatewayWebAppResource;
+import io.trino.gateway.ha.resource.HaGatewayResource;
+import io.trino.gateway.ha.resource.LoginResource;
+import io.trino.gateway.ha.resource.PublicResource;
+import io.trino.gateway.ha.resource.TrinoResource;
+import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.scanners.TypeAnnotationsScanner;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
-import org.reflections.util.FilterBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -57,31 +63,35 @@ public abstract class BaseApp<T extends AppConfiguration>
         extends Application<T>
 {
     private static final Logger logger = Logger.get(BaseApp.class);
-
-    private final Reflections reflections;
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
 
-    protected BaseApp(String... basePackages)
+    private AppModule newModule(String clazz, T configuration, Environment environment)
     {
-        final ConfigurationBuilder confBuilder = new ConfigurationBuilder();
-        final FilterBuilder filterBuilder = new FilterBuilder();
-
-        if (basePackages.length == 0) {
-            basePackages = new String[] {};
+        try {
+            logger.info("Trying to load module [%s]", clazz);
+            Object module =
+                    Class.forName(clazz)
+                            .getConstructor(configuration.getClass(), Environment.class)
+                            .newInstance(configuration, environment);
+            return ((AppModule) module);
         }
-
-        logger.info("op=create auto_scan_packages=%s", basePackages);
-
-        for (String basePkg : basePackages) {
-            confBuilder.addUrls(ClasspathHelper.forPackage(basePkg));
-            filterBuilder.include(FilterBuilder.prefix(basePkg));
+        catch (Exception e) {
+            logger.error(e, "Could not instantiate module [%s]", clazz);
+            onFatalError(e);
         }
+        return null;
+    }
 
-        confBuilder
-                .filterInputsBy(filterBuilder)
-                .setScanners(new SubTypesScanner(), new TypeAnnotationsScanner());
-
-        this.reflections = new Reflections(confBuilder);
+    private void validateModules(List<AppModule> modules, T configuration, Environment environment)
+    {
+        Optional<AppModule> routerProvider = modules.stream()
+                .filter(module -> module instanceof RouterBaseModule)
+                .collect(MoreCollectors.toOptional());
+        if (routerProvider.isEmpty()) {
+            logger.warn("Router provider doesn't exist in the config, using the StochasticRoutingManagerProvider");
+            String clazz = StochasticRoutingManagerProvider.class.getCanonicalName();
+            modules.add(newModule(clazz, configuration, environment));
+        }
     }
 
     @Override // Using Airlift logger
@@ -135,18 +145,11 @@ public abstract class BaseApp<T extends AppConfiguration>
             return modules;
         }
         for (String clazz : configuration.getModules()) {
-            try {
-                logger.info("Trying to load module [%s]", clazz);
-                Object ob =
-                        Class.forName(clazz)
-                                .getConstructor(configuration.getClass(), Environment.class)
-                                .newInstance(configuration, environment);
-                modules.add((AppModule) ob);
-            }
-            catch (Exception e) {
-                logger.error(e, "Could not instantiate module [%s]", clazz);
-            }
+            modules.add(newModule(clazz, configuration, environment));
         }
+
+        validateModules(modules, configuration, environment);
+
         return modules;
     }
 
@@ -180,7 +183,7 @@ public abstract class BaseApp<T extends AppConfiguration>
 
     private void registerProviders(Environment environment, Injector injector)
     {
-        final Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Provider.class);
+        final Set<Class<?>> classes = ImmutableSet.of(AuthorizedExceptionMapper.class);
         classes.forEach(
                 c -> {
                     environment.jersey().register(injector.getInstance(c));
@@ -190,7 +193,15 @@ public abstract class BaseApp<T extends AppConfiguration>
 
     private void registerResources(Environment environment, Injector injector)
     {
-        final Set<Class<?>> classes = reflections.getTypesAnnotatedWith(Path.class);
+        final Set<Class<?>> classes = ImmutableSet.of(
+                EntityEditorResource.class,
+                GatewayResource.class,
+                GatewayViewResource.class,
+                GatewayWebAppResource.class,
+                HaGatewayResource.class,
+                LoginResource.class,
+                PublicResource.class,
+                TrinoResource.class);
         classes.forEach(
                 c -> {
                     environment.jersey().register(injector.getInstance(c));
