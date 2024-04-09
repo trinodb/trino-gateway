@@ -42,8 +42,7 @@ export function Selector() {
             selectorDeleteApi({
               useSchema: useSchema,
               data: record
-            }).then(data => {
-              console.log(data);
+            }).then(() => {
               list();
             }).catch(() => { });
           }}
@@ -109,8 +108,7 @@ export function Selector() {
               selectorSaveApi({
                 useSchema: useSchema,
                 data: values
-              }).then(data => {
-                console.log(data);
+              }).then(() => {
                 list();
                 setVisibleForm(false);
               }).catch(() => { });
@@ -119,8 +117,7 @@ export function Selector() {
                 useSchema: useSchema,
                 data: values,
                 oldData: form
-              }).then(data => {
-                console.log(data);
+              }).then(() => {
                 list();
                 setVisibleForm(false);
               }).catch(() => { });
