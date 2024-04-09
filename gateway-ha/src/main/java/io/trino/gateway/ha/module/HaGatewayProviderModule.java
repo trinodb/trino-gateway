@@ -19,7 +19,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.server.SimpleServerFactory;
-import io.dropwizard.core.setup.Environment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
@@ -72,12 +71,10 @@ public class HaGatewayProviderModule
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final List<String> extraWhitelistPaths;
     private final HaGatewayConfiguration configuration;
-    private final Environment environment;
 
-    public HaGatewayProviderModule(HaGatewayConfiguration configuration, Environment environment)
+    public HaGatewayProviderModule(HaGatewayConfiguration configuration)
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
-        this.environment = requireNonNull(environment, "environment is null");
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
@@ -145,9 +142,7 @@ public class HaGatewayProviderModule
     private ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
                                          RoutingManager routingManager)
     {
-        ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create(
-                environment,
-                configuration.getRequestRouter().getName() + ".requests");
+        ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create();
 
         // By default, use routing group header to route
         RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
