@@ -27,8 +27,7 @@ export const RootLayout = (props: {
   }, [location]);
 
   const logout = () => {
-    logoutApi({}).then(data => {
-      console.log(data);
+    logoutApi({}).then(() => {
       access.updateToken("");
       Toast.success(Locale.Auth.LogoutSuccess);
     }).catch(() => { });
@@ -112,7 +111,6 @@ export const RootLayout = (props: {
               mode="vertical"
               className={styles.nav}
               isCollapsed={collapsed}
-              onCollapseChange={(e) => { console.log(e) }}
               renderWrapper={({ itemElement, props }) => {
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore

@@ -44,8 +44,7 @@ export function ResourceGroup() {
               data: {
                 resourceGroupId: record.resourceGroupId
               }
-            }).then(data => {
-              console.log(data);
+            }).then(() => {
               list();
             }).catch(() => { });
           }}
@@ -117,8 +116,7 @@ export function ResourceGroup() {
               resourceGroupSaveApi({
                 useSchema: useSchema,
                 data: values
-              }).then(data => {
-                console.log(data);
+              }).then(() => {
                 list();
                 setVisibleForm(false);
               }).catch(() => { });
@@ -126,8 +124,7 @@ export function ResourceGroup() {
               resourceGroupUpdateApi({
                 useSchema: useSchema,
                 data: values
-              }).then(data => {
-                console.log(data);
+              }).then(() => {
                 list();
                 setVisibleForm(false);
               }).catch(() => { });
