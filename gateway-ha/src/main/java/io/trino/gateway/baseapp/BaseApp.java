@@ -68,23 +68,21 @@ public abstract class BaseApp
     private static final Logger logger = Logger.get(BaseApp.class);
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
 
-    private Module newModule(String clazz, HaGatewayConfiguration configuration, Environment environment)
+    private Module newModule(String clazz, HaGatewayConfiguration configuration)
     {
         try {
             logger.info("Trying to load module [%s]", clazz);
-            // Modules must have exactly one constructor. The signature must be either one:
+            // Modules must have exactly one constructor. The signature must be:
             // public Module constructor(HaGatewayConfiguration)
-            // public Module constructor(HaGatewayConfiguration, Environment)
             Constructor<?>[] constructors = Class.forName(clazz).getConstructors();
             if (constructors.length != 1) {
                 throw new RuntimeException(format("Failed to load module [%s]. Multiple constructors exist.", clazz));
             }
             Constructor<?> constructor = constructors[0];
-            Object module = switch (constructor.getParameterCount()) {
-                case 1 -> constructor.newInstance(configuration);
-                case 2 -> constructor.newInstance(configuration, environment);
-                default -> throw new RuntimeException(format("Failed to load module [%s]. Unsupported constructor.", clazz));
-            };
+            if (constructor.getParameterCount() != 1) {
+                throw new RuntimeException(format("Failed to load module [%s]. Unsupported constructor.", clazz));
+            }
+            Object module = constructor.newInstance(configuration);
             return ((Module) module);
         }
         catch (Exception e) {
@@ -94,7 +92,7 @@ public abstract class BaseApp
         return null;
     }
 
-    private void validateModules(List<Module> modules, HaGatewayConfiguration configuration, Environment environment)
+    private void validateModules(List<Module> modules, HaGatewayConfiguration configuration)
     {
         Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
@@ -102,7 +100,7 @@ public abstract class BaseApp
         if (routerProvider.isEmpty()) {
             logger.warn("Router provider doesn't exist in the config, using the StochasticRoutingManagerProvider");
             String clazz = StochasticRoutingManagerProvider.class.getCanonicalName();
-            modules.add(newModule(clazz, configuration, environment));
+            modules.add(newModule(clazz, configuration));
         }
     }
 
@@ -126,8 +124,7 @@ public abstract class BaseApp
 
     private void configureGuice(HaGatewayConfiguration configuration, Environment environment)
     {
-        appModules.add(new MetricRegistryModule(environment.metrics()));
-        appModules.addAll(addModules(configuration, environment));
+        appModules.addAll(addModules(configuration));
         Injector injector = Guice.createInjector(appModules.build());
         injector.injectMembers(this);
         registerWithInjector(configuration, environment, injector);
@@ -149,7 +146,7 @@ public abstract class BaseApp
      * @param configuration the app configuration
      * @return a list of modules to be provisioned by Guice
      */
-    protected List<Module> addModules(HaGatewayConfiguration configuration, Environment environment)
+    protected List<Module> addModules(HaGatewayConfiguration configuration)
     {
         List<Module> modules = new ArrayList<>();
         if (configuration.getModules() == null) {
@@ -157,10 +154,10 @@ public abstract class BaseApp
             return modules;
         }
         for (String clazz : configuration.getModules()) {
-            modules.add(newModule(clazz, configuration, environment));
+            modules.add(newModule(clazz, configuration));
         }
 
-        validateModules(modules, configuration, environment);
+        validateModules(modules, configuration);
 
         return modules;
     }
