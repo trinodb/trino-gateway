@@ -15,10 +15,11 @@ package io.trino.gateway.ha.clustermonitor;
 
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
-import io.dropwizard.lifecycle.Managed;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class ActiveClusterMonitor
-        implements Managed
 {
     public static final int MONITOR_TASK_DELAY_SECONDS = 60;
     public static final int DEFAULT_THREAD_POOL_SIZE = 20;
@@ -60,7 +60,7 @@ public class ActiveClusterMonitor
     /**
      * Run an app that queries all active trino clusters for stats.
      */
-    @Override
+    @PostConstruct
     public void start()
     {
         singleTaskExecutor.submit(
@@ -104,7 +104,7 @@ public class ActiveClusterMonitor
     /**
      * Shut down the app.
      */
-    @Override
+    @PreDestroy
     public void stop()
     {
         this.monitorActive = false;
