@@ -52,8 +52,7 @@ export function Cluster() {
           position="bottomRight"
           onConfirm={() => {
             backendDeleteApi({ name: record.name })
-              .then(data => {
-                console.log(data)
+              .then(() => {
                 list();
               }).catch(() => { });
           }}
@@ -116,15 +115,13 @@ export function Cluster() {
           onSubmit={(values) => {
             if (form === undefined) {
               backendSaveApi(values)
-                .then(data => {
-                  console.log(data);
+                .then(() => {
                   list();
                   setVisibleForm(false);
                 }).catch(() => { });
             } else {
               backendUpdateApi(values)
-                .then(data => {
-                  console.log(data);
+                .then(() => {
                   list();
                   setVisibleForm(false);
                 }).catch(() => { });
@@ -192,8 +189,7 @@ const SwitchRender = (props: {
     setLoading(true);
     props.record.active = v;
     backendUpdateApi(props.record)
-      .then(data => {
-        console.log(data);
+      .then(() => {
         setLoading(false);
         props.list();
       }).catch(() => { });
