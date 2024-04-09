@@ -14,13 +14,13 @@
 package io.trino.gateway.ha;
 
 import com.google.inject.Inject;
-import io.dropwizard.lifecycle.Managed;
 import io.trino.gateway.proxyserver.ProxyServer;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 import static java.util.Objects.requireNonNull;
 
 public class GatewayManagedApp
-        implements Managed
 {
     private final ProxyServer gateway;
 
@@ -30,13 +30,13 @@ public class GatewayManagedApp
         this.gateway = requireNonNull(gateway, "gateway is null");
     }
 
-    @Override
+    @PostConstruct
     public void start()
     {
         gateway.start();
     }
 
-    @Override
+    @PreDestroy
     public void stop()
     {
         gateway.close();
