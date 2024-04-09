@@ -156,7 +156,7 @@ public class TestQueryCountBasedRouter
                 .build();
 
         queryCountBasedRouter = new QueryCountBasedRouter(null, null);
-        queryCountBasedRouter.upateBackEndStats(clusters);
+        queryCountBasedRouter.updateBackEndStats(clusters);
     }
 
     @Test
@@ -227,7 +227,7 @@ public class TestQueryCountBasedRouter
                 .addAll(clusters)
                 .add(getClusterWithNoUserQueueAndMinQueueCount())
                 .build();
-        queryCountBasedRouter.upateBackEndStats(clusters);
+        queryCountBasedRouter.updateBackEndStats(clusters);
 
         String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
         assertThat(BACKEND_URL_4).isEqualTo(proxyTo);
@@ -244,7 +244,7 @@ public class TestQueryCountBasedRouter
                 .add(getClusterWithMinRunnningQueries())
                 .build();
 
-        queryCountBasedRouter.upateBackEndStats(clusters);
+        queryCountBasedRouter.updateBackEndStats(clusters);
 
         String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
         assertThat(BACKEND_URL_5).isEqualTo(proxyTo);

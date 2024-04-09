@@ -232,7 +232,7 @@ public class QueryCountBasedRouter
     }
 
     @Override
-    public synchronized void upateBackEndStats(List<ClusterStats> stats)
+    public synchronized void updateBackEndStats(List<ClusterStats> stats)
     {
         clusterStats = stats.stream().map(a -> new LocalStats(a)).collect(Collectors.toList());
     }
