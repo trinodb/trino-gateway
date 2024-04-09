@@ -33,7 +33,6 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
-import io.trino.gateway.ha.security.LbPrincipal;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -46,7 +45,6 @@ import jakarta.ws.rs.core.SecurityContext;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -110,10 +108,8 @@ public class GatewayWebAppResource
     @Path("/findQueryHistory")
     public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
-        LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
-        String[] roles = principal.getMemberOf().orElse("").split("_");
-        if (!Arrays.asList(roles).contains("ADMIN")) {
-            query.setUser(principal.getName());
+        if (!securityContext.isUserInRole("ADMIN")) {
+            query.setUser(securityContext.getUserPrincipal().getName());
         }
         TableData<?> queryHistory = queryHistoryManager.findQueryHistory(query);
         return Response.ok(Result.ok(queryHistory)).build();
