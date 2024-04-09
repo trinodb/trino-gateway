@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 public class TestClusterStateListenerModule
 {
     @Test
-    public void testGetClusterStatsObservers()
+    public void testClusterStateListenerModule()
     {
         HaGatewayConfiguration config = mock(HaGatewayConfiguration.class);
         MonitorConfiguration monitorConfig = mock(MonitorConfiguration.class);

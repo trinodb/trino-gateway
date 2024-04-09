@@ -34,8 +34,10 @@ public class TestEmailNotifier
     @Test
     public void testSendNotificationCustomContent()
     {
-        NotifierConfiguration notifierConfiguration = mock(NotifierConfiguration.class);
-        when(notifierConfiguration.getCustomContent()).thenReturn("Custom content");
+        NotifierConfiguration notifierConfiguration = new NotifierConfiguration();
+        List<String> recipients = Arrays.asList("recipient1@example.com", "recipient2@example.com");
+        notifierConfiguration.setRecipients(recipients);
+        notifierConfiguration.setCustomContent("Custom content");
 
         EmailNotifier emailNotifier = new EmailNotifier(notifierConfiguration);
 
@@ -45,8 +47,10 @@ public class TestEmailNotifier
     @Test
     public void testSendNotificationNoCustomContent()
     {
-        NotifierConfiguration notifierConfiguration = mock(NotifierConfiguration.class);
-        when(notifierConfiguration.getCustomContent()).thenReturn(null);
+        NotifierConfiguration notifierConfiguration = new NotifierConfiguration();
+        List<String> recipients = Arrays.asList("recipient1@example.com", "recipient2@example.com");
+        notifierConfiguration.setRecipients(recipients);
+        notifierConfiguration.setCustomContent(null);
 
         EmailNotifier emailNotifier = new EmailNotifier(notifierConfiguration);
 
@@ -56,9 +60,9 @@ public class TestEmailNotifier
     @Test
     public void testSendEmailNotification()
     {
-        NotifierConfiguration notifierConfiguration = Mockito.mock(NotifierConfiguration.class);
+        NotifierConfiguration notifierConfiguration = new NotifierConfiguration();
         List<String> recipients = Arrays.asList("recipient1@example.com", "recipient2@example.com");
-        when(notifierConfiguration.getRecipients()).thenReturn(recipients);
+        notifierConfiguration.setRecipients(recipients);
 
         EmailNotifier emailNotifier = Mockito.mock(EmailNotifier.class);
 
