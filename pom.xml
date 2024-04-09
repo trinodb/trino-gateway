@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>151</version>
+        <version>156</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -44,6 +44,7 @@
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
+        <dep.jetty.version>12.0.9</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -51,15 +52,23 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>240</version>
+                <version>248</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
 
             <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-dependencies</artifactId>
-                <version>4.0.6</version>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${dep.jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-bom</artifactId>
+                <version>${dep.jetty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -81,9 +90,15 @@
             </dependency>
 
             <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>2.1.2</version>
+                <groupId>io.airlift</groupId>
+                <artifactId>units</artifactId>
+                <version>1.10</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>3.1.6</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
