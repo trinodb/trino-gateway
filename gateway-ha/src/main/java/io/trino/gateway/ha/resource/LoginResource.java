@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.resource;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
@@ -107,7 +108,17 @@ public class LoginResource
     public Response restUserinfo(@Context SecurityContext securityContext)
     {
         LbPrincipal principal = (LbPrincipal) securityContext.getUserPrincipal();
-        List<String> roles = List.of(principal.getMemberOf().map(String::toLowerCase).orElse("").split("_"));
+        ImmutableList.Builder<String> rolesBuilder = ImmutableList.builder();
+        if (securityContext.isUserInRole("ADMIN")) {
+            rolesBuilder.add("ADMIN");
+        }
+        if (securityContext.isUserInRole("USER")) {
+            rolesBuilder.add("USER");
+        }
+        if (securityContext.isUserInRole("API")) {
+            rolesBuilder.add("API");
+        }
+        List<String> roles = rolesBuilder.build();
         List<String> pagePermissions;
         if (formAuthManager != null) {
             pagePermissions = formAuthManager.processPagePermissions(roles);
