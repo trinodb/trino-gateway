@@ -22,12 +22,10 @@ import com.google.inject.Module;
 import io.airlift.log.Logger;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.Configuration;
-import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.log.GatewayRequestLogFactory;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import io.trino.gateway.ha.resource.EntityEditorResource;
@@ -118,7 +116,6 @@ public abstract class BaseApp
     public void run(HaGatewayConfiguration configuration, Environment environment)
             throws Exception
     {
-        ((DefaultServerFactory) configuration.getServerFactory()).setRequestLogFactory(new GatewayRequestLogFactory());
         configureGuice(configuration, environment);
     }
 
