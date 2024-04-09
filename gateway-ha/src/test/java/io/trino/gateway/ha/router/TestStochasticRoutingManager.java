@@ -55,7 +55,7 @@ public class TestStochasticRoutingManager
             proxyBackend.setExternalUrl("trino.example.com");
             backendManager.addBackend(proxyBackend);
             //set backend as healthy start with
-            haRoutingManager.upateBackEndHealth(backend, true);
+            haRoutingManager.updateBackEndHealth(backend, true);
         }
 
         //Keep only 1st backend as healthy, mark all the others as unhealthy
@@ -63,7 +63,7 @@ public class TestStochasticRoutingManager
 
         for (int i = 1; i < numBackends; i++) {
             backend = groupName + i;
-            haRoutingManager.upateBackEndHealth(backend, false);
+            haRoutingManager.updateBackEndHealth(backend, false);
         }
 
         assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, ""))

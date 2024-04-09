@@ -124,16 +124,16 @@ public abstract class RoutingManager
         return backendAddress;
     }
 
-    public void upateBackEndHealth(String backendId, Boolean value)
+    public void updateBackEndHealth(String backendId, Boolean value)
     {
         log.info("backend %s isHealthy %s", backendId, value);
         backendToHealth.put(backendId, value);
     }
 
-    public void upateBackEndStats(List<ClusterStats> stats)
+    public void updateBackEndStats(List<ClusterStats> stats)
     {
         for (ClusterStats clusterStats : stats) {
-            upateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
+            updateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
         }
     }
 
