@@ -108,10 +108,18 @@ public class GatewayWebAppResource
     @Path("/findQueryHistory")
     public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
+        TableData<?> queryHistory;
         if (!securityContext.isUserInRole("ADMIN")) {
-            query.setUser(securityContext.getUserPrincipal().getName());
+            queryHistory = queryHistoryManager.findQueryHistory(new QueryHistoryRequest(
+                    query.page(),
+                    query.size(),
+                    securityContext.getUserPrincipal().getName(),
+                    query.backendUrl(),
+                    query.queryId()));
         }
-        TableData<?> queryHistory = queryHistoryManager.findQueryHistory(query);
+        else {
+            queryHistory = queryHistoryManager.findQueryHistory(query);
+        }
         return Response.ok(Result.ok(queryHistory)).build();
     }
 
@@ -127,7 +135,7 @@ public class GatewayWebAppResource
         Map<String, String> urlToNameMap = allBackends
                 .stream().collect(Collectors.toMap(ProxyBackendConfiguration::getProxyTo, ProxyBackendConfiguration::getName, (o, n) -> n));
         Map<Boolean, List<ProxyBackendConfiguration>> activeMap = allBackends.stream().collect(Collectors.groupingBy(ProxyBackendConfiguration::isActive));
-        Integer latestHour = query.getLatestHour();
+        Integer latestHour = query.latestHour();
         Long ts = System.currentTimeMillis() - (latestHour * 60 * 60 * 1000);
         List<DistributionResponse.LineChart> lineChart = queryHistoryManager.findDistribution(ts);
         lineChart.forEach(qh -> qh.setName(urlToNameMap.get(qh.getBackendUrl())));
@@ -196,7 +204,7 @@ public class GatewayWebAppResource
     public Response saveResourceGroup(ResourceGroupsRequest request)
     {
         ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
-                resourceGroupsManager.createResourceGroup(request.getData(), request.getUseSchema());
+                resourceGroupsManager.createResourceGroup(request.data(), request.useSchema());
         return Response.ok(Result.ok(newResourceGroup)).build();
     }
 
@@ -208,7 +216,7 @@ public class GatewayWebAppResource
     public Response updateResourceGroup(ResourceGroupsRequest request)
     {
         ResourceGroupsManager.ResourceGroupsDetail newResourceGroup =
-                resourceGroupsManager.updateResourceGroup(request.getData(), request.getUseSchema());
+                resourceGroupsManager.updateResourceGroup(request.data(), request.useSchema());
         return Response.ok(Result.ok(newResourceGroup)).build();
     }
 
@@ -219,8 +227,8 @@ public class GatewayWebAppResource
     @Path("/deleteResourceGroup")
     public Response deleteResourceGroup(ResourceGroupsRequest request)
     {
-        ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail = request.getData();
-        resourceGroupsManager.deleteResourceGroup(resourceGroupsDetail.getResourceGroupId(), request.getUseSchema());
+        ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail = request.data();
+        resourceGroupsManager.deleteResourceGroup(resourceGroupsDetail.getResourceGroupId(), request.useSchema());
         return Response.ok(Result.ok(true)).build();
     }
 
@@ -231,7 +239,7 @@ public class GatewayWebAppResource
     @Path("/findResourceGroup")
     public Response findResourceGroup(QueryResourceGroupsRequest request)
     {
-        List<ResourceGroupsManager.ResourceGroupsDetail> resourceGroupsDetailList = resourceGroupsManager.readAllResourceGroups(request.getUseSchema());
+        List<ResourceGroupsManager.ResourceGroupsDetail> resourceGroupsDetailList = resourceGroupsManager.readAllResourceGroups(request.useSchema());
         return Response.ok(Result.ok(resourceGroupsDetailList)).build();
     }
 
@@ -242,12 +250,12 @@ public class GatewayWebAppResource
     @Path("/getResourceGroup")
     public Response readResourceGroup(QueryResourceGroupsRequest request)
     {
-        if (Objects.isNull(request.getResourceGroupId())) {
+        if (Objects.isNull(request.resourceGroupId())) {
             return Response.ok(Result.fail("ResourceGroupId cannot be null!")).build();
         }
         List<ResourceGroupsManager.ResourceGroupsDetail> resourceGroup = resourceGroupsManager.readResourceGroup(
-                request.getResourceGroupId(),
-                request.getUseSchema());
+                request.resourceGroupId(),
+                request.useSchema());
         return Response.ok(Result.ok(resourceGroup.stream().findFirst())).build();
     }
 
@@ -259,8 +267,8 @@ public class GatewayWebAppResource
     public Response saveSelector(SelectorsRequest selectorsRequest)
     {
         ResourceGroupsManager.SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(
-                selectorsRequest.getData(),
-                selectorsRequest.getUseSchema());
+                selectorsRequest.data(),
+                selectorsRequest.useSchema());
         return Response.ok(Result.ok(updatedSelector)).build();
     }
 
@@ -272,9 +280,9 @@ public class GatewayWebAppResource
     public Response updateSelector(SelectorsRequest selectorsRequest)
     {
         ResourceGroupsManager.SelectorsDetail updatedSelector = resourceGroupsManager.updateSelector(
-                selectorsRequest.getOldData(),
-                selectorsRequest.getData(),
-                selectorsRequest.getUseSchema());
+                selectorsRequest.oldData(),
+                selectorsRequest.data(),
+                selectorsRequest.useSchema());
         return Response.ok(Result.ok(updatedSelector)).build();
     }
 
@@ -285,7 +293,7 @@ public class GatewayWebAppResource
     @Path("/deleteSelector")
     public Response deleteSelector(SelectorsRequest request)
     {
-        resourceGroupsManager.deleteSelector(request.getData(), request.getUseSchema());
+        resourceGroupsManager.deleteSelector(request.data(), request.useSchema());
         return Response.ok(Result.ok(true)).build();
     }
 
@@ -297,7 +305,7 @@ public class GatewayWebAppResource
     public Response findSelector(QuerySelectorsRequest request)
     {
         List<ResourceGroupsManager.SelectorsDetail> selectorsDetailList = resourceGroupsManager.readAllSelectors(
-                request.getUseSchema());
+                request.useSchema());
         return Response.ok(Result.ok(selectorsDetailList)).build();
     }
 
@@ -308,12 +316,12 @@ public class GatewayWebAppResource
     @Path("/getSelector")
     public Response getSelector(QuerySelectorsRequest request)
     {
-        if (Objects.isNull(request.getResourceGroupId())) {
+        if (Objects.isNull(request.resourceGroupId())) {
             return Response.ok(Result.fail("ResourceGroupId cannot be null!")).build();
         }
         List<ResourceGroupsManager.SelectorsDetail> selectors = resourceGroupsManager.readSelector(
-                request.getResourceGroupId(),
-                request.getUseSchema());
+                request.resourceGroupId(),
+                request.useSchema());
         return Response.ok(Result.ok(selectors.stream().findFirst())).build();
     }
 
@@ -325,8 +333,8 @@ public class GatewayWebAppResource
     public Response saveGlobalProperty(GlobalPropertyRequest request)
     {
         ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.createGlobalProperty(
-                request.getData(),
-                request.getUseSchema());
+                request.data(),
+                request.useSchema());
         return Response.ok(Result.ok(globalProperty)).build();
     }
 
@@ -338,8 +346,8 @@ public class GatewayWebAppResource
     public Response updateGlobalProperty(GlobalPropertyRequest request)
     {
         ResourceGroupsManager.GlobalPropertiesDetail globalProperty = resourceGroupsManager.updateGlobalProperty(
-                request.getData(),
-                request.getUseSchema());
+                request.data(),
+                request.useSchema());
         return Response.ok(Result.ok(globalProperty)).build();
     }
 
@@ -350,10 +358,10 @@ public class GatewayWebAppResource
     @Path("/deleteGlobalProperty")
     public Response deleteGlobalProperty(GlobalPropertyRequest request)
     {
-        ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail = request.getData();
+        ResourceGroupsManager.GlobalPropertiesDetail globalPropertiesDetail = request.data();
         resourceGroupsManager.deleteGlobalProperty(
                 globalPropertiesDetail.getName(),
-                request.getUseSchema());
+                request.useSchema());
         return Response.ok(Result.ok(true)).build();
     }
 
@@ -365,11 +373,11 @@ public class GatewayWebAppResource
     public Response readAllGlobalProperties(QueryGlobalPropertyRequest request)
     {
         List<ResourceGroupsManager.GlobalPropertiesDetail> globalPropertiesDetailList;
-        if (Strings.isNullOrEmpty(request.getName())) {
-            globalPropertiesDetailList = resourceGroupsManager.readAllGlobalProperties(request.getUseSchema());
+        if (Strings.isNullOrEmpty(request.name())) {
+            globalPropertiesDetailList = resourceGroupsManager.readAllGlobalProperties(request.useSchema());
         }
         else {
-            globalPropertiesDetailList = resourceGroupsManager.readGlobalProperty(request.getName(), request.getUseSchema());
+            globalPropertiesDetailList = resourceGroupsManager.readGlobalProperty(request.name(), request.useSchema());
         }
         return Response.ok(Result.ok(globalPropertiesDetailList)).build();
     }
@@ -381,10 +389,10 @@ public class GatewayWebAppResource
     @Path("/getGlobalProperty")
     public Response readGlobalProperty(QueryGlobalPropertyRequest request)
     {
-        if (Strings.isNullOrEmpty(request.getName())) {
+        if (Strings.isNullOrEmpty(request.name())) {
             return Response.ok(Result.fail("Name cannot be null!")).build();
         }
-        List<ResourceGroupsManager.GlobalPropertiesDetail> globalProperty = resourceGroupsManager.readGlobalProperty(request.getName(), request.getUseSchema());
+        List<ResourceGroupsManager.GlobalPropertiesDetail> globalProperty = resourceGroupsManager.readGlobalProperty(request.name(), request.useSchema());
         return Response.ok(Result.ok(globalProperty.stream().findFirst())).build();
     }
 

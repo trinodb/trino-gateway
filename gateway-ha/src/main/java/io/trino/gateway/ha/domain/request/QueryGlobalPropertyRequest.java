@@ -14,43 +14,16 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for GlobalProperty
+ *
+ * @param useSchema Optional, defaults to the Schema of the configuration file.
+ * @param name Optional, you can query the configuration for a specific name.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class QueryGlobalPropertyRequest
+public record QueryGlobalPropertyRequest(
+        String useSchema,
+        String name)
 {
-    /**
-     * Optional, defaults to the Schema of the configuration file.
-     */
-    @JsonProperty
-    private String useSchema;
-
-    /**
-     * Optional, you can query the configuration for a specific name.
-     */
-    @JsonProperty
-    private String name;
-
-    public String getUseSchema()
-    {
-        return useSchema;
-    }
-
-    public void setUseSchema(String useSchema)
-    {
-        this.useSchema = useSchema;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
 }

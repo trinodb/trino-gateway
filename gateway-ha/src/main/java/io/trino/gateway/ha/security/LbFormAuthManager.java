@@ -79,8 +79,8 @@ public class LbFormAuthManager
      */
     public Result<?> processRESTLogin(RestLoginRequest loginForm)
     {
-        if (authenticate(new BasicCredentials(loginForm.getUsername(), loginForm.getPassword()))) {
-            String token = getSelfSignedToken(loginForm.getUsername());
+        if (authenticate(new BasicCredentials(loginForm.username(), loginForm.password()))) {
+            String token = getSelfSignedToken(loginForm.username());
             return Result.ok(Map.of("token", token));
         }
         return Result.fail("Authentication failed.");

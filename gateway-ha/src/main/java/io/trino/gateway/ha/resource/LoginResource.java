@@ -83,7 +83,7 @@ public class LoginResource
     {
         if (formAuthManager == null) {
             if (oauthManager == null) {
-                return Response.ok(Result.ok(Map.of("token", loginForm.getUsername()))).build();
+                return Response.ok(Result.ok(Map.of("token", loginForm.username()))).build();
             }
             throw new WebApplicationException("Form authentication is not setup");
         }
