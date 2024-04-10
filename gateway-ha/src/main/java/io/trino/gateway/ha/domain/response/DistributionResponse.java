@@ -20,50 +20,42 @@ import java.util.Map;
 
 public class DistributionResponse
 {
-    @JsonProperty
     private Integer totalBackendCount;
-    @JsonProperty
     private Integer offlineBackendCount;
-    @JsonProperty
     private Integer onlineBackendCount;
 
     /**
      * Total number of queries.
      * The QueryDistributionRequest's latestHour parameter will affect the statistical range.
      */
-    @JsonProperty
     private Long totalQueryCount;
 
     /**
      * Average number of queries per minute.
      * The QueryDistributionRequest's latestHour parameter will affect the statistical range.
      */
-    @JsonProperty
     private Double averageQueryCountMinute;
 
     /**
      * Average number of queries per second.
      * The QueryDistributionRequest's latestHour parameter will affect the statistical range.
      */
-    @JsonProperty
     private Double averageQueryCountSecond;
 
     /**
      * Pie chart of the number of backend queries.
      * The QueryDistributionRequest's latestHour parameter will affect the statistical range.
      */
-    @JsonProperty
     private List<DistributionChart> distributionChart;
 
     /**
      * Line graph of the number of queries per minute for each backend.
      * The QueryDistributionRequest's latestHour parameter will affect the statistical range.
      */
-    @JsonProperty
     private Map<String, List<LineChart>> lineChart;
-    @JsonProperty
     private String startTime;
 
+    @JsonProperty
     public String getStartTime()
     {
         return startTime;
@@ -74,6 +66,7 @@ public class DistributionResponse
         this.startTime = startTime;
     }
 
+    @JsonProperty
     public Integer getTotalBackendCount()
     {
         return totalBackendCount;
@@ -84,6 +77,7 @@ public class DistributionResponse
         this.totalBackendCount = totalBackendCount;
     }
 
+    @JsonProperty
     public Integer getOfflineBackendCount()
     {
         return offlineBackendCount;
@@ -94,6 +88,7 @@ public class DistributionResponse
         this.offlineBackendCount = offlineBackendCount;
     }
 
+    @JsonProperty
     public Integer getOnlineBackendCount()
     {
         return onlineBackendCount;
@@ -104,6 +99,7 @@ public class DistributionResponse
         this.onlineBackendCount = onlineBackendCount;
     }
 
+    @JsonProperty
     public Long getTotalQueryCount()
     {
         return totalQueryCount;
@@ -114,6 +110,7 @@ public class DistributionResponse
         this.totalQueryCount = totalQueryCount;
     }
 
+    @JsonProperty
     public Double getAverageQueryCountMinute()
     {
         return averageQueryCountMinute;
@@ -124,6 +121,7 @@ public class DistributionResponse
         this.averageQueryCountMinute = averageQueryCountMinute;
     }
 
+    @JsonProperty
     public Double getAverageQueryCountSecond()
     {
         return averageQueryCountSecond;
@@ -134,6 +132,7 @@ public class DistributionResponse
         this.averageQueryCountSecond = averageQueryCountSecond;
     }
 
+    @JsonProperty
     public List<DistributionChart> getDistributionChart()
     {
         return distributionChart;
@@ -144,6 +143,7 @@ public class DistributionResponse
         this.distributionChart = distributionChart;
     }
 
+    @JsonProperty
     public Map<String, List<LineChart>> getLineChart()
     {
         return lineChart;
@@ -160,6 +160,7 @@ public class DistributionResponse
         private Long queryCount;
         private String name;
 
+        @JsonProperty
         public String getBackendUrl()
         {
             return backendUrl;
@@ -170,6 +171,7 @@ public class DistributionResponse
             this.backendUrl = backendUrl;
         }
 
+        @JsonProperty
         public Long getQueryCount()
         {
             return queryCount;
@@ -180,6 +182,7 @@ public class DistributionResponse
             this.queryCount = queryCount;
         }
 
+        @JsonProperty
         public String getName()
         {
             return name;
@@ -198,6 +201,7 @@ public class DistributionResponse
         private Long queryCount;
         private String name;
 
+        @JsonProperty
         public String getMinute()
         {
             return minute;
@@ -208,6 +212,7 @@ public class DistributionResponse
             this.minute = minute;
         }
 
+        @JsonProperty
         public String getBackendUrl()
         {
             return backendUrl;
@@ -218,6 +223,7 @@ public class DistributionResponse
             this.backendUrl = backendUrl;
         }
 
+        @JsonProperty
         public Long getQueryCount()
         {
             return queryCount;
@@ -228,6 +234,7 @@ public class DistributionResponse
             this.queryCount = queryCount;
         }
 
+        @JsonProperty
         public String getName()
         {
             return name;

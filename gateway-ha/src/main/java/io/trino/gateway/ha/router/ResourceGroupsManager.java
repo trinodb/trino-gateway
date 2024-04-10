@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
@@ -106,6 +107,7 @@ public interface ResourceGroupsManager
             }
         }
 
+        @JsonProperty
         public long getResourceGroupId()
         {
             return this.resourceGroupId;
@@ -117,6 +119,7 @@ public interface ResourceGroupsManager
         }
 
         @Nonnull
+        @JsonProperty
         public String getName()
         {
             return this.name;
@@ -127,6 +130,7 @@ public interface ResourceGroupsManager
             this.name = name;
         }
 
+        @JsonProperty
         public Long getParent()
         {
             return this.parent;
@@ -137,6 +141,7 @@ public interface ResourceGroupsManager
             this.parent = parent;
         }
 
+        @JsonProperty
         public Boolean getJmxExport()
         {
             return this.jmxExport;
@@ -147,6 +152,7 @@ public interface ResourceGroupsManager
             this.jmxExport = jmxExport;
         }
 
+        @JsonProperty
         public String getSchedulingPolicy()
         {
             return this.schedulingPolicy;
@@ -157,16 +163,19 @@ public interface ResourceGroupsManager
             this.schedulingPolicy = schedulingPolicy;
         }
 
+        @JsonProperty
         public Integer getSchedulingWeight()
         {
             return this.schedulingWeight;
         }
 
+        @JsonProperty
         public void setSchedulingWeight(Integer schedulingWeight)
         {
             this.schedulingWeight = schedulingWeight;
         }
 
+        @JsonProperty
         @Nonnull
         public String getSoftMemoryLimit()
         {
@@ -178,6 +187,7 @@ public interface ResourceGroupsManager
             this.softMemoryLimit = softMemoryLimit;
         }
 
+        @JsonProperty
         public int getMaxQueued()
         {
             return this.maxQueued;
@@ -188,6 +198,7 @@ public interface ResourceGroupsManager
             this.maxQueued = maxQueued;
         }
 
+        @JsonProperty
         public int getHardConcurrencyLimit()
         {
             return this.hardConcurrencyLimit;
@@ -198,6 +209,7 @@ public interface ResourceGroupsManager
             this.hardConcurrencyLimit = hardConcurrencyLimit;
         }
 
+        @JsonProperty
         public Integer getSoftConcurrencyLimit()
         {
             return this.softConcurrencyLimit;
@@ -208,6 +220,7 @@ public interface ResourceGroupsManager
             this.softConcurrencyLimit = softConcurrencyLimit;
         }
 
+        @JsonProperty
         public String getSoftCpuLimit()
         {
             return this.softCpuLimit;
@@ -218,6 +231,7 @@ public interface ResourceGroupsManager
             this.softCpuLimit = softCpuLimit;
         }
 
+        @JsonProperty
         public String getHardCpuLimit()
         {
             return this.hardCpuLimit;
@@ -228,6 +242,7 @@ public interface ResourceGroupsManager
             this.hardCpuLimit = hardCpuLimit;
         }
 
+        @JsonProperty
         public String getEnvironment()
         {
             return this.environment;
@@ -322,6 +337,7 @@ public interface ResourceGroupsManager
             }
         }
 
+        @JsonProperty
         public long getResourceGroupId()
         {
             return this.resourceGroupId;
@@ -332,6 +348,7 @@ public interface ResourceGroupsManager
             this.resourceGroupId = resourceGroupId;
         }
 
+        @JsonProperty
         public long getPriority()
         {
             return this.priority;
@@ -342,6 +359,7 @@ public interface ResourceGroupsManager
             this.priority = priority;
         }
 
+        @JsonProperty
         public String getUserRegex()
         {
             return this.userRegex;
@@ -352,6 +370,7 @@ public interface ResourceGroupsManager
             this.userRegex = userRegex;
         }
 
+        @JsonProperty
         public String getSourceRegex()
         {
             return this.sourceRegex;
@@ -362,6 +381,7 @@ public interface ResourceGroupsManager
             this.sourceRegex = sourceRegex;
         }
 
+        @JsonProperty
         public String getQueryType()
         {
             return this.queryType;
@@ -372,6 +392,7 @@ public interface ResourceGroupsManager
             this.queryType = queryType;
         }
 
+        @JsonProperty
         public String getClientTags()
         {
             return this.clientTags;
@@ -382,6 +403,7 @@ public interface ResourceGroupsManager
             this.clientTags = clientTags;
         }
 
+        @JsonProperty
         public String getSelectorResourceEstimate()
         {
             return this.selectorResourceEstimate;
@@ -453,6 +475,7 @@ public interface ResourceGroupsManager
         }
 
         @Nonnull
+        @JsonProperty
         public String getName()
         {
             return this.name;
@@ -463,6 +486,7 @@ public interface ResourceGroupsManager
             this.name = name;
         }
 
+        @JsonProperty
         public String getValue()
         {
             return this.value;
@@ -530,6 +554,7 @@ public interface ResourceGroupsManager
             return 0;
         }
 
+        @JsonProperty
         @Nonnull
         public String getResourceGroupId()
         {
@@ -541,6 +566,7 @@ public interface ResourceGroupsManager
             this.resourceGroupId = resourceGroupId;
         }
 
+        @JsonProperty
         @Nonnull
         public String getUpdateTime()
         {
@@ -552,6 +578,7 @@ public interface ResourceGroupsManager
             this.updateTime = updateTime;
         }
 
+        @JsonProperty
         @Nonnull
         public String getSource()
         {
@@ -563,6 +590,7 @@ public interface ResourceGroupsManager
             this.source = source;
         }
 
+        @JsonProperty
         public String getEnvironment()
         {
             return this.environment;
@@ -573,6 +601,7 @@ public interface ResourceGroupsManager
             this.environment = environment;
         }
 
+        @JsonProperty
         public String getQueryType()
         {
             return this.queryType;
