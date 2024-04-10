@@ -159,9 +159,7 @@ public class TestLbAuthenticator
                 "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
         LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
-        RestLoginRequest restLoginRequest = new RestLoginRequest();
-        restLoginRequest.setUsername("user1");
-        restLoginRequest.setPassword("pass1");
+        RestLoginRequest restLoginRequest = new RestLoginRequest("user1", "pass1");
         Result<?> r = lbFormAuthManager.processRESTLogin(restLoginRequest);
         assertThat(Result.isSuccess(r)).isTrue();
         Map data = (Map) r.getData();

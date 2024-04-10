@@ -14,27 +14,18 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for Distribution
+ *
+ * @param latestHour Latest statistics for multiple hours.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class QueryDistributionRequest
+public record QueryDistributionRequest(
+        Integer latestHour)
 {
-    /**
-     * Latest statistics for multiple hours.
-     */
-    @JsonProperty
-    private Integer latestHour = 1;
-
-    public Integer getLatestHour()
+    public QueryDistributionRequest
     {
-        return latestHour;
-    }
-
-    public void setLatestHour(Integer latestHour)
-    {
-        this.latestHour = latestHour;
+        latestHour = latestHour == null ? 1 : latestHour;
     }
 }

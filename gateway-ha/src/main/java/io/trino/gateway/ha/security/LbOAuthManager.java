@@ -165,17 +165,11 @@ public class LbOAuthManager
     @JsonIgnoreProperties(ignoreUnknown = true)
     static final class OidcTokens
     {
-        @JsonProperty
         private final String accessToken;
-        @JsonProperty
         private final String idToken;
-        @JsonProperty
         private final String scope;
-        @JsonProperty
         private final String refreshToken;
-        @JsonProperty
         private final String tokenType;
-        @JsonProperty
         private final String expiresIn;
 
         @JsonCreator
@@ -194,31 +188,37 @@ public class LbOAuthManager
             this.refreshToken = refreshToken;
         }
 
+        @JsonProperty
         public String getAccessToken()
         {
             return this.accessToken;
         }
 
+        @JsonProperty
         public String getIdToken()
         {
             return this.idToken;
         }
 
+        @JsonProperty
         public String getScope()
         {
             return this.scope;
         }
 
+        @JsonProperty
         public String getRefreshToken()
         {
             return this.refreshToken;
         }
 
+        @JsonProperty
         public String getTokenType()
         {
             return this.tokenType;
         }
 
+        @JsonProperty
         public String getExpiresIn()
         {
             return this.expiresIn;
