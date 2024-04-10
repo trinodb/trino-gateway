@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 
 public class ProxyBackendConfiguration
@@ -24,6 +25,7 @@ public class ProxyBackendConfiguration
 
     public ProxyBackendConfiguration() {}
 
+    @JsonProperty
     public String getExternalUrl()
     {
         if (externalUrl == null) {
@@ -37,6 +39,7 @@ public class ProxyBackendConfiguration
         this.externalUrl = externalUrl;
     }
 
+    @JsonProperty
     public boolean isActive()
     {
         return this.active;
@@ -47,6 +50,7 @@ public class ProxyBackendConfiguration
         this.active = active;
     }
 
+    @JsonProperty
     public String getRoutingGroup()
     {
         return this.routingGroup;

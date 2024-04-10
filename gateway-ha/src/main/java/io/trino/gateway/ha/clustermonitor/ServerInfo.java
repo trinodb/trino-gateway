@@ -31,6 +31,7 @@ public class ServerInfo
         this.starting = requireNonNull(starting, "starting is null");
     }
 
+    @JsonProperty
     public boolean isStarting()
     {
         return starting;

@@ -14,43 +14,16 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for ResourceGroups
+ *
+ * @param useSchema Optional, defaults to the Schema of the configuration file.
+ * @param resourceGroupId Query a single item by id.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class QueryResourceGroupsRequest
+public record QueryResourceGroupsRequest(
+        String useSchema,
+        Long resourceGroupId)
 {
-    /**
-     * Optional, defaults to the Schema of the configuration file.
-     */
-    @JsonProperty
-    private String useSchema;
-
-    /**
-     * Query a single item by id.
-     */
-    @JsonProperty
-    private Long resourceGroupId;
-
-    public String getUseSchema()
-    {
-        return useSchema;
-    }
-
-    public void setUseSchema(String useSchema)
-    {
-        this.useSchema = useSchema;
-    }
-
-    public Long getResourceGroupId()
-    {
-        return resourceGroupId;
-    }
-
-    public void setResourceGroupId(Long resourceGroupId)
-    {
-        this.resourceGroupId = resourceGroupId;
-    }
 }

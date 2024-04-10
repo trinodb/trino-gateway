@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.proxyserver;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ProxyServerConfiguration
 {
     private String name;
@@ -100,11 +102,13 @@ public class ProxyServerConfiguration
         return responseBufferSize;
     }
 
+    @JsonProperty
     public String getName()
     {
         return this.name;
     }
 
+    @JsonProperty
     public String getProxyTo()
     {
         return this.proxyTo;
