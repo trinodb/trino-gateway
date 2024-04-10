@@ -15,7 +15,7 @@ package io.trino.gateway.ha.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.Request;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;

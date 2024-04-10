@@ -15,16 +15,16 @@ package io.trino.gateway.proxyserver;
 
 import io.airlift.log.Logger;
 import jakarta.servlet.DispatcherType;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.http.HttpScheme;
-import org.eclipse.jetty.proxy.ConnectHandler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.handler.ConnectHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.Closeable;
@@ -122,10 +122,10 @@ public class ProxyServer
         proxyServlet.setInitParameter("preserveHost", config.getPreserveHost());
 
         // Setup proxy servlet
-        this.context =
-                new ServletContextHandler(proxyConnectHandler, "/", ServletContextHandler.SESSIONS);
-        this.context.addServlet(proxyServlet, "/*");
-        this.context.addFilter(RequestFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
+        context = new ServletContextHandler("/", ServletContextHandler.SESSIONS);
+        proxyConnectHandler.setHandler(context);
+        context.addServlet(proxyServlet, "/*");
+        context.addFilter(RequestFilter.class, "/*", EnumSet.allOf(DispatcherType.class));
     }
 
     public void start()
