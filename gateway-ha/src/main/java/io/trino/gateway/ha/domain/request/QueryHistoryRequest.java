@@ -14,92 +14,27 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for History
+ *
+ * @param page page index
+ * @param size page size
+ * @param user Query histories of specified user. ADMIN role is optional, other roles are mandatory.
+ * @param backendUrl Optional, you can query the history based on the backendUrl.
+ * @param queryId Optional, you can query the query history based on the queryId of Trino.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class QueryHistoryRequest
+public record QueryHistoryRequest(
+        Integer page,
+        Integer size,
+        String user,
+        String backendUrl,
+        String queryId)
 {
-    /**
-     * page index
-     */
-    @JsonProperty
-    private Integer page = 1;
-
-    /**
-     * page size
-     */
-    @JsonProperty
-    private Integer size = 10;
-
-    /**
-     * Query histories of specified user.
-     * ADMIN role is optional, other roles are mandatory.
-     */
-    @JsonProperty
-    private String user;
-
-    /**
-     * Optional, you can query the history based on the backendUrl.
-     */
-    @JsonProperty
-    private String backendUrl;
-
-    /**
-     * Optional, you can query the query history based on the queryId of Trino.
-     */
-    @JsonProperty
-    private String queryId;
-
-    public Integer getPage()
+    public QueryHistoryRequest
     {
-        return page;
-    }
-
-    public void setPage(Integer page)
-    {
-        this.page = page;
-    }
-
-    public Integer getSize()
-    {
-        return size;
-    }
-
-    public void setSize(Integer size)
-    {
-        this.size = size;
-    }
-
-    public String getUser()
-    {
-        return user;
-    }
-
-    public void setUser(String user)
-    {
-        this.user = user;
-    }
-
-    public String getBackendUrl()
-    {
-        return backendUrl;
-    }
-
-    public void setBackendUrl(String backendUrl)
-    {
-        this.backendUrl = backendUrl;
-    }
-
-    public String getQueryId()
-    {
-        return queryId;
-    }
-
-    public void setQueryId(String queryId)
-    {
-        this.queryId = queryId;
+        page = page == null ? 1 : page;
+        size = size == null ? 10 : size;
     }
 }

@@ -28,13 +28,11 @@ public class TableData<T>
     /**
      * Total number of table data
      */
-    @JsonProperty
     private long total;
 
     /**
      * page data
      */
-    @JsonProperty
     private List<T> rows;
 
     public TableData(List<T> list, long total)
@@ -50,6 +48,7 @@ public class TableData<T>
 
     public TableData() {}
 
+    @JsonProperty
     public long getTotal()
     {
         return total;
@@ -60,6 +59,7 @@ public class TableData<T>
         this.total = total;
     }
 
+    @JsonProperty
     public List<T> getRows()
     {
         return rows;

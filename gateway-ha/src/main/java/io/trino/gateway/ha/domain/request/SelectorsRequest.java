@@ -14,60 +14,19 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 
 /**
  * Parameters for adding, modifying, and deleting Selectors.
+ *
+ * @param useSchema Optional, defaults to the Schema of the configuration file.
+ * @param data This field is used for adding, modifying, and deleting.
+ * @param oldData This field is only used for modification.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SelectorsRequest
+public record SelectorsRequest(
+        String useSchema,
+        ResourceGroupsManager.SelectorsDetail data,
+        ResourceGroupsManager.SelectorsDetail oldData)
 {
-    /**
-     * Optional, defaults to the Schema of the configuration file.
-     */
-    @JsonProperty
-    private String useSchema;
-
-    /**
-     * This field is used for adding, modifying, and deleting.
-     */
-    @JsonProperty
-    private ResourceGroupsManager.SelectorsDetail data;
-
-    /**
-     * This field is only used for modification
-     */
-    @JsonProperty
-    private ResourceGroupsManager.SelectorsDetail oldData;
-
-    public String getUseSchema()
-    {
-        return useSchema;
-    }
-
-    public void setUseSchema(String useSchema)
-    {
-        this.useSchema = useSchema;
-    }
-
-    public ResourceGroupsManager.SelectorsDetail getData()
-    {
-        return data;
-    }
-
-    public void setData(ResourceGroupsManager.SelectorsDetail data)
-    {
-        this.data = data;
-    }
-
-    public ResourceGroupsManager.SelectorsDetail getOldData()
-    {
-        return oldData;
-    }
-
-    public void setOldData(ResourceGroupsManager.SelectorsDetail oldData)
-    {
-        this.oldData = oldData;
-    }
 }

@@ -98,18 +98,18 @@ public class HaQueryHistoryManager
     @Override
     public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
     {
-        int start = PageUtil.getStart(query.getPage(), query.getSize());
+        int start = PageUtil.getStart(query.page(), query.size());
         String condition = "";
-        if (!Strings.isNullOrEmpty(query.getUser())) {
-            condition += " and user_name = '" + query.getUser() + "'";
+        if (!Strings.isNullOrEmpty(query.user())) {
+            condition += " and user_name = '" + query.user() + "'";
         }
-        if (!Strings.isNullOrEmpty(query.getBackendUrl())) {
-            condition += " and backend_url = '" + query.getBackendUrl() + "'";
+        if (!Strings.isNullOrEmpty(query.backendUrl())) {
+            condition += " and backend_url = '" + query.backendUrl() + "'";
         }
-        if (!Strings.isNullOrEmpty(query.getQueryId())) {
-            condition += " and query_id = '" + query.getQueryId() + "'";
+        if (!Strings.isNullOrEmpty(query.queryId())) {
+            condition += " and query_id = '" + query.queryId() + "'";
         }
-        List<QueryHistory> histories = dao.pageQueryHistory(condition, query.getSize(), start);
+        List<QueryHistory> histories = dao.pageQueryHistory(condition, query.size(), start);
         List<QueryDetail> rows = upcast(histories);
         Long total = dao.count(condition);
         return TableData.build(rows, total);

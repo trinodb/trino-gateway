@@ -29,13 +29,10 @@ public class Result<T>
 
     public static final int FAIL = 500;
 
-    @JsonProperty
     private int code;
 
-    @JsonProperty
     private String msg;
 
-    @JsonProperty
     private T data;
 
     public static <T> Result<T> ok()
@@ -84,6 +81,7 @@ public class Result<T>
 
     public Result() {}
 
+    @JsonProperty
     public int getCode()
     {
         return code;
@@ -94,6 +92,7 @@ public class Result<T>
         this.code = code;
     }
 
+    @JsonProperty
     public String getMsg()
     {
         return msg;
@@ -104,6 +103,7 @@ public class Result<T>
         this.msg = msg;
     }
 
+    @JsonProperty
     public T getData()
     {
         return data;

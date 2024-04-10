@@ -19,11 +19,10 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 public class BackendResponse
         extends ProxyBackendConfiguration
 {
-    @JsonProperty
     private Integer queued;
-    @JsonProperty
     private Integer running;
 
+    @JsonProperty
     public Integer getQueued()
     {
         return queued;
@@ -34,6 +33,7 @@ public class BackendResponse
         this.queued = queued;
     }
 
+    @JsonProperty
     public Integer getRunning()
     {
         return running;
