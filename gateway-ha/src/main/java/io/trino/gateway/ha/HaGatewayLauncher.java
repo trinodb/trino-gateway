@@ -16,9 +16,6 @@ package io.trino.gateway.ha;
 import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.log.Logging;
 import io.airlift.log.LoggingConfiguration;
-import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.core.setup.Bootstrap;
-import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
 import java.util.Map;
 
@@ -26,13 +23,6 @@ import static io.airlift.configuration.ConfigurationLoader.loadProperties;
 
 public class HaGatewayLauncher
 {
-    public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap)
-    {
-        super.initialize(bootstrap);
-        bootstrap.addBundle(new AssetsBundle("/static/assets", "/assets", null, "assets"));
-        bootstrap.addBundle(new AssetsBundle("/static", "/logo.svg", "logo.svg", "logo.svg"));
-    }
-
     public static void main(String[] args)
             throws Exception
     {
