@@ -14,17 +14,11 @@
 package io.trino.gateway.baseapp;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MoreCollectors;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Binder;
 import com.google.inject.Module;
+import com.google.inject.Scopes;
 import io.airlift.log.Logger;
-import io.dropwizard.core.Application;
-import io.dropwizard.core.Configuration;
-import io.dropwizard.core.setup.Environment;
-import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
@@ -44,27 +38,22 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
+import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
-/**
- * Supports Guice in Dropwizard.
- *
- * <p>To use it, create a subclass and provide a list of modules you want to use with the {@link
- * #addModules} method.
- *
- * <p>Packages supplied in the constructor will be scanned for Resources, Providers, and Managed
- * classes, and added to the environment.
- *
- * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
- * injection.
- */
-public abstract class BaseApp
-        extends Application<HaGatewayConfiguration>
+public class BaseApp
+        implements Module
 {
     private static final Logger logger = Logger.get(BaseApp.class);
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
+    private final HaGatewayConfiguration haGatewayConfiguration;
+
+    public BaseApp(HaGatewayConfiguration haGatewayConfiguration)
+    {
+        this.haGatewayConfiguration = requireNonNull(haGatewayConfiguration);
+    }
 
     private Module newModule(String clazz, HaGatewayConfiguration configuration)
     {
@@ -85,7 +74,7 @@ public abstract class BaseApp
         }
         catch (Exception e) {
             logger.error(e, "Could not instantiate module [%s]", clazz);
-            onFatalError(e);
+            System.exit(1);
         }
         return null;
     }
@@ -102,47 +91,6 @@ public abstract class BaseApp
         }
     }
 
-    @Override // Using Airlift logger
-    protected void bootstrapLogging() {}
-
-    /**
-     * When the application runs, this is called after the bundles are run.
-     *
-     * @param configuration the parsed {@link Configuration} object
-     * @param environment the application's {@link Environment}
-     * @throws Exception if something goes wrong
-     */
-    @Override
-    public void run(HaGatewayConfiguration configuration, Environment environment)
-            throws Exception
-    {
-        configureGuice(configuration, environment);
-    }
-
-    private void configureGuice(HaGatewayConfiguration configuration, Environment environment)
-    {
-        appModules.addAll(addModules(configuration));
-        Injector injector = Guice.createInjector(appModules.build());
-        injector.injectMembers(this);
-        registerWithInjector(configuration, environment, injector);
-    }
-
-    private void registerWithInjector(HaGatewayConfiguration configuration, Environment environment, Injector injector)
-    {
-        logger.info("op=register_start configuration=%s", configuration.toString());
-        registerAuthFilters(environment, injector);
-        registerProviders(environment, injector);
-        addManagedApps(configuration, environment, injector);
-        registerResources(environment, injector);
-        logger.info("op=register_end configuration=%s", configuration.toString());
-    }
-
-    /**
-     * Supply a list of modules to be used by Guice.
-     *
-     * @param configuration the app configuration
-     * @return a list of modules to be provisioned by Guice
-     */
     protected List<Module> addModules(HaGatewayConfiguration configuration)
     {
         List<Module> modules = new ArrayList<>();
@@ -159,68 +107,58 @@ public abstract class BaseApp
         return modules;
     }
 
-    /**
-     * Supply a list of managed apps.
-     */
-    protected List<Managed> addManagedApps(
-            HaGatewayConfiguration configuration, Environment environment, Injector injector)
+    @Override
+    public void configure(Binder binder)
     {
-        List<Managed> managedApps = new ArrayList<>();
+        registerWithInjector(this.haGatewayConfiguration, binder);
+    }
+
+    private static void registerWithInjector(HaGatewayConfiguration configuration, Binder binder)
+    {
+        registerAuthFilters(binder);
+        registerProviders(binder);
+        addManagedApps(configuration, binder);
+        registerResources(binder);
+    }
+
+    private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
+    {
         if (configuration.getManagedApps() == null) {
             logger.error("No managed apps found");
-            return managedApps;
+            return;
         }
-        configuration
-                .getManagedApps()
-                .forEach(
-                        clazz -> {
-                            try {
-                                Class c = Class.forName(clazz);
-                                LifecycleEnvironment lifecycle = environment.lifecycle();
-                                lifecycle.manage((Managed) injector.getInstance(c));
-                                logger.info("op=register type=managed item=%s", c);
-                            }
-                            catch (Exception e) {
-                                logger.error(e, "Error loading managed app");
-                            }
-                        });
-        return managedApps;
-    }
-
-    private void registerProviders(Environment environment, Injector injector)
-    {
-        final Set<Class<?>> classes = ImmutableSet.of(AuthorizedExceptionMapper.class);
-        classes.forEach(
-                c -> {
-                    environment.jersey().register(injector.getInstance(c));
-                    logger.info("op=register type=provider item=%s", c);
+        configuration.getManagedApps().forEach(
+                clazz -> {
+                    try {
+                        Class c = Class.forName(clazz);
+                        binder.bind(c).in(Scopes.SINGLETON);
+                    }
+                    catch (Exception e) {
+                        logger.error(e, "Error loading managed app");
+                    }
                 });
     }
 
-    private void registerResources(Environment environment, Injector injector)
+    private static void registerProviders(Binder binder)
     {
-        final Set<Class<?>> classes = ImmutableSet.of(
-                EntityEditorResource.class,
-                GatewayResource.class,
-                GatewayViewResource.class,
-                GatewayWebAppResource.class,
-                HaGatewayResource.class,
-                LoginResource.class,
-                PublicResource.class,
-                TrinoResource.class);
-        classes.forEach(
-                c -> {
-                    environment.jersey().register(injector.getInstance(c));
-                    logger.info("op=register type=resource item=%s", c);
-                });
+        jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
     }
 
-    private void registerAuthFilters(Environment environment, Injector injector)
+    private static void registerResources(Binder binder)
     {
-        environment
-                .jersey()
-                .register(injector.getInstance(ResourceSecurityDynamicFeature.class));
-        logger.info("op=register type=auth filter item=%s", ResourceSecurityDynamicFeature.class);
-        environment.jersey().register(RolesAllowedDynamicFeature.class);
+        jaxrsBinder(binder).bind(EntityEditorResource.class);
+        jaxrsBinder(binder).bind(GatewayResource.class);
+        jaxrsBinder(binder).bind(GatewayViewResource.class);
+        jaxrsBinder(binder).bind(GatewayWebAppResource.class);
+        jaxrsBinder(binder).bind(HaGatewayResource.class);
+        jaxrsBinder(binder).bind(LoginResource.class);
+        jaxrsBinder(binder).bind(PublicResource.class);
+        jaxrsBinder(binder).bind(TrinoResource.class);
+    }
+
+    private static void registerAuthFilters(Binder binder)
+    {
+        jaxrsBinder(binder).bind(ResourceSecurityDynamicFeature.class);
+        jaxrsBinder(binder).bind(RolesAllowedDynamicFeature.class);
     }
 }
