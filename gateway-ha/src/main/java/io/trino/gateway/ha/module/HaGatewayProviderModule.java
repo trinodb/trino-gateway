@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.util.Objects.requireNonNull;
 
 public class HaGatewayProviderModule
@@ -69,6 +70,12 @@ public class HaGatewayProviderModule
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final List<String> extraWhitelistPaths;
     private final HaGatewayConfiguration configuration;
+
+    @Override
+    protected void configure()
+    {
+        jaxrsBinder(binder()).bindInstance(resourceSecurityDynamicFeature);
+    }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
     {
@@ -230,13 +237,6 @@ public class HaGatewayProviderModule
     public AuthorizationManager getAuthorizationManager()
     {
         return this.authorizationManager;
-    }
-
-    @Provides
-    @Singleton
-    public ResourceSecurityDynamicFeature getResourceSecurityDynamicFeature()
-    {
-        return resourceSecurityDynamicFeature;
     }
 
     @Provides
