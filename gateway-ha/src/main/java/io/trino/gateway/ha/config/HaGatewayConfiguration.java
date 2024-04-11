@@ -13,7 +13,7 @@
  */
 package io.trino.gateway.ha.config;
 
-import io.trino.gateway.baseapp.AppConfiguration;
+import io.dropwizard.core.Configuration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 public class HaGatewayConfiguration
-        extends AppConfiguration
+        extends Configuration
 {
     private RequestRouterConfiguration requestRouter;
     private NotifierConfiguration notifier;
@@ -35,6 +35,12 @@ public class HaGatewayConfiguration
     private BackendStateConfiguration backendState;
     private ClusterStatsConfiguration clusterStatsConfiguration;
     private List<String> extraWhitelistPaths = new ArrayList<>();
+
+    // List of Modules with FQCN (Fully Qualified Class Name)
+    private List<String> modules;
+
+    // List of ManagedApps with FQCN (Fully Qualified Class Name)
+    private List<String> managedApps;
 
     public HaGatewayConfiguration() {}
 
@@ -156,5 +162,25 @@ public class HaGatewayConfiguration
     public void setExtraWhitelistPaths(List<String> extraWhitelistPaths)
     {
         this.extraWhitelistPaths = extraWhitelistPaths;
+    }
+
+    public List<String> getModules()
+    {
+        return this.modules;
+    }
+
+    public void setModules(List<String> modules)
+    {
+        this.modules = modules;
+    }
+
+    public List<String> getManagedApps()
+    {
+        return this.managedApps;
+    }
+
+    public void setManagedApps(List<String> managedApps)
+    {
+        this.managedApps = managedApps;
     }
 }
