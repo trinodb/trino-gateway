@@ -18,7 +18,6 @@ import io.airlift.log.Logging;
 import io.airlift.log.LoggingConfiguration;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.core.setup.Bootstrap;
-import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
 import java.util.Map;
@@ -26,9 +25,7 @@ import java.util.Map;
 import static io.airlift.configuration.ConfigurationLoader.loadProperties;
 
 public class HaGatewayLauncher
-        extends BaseApp
 {
-    @Override
     public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap)
     {
         super.initialize(bootstrap);
