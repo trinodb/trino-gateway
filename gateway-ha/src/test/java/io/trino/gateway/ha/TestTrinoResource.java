@@ -69,7 +69,7 @@ public class TestTrinoResource
         prepareData();
 
         // Start Gateway
-        String[] args = {"server", testConfig.configFilePath()};
+        String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
     }
 
