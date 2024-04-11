@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
 import io.airlift.bootstrap.ApplicationConfigurationException;
 import io.airlift.bootstrap.Bootstrap;
-import io.airlift.configuration.ConfigurationFactory;
 import io.airlift.event.client.EventModule;
 import io.airlift.http.server.HttpServerModule;
 import io.airlift.jaxrs.JaxrsModule;
@@ -28,8 +27,6 @@ import io.airlift.jmx.JmxModule;
 import io.airlift.json.JsonModule;
 import io.airlift.log.LogJmxModule;
 import io.airlift.log.Logger;
-import io.airlift.log.Logging;
-import io.airlift.log.LoggingConfiguration;
 import io.airlift.node.NodeModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
@@ -38,9 +35,7 @@ import org.weakref.jmx.guice.MBeanModule;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 
-import static io.airlift.configuration.ConfigurationLoader.loadProperties;
 import static io.trino.gateway.baseapp.BaseApp.addModules;
 import static java.lang.String.format;
 
@@ -104,13 +99,6 @@ public class HaGatewayLauncher
     public static void main(String[] args)
             throws Exception
     {
-        Logging.initialize();
-        Map<String, String> properties = loadProperties();
-        ConfigurationFactory configurationFactory = new ConfigurationFactory(properties);
-        LoggingConfiguration configuration = configurationFactory.build(LoggingConfiguration.class);
-        Logging logging = Logging.initialize();
-        logging.configure(configuration);
-
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(new File(args[0]), HaGatewayConfiguration.class);
         List<Module> modules = addModules(haGatewayConfiguration);
