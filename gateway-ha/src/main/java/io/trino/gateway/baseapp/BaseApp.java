@@ -31,7 +31,6 @@ import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
-import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.lang.reflect.Constructor;
@@ -158,7 +157,6 @@ public class BaseApp
 
     private static void registerAuthFilters(Binder binder)
     {
-        jaxrsBinder(binder).bind(ResourceSecurityDynamicFeature.class);
         jaxrsBinder(binder).bind(RolesAllowedDynamicFeature.class);
     }
 }
