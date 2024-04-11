@@ -147,6 +147,7 @@ public class BaseApp
         jaxrsBinder(binder).bind(LoginResource.class);
         jaxrsBinder(binder).bind(PublicResource.class);
         jaxrsBinder(binder).bind(TrinoResource.class);
+        jaxrsBinder(binder).bind(WebUIStaticResource.class);
     }
 
     private static void registerAuthFilters(Binder binder)
