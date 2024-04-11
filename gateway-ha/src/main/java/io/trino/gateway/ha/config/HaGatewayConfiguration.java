@@ -13,15 +13,12 @@
  */
 package io.trino.gateway.ha.config;
 
-import io.dropwizard.core.Configuration;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class HaGatewayConfiguration
-        extends Configuration
 {
     private RequestRouterConfiguration requestRouter;
     private NotifierConfiguration notifier;

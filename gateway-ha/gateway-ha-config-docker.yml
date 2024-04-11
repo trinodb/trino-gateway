@@ -18,16 +18,6 @@ dataStore:
 clusterStatsConfiguration:
   monitorType: INFO_API
 
-server:
-  applicationConnectors:
-    - type: http
-      port: 8090
-      useForwardedHeaders: true
-  adminConnectors:
-    - type: http
-      port: 8091
-      useForwardedHeaders: true
-
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
   - io.trino.gateway.ha.module.ClusterStateListenerModule
@@ -36,6 +26,3 @@ modules:
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
-
-logging:
-  type: external

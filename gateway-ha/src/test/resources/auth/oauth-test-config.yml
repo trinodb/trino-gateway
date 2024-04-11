@@ -5,14 +5,6 @@ requestRouter:
   keystorePath: LOCALHOST_JKS
   keystorePass: 123456
 
-server:
-  applicationConnectors:
-    - type: http
-      port: APPLICATION_CONNECTOR_PORT
-  adminConnectors:
-    - type: http
-      port: ADMIN_CONNECTOR_PORT
-
 dataStore:
   jdbcUrl: jdbc:h2:DB_FILE_PATH
   user: sa
@@ -27,9 +19,6 @@ managedApps:
 
 extraWhitelistPaths:
   - "/v1/custom"
-
-logging:
-  type: external
 
 authorization:
   admin: .*FOO.*
