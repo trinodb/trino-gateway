@@ -32,7 +32,7 @@ and update the mysql db information.
 
 ```
 cd gateway-ha/target/
-java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar server ../gateway-ha-config.yml
+java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
 ```
 
 #### In Docker

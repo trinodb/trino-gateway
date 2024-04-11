@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.baseapp;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MoreCollectors;
 import com.google.inject.Binder;
 import com.google.inject.Module;
@@ -48,7 +47,6 @@ public class BaseApp
         implements Module
 {
     private static final Logger logger = Logger.get(BaseApp.class);
-    private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
     private final HaGatewayConfiguration haGatewayConfiguration;
 
     public BaseApp(HaGatewayConfiguration haGatewayConfiguration)
@@ -56,7 +54,7 @@ public class BaseApp
         this.haGatewayConfiguration = requireNonNull(haGatewayConfiguration);
     }
 
-    private Module newModule(String clazz, HaGatewayConfiguration configuration)
+    private static Module newModule(String clazz, HaGatewayConfiguration configuration)
     {
         try {
             logger.info("Trying to load module [%s]", clazz);
@@ -80,7 +78,7 @@ public class BaseApp
         return null;
     }
 
-    private void validateModules(List<Module> modules, HaGatewayConfiguration configuration)
+    private static void validateModules(List<Module> modules, HaGatewayConfiguration configuration)
     {
         Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
@@ -92,7 +90,7 @@ public class BaseApp
         }
     }
 
-    protected List<Module> addModules(HaGatewayConfiguration configuration)
+    public static List<Module> addModules(HaGatewayConfiguration configuration)
     {
         List<Module> modules = new ArrayList<>();
         if (configuration.getModules() == null) {
