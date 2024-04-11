@@ -28,6 +28,7 @@ import io.dropwizard.core.server.DefaultServerFactory;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.log.GatewayRequestLogFactory;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
@@ -62,13 +63,13 @@ import static java.lang.String.format;
  * <p>GuiceApplication also makes {@link com.codahale.metrics.MetricRegistry} available for
  * injection.
  */
-public abstract class BaseApp<T extends AppConfiguration>
-        extends Application<T>
+public abstract class BaseApp
+        extends Application<HaGatewayConfiguration>
 {
     private static final Logger logger = Logger.get(BaseApp.class);
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
 
-    private Module newModule(String clazz, T configuration, Environment environment)
+    private Module newModule(String clazz, HaGatewayConfiguration configuration, Environment environment)
     {
         try {
             logger.info("Trying to load module [%s]", clazz);
@@ -94,7 +95,7 @@ public abstract class BaseApp<T extends AppConfiguration>
         return null;
     }
 
-    private void validateModules(List<Module> modules, T configuration, Environment environment)
+    private void validateModules(List<Module> modules, HaGatewayConfiguration configuration, Environment environment)
     {
         Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
@@ -117,14 +118,14 @@ public abstract class BaseApp<T extends AppConfiguration>
      * @throws Exception if something goes wrong
      */
     @Override
-    public void run(T configuration, Environment environment)
+    public void run(HaGatewayConfiguration configuration, Environment environment)
             throws Exception
     {
         ((DefaultServerFactory) configuration.getServerFactory()).setRequestLogFactory(new GatewayRequestLogFactory());
         configureGuice(configuration, environment);
     }
 
-    private void configureGuice(T configuration, Environment environment)
+    private void configureGuice(HaGatewayConfiguration configuration, Environment environment)
     {
         appModules.add(new MetricRegistryModule(environment.metrics()));
         appModules.addAll(addModules(configuration, environment));
@@ -133,7 +134,7 @@ public abstract class BaseApp<T extends AppConfiguration>
         registerWithInjector(configuration, environment, injector);
     }
 
-    private void registerWithInjector(T configuration, Environment environment, Injector injector)
+    private void registerWithInjector(HaGatewayConfiguration configuration, Environment environment, Injector injector)
     {
         logger.info("op=register_start configuration=%s", configuration.toString());
         registerAuthFilters(environment, injector);
@@ -149,7 +150,7 @@ public abstract class BaseApp<T extends AppConfiguration>
      * @param configuration the app configuration
      * @return a list of modules to be provisioned by Guice
      */
-    protected List<Module> addModules(T configuration, Environment environment)
+    protected List<Module> addModules(HaGatewayConfiguration configuration, Environment environment)
     {
         List<Module> modules = new ArrayList<>();
         if (configuration.getModules() == null) {
@@ -169,7 +170,7 @@ public abstract class BaseApp<T extends AppConfiguration>
      * Supply a list of managed apps.
      */
     protected List<Managed> addManagedApps(
-            T configuration, Environment environment, Injector injector)
+            HaGatewayConfiguration configuration, Environment environment, Injector injector)
     {
         List<Managed> managedApps = new ArrayList<>();
         if (configuration.getManagedApps() == null) {
