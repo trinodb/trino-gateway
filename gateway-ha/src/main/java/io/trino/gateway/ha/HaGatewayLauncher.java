@@ -26,7 +26,7 @@ import java.util.Map;
 import static io.airlift.configuration.ConfigurationLoader.getSystemProperties;
 
 public class HaGatewayLauncher
-        extends BaseApp<HaGatewayConfiguration>
+        extends BaseApp
 {
     @Override
     public void initialize(Bootstrap<HaGatewayConfiguration> bootstrap)
