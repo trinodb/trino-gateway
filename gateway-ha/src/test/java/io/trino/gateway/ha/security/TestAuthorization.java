@@ -51,7 +51,7 @@ public class TestAuthorization
             throws Exception
     {
         HaGatewayTestUtils.TestConfig testConfig = HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "auth/auth-test-config.yml");
-        String[] args = {"server", testConfig.configFilePath()};
+        String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
     }
 

@@ -142,7 +142,7 @@ public class TestOIDC
 
         HaGatewayTestUtils.TestConfig testConfig =
                 HaGatewayTestUtils.buildGatewayConfigAndSeedDb(ROUTER_PORT, "auth/oauth-test-config.yml");
-        String[] args = {"server", testConfig.configFilePath()};
+        String[] args = {testConfig.configFilePath()};
         System.out.println(ROUTER_PORT);
         HaGatewayLauncher.main(args);
     }
