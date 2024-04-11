@@ -17,10 +17,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.dropwizard.core.server.DefaultServerFactory;
-import io.dropwizard.core.server.SimpleServerFactory;
-import io.dropwizard.jetty.ConnectorFactory;
-import io.dropwizard.jetty.HttpConnectorFactory;
+import io.airlift.http.server.HttpServerConfig;
+import io.airlift.http.server.HttpsConfig;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
@@ -57,7 +55,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -139,8 +137,11 @@ public class HaGatewayProviderModule
         return new ChainedAuthFilter(authFilters.build());
     }
 
-    private ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
-                                         RoutingManager routingManager)
+    private ProxyHandler getProxyHandler(
+            QueryHistoryManager queryHistoryManager,
+            RoutingManager routingManager,
+            HttpServerConfig httpServerConfig,
+            Optional<HttpsConfig> httpsConfig)
     {
         ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create();
 
@@ -157,26 +158,9 @@ public class HaGatewayProviderModule
                 queryHistoryManager,
                 routingManager,
                 routingGroupSelector,
-                getApplicationPort(),
+                httpsConfig.map(HttpsConfig::getHttpsPort).orElseGet(httpServerConfig::getHttpPort),
                 proxyHandlerStats,
                 extraWhitelistPaths);
-    }
-
-    private int getApplicationPort()
-    {
-        Stream<ConnectorFactory> connectors =
-                configuration.getServerFactory() instanceof DefaultServerFactory
-                        ? ((DefaultServerFactory) configuration.getServerFactory())
-                        .getApplicationConnectors().stream()
-                        : Stream.of((SimpleServerFactory) configuration.getServerFactory())
-                        .map(SimpleServerFactory::getConnector);
-
-        return connectors
-                .filter(connector -> connector.getClass().isAssignableFrom(HttpConnectorFactory.class))
-                .map(connector -> (HttpConnectorFactory) connector)
-                .mapToInt(HttpConnectorFactory::getPort)
-                .findFirst()
-                .orElseThrow(IllegalStateException::new);
     }
 
     private ResourceSecurityDynamicFeature getAuthFilter(HaGatewayConfiguration configuration)
@@ -196,8 +180,11 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public ProxyServer provideGateway(QueryHistoryManager queryHistoryManager,
-                                        RoutingManager routingManager)
+    public ProxyServer provideGateway(
+            QueryHistoryManager queryHistoryManager,
+            RoutingManager routingManager,
+            HttpServerConfig httpServerConfig,
+            Optional<HttpsConfig> httpsConfig)
     {
         ProxyServer gateway = null;
         if (configuration.getRequestRouter() != null) {
@@ -218,7 +205,7 @@ public class HaGatewayProviderModule
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
             routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager);
+            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager, httpServerConfig, httpsConfig);
             gateway = new ProxyServer(routerProxyConfig, proxyHandler);
         }
         return gateway;

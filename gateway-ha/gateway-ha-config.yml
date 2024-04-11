@@ -18,16 +18,6 @@ dataStore:
 clusterStatsConfiguration:
   monitorType: INFO_API
 
-server:
-  applicationConnectors:
-    - type: http
-      port: 8090
-      useForwardedHeaders: true
-  adminConnectors:
-    - type: http
-      port: 8091
-      useForwardedHeaders: true
-
 # This can be adjusted based on the coordinator state
 monitor:
   taskDelaySeconds: 10
@@ -40,6 +30,3 @@ modules:
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
-
-logging:
-  type: external
