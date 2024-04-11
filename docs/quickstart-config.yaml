@@ -4,16 +4,6 @@ requestRouter:
   name: testTrinoRouter
   historySize: 1000
 
-server:
-  applicationConnectors:
-    - type: http
-      port: 9081
-      useForwardedHeaders: true
-  adminConnectors:
-    - type: http
-      port: 9082
-      useForwardedHeaders: true
-
 dataStore:
   #This stores the URLs of backend Trino servers and query history
   jdbcUrl: jdbc:postgresql://localhost:5432/gateway
@@ -32,6 +22,3 @@ modules:
 managedApps:
   - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
-
-logging:
-    type: external

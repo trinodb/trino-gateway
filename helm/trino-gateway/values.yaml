@@ -34,22 +34,11 @@ authenticationSecret:
     key: ""
 
 config:
-    logging:
-        type: "external"
     requestRouter:
         #SQL clients connect to the request port
         port: 9080
         name: testTrinoRouter
         historySize: 1000
-    server:
-        applicationConnectors:
-            - type: http
-              port: 9081
-              useForwardedHeaders: true
-        adminConnectors:
-            - type: http
-              port: 9082
-              useForwardedHeaders: true
     clusterStatsConfiguration:
         monitorType: INFO_API
     modules:
