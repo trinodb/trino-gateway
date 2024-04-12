@@ -110,7 +110,7 @@ echo "🧱 Preparing the image build context directory"
 WORK_DIR="$(mktemp -d)"
 GATEWAY_WORK_DIR="${WORK_DIR}/gateway-ha"
 mkdir "${GATEWAY_WORK_DIR}"
-cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}"
+cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}/gateway-ha-jar-with-dependencies.jar"
 cp -R bin "${GATEWAY_WORK_DIR}"
 cp "${SCRIPT_DIR}/Dockerfile" "${WORK_DIR}"
 
@@ -126,7 +126,6 @@ for arch in "${ARCHITECTURES[@]}"; do
         --pull \
         --build-arg JDK_VERSION="${JDK_VERSION}" \
         --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "${JDK_VERSION}" "${arch}")" \
-        --build-arg TRINO_GATEWAY_VERSION="${TRINO_GATEWAY_VERSION}" \
         --build-arg TRINO_GATEWAY_BASE_IMAGE="${TRINO_GATEWAY_BASE_IMAGE}" \
         --platform "linux/$arch" \
         -f Dockerfile \
