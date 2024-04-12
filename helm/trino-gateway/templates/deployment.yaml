@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trino-gateway.fullname" . }}
+  labels:
+    {{- include "trino-gateway.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "trino-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+          # Include the version of trino-gateway-configuration as an input to the deployment checksum. This causes pods to restart on helm update
+          # whether the chart `config` is updated or if one of the configuration secrets is updated. Helm template must be run with the
+          # --dry-run=server option to prevent a nil pointer
+          checksum/config: {{ (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata.resourceVersion | sha256sum}}
+      {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "trino-gateway.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "trino-gateway.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+              - "java"
+              - "--add-opens=java.base/java.lang=ALL-UNNAMED"
+              - "--add-opens=java.base/java.net=ALL-UNNAMED"
+              - "-XX:MinRAMPercentage=80.0"
+              - "-XX:MaxRAMPercentage=80.0"
+              - "-jar"
+              - "/usr/lib/trino/gateway-ha-jar-with-dependencies.jar"
+              - "server"
+              - "/etc/gateway/config.yaml"
+          ports:
+            - name: request
+              containerPort: {{ .Values.config.requestRouter.port }}
+              protocol: TCP
+            {{- range $index, $connector := $.Values.config.server.adminConnectors}}
+            - name: {{print "admin-" $index }}
+              protocol: TCP
+              containerPort: {{ $connector.port }}
+            {{- end }}
+            {{- range $index, $connector := $.Values.config.server.applicationConnectors}}
+            - name: {{print "app-" $index }}
+              protocol: TCP
+              containerPort: {{ $connector.port }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+                path: /
+                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+            initialDelaySeconds: .Values.livenessProbe.initialDelaySeconds
+            periodSeconds: .Values.livenessProbe.periodSeconds
+            failureThreshold: .Values.livenessProbe.failureThreshold
+            timeoutSeconds: .Values.livenessProbe.timeoutSeconds
+          readinessProbe:
+            httpGet:
+                path: /
+                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+            initialDelaySeconds: .Values.readinessProbe.initialDelaySeconds
+            periodSeconds: .Values.readinessProbe.periodSeconds
+            failureThreshold: .Values.readinessProbe.failureThreshold
+            timeoutSeconds: .Values.readinessProbe.timeoutSeconds
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: trino-gateway-configuration
+              mountPath: "/etc/gateway/config.yaml"
+              subPath: "config.yaml"
+              readOnly: true
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: trino-gateway-configuration
+          secret:
+              secretName: trino-gateway-configuration
+              optional: false
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -143,3 +143,95 @@ java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
     --add-opens=java.base/java.net=ALL-UNNAMED \
     -jar gateway-ha.jar server gateway-config.yml
 ```
+
+### Helm
+
+Helm manages the deployment of Kubernetes applications by templating Kubernetes
+resources with a set of Helm charts. The Trino Gateway Helm chart consists 
+of the following compnents:
+
+* A `config` node for general configuration
+* `dataStoreSecret`, `backendStateSecret` and `authenticationSecret` for 
+  providing sensitive configurations through Kubernetes secrets, 
+* Standard Helm options such as `replicaCount`, `resources` and `ingress`.
+
+The default [values.yaml](../helm/trino-gateway/values.yaml) includes basic
+configuration options as an example. For a simple deployment, proceed with 
+the following steps:
+
+Create a yaml file containing the configuration for your `datastore`:
+
+```shell
+cat << EOF > datastore.yaml
+dataStore:
+   jdbcUrl: jdbc:postgresql://yourdatabasehost:5432/gateway
+   user: postgres
+   password: secretpassword
+   driver: org.postgresql.Driver
+EOF
+```
+Create a Kubernetes secret from this file:
+
+```shell
+kubectl create secret generic datastore-yaml --from-file datastore.yaml --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Create a values override with a name such as `values-override.yaml` and
+reference this secret in the `backendStateSecret` node:
+
+```yaml
+backendStateSecret:
+    name: "datastore-yaml"
+    key: "datastore.yaml"
+```
+
+When a Secret is created with the `--from-file` option, the filename is used as
+the key. Finally, you can deploy Trino Gateway with the chart from the root 
+of this repository:
+
+```shell
+helm install tg --values values-override.yaml helm/trino-gateway 
+```
+
+Secrets for `authenticationSecret` and `backendState` can be provisioned
+similarly. Alternatively,  you can directly define the `config.backEndState` 
+node in `values-override.yaml` and leave `backendStateSecret` undefined. 
+However, a [Secret](https://kubernetes.
+io/docs/concepts/configuration/secret/)
+is recommended to protect the  database credentials required for this 
+configuration.
+
+#### Additional options
+
+To implement routing rules, create a ConfigMap from your routing rules yaml
+definition:
+
+```shell
+kubectl create cm routing-rules --from-file your-routing-rules.yaml
+```
+
+Then mount it to your container:
+
+```yaml
+volumes:
+    - name: routing-rules
+      configMap:
+          name: routing-rules
+          items:
+              name: your-routing-rules.yaml
+              path: your-routing-rules.yaml
+
+volumeMounts:
+    - name: routing-rules
+      mountPath: "/etc/routing-rules/your-routing-rules.yaml"
+      subPath: your-routing-rules.yaml
+```
+
+Ensure that the `mountPath` matches the `rulesConfigPath` specified in your
+configuration. Note that the `subPath` is not strictly necessary, and if it 
+is not specified the file is mounted at `mountPath/<configMap key>`. 
+Kubernetes updates the mounted file when the ConfigMap is updated.
+
+Standard Helm oœptions such as `replicaCount`, `image`, `imagePullSecrets`, 
+`service`, `ingress` and `resources` are supported. These are defined in 
+`helm/values.yaml`. 
