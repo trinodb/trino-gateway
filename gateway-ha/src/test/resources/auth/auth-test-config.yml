@@ -1,0 +1,50 @@
+requestRouter:
+  port: REQUEST_ROUTER_PORT
+  name: testTrinoRouter
+  historySize: 1000
+
+server:
+  applicationConnectors:
+    - type: http
+      port: APPLICATION_CONNECTOR_PORT
+  adminConnectors:
+    - type: http
+      port: ADMIN_CONNECTOR_PORT
+
+dataStore:
+  jdbcUrl: jdbc:h2:DB_FILE_PATH
+  user: sa
+  password: sa
+  driver: org.h2.Driver
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+
+managedApps:
+  - io.trino.gateway.ha.GatewayManagedApp
+
+extraWhitelistPaths:
+  - "/v1/custom"
+
+logging:
+  type: external
+
+authorization:
+  admin: .*FOO.*
+  user: .*BAR.*
+  api: .*BAZ.*
+
+presetUsers:
+  admin1:
+    password: admin1_password
+    privileges: FOO_BAR
+  user1:
+    password: password_user1
+    privileges: BAR_BAZ
+
+authentication:
+  defaultType: "form"
+  form:
+    selfSignKeyPair:
+      privateKeyRsa: src/test/resources/auth/test_private_key.pem
+      publicKeyRsa: src/test/resources/auth/test_public_key.pem
