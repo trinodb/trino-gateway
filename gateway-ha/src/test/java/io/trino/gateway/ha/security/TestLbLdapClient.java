@@ -33,9 +33,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
 @ExtendWith(MockitoExtension.class)
-public class LbLdapClientTest
+public class TestLbLdapClient
 {
-    private static final Logger log = Logger.get(LbLdapClientTest.class);
+    private static final Logger log = Logger.get(TestLbLdapClient.class);
     @Mock
     LdapConnectionTemplate ldapConnectionTemplate;
     @Spy
@@ -84,7 +84,7 @@ public class LbLdapClientTest
                             filter,
                             SearchScope.SUBTREE,
                             password.toCharArray()))
-                    .thenReturn(new LbLdapClientTest.DummyPasswordWarning());
+                    .thenReturn(new TestLbLdapClient.DummyPasswordWarning());
 
             //Warning case
             assertThat(lbLdapClient.authenticate(user, password)).isTrue();
