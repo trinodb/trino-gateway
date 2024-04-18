@@ -1,3 +1,7 @@
+httpConfig:
+    node.environment: test
+    http-server.http.port: 9081
+
 requestRouter:
   #SQL clients connect to the request port
   port: 9080
