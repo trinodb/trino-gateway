@@ -1,3 +1,7 @@
+httpConfig:
+  node.environment: test
+  http-server.http.port: 9081
+
 requestRouter:
   port: REQUEST_ROUTER_PORT
   name: testTrinoRouter
