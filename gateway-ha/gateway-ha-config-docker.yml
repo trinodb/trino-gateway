@@ -1,3 +1,7 @@
+httpConfig:
+  node.environment: test
+  http-server.http.port: 9081
+
 routingRules:
   rulesEngineEnabled: False
   # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
