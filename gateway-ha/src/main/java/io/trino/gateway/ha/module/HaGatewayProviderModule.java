@@ -196,6 +196,7 @@ public class HaGatewayProviderModule
         return new RoutingTargetHandler(
                 routingManager,
                 routingGroupSelector,
+                configuration.getStatementPaths(),
                 configuration.getExtraWhitelistPaths());
     }
 }
