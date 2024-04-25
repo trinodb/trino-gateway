@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -62,7 +63,6 @@ import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTO
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
@@ -84,6 +84,7 @@ public class ProxyRequestHandler
     private final QueryHistoryManager queryHistoryManager;
     private final boolean cookiesEnabled;
     private final boolean addXForwardedHeaders;
+    private final List<String> statementPaths;
 
     @Inject
     public ProxyRequestHandler(
@@ -98,6 +99,7 @@ public class ProxyRequestHandler
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
+        statementPaths = haGatewayConfiguration.getStatementPaths();
     }
 
     @PreDestroy
@@ -167,7 +169,7 @@ public class ProxyRequestHandler
 
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
-        if (request.getUri().getPath().startsWith(V1_STATEMENT_PATH) && request.getMethod().equals(HttpMethod.POST)) {
+        if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
             future = future.transform(response -> recordBackendForQueryId(request, response), executor);
         }
 

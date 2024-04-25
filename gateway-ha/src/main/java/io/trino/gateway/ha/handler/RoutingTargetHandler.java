@@ -36,7 +36,6 @@ import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_INFO_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_NODE_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -44,16 +43,19 @@ public class RoutingTargetHandler
     private static final Logger log = Logger.get(RoutingTargetHandler.class);
     private final RoutingManager routingManager;
     private final RoutingGroupSelector routingGroupSelector;
+    private final List<String> statementPaths;
     private final List<Pattern> extraWhitelistPaths;
     private final boolean cookiesEnabled;
 
     public RoutingTargetHandler(
             RoutingManager routingManager,
             RoutingGroupSelector routingGroupSelector,
+            List<String> statementPaths,
             List<String> extraWhitelistPaths)
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
+        this.statementPaths = requireNonNull(statementPaths);
         this.extraWhitelistPaths = extraWhitelistPaths.stream().map(Pattern::compile).collect(toImmutableList());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
@@ -69,7 +71,7 @@ public class RoutingTargetHandler
 
     public boolean isPathWhiteListed(String path)
     {
-        return path.startsWith(V1_STATEMENT_PATH)
+        return statementPaths.stream().anyMatch(path::startsWith)
                 || path.startsWith(V1_QUERY_PATH)
                 || path.startsWith(TRINO_UI_PATH)
                 || path.startsWith(V1_INFO_PATH)
@@ -92,7 +94,7 @@ public class RoutingTargetHandler
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)
     {
-        String queryId = extractQueryIdIfPresent(request);
+        String queryId = extractQueryIdIfPresent(request, statementPaths);
         if (!isNullOrEmpty(queryId)) {
             return Optional.of(routingManager.findBackendForQueryId(queryId));
         }
