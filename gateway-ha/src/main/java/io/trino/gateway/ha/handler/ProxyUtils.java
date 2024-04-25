@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.InputStreamReader;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +29,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
 
 public final class ProxyUtils
 {
@@ -89,7 +89,7 @@ public final class ProxyUtils
         return parts.get(0);
     }
 
-    public static String extractQueryIdIfPresent(HttpServletRequest request)
+    public static String extractQueryIdIfPresent(HttpServletRequest request, List<String> statementPaths)
     {
         String path = request.getRequestURI();
         String queryParams = request.getQueryString();
@@ -116,28 +116,32 @@ public final class ProxyUtils
             log.error(e, "Error extracting query payload from request");
         }
 
-        return extractQueryIdIfPresent(path, queryParams);
+        return extractQueryIdIfPresent(path, queryParams, statementPaths);
     }
 
-    public static String extractQueryIdIfPresent(String path, String queryParams)
+    public static String extractQueryIdIfPresent(String path, String queryParams, List<String> statementPaths)
     {
         if (path == null) {
             return null;
         }
         String queryId = null;
-
         log.debug("Trying to extract query id from path [%s] or queryString [%s]", path, queryParams);
-        if (path.startsWith(V1_STATEMENT_PATH) || path.startsWith(V1_QUERY_PATH)) {
+        // matchingStatementPath should match paths such as /v1/statement/executing/query_id/nonce/sequence_number,
+        // and if custom paths are supplied using the statementPaths configuration, paths such as
+        // /custom/statement/path/executing/query_id/nonce/sequence_number
+        Optional<String> matchingStatementPath = statementPaths.stream().filter(path::startsWith).findAny();
+        if (matchingStatementPath.isPresent() || path.startsWith(V1_QUERY_PATH)) {
+            path = path.replace(matchingStatementPath.orElse(V1_QUERY_PATH), "");
             String[] tokens = path.split("/");
-            if (tokens.length >= 4) {
-                if (path.contains("queued")
-                        || path.contains("scheduled")
-                        || path.contains("executing")
-                        || path.contains("partialCancel")) {
-                    queryId = tokens[4];
+            if (tokens.length >= 2) {
+                if (tokens[1].equals("queued")
+                        || tokens[1].equals("scheduled")
+                        || tokens[1].equals("executing")
+                        || tokens[1].equals("partialCancel")) {
+                    queryId = tokens[2];
                 }
                 else {
-                    queryId = tokens[3];
+                    queryId = tokens[1];
                 }
             }
         }

@@ -138,6 +138,23 @@ extraWhitelistPaths:
   - '/ext/faster'
 ```
 
+### Configure additional v1/statement-like paths
+
+The Trino client protocol specifies that queries are initiated by a POST to `v1/statement`. 
+The Trino Gateway incorporates this into its routing logic by extracting and recording the 
+query id from responses to such requests. If you use an experimental or commercial build of
+Trino that supports additional endpoints, you can cause Trino Gateway to treat them 
+equivalently to `/v1/statement` by adding them under the `additionalStatementPaths`
+configuration node. They must be absolute, and no path can be a prefix to any other path.
+The standard `/v1/statement` path is always included and does not need to be configured. 
+For example:
+
+```yaml
+additionalStatementPaths:
+  - '/ui/api/insights/ide/statement'
+  - '/v2/statement'
+```
+
 ## Configure behind a load balancer
 
 A possible deployment of Trino Gateway is to run multiple instances of Trino 

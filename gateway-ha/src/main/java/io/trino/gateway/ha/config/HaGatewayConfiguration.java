@@ -13,10 +13,15 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
 
 public class HaGatewayConfiguration
 {
@@ -35,6 +40,7 @@ public class HaGatewayConfiguration
     private List<String> extraWhitelistPaths = new ArrayList<>();
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
+    private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
 
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
@@ -224,5 +230,37 @@ public class HaGatewayConfiguration
     public void setManagedApps(List<String> managedApps)
     {
         this.managedApps = managedApps;
+    }
+
+    public List<String> getStatementPaths()
+    {
+        return statementPaths;
+    }
+
+    public void setAdditionalStatementPaths(List<String> statementPaths)
+    {
+        // remove trailing slashes to ensure predictable behavior when splitting on "/"
+        this.statementPaths = Streams.concat(ImmutableList.of(V1_STATEMENT_PATH).stream(),
+                statementPaths.stream().peek(s -> validateStatementPath(s, statementPaths)).map(s -> s.replaceAll("/+$", ""))).toList();
+    }
+
+    private void validateStatementPath(String statementPath, List<String> statementPaths)
+    {
+        if (statementPath.startsWith(V1_STATEMENT_PATH) ||
+                statementPaths.stream().filter(s -> !s.equals(statementPath)).anyMatch(s -> s.startsWith(statementPath))) {
+            throw new HaGatewayConfigurationException("Statement paths cannot be prefixes of other statement paths");
+        }
+        if (!statementPath.startsWith("/")) {
+            throw new HaGatewayConfigurationException("Statement paths must be absolute");
+        }
+    }
+
+    public static class HaGatewayConfigurationException
+            extends RuntimeException
+    {
+        public HaGatewayConfigurationException(String message)
+        {
+            super(message);
+        }
     }
 }
