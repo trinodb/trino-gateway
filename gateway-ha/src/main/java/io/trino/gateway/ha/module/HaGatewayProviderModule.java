@@ -33,6 +33,7 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.handler.DropWizardProxyHandlerStats;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.QueryIdCachingProxyHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
@@ -72,6 +73,7 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final AuthFilter authenticationFilter;
     private final List<String> extraWhitelistPaths;
+    private final List<String> customStatementPaths;
     private final HaGatewayConfiguration configuration;
     private final Environment environment;
 
@@ -94,6 +96,7 @@ public class HaGatewayProviderModule
 
         OAuth2GatewayCookieConfigurationPropertiesProvider oAuth2GatewayCookieConfigurationPropertiesProvider = OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance();
         oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
+        customStatementPaths = configuration.getCustomStatementPaths();
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
@@ -149,9 +152,9 @@ public class HaGatewayProviderModule
     }
 
     private ProxyHandler getProxyHandler(QueryHistoryManager queryHistoryManager,
-                                         RoutingManager routingManager)
+            RoutingManager routingManager)
     {
-        ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create(
+        ProxyHandlerStats proxyHandlerStats = DropWizardProxyHandlerStats.create(
                 environment,
                 configuration.getRequestRouter().getName() + ".requests");
 
@@ -170,7 +173,8 @@ public class HaGatewayProviderModule
                 routingGroupSelector,
                 getApplicationPort(),
                 proxyHandlerStats,
-                extraWhitelistPaths);
+                extraWhitelistPaths,
+                customStatementPaths);
     }
 
     private int getApplicationPort()
@@ -211,7 +215,7 @@ public class HaGatewayProviderModule
     @Provides
     @Singleton
     public ProxyServer provideGateway(QueryHistoryManager queryHistoryManager,
-                                        RoutingManager routingManager)
+            RoutingManager routingManager)
     {
         ProxyServer gateway = null;
         if (configuration.getRequestRouter() != null) {

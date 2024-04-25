@@ -37,6 +37,7 @@ import org.eclipse.jetty.util.Callback;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -90,6 +92,7 @@ public class QueryIdCachingProxyHandler
 
     private final ProxyHandlerStats proxyHandlerStats;
     private final List<String> extraWhitelistPaths;
+    private final List<String> statementPaths = new ArrayList<>(List.of(V1_STATEMENT_PATH));
     private final String applicationEndpoint;
     private final boolean cookiesEnabled;
 
@@ -99,18 +102,20 @@ public class QueryIdCachingProxyHandler
             RoutingGroupSelector routingGroupSelector,
             int serverApplicationPort,
             ProxyHandlerStats proxyHandlerStats,
-            List<String> extraWhitelistPaths)
+            List<String> extraWhitelistPaths,
+            List<String> customStatementPaths)
     {
         this.proxyHandlerStats = proxyHandlerStats;
         this.routingManager = routingManager;
         this.routingGroupSelector = routingGroupSelector;
         this.queryHistoryManager = queryHistoryManager;
         this.extraWhitelistPaths = extraWhitelistPaths;
+        statementPaths.addAll(customStatementPaths);
         this.applicationEndpoint = "http://localhost:" + serverApplicationPort;
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
-    protected static String extractQueryIdIfPresent(String path, String queryParams)
+    protected String extractQueryIdIfPresent(String path, String queryParams)
     {
         if (path == null) {
             return null;
@@ -118,17 +123,20 @@ public class QueryIdCachingProxyHandler
         String queryId = null;
 
         log.debug("trying to extract query id from  path [%s] or queryString [%s]", path, queryParams);
-        if (path.startsWith(V1_STATEMENT_PATH) || path.startsWith(V1_QUERY_PATH)) {
-            String[] tokens = path.split("/");
-            if (tokens.length >= 4) {
+        Optional<String> pathPrefix = Stream.concat(statementPaths.stream(), Stream.of(V1_QUERY_PATH)).filter(path::startsWith).findFirst();
+        if (pathPrefix.isPresent()) {
+            String reducedPath = path.replace(pathPrefix.orElseThrow(), "");
+
+            String[] tokens = reducedPath.split("/");
+            if (tokens.length >= 2) {
                 if (path.contains("queued")
                         || path.contains("scheduled")
                         || path.contains("executing")
                         || path.contains("partialCancel")) {
-                    queryId = tokens[4];
+                    queryId = tokens[2];
                 }
                 else {
-                    queryId = tokens[3];
+                    queryId = tokens[1];
                 }
             }
         }
@@ -246,7 +254,7 @@ public class QueryIdCachingProxyHandler
     public void preConnectionHook(HttpServletRequest request, Request proxyRequest)
     {
         if (request.getMethod().equals(HttpMethod.POST)
-                && request.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
+                && statementPaths.stream().anyMatch(request.getRequestURI()::startsWith)) {
             proxyHandlerStats.recordRequest();
             try {
                 String requestBody = CharStreams.toString(request.getReader());
@@ -268,14 +276,14 @@ public class QueryIdCachingProxyHandler
 
     private boolean isPathWhiteListed(String path)
     {
-        return path.startsWith(V1_STATEMENT_PATH)
+        return statementPaths.stream().anyMatch(path::startsWith)
                 || path.startsWith(V1_QUERY_PATH)
                 || path.startsWith(TRINO_UI_PATH)
                 || path.startsWith(V1_INFO_PATH)
                 || path.startsWith(V1_NODE_PATH)
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
-                || extraWhitelistPaths.stream().anyMatch(s -> path.startsWith(s));
+                || extraWhitelistPaths.stream().anyMatch(path::startsWith);
     }
 
     @Override
@@ -378,10 +386,11 @@ public class QueryIdCachingProxyHandler
             Callback callback)
     {
         try {
-            if (request.getRequestURI().startsWith(V1_STATEMENT_PATH) && request.getMethod().equals(HttpMethod.POST)) {
+            String requestPath = request.getRequestURI();
+            if (statementPaths.stream().anyMatch(requestPath::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
                 recordBackendForQueryId(request, response, buffer);
             }
-            else if (cookiesEnabled && request.getRequestURI().startsWith(OAuth2GatewayCookie.OAUTH2_PATH)
+            else if (cookiesEnabled && requestPath.startsWith(OAuth2GatewayCookie.OAUTH2_PATH)
                     && !(request.getCookies() != null
                     && Arrays.stream(request.getCookies()).anyMatch(c -> c.getName().equals(OAuth2GatewayCookie.NAME)))) {
                 GatewayCookie oauth2Cookie = new OAuth2GatewayCookie(request.getHeader(PROXY_TARGET_HEADER));

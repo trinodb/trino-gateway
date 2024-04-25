@@ -37,6 +37,7 @@ public class HaGatewayConfiguration
     private List<String> extraWhitelistPaths = new ArrayList<>();
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
+    private List<String> customStatementPaths = new ArrayList<>();
 
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
@@ -204,5 +205,15 @@ public class HaGatewayConfiguration
     public void setManagedApps(List<String> managedApps)
     {
         this.managedApps = managedApps;
+    }
+
+    public List<String> getCustomStatementPaths()
+    {
+        return customStatementPaths;
+    }
+
+    public void setCustomStatementPaths(List<String> customStatementPaths)
+    {
+        this.customStatementPaths = customStatementPaths;
     }
 }

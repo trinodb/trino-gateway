@@ -17,7 +17,7 @@ import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 
 public class StochasticRoutingManager
-        extends RoutingManager
+        extends CachingRoutingManager
 {
     private static final Logger log = Logger.get(StochasticRoutingManager.class);
     QueryHistoryManager queryHistoryManager;
@@ -30,7 +30,7 @@ public class StochasticRoutingManager
     }
 
     @Override
-    protected String findBackendForUnknownQueryId(String queryId)
+    public String findBackendForUnknownQueryId(String queryId)
     {
         String backend;
         backend = queryHistoryManager.getBackendForQueryId(queryId);

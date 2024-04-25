@@ -13,51 +13,15 @@
  */
 package io.trino.gateway.ha.handler;
 
-import com.codahale.metrics.Meter;
 import io.airlift.stats.CounterStat;
-import io.dropwizard.core.setup.Environment;
-import org.weakref.jmx.MBeanExporter;
 import org.weakref.jmx.Managed;
 import org.weakref.jmx.Nested;
 
-import java.lang.management.ManagementFactory;
-
-import static java.util.Objects.requireNonNull;
-
-public final class ProxyHandlerStats
+public interface ProxyHandlerStats
 {
-    // Airlift
-    private final CounterStat requestCount = new CounterStat();
-
-    // Dropwizard
-    private final Meter requestMeter;
-
-    private ProxyHandlerStats(Environment environment, String metricsName)
-    {
-        this.requestMeter = requireNonNull(environment, "environment is null")
-                .metrics()
-                .meter(requireNonNull(metricsName, "metricsName is null"));
-    }
-
-    public void recordRequest()
-    {
-        requestCount.update(1);
-        requestMeter.mark();
-    }
-
-    // Replace this with Guice bind after migrated to Airlift
-    public static ProxyHandlerStats create(Environment environment, String metricsName)
-    {
-        ProxyHandlerStats proxyHandlerStats = new ProxyHandlerStats(environment, metricsName);
-        MBeanExporter exporter = new MBeanExporter(ManagementFactory.getPlatformMBeanServer());
-        exporter.exportWithGeneratedName(proxyHandlerStats);
-        return proxyHandlerStats;
-    }
+    void recordRequest();
 
     @Managed
     @Nested
-    public CounterStat getRequestCount()
-    {
-        return requestCount;
-    }
+    CounterStat getRequestCount();
 }
