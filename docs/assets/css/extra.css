@@ -1,0 +1,12 @@
+/*  Additional CSS hackery */
+:root {
+    --md-primary-fg-color: #000033;
+}
+
+.md-typeset a {
+    color: #DD00A1;
+}
+
+.youtube {
+    color: #EE0F0F;
+}

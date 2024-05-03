@@ -1,0 +1,89 @@
+site_name: Trino Gateway
+site_url: https://trinodb.github.io/trino-gateway/
+site_author: Trino Gateway contributors
+site_description: >-
+  Overview, guides, reference documentation and other reosurces for Trino Gateway.
+
+copyright: |
+  Trino Gateway is open source software licensed under the
+  <a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE"Apache License 2.0</a>
+  and supported by the <a href="https://trino.io/foundation">Trino Software Foundation</a>.
+
+repo_name: trinodb/trino-gateway
+repo_url: https://github.com/trinodb/trino-gateway
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    primary: custom
+  features:
+    - navigation.indexes
+    - navigation.instant
+    - navigation.path
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    - content.action.edit
+    - content.action.view
+  language: en
+  logo: assets/logos/trino.svg
+  favicon: assets/logos/trino-favicon.ico
+
+plugins:
+  - social
+  - search
+extra_css:
+  - assets/css/extra.css
+extra_javascript:
+  - assets/js/extra.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/trinodb/trino-gateway
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/c/trinodb
+    - icon: fontawesome/brands/slack
+      link: https://trino.io/slack
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/trino-software-foundation
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home:
+      - Overview: index.md
+      - Release notes: release-notes.md
+  - Get started:
+      - Quick start: quickstart.md
+      - Installation: installation.md
+      - Operation: operation.md
+      - Security: security.md
+  - Reference:
+      - Routing rules: routing-rules.md
+      - Routing logic: routing-logic.md
+      - Gateway API: gateway-api.md
+      - Resource groups API: resource-groups-api.md
+      - Code architecture: design.md
+  - Contribute:
+    - Code: development.md
+    - Documentation: docs.md
