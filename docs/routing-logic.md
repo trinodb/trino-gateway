@@ -1,37 +1,3 @@
-**Trino Gateway documentation**
-
-<table>
-  <tr>
-    <td>
-      <img src="./assets/logos/trino-gateway-v.png"/>
-    </td>
-    <td>
-      <ul>
-        <li><a href="quickstart.md">Quickstart</a></li>
-        <li><a href="installation.md">Installation</a></li>
-        <li><a href="security.md">Security</a></li>
-        <li><a href="operation.md">Operation</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="gateway-api.md">Gateway API</a></li>
-        <li><a href="resource-groups-api.md">Resource groups API</a></li>
-        <li><a href="routing-rules.md">Routing rules</a></li>
-        <li><a href="routing-logic.md">Routing logic</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="design.md">Design</a></li>
-        <li><a href="development.md">Development</a></li>
-        <li><a href="release-notes.md">Release notes</a></li>
-        <li><a href="references.md">References</a></li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 # Routing Logic
 
 ## Overview
