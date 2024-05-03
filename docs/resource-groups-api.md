@@ -1,5 +1,15 @@
 # Resource groups API
 
+Trino Gateway facilitates the management of resource groups across
+multiple Trino clusters, using the [database resource group manager](https://trino.io/docs/current/admin/resource-groups.html#database-resource-group-manager).
+It allows users to connect their Trino clusters to a centralized resource groups
+table maintained in the Trino Gateway's database. This setup enables management
+of resource groups either through the API or the Trino Gateway user interface.
+
+Trino offers both file-based and database resource group management. Using Trino
+Gateway with database management avoids the need for cluster re-deployments when
+updating resource groups, enhancing operational efficiency.
+
 For resource group and selector apis, we can now specify a query parameter with
 the request supporting multiple trino databases for different trino backends.
 This allows a user to configure a db for every trino backend with their own
