@@ -63,6 +63,9 @@ public class QueryCountBasedRouter
             if (stats.userQueuedCount() != null) {
                 userQueuedCount = new HashMap<String, Integer>(stats.userQueuedCount());
             }
+            else {
+                userQueuedCount = new HashMap<String, Integer>();
+            }
         }
 
         public String clusterId()
