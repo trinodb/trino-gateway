@@ -1,37 +1,3 @@
-**Trino Gateway documentation**
-
-<table>
-  <tr>
-    <td>
-      <img src="./assets/logos/trino-gateway-v.png"/>
-    </td>
-    <td>
-      <ul>
-        <li><a href="quickstart.md">Quickstart</a></li>
-        <li><a href="installation.md">Installation</a></li>
-        <li><a href="security.md">Security</a></li>
-        <li><a href="operation.md">Operation</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="gateway-api.md">Gateway API</a></li>
-        <li><a href="resource-groups-api.md">Resource groups API</a></li>
-        <li><a href="routing-rules.md">Routing rules</a></li>
-        <li><a href="routing-logic.md">Routing logic</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="design.md">Design</a></li>
-        <li><a href="development.md">Development</a></li>
-        <li><a href="release-notes.md">Release notes</a></li>
-        <li><a href="references.md">References</a></li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 # Development
 
 ## Build requirements
@@ -61,8 +27,8 @@ verified and may run into unexpected issues.
 Run `./mvnw clean install` to build `trino-gateway`. VM options required for
 compilation and testing are specified in `.mvn/jvm.config`.
 
-Edit the [config file](/gateway-ha/gateway-ha-config.yml) and update the mysql
-db information.
+Edit the configuration file `gateway-ha-config.yml` in the `gateway-ha` folder
+and update the mysql db information.
 
 ```
 cd gateway-ha/target/
@@ -71,8 +37,8 @@ java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=
 
 #### In Docker
 
-Follow the [separate instructions for building the container and running Trino 
-Gateway with docker compose](../docker/README.md)
+Follow the separate instructions for building the container and running Trino
+Gateway with docker compose from the `README.md` file in the `docker` folder.
 
 #### Common Run Failures
 
@@ -109,8 +75,7 @@ for more details.
 ## Contributing
 
 Want to help build Trino Gateway? Check out our [contributing
-documentation](../.github/CONTRIBUTING.md)
-
+documentation](https://github.com/trinodb/trino-gateway/blob/main/.github/CONTRIBUTING.md)
 
 ## Release process
 
