@@ -47,7 +47,7 @@ public class TestQueryCountBasedRouter
     // Helper function to generate the ClusterStat list
     private static List<ClusterStats> getClusterStatsList(String routingGroup)
     {
-        ImmutableList.Builder<ClusterStats> clustersBuilder = new ImmutableList.Builder();
+        ImmutableList.Builder<ClusterStats> clustersBuilder = new ImmutableList.Builder<ClusterStats>();
         // Set Cluster1 stats
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c1");
@@ -130,11 +130,10 @@ public class TestQueryCountBasedRouter
         cluster.routingGroup("adhoc");
         cluster.runningQueryCount(5);
         cluster.queuedQueryCount(LEAST_QUEUED_COUNT);
-        cluster.userQueuedCount(new HashMap<String, Integer>());
         return cluster.build();
     }
 
-    static ClusterStats getClusterWithMinRunnningQueries()
+    static ClusterStats getClusterWithMinRunningQueries()
     {
         ClusterStats.Builder cluster = ClusterStats.builder("c-Minimal-Running");
         cluster.proxyTo(BACKEND_URL_5);
@@ -150,7 +149,7 @@ public class TestQueryCountBasedRouter
     public void init()
     {
         //Have a adoc and an etl routing groups - 2 sets of clusters
-        clusters = new ImmutableList.Builder()
+        clusters = new ImmutableList.Builder<ClusterStats>()
                 .addAll(getClusterStatsList("adhoc"))
                 .addAll(getClusterStatsList("etl"))
                 .build();
@@ -211,7 +210,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testAdhocroutingGroupFailOver()
+    public void testAdhocRoutingGroupFailOver()
     {
         // The ETL routing group doesn't exist
         String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
@@ -223,7 +222,7 @@ public class TestQueryCountBasedRouter
     public void testClusterWithLeastQueueCount()
     {
         // Add a cluster with minimal queuelength
-        clusters = new ImmutableList.Builder()
+        clusters = new ImmutableList.Builder<ClusterStats>()
                 .addAll(clusters)
                 .add(getClusterWithNoUserQueueAndMinQueueCount())
                 .build();
@@ -238,10 +237,10 @@ public class TestQueryCountBasedRouter
     public void testClusterWithLeastRunningCount()
     {
         // Add a cluster with minimal queuelength
-        clusters = new ImmutableList.Builder()
+        clusters = new ImmutableList.Builder<ClusterStats>()
                 .addAll(clusters)
                 .add(getClusterWithNoUserQueueAndMinQueueCount())
-                .add(getClusterWithMinRunnningQueries())
+                .add(getClusterWithMinRunningQueries())
                 .build();
 
         queryCountBasedRouter.updateBackEndStats(clusters);
