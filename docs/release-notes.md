@@ -1,37 +1,3 @@
-**Trino Gateway documentation**
-
-<table>
-  <tr>
-    <td>
-      <img src="./assets/logos/trino-gateway-v.png"/>
-    </td>
-    <td>
-      <ul>
-        <li><a href="quickstart.md">Quickstart</a></li>
-        <li><a href="installation.md">Installation</a></li>
-        <li><a href="security.md">Security</a></li>
-        <li><a href="operation.md">Operation</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="gateway-api.md">Gateway API</a></li>
-        <li><a href="resource-groups-api.md">Resource groups API</a></li>
-        <li><a href="routing-rules.md">Routing rules</a></li>
-        <li><a href="routing-logic.md">Routing logic</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="design.md">Design</a></li>
-        <li><a href="development.md">Development</a></li>
-        <li><a href="release-notes.md">Release notes</a></li>
-        <li><a href="references.md">References</a></li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 # Release notes
 
 ## Trino Gateway 8 (6 May 2024)
@@ -103,9 +69,9 @@ Docker container `trinodb/trino-gateway:6`
 
 [gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
 
-The first release of Trino Gateway is based on the [Presto
-Gateway](https://github.com/lyft/presto-gateway/) 1.9.5 codebase
-[#4](#4), with these additions:
+The first release of Trino Gateway is based on the 
+[Presto Gateway](https://github.com/lyft/presto-gateway/) 1.9.5 codebase
+([#4](https://github.com/trinodb/trino-gateway/pull/4)) with these additions:
 
 * Add authentication and authorization with LDAP, OIDC and user list from config
   file. ([#9](https://github.com/trinodb/trino-gateway/pull/9))
