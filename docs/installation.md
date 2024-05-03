@@ -1,37 +1,3 @@
-**Trino Gateway documentation**
-
-<table>
-  <tr>
-    <td>
-      <img src="./assets/logos/trino-gateway-v.png"/>
-    </td>
-    <td>
-      <ul>
-        <li><a href="quickstart.md">Quickstart</a></li>
-        <li><a href="installation.md">Installation</a></li>
-        <li><a href="security.md">Security</a></li>
-        <li><a href="operation.md">Operation</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="gateway-api.md">Gateway API</a></li>
-        <li><a href="resource-groups-api.md">Resource groups API</a></li>
-        <li><a href="routing-rules.md">Routing rules</a></li>
-        <li><a href="routing-logic.md">Routing logic</a></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li><a href="design.md">Design</a></li>
-        <li><a href="development.md">Development</a></li>
-        <li><a href="release-notes.md">Release notes</a></li>
-        <li><a href="references.md">References</a></li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 # Installation
 
 Trino Gateway is distributed as an executable JAR file. The [release
@@ -69,10 +35,11 @@ distribution is installed.
 
 Trino Gateway requires a MySQL or PostgreSQL database.
 
-Use the following scripts to initialize the database:
+Use the following scripts in the `gateway-ha/src/main/resources/` folder to
+initialize the database:
 
-* [gateway-ha-persistence-mysql.sql](../gateway-ha/src/main/resources/gateway-ha-persistence-mysql.sql) for MySQL
-* [gateway-ha-persistence-postgres.sql](../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql) for PostgreSQL
+* `gateway-ha-persistence-mysql.sql` for MySQL
+* `gateway-ha-persistence-postgres.sql` for PostgreSQL
 
 The files are also included in the JAR file.
 
@@ -121,9 +88,8 @@ HTTP if the request includes `X-Forwarded-Proto: HTTPS`.
 After downloading or building the JAR, rename it to `gateway-ha.jar`,
 and place it in a directory with read and write access such as `/opt/trinogateway`.
 
-Copy the example config file
-[gateway-ha-config.yml](../gateway-ha/gateway-ha-config.yml)  into the same
-directory, and update the configuration as needed.
+Copy the example config file `gateway-ha-config.yml` from the `gateway-ha/`
+directory into the same directory, and update the configuration as needed.
 
 Each component of the Trino Gateway has a corresponding node in the
 configuration YAML file.
@@ -175,15 +141,15 @@ java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
 
 Helm manages the deployment of Kubernetes applications by templating Kubernetes
 resources with a set of Helm charts. The Trino Gateway Helm chart consists 
-of the following compnents:
+of the following components:
 
 * A `config` node for general configuration
 * `dataStoreSecret`, `backendStateSecret` and `authenticationSecret` for 
   providing sensitive configurations through Kubernetes secrets, 
 * Standard Helm options such as `replicaCount`, `resources` and `ingress`.
 
-The default [values.yaml](../helm/trino-gateway/values.yaml) includes basic
-configuration options as an example. For a simple deployment, proceed with 
+The default `values.yaml` found in the `helm/trino-gateway` folder includes
+basic configuration options as an example. For a simple deployment, proceed with 
 the following steps:
 
 Create a yaml file containing the configuration for your `datastore`:
