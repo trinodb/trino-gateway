@@ -9,7 +9,7 @@ Docker container `trinodb/trino-gateway:8`
 * Add a router policy based on query count per cluster. ([#98](https://github.com/trinodb/trino-gateway/pull/98))
 * Add a router policy for select paths based on cookie content. ([#188](https://github.com/trinodb/trino-gateway/pull/188))
 * Support configuring access permissions for UI pages. ([#296](https://github.com/trinodb/trino-gateway/pull/296))
-* Add Helm chart for Kubernetes deployments.  ([#296](https://github.com/trinodb/trino-gateway/pull/296))
+* Add Helm chart for Kubernetes deployments. ([#87](https://github.com/trinodb/trino-gateway/issues/87))
 * Require Java 21 for build and runtime. ([#225](https://github.com/trinodb/trino-gateway/pull/225))
 * Fix the `userInfo` resource to pass role information used by the API, so that
   the webapp authentication matches the API authentication. ([#310](https://github.com/trinodb/trino-gateway/pull/310))
