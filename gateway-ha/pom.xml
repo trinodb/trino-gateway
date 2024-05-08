@@ -559,9 +559,9 @@
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
-                        <phase>generate-resources</phase>
+                        <phase>prepare-package</phase>
                         <configuration>
-                            <outputDirectory>src/main/resources/static</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
