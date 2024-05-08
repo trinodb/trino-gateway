@@ -1,5 +1,12 @@
 # Release notes
 
+## Trino Gateway 9 (8 May 2024)
+
+[JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar),
+Docker container `trinodb/trino-gateway:9`
+
+* Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
+
 ## Trino Gateway 8 (6 May 2024)
 
 [JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar),
