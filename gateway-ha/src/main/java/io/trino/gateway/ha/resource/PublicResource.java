@@ -59,7 +59,7 @@ public class PublicResource
     public Response getBackendState(@PathParam("name") String name)
     {
         return gatewayBackendManager.getBackendByName(name).map(backendStateManager::getBackendState)
-                .map(state -> Response.ok(state.state()).build())
+                .map(state -> Response.ok(state).build())
                 .orElseGet(() -> Response.status(404).build());
     }
 }
