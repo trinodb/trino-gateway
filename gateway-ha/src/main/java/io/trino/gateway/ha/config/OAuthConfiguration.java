@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 public class OAuthConfiguration
@@ -21,27 +23,13 @@ public class OAuthConfiguration
     private String clientId;
     private String clientSecret;
     private String tokenEndpoint;
-    private String authorizationEndpoint;
+    private URI authorizationEndpoint;
     private String jwkEndpoint;
     private List<String> scopes;
-    private String redirectUrl;
+    private URI redirectUrl;
     private String userIdField;
     private List<String> audiences;
     private String redirectWebUrl;
-
-    public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField, List<String> audiences)
-    {
-        this.issuer = issuer;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.tokenEndpoint = tokenEndpoint;
-        this.authorizationEndpoint = authorizationEndpoint;
-        this.jwkEndpoint = jwkEndpoint;
-        this.scopes = scopes;
-        this.redirectUrl = redirectUrl;
-        this.userIdField = userIdField;
-        this.audiences = audiences;
-    }
 
     public OAuthConfiguration() {}
 
@@ -85,14 +73,19 @@ public class OAuthConfiguration
         this.tokenEndpoint = tokenEndpoint;
     }
 
-    public String getAuthorizationEndpoint()
+    public URI getAuthorizationEndpoint()
     {
         return this.authorizationEndpoint;
     }
 
     public void setAuthorizationEndpoint(String authorizationEndpoint)
     {
-        this.authorizationEndpoint = authorizationEndpoint;
+        try {
+            this.authorizationEndpoint = new URI(authorizationEndpoint);
+        }
+        catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public String getJwkEndpoint()
@@ -115,14 +108,19 @@ public class OAuthConfiguration
         this.scopes = scopes;
     }
 
-    public String getRedirectUrl()
+    public URI getRedirectUrl()
     {
         return this.redirectUrl;
     }
 
     public void setRedirectUrl(String redirectUrl)
     {
-        this.redirectUrl = redirectUrl;
+        try {
+            this.redirectUrl = new URI(redirectUrl);
+        }
+        catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     public String getUserIdField()

@@ -22,8 +22,14 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.nimbusds.oauth2.sdk.Scope;
+import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.State;
+import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
+import com.nimbusds.openid.connect.sdk.Nonce;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.OAuthConfiguration;
+import io.trino.gateway.ha.domain.Result;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -40,7 +46,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.google.common.hash.Hashing.sha256;
+import static com.nimbusds.oauth2.sdk.ResponseType.CODE;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LbOAuthManager
 {
@@ -70,12 +79,12 @@ public class LbOAuthManager
      * @param redirectLocation the application path to redirect back to
      * @return redirect response with a Set-Cookie header
      */
-    public Response exchangeCodeForToken(String code, String redirectLocation)
+    public Response exchangeCodeForToken(String code, String nonce, String redirectLocation)
     {
         String tokenEndpoint = oauthConfig.getTokenEndpoint();
         String clientId = oauthConfig.getClientId();
         String clientSecret = oauthConfig.getClientSecret();
-        String redirectUri = oauthConfig.getRedirectUrl();
+        String redirectUri = oauthConfig.getRedirectUrl().toString();
         String redirectWebUrl = oauthConfig.getRedirectWebUrl();
         Client oauthClient = ClientBuilder.newBuilder().build();
 
@@ -98,6 +107,28 @@ public class LbOAuthManager
 
         OidcTokens tokens = tokenResponse.readEntity(OidcTokens.class);
 
+        // verify nonce
+        Optional<Map<String, Claim>> claims = getClaimsFromIdToken(tokens.getIdToken());
+        if (claims.isEmpty()) {
+            log.error("Invalid id_token");
+            return Response.status(401)
+                    .cookie(OidcCookie.delete())
+                    .build();
+        }
+        Claim nonceInClaim = claims.orElseThrow().get("nonce");
+        if (nonceInClaim == null || nonceInClaim.asString() == null) {
+            log.error("Nonce in claim is missing");
+            return Response.status(401)
+                    .cookie(OidcCookie.delete())
+                    .build();
+        }
+        if (!nonceInClaim.asString().equals(hashNonce(nonce))) {
+            log.error("Nonce does not match");
+            return Response.status(401)
+                    .cookie(OidcCookie.delete())
+                    .build();
+        }
+
         return Response.status(302)
                 .location(URI.create(redirectWebUrl == null ? redirectLocation : redirectWebUrl))
                 .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
@@ -109,15 +140,22 @@ public class LbOAuthManager
      *
      * @return redirect response to the authorization provider
      */
-    public String getAuthorizationCode()
+    public Response getAuthorizationCodeResponse()
     {
-        String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
-        String clientId = oauthConfig.getClientId();
-        String redirectUrl = oauthConfig.getRedirectUrl();
-        String scopes = String.join("+", oauthConfig.getScopes());
-        return format(
-                "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
-                authorizationEndpoint, clientId, redirectUrl, scopes);
+        State state = new State();
+        Nonce nonce = new Nonce();
+        AuthenticationRequest request = new AuthenticationRequest.Builder(
+                CODE,
+                new Scope(oauthConfig.getScopes().toArray(String[]::new)),
+                new ClientID(oauthConfig.getClientId()),
+                oauthConfig.getRedirectUrl())
+                .endpointURI(oauthConfig.getAuthorizationEndpoint())
+                .state(state)
+                .nonce(new Nonce(hashNonce(nonce.getValue())))
+                .build();
+        return Response.ok(Result.ok("Ok", request.toURI().toString()))
+                .cookie(OidcCookie.create(state.getValue(), nonce.getValue()))
+                .build();
     }
 
     /**
@@ -160,6 +198,13 @@ public class LbOAuthManager
         return roles.stream()
                 .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
                 .distinct().toList();
+    }
+
+    private String hashNonce(String nonce)
+    {
+        return sha256()
+                .hashString(nonce, UTF_8)
+                .toString();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
