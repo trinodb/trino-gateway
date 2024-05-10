@@ -15,6 +15,7 @@ package io.trino.gateway.ha.resource;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.TableData;
@@ -86,11 +87,10 @@ public class GatewayWebAppResource
     {
         List<ProxyBackendConfiguration> allBackends = gatewayBackendManager.getAllBackends();
         List<BackendResponse> data = allBackends.stream().map(b -> {
-            BackendStateManager.BackendState backendState = backendStateManager.getBackendState(b);
-            Map<String, Integer> state = backendState.state();
+            ClusterStats backendState = backendStateManager.getBackendState(b);
             BackendResponse backendResponse = new BackendResponse();
-            backendResponse.setQueued(state.get("QUEUED"));
-            backendResponse.setRunning(state.get("RUNNING"));
+            backendResponse.setQueued(backendState.queuedQueryCount());
+            backendResponse.setRunning(backendState.runningQueryCount());
             backendResponse.setName(b.getName());
             backendResponse.setProxyTo(b.getProxyTo());
             backendResponse.setActive(b.isActive());
