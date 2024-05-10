@@ -13,14 +13,11 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.util.Objects.requireNonNull;
 
 public class BackendStateManager
 {
@@ -31,27 +28,14 @@ public class BackendStateManager
         this.clusterStats = new HashMap<>();
     }
 
-    public BackendState getBackendState(ProxyBackendConfiguration backend)
+    public ClusterStats getBackendState(ProxyBackendConfiguration backend)
     {
         String name = backend.getName();
-        ClusterStats stats = clusterStats.getOrDefault(backend.getName(), ClusterStats.builder(name).build());
-        Map<String, Integer> state = new HashMap<>();
-        state.put("QUEUED", stats.queuedQueryCount());
-        state.put("RUNNING", stats.runningQueryCount());
-        return new BackendState(name, state);
+        return clusterStats.getOrDefault(name, ClusterStats.builder(name).build());
     }
 
     public void updateStates(String clusterId, ClusterStats stats)
     {
         clusterStats.put(clusterId, stats);
-    }
-
-    public record BackendState(String name, Map<String, Integer> state)
-    {
-        public BackendState
-        {
-            requireNonNull(name, "name is null");
-            state = ImmutableMap.copyOf(requireNonNull(state, "state is null"));
-        }
     }
 }
