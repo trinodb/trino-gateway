@@ -100,14 +100,15 @@ configuration YAML file.
 
 Find more information in the [routing rules documentation](routing-rules.md).
 
-
 ### Configure logging <a name="logging">
 
-Path to `log.properties` must be set via `log.levels-file` JVM options
-like `-Dlog.levels-file=etc/log.properties`.
+To configure the logging level for various classes, specify the path to the 
+`log.properties` file using the `log.levels-file` JVM options, such as 
+`-Dlog.levels-file=etc/log.properties`, when the logging type is `external`.
 
-Use the `log.*` properties from the [Trino logging properties
-documentation](https://trino.io/docs/current/admin/properties-logging.html) for further configuration.
+For additional configurations, use the `log.*` properties from the 
+[Trino logging properties documentation](https://trino.io/docs/current/admin/properties-logging.html) and specify the path to `config.properties` 
+file using the `config` JVM options, such as `-Dconfig=var/config.properties`.
 
 ### Proxying additional paths
 
