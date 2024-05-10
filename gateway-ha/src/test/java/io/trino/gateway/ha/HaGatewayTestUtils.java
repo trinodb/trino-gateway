@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
@@ -87,19 +89,21 @@ public class HaGatewayTestUtils
     }
 
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
-            throws IOException
+            throws Exception
     {
         File baseDir = new File(System.getProperty("java.io.tmpdir"));
         File tempH2DbDir = new File(baseDir, "h2db-" + RANDOM.nextInt() + System.currentTimeMillis());
         tempH2DbDir.deleteOnExit();
 
+        URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
         String configStr =
                 getResourceFileContent(configFile)
                         .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
                         .replace("DB_FILE_PATH", tempH2DbDir.getAbsolutePath())
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
-                        .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)));
+                        .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
+                        .replace("LOCALHOST_JKS", Paths.get(resource.toURI()).toFile().getAbsolutePath());
 
         File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
 
