@@ -1,0 +1,56 @@
+requestRouter:
+  port: REQUEST_ROUTER_PORT
+  name: testTrinoRouter
+  ssl: true
+  keystorePath: LOCALHOST_JKS
+  keystorePass: 123456
+
+server:
+  applicationConnectors:
+    - type: http
+      port: APPLICATION_CONNECTOR_PORT
+  adminConnectors:
+    - type: http
+      port: ADMIN_CONNECTOR_PORT
+
+dataStore:
+  jdbcUrl: jdbc:h2:DB_FILE_PATH
+  user: sa
+  password: sa
+  driver: org.h2.Driver
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+
+managedApps:
+  - io.trino.gateway.ha.GatewayManagedApp
+
+extraWhitelistPaths:
+  - "/v1/custom"
+
+logging:
+  type: external
+
+authorization:
+  admin: .*FOO.*
+  user: .*BAR.*
+  api: .*BAZ.*
+
+presetUsers:
+  foo@bar.com:
+    privileges: FOO_BAR
+
+authentication:
+  defaultType: "oauth"
+  oauth:
+    issuer: http://localhost:4444/
+    clientId: trino_client_id
+    clientSecret: trino_client_secret
+    tokenEndpoint: http://localhost:4444/oauth2/token
+    authorizationEndpoint: http://localhost:4444/oauth2/auth
+    jwkEndpoint: http://localhost:4444/.well-known/jwks.json
+    redirectUrl: https://localhost:REQUEST_ROUTER_PORT/oidc/callback
+    redirectWebUrl: https://localhost:REQUEST_ROUTER_PORT/
+    userIdField: sub
+    scopes:
+      - openid
