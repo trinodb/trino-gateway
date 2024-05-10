@@ -23,7 +23,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
 import java.util.Map;
 
-import static io.airlift.configuration.ConfigurationLoader.getSystemProperties;
+import static io.airlift.configuration.ConfigurationLoader.loadProperties;
 
 public class HaGatewayLauncher
         extends BaseApp
@@ -40,7 +40,7 @@ public class HaGatewayLauncher
             throws Exception
     {
         Logging.initialize();
-        Map<String, String> properties = getSystemProperties();
+        Map<String, String> properties = loadProperties();
         ConfigurationFactory configurationFactory = new ConfigurationFactory(properties);
         LoggingConfiguration configuration = configurationFactory.build(LoggingConfiguration.class);
         Logging logging = Logging.initialize();
