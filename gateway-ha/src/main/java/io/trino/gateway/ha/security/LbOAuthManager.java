@@ -72,11 +72,11 @@ public class LbOAuthManager
      */
     public Response exchangeCodeForToken(String code, String redirectLocation)
     {
-        String tokenEndpoint = oauthConfig.getTokenEndpoint();
+        String tokenEndpoint = oauthConfig.getTokenEndpoint().toString();
         String clientId = oauthConfig.getClientId();
         String clientSecret = oauthConfig.getClientSecret();
-        String redirectUri = oauthConfig.getRedirectUrl();
-        String redirectWebUrl = oauthConfig.getRedirectWebUrl();
+        String redirectUri = oauthConfig.getRedirectUrl().toString();
+        Optional<URI> redirectWebUrl = oauthConfig.getRedirectWebUrl();
         Client oauthClient = ClientBuilder.newBuilder().build();
 
         Form form = new Form().param("grant_type", "authorization_code")
@@ -99,7 +99,7 @@ public class LbOAuthManager
         OidcTokens tokens = tokenResponse.readEntity(OidcTokens.class);
 
         return Response.status(302)
-                .location(URI.create(redirectWebUrl == null ? redirectLocation : redirectWebUrl))
+                .location(redirectWebUrl.orElse(URI.create(redirectLocation)))
                 .cookie(SessionCookie.getTokenCookie(tokens.getIdToken()))
                 .build();
     }
@@ -111,9 +111,9 @@ public class LbOAuthManager
      */
     public String getAuthorizationCode()
     {
-        String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint();
+        String authorizationEndpoint = oauthConfig.getAuthorizationEndpoint().toString();
         String clientId = oauthConfig.getClientId();
-        String redirectUrl = oauthConfig.getRedirectUrl();
+        String redirectUrl = oauthConfig.getRedirectUrl().toString();
         String scopes = String.join("+", oauthConfig.getScopes());
         return format(
                 "%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s",
@@ -134,8 +134,8 @@ public class LbOAuthManager
         try {
             DecodedJWT jwt = JWT.decode(idToken);
 
-            String jwkEndpoint = oauthConfig.getJwkEndpoint();
-            JwkProvider provider = new UrlJwkProvider(new URL(jwkEndpoint));
+            URI jwkEndpoint = oauthConfig.getJwkEndpoint();
+            JwkProvider provider = new UrlJwkProvider(jwkEndpoint.toURL());
             Jwk jwk = provider.get(jwt.getKeyId());
             RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
 
