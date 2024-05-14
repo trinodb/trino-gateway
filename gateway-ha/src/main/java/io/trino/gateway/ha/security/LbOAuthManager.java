@@ -29,11 +29,14 @@ import com.nimbusds.oauth2.sdk.auth.ClientSecretBasic;
 import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
+import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
+import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse;
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.OAuthConfiguration;
+import io.trino.gateway.ha.domain.Result;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
@@ -45,9 +48,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.google.common.hash.Hashing.sha256;
 import static com.nimbusds.oauth2.sdk.ResponseType.CODE;
+import static com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet.NONCE_CLAIM_NAME;
 import static jakarta.ws.rs.core.Response.Status.FOUND;
 import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class LbOAuthManager
 {
@@ -74,10 +80,11 @@ public class LbOAuthManager
      * Sets it in a cookie and redirects back to a location.
      *
      * @param code the authorization code obtained from the authorization server
+     * @param nonce the nonce used in authentication request before hash
      * @param redirectLocation the application path to redirect back to
      * @return redirect response with a Set-Cookie header
      */
-    public Response exchangeCodeForToken(String code, String redirectLocation)
+    public Response exchangeCodeForToken(String code, String nonce, String redirectLocation)
     {
         TokenRequest tokenRequest = new TokenRequest(
                 oauthConfig.getTokenEndpoint(),
@@ -90,19 +97,29 @@ public class LbOAuthManager
         }
         catch (ParseException | IOException e) {
             log.error("Failed to parse token response: %s", e.getMessage());
-            return Response.status(UNAUTHORIZED).build();
+            return buildUnauthorizedResponse();
         }
 
         if (!tokenResponse.indicatesSuccess()) {
             HTTPResponse httpResponse = tokenResponse.toErrorResponse().toHTTPResponse();
             log.error("token response failed with code %d - %s", httpResponse.getStatusCode(), httpResponse.getBody());
-            return Response.status(UNAUTHORIZED).build();
+            return buildUnauthorizedResponse();
         }
 
         OIDCTokenResponse successResponse = (OIDCTokenResponse) tokenResponse.toSuccessResponse();
+        String idToken = successResponse.getOIDCTokens().getIDToken().serialize();
+
+        Optional<Claim> result = getClaimsFromIdToken(idToken)
+                .map(map -> map.get(NONCE_CLAIM_NAME))
+                .filter(nonceInClaim -> nonceInClaim.asString().equals(hashNonce(nonce)));
+        if (result.isEmpty()) {
+            log.error("Invalid nonce");
+            return buildUnauthorizedResponse();
+        }
         return Response.status(FOUND)
                 .location(oauthConfig.getRedirectWebUrl().orElse(URI.create(redirectLocation)))
-                .cookie(SessionCookie.getTokenCookie(successResponse.getOIDCTokens().getIDToken().serialize()))
+                .cookie(SessionCookie.getTokenCookie(idToken))
+                .cookie(OidcCookie.delete())
                 .build();
     }
 
@@ -111,16 +128,22 @@ public class LbOAuthManager
      *
      * @return redirect response to the authorization provider
      */
-    public String getAuthorizationCode()
+    public Response getAuthorizationCodeResponse()
     {
+        State state = new State();
+        Nonce nonce = new Nonce();
         AuthenticationRequest request = new AuthenticationRequest.Builder(
                 CODE,
                 new Scope(oauthConfig.getScopes().toArray(String[]::new)),
                 new ClientID(oauthConfig.getClientId()),
                 oauthConfig.getRedirectUrl())
                 .endpointURI(oauthConfig.getAuthorizationEndpoint())
+                .state(state)
+                .nonce(new Nonce(hashNonce(nonce.getValue())))
                 .build();
-        return request.toURI().toString();
+        return Response.ok(Result.ok("Ok", request.toURI().toString()))
+                .cookie(OidcCookie.create(state.getValue(), nonce.getValue()))
+                .build();
     }
 
     /**
@@ -163,5 +186,19 @@ public class LbOAuthManager
         return roles.stream()
                 .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
                 .distinct().toList();
+    }
+
+    private String hashNonce(String nonce)
+    {
+        return sha256()
+                .hashString(nonce, UTF_8)
+                .toString();
+    }
+
+    public static Response buildUnauthorizedResponse()
+    {
+        return Response.status(UNAUTHORIZED)
+                .cookie(OidcCookie.delete())
+                .build();
     }
 }
