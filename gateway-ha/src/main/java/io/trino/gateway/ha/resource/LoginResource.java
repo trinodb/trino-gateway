@@ -15,14 +15,17 @@ package io.trino.gateway.ha.resource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbPrincipal;
+import io.trino.gateway.ha.security.OidcCookie;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -30,6 +33,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -37,11 +41,18 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import static io.trino.gateway.ha.security.LbOAuthManager.buildUnauthorizedResponse;
+import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 public class LoginResource
 {
+    private static final Logger log = Logger.get(LoginResource.class);
+    public static final String CALLBACK_ENDPOINT = "oidc/callback";
+
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
 
@@ -61,18 +72,30 @@ public class LoginResource
         if (oauthManager == null) {
             throw new WebApplicationException("OAuth configuration is not setup");
         }
-        String authorizationUrl = oauthManager.getAuthorizationCode();
-        return Response.ok(Result.ok("Ok", authorizationUrl)).build();
+        return oauthManager.getAuthorizationCodeResponse();
     }
 
-    @Path("oidc/callback")
+    @Path(CALLBACK_ENDPOINT)
     @GET
-    public Response callback(@QueryParam("code") String code)
+    public Response callback(
+            @QueryParam("code") String code,
+            @QueryParam("state") String state,
+            @CookieParam(OIDC_COOKIE) Cookie cookie)
     {
         if (oauthManager == null) {
             throw new WebApplicationException("OAuth configuration is not setup");
         }
-        return oauthManager.exchangeCodeForToken(code, "/");
+        if (cookie == null) {
+            log.error("OIDC cookie doesn't exist");
+            return buildUnauthorizedResponse();
+        }
+        Optional<String> cookieState = OidcCookie.getState(cookie);
+        Optional<String> nonce = OidcCookie.getNonce(cookie);
+        if (cookieState.isEmpty() || !cookieState.orElseThrow().equals(state) || nonce.isEmpty()) {
+            log.error("Invalid OIDC cookie");
+            return buildUnauthorizedResponse();
+        }
+        return oauthManager.exchangeCodeForToken(code, nonce.orElseThrow(), "/");
     }
 
     @POST
