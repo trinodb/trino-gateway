@@ -13,35 +13,23 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 public class OAuthConfiguration
 {
     private String issuer;
     private String clientId;
     private String clientSecret;
-    private String tokenEndpoint;
-    private String authorizationEndpoint;
-    private String jwkEndpoint;
+    private URI tokenEndpoint;
+    private URI authorizationEndpoint;
+    private URI jwkEndpoint;
     private List<String> scopes;
-    private String redirectUrl;
+    private URI redirectUrl;
     private String userIdField;
     private List<String> audiences;
-    private String redirectWebUrl;
-
-    public OAuthConfiguration(String issuer, String clientId, String clientSecret, String tokenEndpoint, String authorizationEndpoint, String jwkEndpoint, List<String> scopes, String redirectUrl, String userIdField, List<String> audiences)
-    {
-        this.issuer = issuer;
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-        this.tokenEndpoint = tokenEndpoint;
-        this.authorizationEndpoint = authorizationEndpoint;
-        this.jwkEndpoint = jwkEndpoint;
-        this.scopes = scopes;
-        this.redirectUrl = redirectUrl;
-        this.userIdField = userIdField;
-        this.audiences = audiences;
-    }
+    private URI redirectWebUrl;
 
     public OAuthConfiguration() {}
 
@@ -75,34 +63,34 @@ public class OAuthConfiguration
         this.clientSecret = clientSecret;
     }
 
-    public String getTokenEndpoint()
+    public URI getTokenEndpoint()
     {
         return this.tokenEndpoint;
     }
 
     public void setTokenEndpoint(String tokenEndpoint)
     {
-        this.tokenEndpoint = tokenEndpoint;
+        this.tokenEndpoint = URI.create(tokenEndpoint);
     }
 
-    public String getAuthorizationEndpoint()
+    public URI getAuthorizationEndpoint()
     {
         return this.authorizationEndpoint;
     }
 
     public void setAuthorizationEndpoint(String authorizationEndpoint)
     {
-        this.authorizationEndpoint = authorizationEndpoint;
+        this.authorizationEndpoint = URI.create(authorizationEndpoint);
     }
 
-    public String getJwkEndpoint()
+    public URI getJwkEndpoint()
     {
         return this.jwkEndpoint;
     }
 
     public void setJwkEndpoint(String jwkEndpoint)
     {
-        this.jwkEndpoint = jwkEndpoint;
+        this.jwkEndpoint = URI.create(jwkEndpoint);
     }
 
     public List<String> getScopes()
@@ -115,14 +103,14 @@ public class OAuthConfiguration
         this.scopes = scopes;
     }
 
-    public String getRedirectUrl()
+    public URI getRedirectUrl()
     {
         return this.redirectUrl;
     }
 
     public void setRedirectUrl(String redirectUrl)
     {
-        this.redirectUrl = redirectUrl;
+        this.redirectUrl = URI.create(redirectUrl);
     }
 
     public String getUserIdField()
@@ -145,13 +133,13 @@ public class OAuthConfiguration
         this.audiences = audiences;
     }
 
-    public String getRedirectWebUrl()
+    public Optional<URI> getRedirectWebUrl()
     {
-        return this.redirectWebUrl;
+        return Optional.ofNullable(this.redirectWebUrl);
     }
 
     public void setRedirectWebUrl(String redirectWebUrl)
     {
-        this.redirectWebUrl = redirectWebUrl;
+        this.redirectWebUrl = URI.create(redirectWebUrl);
     }
 }
