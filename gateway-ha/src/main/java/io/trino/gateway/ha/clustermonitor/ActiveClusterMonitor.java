@@ -79,6 +79,10 @@ public class ActiveClusterMonitor
                             List<ClusterStats> stats = new ArrayList<>();
                             for (Future<ClusterStats> clusterStatsFuture : futures) {
                                 ClusterStats clusterStats = clusterStatsFuture.get();
+                                if (!clusterStats.healthy()) {
+                                    log.error("cluster %s is unhealthy", clusterStats.clusterId());
+                                    log.debug("cluster stats: %s", clusterStats);
+                                }
                                 stats.add(clusterStats);
                             }
 
