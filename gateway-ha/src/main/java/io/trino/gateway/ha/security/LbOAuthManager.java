@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.hash.Hashing.sha256;
 import static com.nimbusds.oauth2.sdk.ResponseType.CODE;
 import static com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet.NONCE_CLAIM_NAME;
@@ -67,7 +68,9 @@ public class LbOAuthManager
     public LbOAuthManager(OAuthConfiguration configuration, Map<String, String> pagePermissions)
     {
         this.oauthConfig = configuration;
-        this.pagePermissions = pagePermissions;
+        this.pagePermissions = pagePermissions.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(), Map.Entry::getValue));
     }
 
     public String getUserIdField()
