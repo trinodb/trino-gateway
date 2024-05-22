@@ -36,6 +36,7 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.security.SessionCookie.OAUTH_ID_TOKEN;
 import static io.trino.gateway.ha.security.SessionCookie.logOut;
+import static java.util.Collections.unmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -119,7 +120,7 @@ public class TestLbAuthenticator
     public void testNoLdapNoPresetUsers()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
     }
@@ -128,9 +129,21 @@ public class TestLbAuthenticator
     public void testWrongLdapConfig()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null, null);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
+    }
+
+    @Test
+    public void testNullInPagePermission()
+    {
+        Map<String, UserConfiguration> presetUsers = ImmutableMap.of("user1", new UserConfiguration("admin, user, api", "pass1"));
+        Map<String, String> pagePermission = new HashMap<>();
+        pagePermission.put("user", null);
+
+        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, unmodifiableMap(pagePermission));
+        assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
+                .isTrue();
     }
 
     @Test

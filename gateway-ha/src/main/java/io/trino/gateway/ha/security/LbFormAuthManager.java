@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
+
 public class LbFormAuthManager
 {
     private static final Logger log = Logger.get(LbFormAuthManager.class);
@@ -48,7 +50,9 @@ public class LbFormAuthManager
             Map<String, String> pagePermissions)
     {
         this.presetUsers = presetUsers;
-        this.pagePermissions = pagePermissions;
+        this.pagePermissions = pagePermissions.entrySet().stream()
+                .filter(entry -> entry.getValue() != null)
+                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(), Map.Entry::getValue));
 
         if (configuration != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
