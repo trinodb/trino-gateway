@@ -82,7 +82,9 @@ public class ClusterStatsJdbcMonitor
                 partialState.put(rs.getString("state"), rs.getInt("count"));
             }
             return clusterStats
-                    .healthy(true)
+                    // at this point we can set cluster to healthy because otherwise
+                    // it wouldn't have gotten worker stats
+                    .healthy(TrinoHealthStateType.HEALTHY)
                     .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
                     .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
                     .build();

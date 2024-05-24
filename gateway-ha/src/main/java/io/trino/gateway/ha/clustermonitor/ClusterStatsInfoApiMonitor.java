@@ -46,7 +46,7 @@ public class ClusterStatsInfoApiMonitor
                 .routingGroup(backend.getRoutingGroup()).build();
     }
 
-    private boolean isReadyStatus(String baseUrl)
+    private TrinoHealthStateType isReadyStatus(String baseUrl)
     {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
@@ -54,11 +54,11 @@ public class ClusterStatsInfoApiMonitor
 
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
-            return !serverInfo.isStarting();
+            return serverInfo.isStarting() ? TrinoHealthStateType.UNHEALTHY : TrinoHealthStateType.HEALTHY;
         }
         catch (Exception e) {
             log.error("Exception checking {} for health: {} ", request.getUri(), e.getMessage());
         }
-        return false;
+        return TrinoHealthStateType.UNHEALTHY;
     }
 }

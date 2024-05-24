@@ -34,7 +34,7 @@ public class HealthChecker
     public void observe(List<ClusterStats> clustersStats)
     {
         for (ClusterStats clusterStats : clustersStats) {
-            if (!clusterStats.healthy()) {
+            if (clusterStats.healthy() == TrinoHealthStateType.UNHEALTHY) {
                 notifyUnhealthyCluster(clusterStats);
             }
             else {

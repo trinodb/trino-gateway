@@ -18,7 +18,10 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoHealthStateType;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -52,13 +55,15 @@ public class EntityEditorResource
     private final GatewayBackendManager gatewayBackendManager;
     private final ResourceGroupsManager resourceGroupsManager;
     private final RoutingManager routingManager;
+    private final BackendStateManager backendStateManager;
 
     @Inject
-    public EntityEditorResource(GatewayBackendManager gatewayBackendManager, ResourceGroupsManager resourceGroupsManager, RoutingManager routingManager)
+    public EntityEditorResource(GatewayBackendManager gatewayBackendManager, ResourceGroupsManager resourceGroupsManager, RoutingManager routingManager, BackendStateManager backendStateManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
     }
 
     @GET
@@ -88,6 +93,11 @@ public class EntityEditorResource
                     gatewayBackendManager.updateBackend(backend);
                     log.info("Setting up the backend %s with healthy state", backend.getName());
                     routingManager.updateBackEndHealth(backend.getName(), backend.isActive());
+                    backendStateManager.updateStates(
+                            backend.getName(),
+                            ClusterStats.builder(backend.getName())
+                                    .healthy(backend.isActive() ? TrinoHealthStateType.PENDING : TrinoHealthStateType.UNHEALTHY)
+                                    .build());
                     break;
                 case RESOURCE_GROUP:
                     ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,

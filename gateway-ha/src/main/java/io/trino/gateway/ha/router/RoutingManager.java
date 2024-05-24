@@ -18,6 +18,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoHealthStateType;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.HttpMethod;
@@ -133,7 +134,7 @@ public abstract class RoutingManager
     public void updateBackEndStats(List<ClusterStats> stats)
     {
         for (ClusterStats clusterStats : stats) {
-            updateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
+            updateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy() == TrinoHealthStateType.HEALTHY);
         }
     }
 

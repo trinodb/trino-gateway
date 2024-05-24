@@ -14,7 +14,10 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Injector;
+import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.RoutingManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -26,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
+
+import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,10 +55,17 @@ public class TestGatewayHaSingleBackend
                 HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
         // Start Gateway
         String[] args = {"server", testConfig.configFilePath()};
-        HaGatewayLauncher.main(args);
+        HaGatewayLauncher haGatewayLauncher = new HaGatewayLauncher();
+        haGatewayLauncher.run(args);
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(
                 "trino1", "http://localhost:" + backendPort, "externalUrl", true, "adhoc", routerPort);
+
+        // use injector to manually set backends to healthy
+        Field privateInjectorField = BaseApp.class.getDeclaredField("injector");
+        privateInjectorField.setAccessible(true);
+        Injector injector = (Injector) privateInjectorField.get(haGatewayLauncher);
+        injector.getInstance(RoutingManager.class).updateBackEndHealth("trino1", true);
     }
 
     @Test

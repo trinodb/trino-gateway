@@ -15,9 +15,12 @@ package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Injector;
+import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
+import io.trino.gateway.ha.router.RoutingManager;
 import okhttp3.Cookie;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -85,7 +89,8 @@ public class TestGatewayHaMultipleBackend
 
         // Start Gateway
         String[] args = {"server", testConfig.configFilePath()};
-        HaGatewayLauncher.main(args);
+        HaGatewayLauncher haGatewayLauncher = new HaGatewayLauncher();
+        haGatewayLauncher.run(args);
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(
                 "trino1", "http://localhost:" + backend1Port, "externalUrl", true, "adhoc", routerPort);
@@ -95,6 +100,14 @@ public class TestGatewayHaMultipleBackend
         HaGatewayTestUtils.setUpBackend(
                 "custom", "http://localhost:" + customBackendPort, "externalUrl", true, "custom",
                 routerPort);
+
+        // use injector to manually set backends to healthy
+        Field privateInjectorField = BaseApp.class.getDeclaredField("injector");
+        privateInjectorField.setAccessible(true);
+        Injector injector = (Injector) privateInjectorField.get(haGatewayLauncher);
+        injector.getInstance(RoutingManager.class).updateBackEndHealth("trino1", true);
+        injector.getInstance(RoutingManager.class).updateBackEndHealth("trino2", true);
+        injector.getInstance(RoutingManager.class).updateBackEndHealth("custom", true);
     }
 
     @Test
