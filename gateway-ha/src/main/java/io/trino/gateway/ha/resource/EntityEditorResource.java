@@ -91,7 +91,7 @@ public class EntityEditorResource
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
-                    log.info("Setting up the backend %s with healthy state", backend.getName());
+                    log.info("Turning cluster %s %s", backend.getName(), backend.isActive() ? "on" : "off");
                     routingManager.updateBackEndHealth(backend.getName(), backend.isActive());
                     backendStateManager.updateStates(
                             backend.getName(),
