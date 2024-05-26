@@ -20,11 +20,7 @@ gateway for multiple [Trino](https://trino.io) clusters.
 * [Trino Gateway announment blog post](https://trino.io/blog/2023/09/28/trino-gateway)
 * :fontawesome-brands-youtube:{ .youtube } [Many clusters and only one
   gateway presentation at Trino Summit 2023](https://www.youtube.com/watch?v=2qwBcKmQSn0)
-* [Lyft blog post](https://eng.lyft.
-  com/trino-infrastructure-at-lyft-b10adb9db01)
-* [Pinterest blog post](https://medium.
-  com/pinterest-engineering/trino-at-pinterest-a8bda7515e52)
-* [Zomato blog post](https://www.zomato.
-  com/blog/powering-data-analytics-with-trino)
-* [Shopify blog post](https://shopify.
-  engineering/faster-trino-query-execution-infrastructure)
+* [Lyft blog post](https://eng.lyft.com/trino-infrastructure-at-lyft-b10adb9db01)
+* [Pinterest blog post](https://medium.com/pinterest-engineering/trino-at-pinterest-a8bda7515e52)
+* [Zomato blog post](https://www.zomato.com/blog/powering-data-analytics-with-trino)
+* [Shopify blog post](https://shopify.engineering/faster-trino-query-execution-infrastructure)
