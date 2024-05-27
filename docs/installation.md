@@ -83,6 +83,8 @@ terminated at the Trino Gateway. Normally it refuses to authenticate plain HTTP
 requests, but if `http-server.process-forwarded=true` it authenticates over 
 HTTP if the request includes `X-Forwarded-Proto: HTTPS`.
 
+Find more information in [the related Trino documentation](https://trino.io/docs/current/security/tls.html#use-a-load-balancer-to-terminate-tls-https).
+
 ## Configuration
 
 After downloading or building the JAR, rename it to `gateway-ha.jar`,
