@@ -2,7 +2,7 @@
 
 ## Add or update a backend
 
-```bash
+```shell
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
  -d '{  "name": "trino-3",
         "proxyTo": "http://localhost:8083",
@@ -15,7 +15,7 @@ If the backend URL is different from the `proxyTo` URL (for example if they are
 internal vs. external hostnames). You can use the optional `externalUrl` field
 to override the link in the Active Backends page.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
  -d '{  "name": "trino-3",
         "proxyTo": "http://localhost:8083",
@@ -56,19 +56,19 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
 
 ## Delete a backend
 
-```bash
+```shell
 curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
 ```
 
 ## Deactivate a backend
 
-```bash
+```shell
 curl -X POST http://localhost:8080/gateway/backend/deactivate/trino-2
 ```
 
 ## Get all active backends
 
-```bash
+```shell
 curl -X GET http://localhost:8080/gateway/backend/active
 ```
 
@@ -87,7 +87,7 @@ Will return a JSON array of active Trino cluster backends:
 
 ## Activate a backend
 
-```bash
+```shell
 curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 ```
 

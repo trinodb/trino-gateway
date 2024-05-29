@@ -7,7 +7,7 @@ resource groups and selector tables. To use this, just specify the query
 parameter ?useSchema=<schemaname> to the request. Example, to list all resource
 groups,
 
-```bash
+```shell
 curl -X GET http://localhost:8080/trino/resourcegroup/read/{INSERT_ID_HERE}?useSchema=newdatabasename
 ```
 
@@ -17,7 +17,7 @@ To add a single resource group, specify all relevant fields in the body.
 Resource group id should not be specified since the database should
 autoincrement it.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/resourcegroup/create \
  -d '{
         "name": "resourcegroup1", \
@@ -40,7 +40,7 @@ curl -X POST http://localhost:8080/trino/resourcegroup/create \
 If no resourceGroupId (type long) is specified, then all existing resource
 groups are fetched.
 
-```bash
+```shell
 curl -X GET http://localhost:8080/trino/resourcegroup/read/{INSERT_ID_HERE}
 ```
 
@@ -49,7 +49,7 @@ curl -X GET http://localhost:8080/trino/resourcegroup/read/{INSERT_ID_HERE}
 Specify all columns in the body, which will overwrite properties for the
 resource group with that specific resourceGroupId.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/resourcegroup/update \
  -d '{  "resourceGroupId": 1, \
         "name": "resourcegroup_updated", \
@@ -72,7 +72,7 @@ curl -X POST http://localhost:8080/trino/resourcegroup/update \
 To delete a resource group, specify the corresponding resourceGroupId (type
 long).
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/resourcegroup/delete/{INSERT_ID_HERE}
 ```
 
@@ -81,7 +81,7 @@ curl -X POST http://localhost:8080/trino/resourcegroup/delete/{INSERT_ID_HERE}
 To add a single selector, specify all relevant fields in the body. Resource
 group id should not be specified since the database should autoincrement it.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/selector/create \
  -d '{
         "priority": 1, \
@@ -96,7 +96,7 @@ curl -X POST http://localhost:8080/trino/selector/create \
 If no resourceGroupId (type long) is specified, then all existing selectors are
 fetched.
 
-```bash
+```shell
 curl -X GET http://localhost:8080/trino/selector/read/{INSERT_ID_HERE}
 ```
 
@@ -108,7 +108,7 @@ fields under "current". The updated version of that selector is specified under
 does not exist, a new selector will be created with the details under "update".
 Both "current" and "update" must be included to update a selector.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/selector/update \
  -d '{  "current": {
             "resourceGroupId": 1, \
@@ -131,7 +131,7 @@ curl -X POST http://localhost:8080/trino/selector/update \
 
 To delete a selector, specify all relevant fields in the body.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/selector/delete \
  -d '{  "resourceGroupId": 1, \
         "priority": 2, \
@@ -145,7 +145,7 @@ curl -X POST http://localhost:8080/trino/selector/delete \
 
 To add a single global property, specify all relevant fields in the body.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/globalproperty/create \
  -d '{
         "name": "cpu_quota_period", \
@@ -158,7 +158,7 @@ curl -X POST http://localhost:8080/trino/globalproperty/create \
 If no name (type String) is specified, then all existing global properties are
 fetched.
 
-```bash
+```shell
 curl -X GET http://localhost:8080/trino/globalproperty/read/{INSERT_NAME_HERE}
 ```
 
@@ -167,7 +167,7 @@ curl -X GET http://localhost:8080/trino/globalproperty/read/{INSERT_NAME_HERE}
 Specify all columns in the body, which will overwrite properties for the global
 property with that specific name.
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/globalproperty/update \
  -d '{
         "name": "cpu_quota_period", \
@@ -179,6 +179,6 @@ curl -X POST http://localhost:8080/trino/globalproperty/update \
 
 To delete a global property, specify the corresponding name (type String).
 
-```bash
+```shell
 curl -X POST http://localhost:8080/trino/globalproperty/delete/{INSERT_NAME_HERE}
 ```
