@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkState;
 import static io.trino.gateway.ha.resource.LoginResource.CALLBACK_ENDPOINT;
-import static jakarta.ws.rs.core.NewCookie.SameSite.STRICT;
+import static jakarta.ws.rs.core.NewCookie.SameSite.LAX;
 
 public class OidcCookie
 {
@@ -42,7 +42,7 @@ public class OidcCookie
                 .value(String.join(DELIMITER, state, nonce))
                 .path(CALLBACK_ENDPOINT)
                 .maxAge(TOKEN_EXPIRATION_SECOND)
-                .sameSite(STRICT)
+                .sameSite(LAX)
                 .secure(true)
                 .httpOnly(true)
                 .build();
@@ -71,7 +71,7 @@ public class OidcCookie
                 .value("delete")
                 .path(CALLBACK_ENDPOINT)
                 .maxAge(0)
-                .sameSite(STRICT)
+                .sameSite(LAX)
                 .secure(true)
                 .httpOnly(true)
                 .build();
