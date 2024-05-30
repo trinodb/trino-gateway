@@ -15,15 +15,18 @@ gateway for multiple [Trino](https://trino.io) clusters.
   blue/green model or canary deployment model.
 * Transparent change of capacity of Trino clusters without user interruptions.
 
-## High Level Architecture
+## High-level architecture
 
-![Trino Gateway - High Level Architecture](assets/TrinoGateway-HighLevelArchitecture.png)
+![High-level architecture](assets/high-level-architecture.png)
 
 ## Other resources
 
 * [Trino Gateway announment blog post](https://trino.io/blog/2023/09/28/trino-gateway)
-* :fontawesome-brands-youtube:{ .youtube } [Many clusters and only one
-  gateway presentation at Trino Summit 2023](https://www.youtube.com/watch?v=2qwBcKmQSn0)
+* Many clusters and only one gateway:
+    * Project announcement and overview at Trino Summit 2023 with use cases 
+      from Bloomberg and Naver
+    * :fontawesome-brands-youtube:{ .youtube } [Video recording](https://www.youtube.com/watch?v=2qwBcKmQSn0)
+    * [Slide deck](./assets/misc/tgw-trino-summit-2023.pdf)
 * [Lyft blog post](https://eng.lyft.com/trino-infrastructure-at-lyft-b10adb9db01)
 * [Pinterest blog post](https://medium.com/pinterest-engineering/trino-at-pinterest-a8bda7515e52)
 * [Zomato blog post](https://www.zomato.com/blog/powering-data-analytics-with-trino)
