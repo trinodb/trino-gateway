@@ -15,6 +15,10 @@ gateway for multiple [Trino](https://trino.io) clusters.
   blue/green model or canary deployment model.
 * Transparent change of capacity of Trino clusters without user interruptions.
 
+## High Level Architecture
+
+![Trino Gateway - High Level Architecture](assets/TrinoGateway-HighLevelArchitecture.png)
+
 ## Other resources
 
 * [Trino Gateway announment blog post](https://trino.io/blog/2023/09/28/trino-gateway)
