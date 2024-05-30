@@ -82,6 +82,6 @@ final class TestClusterStatsMonitor
 
         ClusterStats stats = monitor.monitor(proxyBackend);
         assertThat(stats.clusterId()).isEqualTo("test_cluster");
-        assertThat(stats.healthy()).isTrue();
+        assertThat(stats.trinoStatus()).isEqualTo(TrinoStatus.HEALTHY);
     }
 }
