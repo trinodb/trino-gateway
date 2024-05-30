@@ -20,6 +20,7 @@ import com.google.inject.Module;
 import com.google.inject.Scopes;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import io.trino.gateway.ha.resource.EntityEditorResource;
@@ -41,6 +42,7 @@ import java.util.Optional;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 public class BaseApp
         implements Module
@@ -113,6 +115,8 @@ public class BaseApp
         registerResources(binder);
         addManagedApps(this.haGatewayConfiguration, binder);
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
+        binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
+        newExporter(binder).export(ProxyHandlerStats.class).withGeneratedName();
     }
 
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
