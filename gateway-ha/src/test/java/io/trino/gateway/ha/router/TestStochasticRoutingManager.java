@@ -54,7 +54,7 @@ public class TestStochasticRoutingManager
             proxyBackend.setProxyTo(backend + ".trino.example.com");
             proxyBackend.setExternalUrl("trino.example.com");
             backendManager.addBackend(proxyBackend);
-            //set backend as healthy start with
+            //set backend as healthy to start with
             haRoutingManager.updateBackEndHealth(backend, true);
         }
 

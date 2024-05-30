@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoHealthStateType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public class QueryCountBasedRouter
     {
         private int runningQueryCount;
         private int queuedQueryCount;
-        private boolean healthy;
+        private TrinoHealthStateType healthState;
         private String proxyTo;
         private String routingGroup;
         private String clusterId;
@@ -57,7 +58,7 @@ public class QueryCountBasedRouter
             clusterId = stats.clusterId();
             runningQueryCount = stats.runningQueryCount();
             queuedQueryCount = stats.queuedQueryCount();
-            healthy = stats.healthy();
+            healthState = stats.healthState();
             proxyTo = stats.proxyTo();
             routingGroup = stats.routingGroup();
             if (stats.userQueuedCount() != null) {
@@ -93,14 +94,14 @@ public class QueryCountBasedRouter
             this.queuedQueryCount = queuedQueryCount;
         }
 
-        public boolean healthy()
+        public TrinoHealthStateType healthState()
         {
-            return this.healthy;
+            return this.healthState;
         }
 
-        public void healthy(boolean healthy)
+        public void healthState(TrinoHealthStateType healthState)
         {
-            this.healthy = healthy;
+            this.healthState = healthState;
         }
 
         public String proxyTo()
@@ -187,7 +188,7 @@ public class QueryCountBasedRouter
     {
         log.debug("sorting cluster stats for {} {}", user, routingGroup);
         List<LocalStats> filteredList = clusterStats.stream()
-                    .filter(stats -> stats.healthy())
+                    .filter(stats -> stats.healthState() == TrinoHealthStateType.HEALTHY)
                     .filter(stats -> routingGroup.equals(stats.routingGroup()))
                     .collect(Collectors.toList());
 

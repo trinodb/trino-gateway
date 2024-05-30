@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoHealthStateType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +53,7 @@ public class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c1");
             cluster.proxyTo(BACKEND_URL_1);
-            cluster.healthy(true);
+            cluster.healthy(TrinoHealthStateType.HEALTHY);
             cluster.routingGroup(routingGroup);
             cluster.runningQueryCount(50);
             cluster.queuedQueryCount(SAME_QUERY_COUNT);
@@ -63,7 +64,7 @@ public class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c2");
             cluster.proxyTo(BACKEND_URL_2);
-            cluster.healthy(true);
+            cluster.healthy(TrinoHealthStateType.HEALTHY);
             cluster.routingGroup(routingGroup);
             cluster.runningQueryCount(51);
             cluster.queuedQueryCount(SAME_QUERY_COUNT);
@@ -78,7 +79,7 @@ public class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c3");
             cluster.proxyTo(BACKEND_URL_3);
-            cluster.healthy(true);
+            cluster.healthy(TrinoHealthStateType.HEALTHY);
             cluster.routingGroup(routingGroup);
             cluster.runningQueryCount(5);
             cluster.queuedQueryCount(SAME_QUERY_COUNT);
@@ -93,7 +94,7 @@ public class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy");
             cluster.proxyTo("http://c-unhealthy");
-            cluster.healthy(false); //This cluster should never show up to route
+            cluster.healthy(TrinoHealthStateType.UNHEALTHY); //This cluster should never show up to route
             cluster.routingGroup(routingGroup);
             cluster.runningQueryCount(5);
             cluster.queuedQueryCount(SAME_QUERY_COUNT);
@@ -105,7 +106,7 @@ public class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy2");
             cluster.proxyTo("http://c-unhealthy2");
-            cluster.healthy(false); //This cluster should never show up to route
+            cluster.healthy(TrinoHealthStateType.UNHEALTHY); //This cluster should never show up to route
 
             clustersBuilder.add(cluster.build());
         }
@@ -115,7 +116,7 @@ public class TestQueryCountBasedRouter
             cluster.proxyTo("http://c-messed-up");
             //This is a scenrio when, something is really wrong
             //We just get the cluster state as health but no stats
-            cluster.healthy(true);
+            cluster.healthy(TrinoHealthStateType.HEALTHY);
             clustersBuilder.add(cluster.build());
         }
 
@@ -126,7 +127,7 @@ public class TestQueryCountBasedRouter
     {
         ClusterStats.Builder cluster = ClusterStats.builder("c-Minimal-Queue");
         cluster.proxyTo(BACKEND_URL_4);
-        cluster.healthy(true);
+        cluster.healthy(TrinoHealthStateType.HEALTHY);
         cluster.routingGroup("adhoc");
         cluster.runningQueryCount(5);
         cluster.queuedQueryCount(LEAST_QUEUED_COUNT);
@@ -137,7 +138,7 @@ public class TestQueryCountBasedRouter
     {
         ClusterStats.Builder cluster = ClusterStats.builder("c-Minimal-Running");
         cluster.proxyTo(BACKEND_URL_5);
-        cluster.healthy(true);
+        cluster.healthy(TrinoHealthStateType.HEALTHY);
         cluster.routingGroup("adhoc");
         cluster.runningQueryCount(1);
         cluster.queuedQueryCount(LEAST_QUEUED_COUNT);
