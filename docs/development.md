@@ -77,6 +77,23 @@ for more details.
 Want to help build Trino Gateway? Check out our [contributing
 documentation](https://github.com/trinodb/trino-gateway/blob/main/.github/CONTRIBUTING.md)
 
+## Maintainers
+
+The following Trino and Trino Gateway maintainers are involved in Trino
+Gateway, and can help with pull request reviews and merges.
+
+* [:fontawesome-brands-github: chaho12 - Jaeho Yoo](https://github.com/chaho12)
+* [:fontawesome-brands-github: ebyhr - Yuya Ebihara](https://github.com/ebyhr)
+* [:fontawesome-brands-github: mosabua - Manfred Moser](https://github.com/mosabua)
+* [:fontawesome-brands-github: vishalya - Vishal Jadhav](https://github.com/vishalya)
+* [:fontawesome-brands-github: wendigo - Mateusz Gajewski](https://github.com/wendigo)
+* [:fontawesome-brands-github: willmostly - Will Morrison](https://github.com/willmostly)
+
+## Contributor meetings
+
+Contributor meetings are open to anyone and held every two weeks. [Meeting
+notes and other details are available on GitHub](https://github.com/trinodb/trino-gateway/wiki/Contributor-meetings).
+
 ## Release process
 
 A full release process consists of the following steps:
