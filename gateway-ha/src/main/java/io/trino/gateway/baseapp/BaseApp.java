@@ -109,15 +109,10 @@ public class BaseApp
     @Override
     public void configure(Binder binder)
     {
-        registerWithInjector(this.haGatewayConfiguration, binder);
-    }
-
-    private static void registerWithInjector(HaGatewayConfiguration configuration, Binder binder)
-    {
         registerAuthFilters(binder);
-        registerProviders(binder);
-        addManagedApps(configuration, binder);
         registerResources(binder);
+        addManagedApps(this.haGatewayConfiguration, binder);
+        jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
     }
 
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
@@ -136,11 +131,6 @@ public class BaseApp
                         logger.error(e, "Error loading managed app");
                     }
                 });
-    }
-
-    private static void registerProviders(Binder binder)
-    {
-        jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
     }
 
     private static void registerResources(Binder binder)
