@@ -26,7 +26,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,10 +40,13 @@ import org.testcontainers.containers.TrinoContainer;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.MoreCollectors.onlyElement;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.MediaType.JSON_UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -84,11 +90,26 @@ final class TestGatewayHaMultipleBackend
         int backend2Port = scheduledTrino.getMappedPort(8080);
 
         HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, "default custom response");
-        HaGatewayTestUtils.setPathSpecificResponses(customBackend, ImmutableMap.of(
-                oauthInitiatePath, oauthInitialResponse,
-                oauthCallbackPath, oauthCallbackResponse,
-                CUSTOM_PATH, CUSTOM_RESPONSE,
-                CUSTOM_LOGOUT, ""));
+        customBackend.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request)
+            {
+                Map<String, String> pathResponse = ImmutableMap.of(
+                        oauthInitiatePath, oauthInitialResponse,
+                        oauthCallbackPath, oauthCallbackResponse,
+                        CUSTOM_PATH, CUSTOM_RESPONSE,
+                        CUSTOM_LOGOUT, "");
+                if (pathResponse.containsKey(request.getPath())) {
+                    return new MockResponse().setResponseCode(200).setBody(pathResponse.get(request.getPath()));
+                }
+                if (request.getPath().equals("/v1/info")) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setBody("{\"starting\": false}");
+                }
+                return new MockResponse().setResponseCode(404);
+            }
+        });
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =

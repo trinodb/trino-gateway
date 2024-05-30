@@ -24,7 +24,7 @@ public record ClusterStats(
         int runningQueryCount,
         int queuedQueryCount,
         int numWorkerNodes,
-        boolean healthy,
+        TrinoStatus trinoStatus,
         String proxyTo,
         String externalUrl,
         String routingGroup,
@@ -41,7 +41,7 @@ public record ClusterStats(
         private int runningQueryCount;
         private int queuedQueryCount;
         private int numWorkerNodes;
-        private boolean healthy;
+        private TrinoStatus trinoStatus;
         private String proxyTo;
         private String externalUrl;
         private String routingGroup;
@@ -70,9 +70,9 @@ public record ClusterStats(
             return this;
         }
 
-        public Builder healthy(boolean healthy)
+        public Builder trinoStatus(TrinoStatus trinoStatus)
         {
-            this.healthy = healthy;
+            this.trinoStatus = trinoStatus;
             return this;
         }
 
@@ -107,7 +107,7 @@ public record ClusterStats(
                     runningQueryCount,
                     queuedQueryCount,
                     numWorkerNodes,
-                    healthy,
+                    trinoStatus,
                     proxyTo,
                     externalUrl,
                     routingGroup,
