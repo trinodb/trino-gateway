@@ -10,6 +10,17 @@ dataStore:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelaySeconds: 1
 
 extraWhitelistPaths:
   - '/v1/custom.*'

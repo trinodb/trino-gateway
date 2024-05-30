@@ -49,31 +49,31 @@ public class ClusterStatsInfoApiMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        return ClusterStats.builder(backend.getName()).healthy(isReadyStatus(backend.getProxyTo()))
+        return ClusterStats.builder(backend.getName()).trinoStatus(checkStatus(backend.getProxyTo()))
                 .proxyTo(backend.getProxyTo())
                 .externalUrl(backend.getExternalUrl())
                 .routingGroup(backend.getRoutingGroup()).build();
     }
 
-    private boolean isReadyStatus(String baseUrl)
+    private TrinoStatus checkStatus(String baseUrl)
     {
-        return isReadyStatus(baseUrl, retries);
+        return checkStatus(baseUrl, retries);
     }
 
-    private boolean isReadyStatus(String baseUrl, int retriesRemaining)
+    private TrinoStatus checkStatus(String baseUrl, int retriesRemaining)
     {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
                 .build();
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
-            return !serverInfo.isStarting();
+            return serverInfo.isStarting() ? TrinoStatus.PENDING : TrinoStatus.HEALTHY;
         }
         catch (UnexpectedResponseException e) {
             if (shouldRetry(e.getStatusCode())) {
                 if (retriesRemaining > 0) {
                     log.warn("Retrying health check on error: %s, ", e.toString());
-                    return isReadyStatus(baseUrl, retriesRemaining - 1);
+                    return checkStatus(baseUrl, retriesRemaining - 1);
                 }
                 else {
                     log.error("Encountered error %s, no retries remaining", e.toString());
@@ -86,7 +86,7 @@ public class ClusterStatsInfoApiMonitor
         catch (Exception e) {
             log.error(e, "Exception checking %s for health", request.getUri());
         }
-        return false;
+        return TrinoStatus.UNHEALTHY;
     }
 
     public static boolean shouldRetry(int statusCode)

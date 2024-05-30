@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +46,7 @@ public class QueryCountBasedRouter
     {
         private int runningQueryCount;
         private int queuedQueryCount;
-        private boolean healthy;
+        private TrinoStatus trinoStatus;
         private String proxyTo;
         private String routingGroup;
         private String clusterId;
@@ -56,7 +57,7 @@ public class QueryCountBasedRouter
             clusterId = stats.clusterId();
             runningQueryCount = stats.runningQueryCount();
             queuedQueryCount = stats.queuedQueryCount();
-            healthy = stats.healthy();
+            trinoStatus = stats.trinoStatus();
             proxyTo = stats.proxyTo();
             routingGroup = stats.routingGroup();
             if (stats.userQueuedCount() != null) {
@@ -92,14 +93,14 @@ public class QueryCountBasedRouter
             this.queuedQueryCount = queuedQueryCount;
         }
 
-        public boolean healthy()
+        public TrinoStatus trinoStatus()
         {
-            return this.healthy;
+            return this.trinoStatus;
         }
 
-        public void healthy(boolean healthy)
+        public void trinoStatus(TrinoStatus trinoStatus)
         {
-            this.healthy = healthy;
+            this.trinoStatus = trinoStatus;
         }
 
         public String proxyTo()
@@ -186,7 +187,7 @@ public class QueryCountBasedRouter
     {
         log.debug("sorting cluster stats for %s %s", user, routingGroup);
         List<LocalStats> filteredList = clusterStats.stream()
-                    .filter(stats -> stats.healthy())
+                    .filter(stats -> stats.trinoStatus() == TrinoStatus.HEALTHY)
                     .filter(stats -> routingGroup.equals(stats.routingGroup()))
                     .collect(Collectors.toList());
 
