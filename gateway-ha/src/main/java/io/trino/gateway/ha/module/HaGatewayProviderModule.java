@@ -147,11 +147,10 @@ public class HaGatewayProviderModule
     private ProxyHandler getProxyHandler(
             QueryHistoryManager queryHistoryManager,
             RoutingManager routingManager,
+            ProxyHandlerStats proxyHandlerStats,
             HttpServerConfig httpServerConfig,
             Optional<HttpsConfig> httpsConfig)
     {
-        ProxyHandlerStats proxyHandlerStats = ProxyHandlerStats.create();
-
         // By default, use routing group header to route
         RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
         // Use rules engine if enabled
@@ -190,6 +189,7 @@ public class HaGatewayProviderModule
     public ProxyServer provideGateway(
             QueryHistoryManager queryHistoryManager,
             RoutingManager routingManager,
+            ProxyHandlerStats proxyHandlerStats,
             HttpServerConfig httpServerConfig,
             Optional<HttpsConfig> httpsConfig)
     {
@@ -212,7 +212,7 @@ public class HaGatewayProviderModule
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
             routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager, httpServerConfig, httpsConfig);
+            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager, proxyHandlerStats, httpServerConfig, httpsConfig);
             gateway = new ProxyServer(routerProxyConfig, proxyHandler);
         }
         return gateway;
