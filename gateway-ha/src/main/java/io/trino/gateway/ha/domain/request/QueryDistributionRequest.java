@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for Distribution
@@ -22,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record QueryDistributionRequest(
-        Integer latestHour)
+        @JsonProperty("latestHour") Integer latestHour)
 {
     public QueryDistributionRequest
     {
