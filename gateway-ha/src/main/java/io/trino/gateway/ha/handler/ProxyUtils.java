@@ -16,17 +16,15 @@ package io.trino.gateway.ha.handler;
 import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.router.QueryHistoryManager;
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Base64;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.PROXY_TARGET_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
@@ -38,7 +36,7 @@ public final class ProxyUtils
     public static final String AUTHORIZATION = "Authorization";
 
     private static final Logger log = Logger.get(ProxyUtils.class);
-    private static final int QUERY_TEXT_LENGTH_FOR_HISTORY = 200;
+    public static final int QUERY_TEXT_LENGTH_FOR_HISTORY = 200;
     /**
      * This regular expression matches query ids as they appear in the path of a URL. The query id must be preceded
      * by a "/". A query id is defined as three groups of digits separated by underscores, with a final group
@@ -55,22 +53,6 @@ public final class ProxyUtils
     private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
     private ProxyUtils() {}
-
-    public static QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(HttpServletRequest request)
-            throws IOException
-    {
-        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
-        queryDetail.setBackendUrl(request.getHeader(PROXY_TARGET_HEADER));
-        queryDetail.setCaptureTime(System.currentTimeMillis());
-        queryDetail.setUser(getQueryUser(request.getHeader(USER_HEADER), request.getHeader(AUTHORIZATION)));
-        queryDetail.setSource(request.getHeader(SOURCE_HEADER));
-        String queryText = CharStreams.toString(request.getReader());
-        queryDetail.setQueryText(
-                queryText.length() > QUERY_TEXT_LENGTH_FOR_HISTORY
-                        ? queryText.substring(0, QUERY_TEXT_LENGTH_FOR_HISTORY) + "..."
-                        : queryText);
-        return queryDetail;
-    }
 
     public static String getQueryUser(String userHeader, String authorization)
     {
@@ -112,7 +94,7 @@ public final class ProxyUtils
         String path = request.getRequestURI();
         String queryParams = request.getQueryString();
         try {
-            String queryText = CharStreams.toString(request.getReader());
+            String queryText = CharStreams.toString(new InputStreamReader(request.getInputStream()));
             if (!isNullOrEmpty(queryText)
                     && queryText.toLowerCase().contains("system.runtime.kill_query")) {
                 // extract and return the queryId

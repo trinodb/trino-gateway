@@ -18,7 +18,6 @@ import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
-import io.trino.gateway.proxyserver.wrapper.MultiReadHttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
@@ -29,7 +28,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewBackend;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.OAUTH_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.PROXY_TARGET_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
@@ -62,8 +60,6 @@ public class RoutingTargetHandler
     {
         Optional<String> previousBackend = getPreviousBackend(request);
         String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
-        // set target clusterHost so that we could save queryId to cluster mapping later.
-        ((MultiReadHttpServletRequest) request).addHeader(PROXY_TARGET_HEADER, clusterHost);
         logRewrite(clusterHost, request);
 
         return buildUriWithNewBackend(clusterHost, request);

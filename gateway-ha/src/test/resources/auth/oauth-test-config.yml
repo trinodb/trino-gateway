@@ -1,13 +1,10 @@
 httpConfig:
   node.environment: test
-  http-server.http.port: 9081
-
-requestRouter:
-  port: REQUEST_ROUTER_PORT
-  name: testTrinoRouter
-  ssl: true
-  keystorePath: LOCALHOST_JKS
-  keystorePass: 123456
+  http-server.http.port: 8080
+  http-server.https.enabled: true
+  http-server.https.port: REQUEST_ROUTER_PORT
+  http-server.https.keystore.path: LOCALHOST_JKS
+  http-server.https.keystore.key: 123456
 
 dataStore:
   jdbcUrl: jdbc:h2:DB_FILE_PATH
@@ -17,9 +14,6 @@ dataStore:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
-
-managedApps:
-  - io.trino.gateway.ha.GatewayManagedApp
 
 extraWhitelistPaths:
   - "/v1/custom"

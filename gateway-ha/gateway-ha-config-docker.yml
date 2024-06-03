@@ -1,16 +1,10 @@
 httpConfig:
   node.environment: test
-  http-server.http.port: 9081
+  http-server.http.port: 8080
 
 routingRules:
   rulesEngineEnabled: False
   # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
-
-requestRouter:
-  port: 8080
-  name: trinoRouter
-  historySize: 1000
-  requestBufferSize: 8192
 
 dataStore:
   jdbcUrl: jdbc:postgresql://postgres:5432/trino_gateway_db
@@ -28,5 +22,4 @@ modules:
   - io.trino.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
-  - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor

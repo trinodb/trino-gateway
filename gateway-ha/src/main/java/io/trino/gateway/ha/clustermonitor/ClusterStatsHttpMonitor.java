@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
+import io.airlift.http.client.HttpStatus;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -26,13 +27,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.eclipse.jetty.http.HttpStatus;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.airlift.http.client.HttpStatus.fromStatusCode;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_QUEUED_LIST_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_LOGIN_PATH;
@@ -147,10 +148,10 @@ public class ClusterStatsHttpMonitor
         Call call = client.newCall(request);
 
         try (Response res = call.execute()) {
-            switch (res.code()) {
-                case HttpStatus.OK_200:
+            switch (fromStatusCode(res.code())) {
+                case HttpStatus.OK:
                     return res.body().string();
-                case HttpStatus.UNAUTHORIZED_401:
+                case HttpStatus.UNAUTHORIZED:
                     log.info("Unauthorized to fetch cluster stats");
                     log.debug("username: %s, targetUrl: %s, cookieStore: %s",
                             username,

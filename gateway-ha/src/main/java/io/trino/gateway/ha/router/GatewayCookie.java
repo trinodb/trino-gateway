@@ -22,6 +22,7 @@ import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import jakarta.servlet.http.Cookie;
+import jakarta.ws.rs.core.NewCookie;
 
 import java.util.Base64;
 import java.util.List;
@@ -159,6 +160,14 @@ public class GatewayCookie
         Cookie cookie = new Cookie(unsignedGatewayCookie.getName(), Base64.getUrlEncoder().encodeToString(CODEC.toJson(this).getBytes(UTF_8)));
         cookie.setMaxAge((int) unsignedGatewayCookie.getTtl().toMillis() / 1000);
         return cookie;
+    }
+
+    public NewCookie toNewCookie()
+    {
+        return new NewCookie.Builder(unsignedGatewayCookie.getName())
+                .value(Base64.getUrlEncoder().encodeToString(CODEC.toJson(this).getBytes(UTF_8)))
+                .maxAge((int) unsignedGatewayCookie.getTtl().toMillis() / 1000)
+                .build();
     }
 
     public static GatewayCookie fromCookie(Cookie cookie)
