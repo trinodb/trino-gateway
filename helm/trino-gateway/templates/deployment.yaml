@@ -52,7 +52,7 @@ spec:
               - "/etc/gateway/config.yaml"
           ports:
             - name: request
-              containerPort: {{ .Values.config.requestRouter.port }}
+              containerPort: {{ index .Values "config" "httpConfig" "http-server.http.port" }}
               protocol: TCP
             {{- range $index, $connector := $.Values.config.server.adminConnectors}}
             - name: {{print "admin-" $index }}

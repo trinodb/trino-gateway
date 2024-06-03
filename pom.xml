@@ -44,7 +44,6 @@
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
-        <dep.jetty.version>12.0.9</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -53,22 +52,6 @@
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
                 <version>248</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
-                <version>${dep.jetty.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.jetty.ee10</groupId>
-                <artifactId>jetty-ee10-bom</artifactId>
-                <version>${dep.jetty.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

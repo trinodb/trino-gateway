@@ -21,7 +21,6 @@ import java.util.Map;
 public class HaGatewayConfiguration
 {
     private Map<String, String> httpConfig = new HashMap<>();
-    private RequestRouterConfiguration requestRouter;
     private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
@@ -52,16 +51,6 @@ public class HaGatewayConfiguration
     public void setHttpConfig(Map<String, String> httpConfig)
     {
         this.httpConfig = httpConfig;
-    }
-
-    public RequestRouterConfiguration getRequestRouter()
-    {
-        return this.requestRouter;
-    }
-
-    public void setRequestRouter(RequestRouterConfiguration requestRouter)
-    {
-        this.requestRouter = requestRouter;
     }
 
     public NotifierConfiguration getNotifier()
