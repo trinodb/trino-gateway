@@ -14,6 +14,7 @@
 package io.trino.gateway.proxyserver;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 public class ProxyServerConfiguration
 {
@@ -114,6 +115,7 @@ public class ProxyServerConfiguration
         return this.proxyTo;
     }
 
+    @JsonSetter
     public void setName(String name)
     {
         this.name = name;
@@ -124,6 +126,7 @@ public class ProxyServerConfiguration
         this.localPort = localPort;
     }
 
+    @JsonSetter
     public void setProxyTo(String proxyTo)
     {
         this.proxyTo = proxyTo;
