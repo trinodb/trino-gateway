@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 
 public class ProxyBackendConfiguration
@@ -34,6 +35,7 @@ public class ProxyBackendConfiguration
         return externalUrl;
     }
 
+    @JsonSetter
     public void setExternalUrl(String externalUrl)
     {
         this.externalUrl = externalUrl;
@@ -45,6 +47,7 @@ public class ProxyBackendConfiguration
         return this.active;
     }
 
+    @JsonSetter
     public void setActive(boolean active)
     {
         this.active = active;
@@ -56,6 +59,7 @@ public class ProxyBackendConfiguration
         return this.routingGroup;
     }
 
+    @JsonSetter
     public void setRoutingGroup(String routingGroup)
     {
         this.routingGroup = routingGroup;

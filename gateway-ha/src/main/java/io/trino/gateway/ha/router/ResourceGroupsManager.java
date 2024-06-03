@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -87,7 +88,13 @@ public interface ResourceGroupsManager
 
         public ResourceGroupsDetail() {}
 
-        public ResourceGroupsDetail(long resourceGroupId, @Nonnull String name, @Nonnull String softMemoryLimit, int maxQueued, int hardConcurrencyLimit)
+        @JsonCreator
+        public ResourceGroupsDetail(
+                @JsonProperty("resourceGroupId") long resourceGroupId,
+                @JsonProperty("name") @Nonnull String name,
+                @JsonProperty("softMemoryLimit") @Nonnull String softMemoryLimit,
+                @JsonProperty("maxQueued") int maxQueued,
+                @JsonProperty("hardConcurrencyLimit") int hardConcurrencyLimit)
         {
             this.resourceGroupId = resourceGroupId;
             this.name = name;
@@ -320,7 +327,10 @@ public interface ResourceGroupsManager
 
         public SelectorsDetail() {}
 
-        public SelectorsDetail(long resourceGroupId, long priority)
+        @JsonCreator
+        public SelectorsDetail(
+                @JsonProperty("resourceGroupId") long resourceGroupId,
+                @JsonProperty("priority") long priority)
         {
             this.resourceGroupId = resourceGroupId;
             this.priority = priority;
@@ -463,7 +473,8 @@ public interface ResourceGroupsManager
 
         public GlobalPropertiesDetail() {}
 
-        public GlobalPropertiesDetail(@Nonnull String name)
+        @JsonCreator
+        public GlobalPropertiesDetail(@JsonProperty("name") @Nonnull String name)
         {
             this.name = name;
         }
@@ -541,7 +552,11 @@ public interface ResourceGroupsManager
 
         public ExactSelectorsDetail() {}
 
-        public ExactSelectorsDetail(@Nonnull String resourceGroupId, @Nonnull String updateTime, @Nonnull String source)
+        @JsonCreator
+        public ExactSelectorsDetail(
+                @JsonProperty("resourceGroupId") @Nonnull String resourceGroupId,
+                @JsonProperty("updateTime") @Nonnull String updateTime,
+                @JsonProperty("source") @Nonnull String source)
         {
             this.resourceGroupId = resourceGroupId;
             this.updateTime = updateTime;

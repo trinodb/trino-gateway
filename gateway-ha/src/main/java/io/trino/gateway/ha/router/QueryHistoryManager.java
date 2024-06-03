@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -58,6 +59,7 @@ public interface QueryHistoryManager
             }
         }
 
+        @JsonProperty
         public String getQueryId()
         {
             return this.queryId;
@@ -68,6 +70,7 @@ public interface QueryHistoryManager
             this.queryId = queryId;
         }
 
+        @JsonProperty
         public String getQueryText()
         {
             return this.queryText;
@@ -78,6 +81,7 @@ public interface QueryHistoryManager
             this.queryText = queryText;
         }
 
+        @JsonProperty
         public String getUser()
         {
             return this.user;
@@ -88,6 +92,7 @@ public interface QueryHistoryManager
             this.user = user;
         }
 
+        @JsonProperty
         public String getSource()
         {
             return this.source;
@@ -98,6 +103,7 @@ public interface QueryHistoryManager
             this.source = source;
         }
 
+        @JsonProperty
         public String getBackendUrl()
         {
             return this.backendUrl;
@@ -108,6 +114,7 @@ public interface QueryHistoryManager
             this.backendUrl = backendUrl;
         }
 
+        @JsonProperty
         public long getCaptureTime()
         {
             return this.captureTime;

@@ -14,13 +14,14 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Receiving form login parameters.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RestLoginRequest(
-        String username,
-        String password)
+        @JsonProperty("username") String username,
+        @JsonProperty("password") String password)
 {
 }

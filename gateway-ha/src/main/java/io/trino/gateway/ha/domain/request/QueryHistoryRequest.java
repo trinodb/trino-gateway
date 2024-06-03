@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Query parameters for History
@@ -26,11 +27,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record QueryHistoryRequest(
-        Integer page,
-        Integer size,
-        String user,
-        String backendUrl,
-        String queryId)
+        @JsonProperty("page") Integer page,
+        @JsonProperty("size") Integer size,
+        @JsonProperty("user") String user,
+        @JsonProperty("backendUrl") String backendUrl,
+        @JsonProperty("queryId") String queryId)
 {
     public QueryHistoryRequest
     {

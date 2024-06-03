@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.domain.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 
 /**
@@ -25,8 +26,8 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record SelectorsRequest(
-        String useSchema,
-        ResourceGroupsManager.SelectorsDetail data,
-        ResourceGroupsManager.SelectorsDetail oldData)
+        @JsonProperty("useSchema") String useSchema,
+        @JsonProperty("data") ResourceGroupsManager.SelectorsDetail data,
+        @JsonProperty("oldData") ResourceGroupsManager.SelectorsDetail oldData)
 {
 }
