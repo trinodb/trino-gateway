@@ -21,7 +21,7 @@ gateway for multiple [Trino](https://trino.io) clusters.
 
 ## Other resources
 
-* [Trino Gateway announment blog post](https://trino.io/blog/2023/09/28/trino-gateway)
+* [Trino Gateway announcement blog post](https://trino.io/blog/2023/09/28/trino-gateway)
 * Many clusters and only one gateway:
     * Project announcement and overview at Trino Summit 2023 with use cases 
       from Bloomberg and Naver
