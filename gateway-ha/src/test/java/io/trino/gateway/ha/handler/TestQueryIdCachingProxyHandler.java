@@ -14,8 +14,6 @@
 package io.trino.gateway.ha.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.Request;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -27,7 +25,6 @@ import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.AUTHORIZATION;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -62,22 +59,6 @@ public class TestQueryIdCachingProxyHandler
                 .isNull();
         assertThat(extractQueryIdIfPresent("/ui/", "lang=en&p=1&id=0_1_2_a"))
                 .isNull();
-    }
-
-    @Test
-    public void testForwardedHostHeaderOnProxyRequest()
-            throws IOException
-    {
-        String backendServer = "trinocluster";
-        String backendPort = "80";
-        HttpServletRequest mockServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(mockServletRequest.getHeader("proxytarget")).thenReturn(format("http://%s:%s", backendServer, backendPort));
-        HttpClient httpClient = new HttpClient();
-        Request proxyRequest = httpClient.newRequest("http://localhost:80");
-        QueryIdCachingProxyHandler.setForwardedHostHeaderOnProxyRequest(mockServletRequest,
-                proxyRequest);
-        assertThat(proxyRequest.getHeaders().get("Host"))
-                .isEqualTo(format("%s:%s", backendServer, backendPort));
     }
 
     @Test

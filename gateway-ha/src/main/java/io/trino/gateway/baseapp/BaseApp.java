@@ -31,6 +31,10 @@ import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
+import io.trino.gateway.proxyserver.ForProxy;
+import io.trino.gateway.proxyserver.ProxyRequestHandler;
+import io.trino.gateway.proxyserver.RouteToBackendResource;
+import io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.lang.reflect.Constructor;
@@ -38,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -109,8 +114,10 @@ public class BaseApp
     @Override
     public void configure(Binder binder)
     {
+        binder.bind(HaGatewayConfiguration.class).toInstance(haGatewayConfiguration);
         registerAuthFilters(binder);
         registerResources(binder);
+        registerProxyResources(binder);
         addManagedApps(this.haGatewayConfiguration, binder);
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
@@ -151,5 +158,13 @@ public class BaseApp
     private static void registerAuthFilters(Binder binder)
     {
         jaxrsBinder(binder).bind(RolesAllowedDynamicFeature.class);
+    }
+
+    private static void registerProxyResources(Binder binder)
+    {
+        jaxrsBinder(binder).bind(RouteToBackendResource.class);
+        jaxrsBinder(binder).bind(RouterPreMatchContainerRequestFilter.class);
+        jaxrsBinder(binder).bind(ProxyRequestHandler.class);
+        httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
     }
 }

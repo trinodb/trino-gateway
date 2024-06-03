@@ -22,7 +22,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.eclipse.jetty.http.HttpStatus;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
@@ -33,6 +32,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.Arrays;
 
+import static io.airlift.http.client.HttpStatus.NOT_FOUND;
+import static io.airlift.http.client.HttpStatus.OK;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
@@ -136,7 +137,7 @@ public class TestTrinoResource
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
 
         ResourceGroupsDetail[] groups =
                 objectMapper.readValue(response.body().string(), ResourceGroupsDetail[].class);
@@ -159,7 +160,7 @@ public class TestTrinoResource
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
 
         ResourceGroupsDetail[] resourceGroups =
                 objectMapper.readValue(response.body().string(), ResourceGroupsDetail[].class);
@@ -179,7 +180,7 @@ public class TestTrinoResource
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
 
         SelectorsDetail[] selectors =
                 objectMapper.readValue(response.body().string(), SelectorsDetail[].class);
@@ -201,7 +202,7 @@ public class TestTrinoResource
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
 
         SelectorsDetail[] selectors =
                 objectMapper.readValue(response.body().string(), SelectorsDetail[].class);
@@ -223,7 +224,7 @@ public class TestTrinoResource
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
     }
 
     @Test
@@ -239,7 +240,7 @@ public class TestTrinoResource
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.NOT_FOUND_404);
+        assertThat(response.code()).isEqualTo(NOT_FOUND.code());
     }
 
     @Test
@@ -255,7 +256,7 @@ public class TestTrinoResource
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.OK_200);
+        assertThat(response.code()).isEqualTo(OK.code());
     }
 
     @Test
@@ -271,6 +272,6 @@ public class TestTrinoResource
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.code()).isEqualTo(HttpStatus.NOT_FOUND_404);
+        assertThat(response.code()).isEqualTo(NOT_FOUND.code());
     }
 }

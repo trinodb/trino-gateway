@@ -11,34 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha;
+package io.trino.gateway.proxyserver;
 
-import com.google.inject.Inject;
-import io.trino.gateway.proxyserver.ProxyServer;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-
-import static java.util.Objects.requireNonNull;
-
-public class GatewayManagedApp
+public class ProxyException
+        extends RuntimeException
 {
-    private final ProxyServer gateway;
-
-    @Inject
-    public GatewayManagedApp(ProxyServer gateway)
+    public ProxyException(String message)
     {
-        this.gateway = requireNonNull(gateway, "gateway is null");
+        super(message);
     }
 
-    @PostConstruct
-    public void start()
+    public ProxyException(String message, Throwable cause)
     {
-        gateway.start();
+        super(message, cause);
     }
 
-    @PreDestroy
-    public void stop()
+    public ProxyException(Throwable cause)
     {
-        gateway.close();
+        super(cause);
     }
 }
