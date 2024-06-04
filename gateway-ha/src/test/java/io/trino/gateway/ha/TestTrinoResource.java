@@ -77,7 +77,6 @@ public class TestTrinoResource
     {
         // First resource group and selector(s)
         ResourceGroupsDetail firstResourceGroup = new ResourceGroupsDetail();
-        firstResourceGroup.setResourceGroupId(1234);
         firstResourceGroup.setName("admins");
         firstResourceGroup.setHardConcurrencyLimit(1);
         firstResourceGroup.setSoftMemoryLimit("2%");
@@ -86,14 +85,13 @@ public class TestTrinoResource
         resourceGroupManager.createResourceGroup(firstResourceGroup, null);
 
         SelectorsDetail firstGroupSelector = new SelectorsDetail();
-        firstGroupSelector.setResourceGroupId(1234);
+        firstGroupSelector.setResourceGroupId(1);
         firstGroupSelector.setPriority(5L);
 
         resourceGroupManager.createSelector(firstGroupSelector, null);
 
         // Second resource group and selector(s)
         ResourceGroupsDetail secondResourceGroup = new ResourceGroupsDetail();
-        secondResourceGroup.setResourceGroupId(3456);
         secondResourceGroup.setName("services");
         secondResourceGroup.setHardConcurrencyLimit(34);
         secondResourceGroup.setSoftMemoryLimit("5GB");
@@ -102,14 +100,13 @@ public class TestTrinoResource
         resourceGroupManager.createResourceGroup(secondResourceGroup, null);
 
         SelectorsDetail secondGroupSelector = new SelectorsDetail();
-        secondGroupSelector.setResourceGroupId(3456);
+        secondGroupSelector.setResourceGroupId(2);
         secondGroupSelector.setPriority(9L);
 
         resourceGroupManager.createSelector(secondGroupSelector, null);
 
         // Third resource group (no selectors)
         ResourceGroupsDetail thirdResourceGroup = new ResourceGroupsDetail();
-        thirdResourceGroup.setResourceGroupId(5678);
         thirdResourceGroup.setName("users");
         thirdResourceGroup.setHardConcurrencyLimit(5);
         thirdResourceGroup.setSoftMemoryLimit("67%");
@@ -143,9 +140,9 @@ public class TestTrinoResource
         assertThat(groups.length).isEqualTo(3);
 
         Arrays.sort(groups, (x, y) -> Long.compare(x.getResourceGroupId(), y.getResourceGroupId()));
-        assertThat(groups[0].getResourceGroupId()).isEqualTo(1234);
-        assertThat(groups[1].getResourceGroupId()).isEqualTo(3456);
-        assertThat(groups[2].getResourceGroupId()).isEqualTo(5678);
+        assertThat(groups[0].getResourceGroupId()).isEqualTo(1);
+        assertThat(groups[1].getResourceGroupId()).isEqualTo(2);
+        assertThat(groups[2].getResourceGroupId()).isEqualTo(3);
     }
 
     @Test
@@ -155,7 +152,7 @@ public class TestTrinoResource
     {
         Request request =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/trino/resourcegroup/read/1234")
+                        .url("http://localhost:" + routerPort + "/trino/resourcegroup/read/1")
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
@@ -165,7 +162,7 @@ public class TestTrinoResource
                 objectMapper.readValue(response.body().string(), ResourceGroupsDetail[].class);
         assertThat(resourceGroups.length).isEqualTo(1);
 
-        assertThat(resourceGroups[0].getResourceGroupId()).isEqualTo(1234);
+        assertThat(resourceGroups[0].getResourceGroupId()).isEqualTo(1);
     }
 
     @Test
@@ -186,8 +183,8 @@ public class TestTrinoResource
         assertThat(selectors.length).isEqualTo(2);
 
         Arrays.sort(selectors, (x, y) -> Long.compare(x.getResourceGroupId(), y.getResourceGroupId()));
-        assertThat(selectors[0].getResourceGroupId()).isEqualTo(1234);
-        assertThat(selectors[1].getResourceGroupId()).isEqualTo(3456);
+        assertThat(selectors[0].getResourceGroupId()).isEqualTo(1);
+        assertThat(selectors[1].getResourceGroupId()).isEqualTo(2);
     }
 
     @Test
@@ -197,7 +194,7 @@ public class TestTrinoResource
     {
         Request request =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/trino/selector/read/3456")
+                        .url("http://localhost:" + routerPort + "/trino/selector/read/2")
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
@@ -207,7 +204,7 @@ public class TestTrinoResource
                 objectMapper.readValue(response.body().string(), SelectorsDetail[].class);
         assertThat(selectors.length).isEqualTo(1);
 
-        assertThat(selectors[0].getResourceGroupId()).isEqualTo(3456);
+        assertThat(selectors[0].getResourceGroupId()).isEqualTo(2);
     }
 
     @Test
@@ -219,7 +216,7 @@ public class TestTrinoResource
                 RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
         Request request =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/5678")
+                        .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/3")
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
