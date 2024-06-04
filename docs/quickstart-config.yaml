@@ -1,6 +1,7 @@
 httpConfig:
     node.environment: test
     http-server.http.port: 9081
+    log.levels-file: gateway-ha/etc/log.properties
 
 requestRouter:
   #SQL clients connect to the request port
