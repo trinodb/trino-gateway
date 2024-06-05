@@ -144,31 +144,6 @@ public class HaGatewayProviderModule
         return new ChainedAuthFilter(authFilters.build());
     }
 
-    private ProxyHandler getProxyHandler(
-            QueryHistoryManager queryHistoryManager,
-            RoutingManager routingManager,
-            ProxyHandlerStats proxyHandlerStats,
-            HttpServerConfig httpServerConfig,
-            Optional<HttpsConfig> httpsConfig)
-    {
-        // By default, use routing group header to route
-        RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
-        // Use rules engine if enabled
-        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
-        if (routingRulesConfig.isRulesEngineEnabled()) {
-            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-            routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
-        }
-
-        return new QueryIdCachingProxyHandler(
-                queryHistoryManager,
-                routingManager,
-                routingGroupSelector,
-                httpsConfig.map(HttpsConfig::getHttpsPort).orElseGet(httpServerConfig::getHttpPort),
-                proxyHandlerStats,
-                extraWhitelistPaths);
-    }
-
     private ResourceSecurityDynamicFeature getAuthFilter(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
@@ -189,6 +164,7 @@ public class HaGatewayProviderModule
     public ProxyServer provideGateway(
             QueryHistoryManager queryHistoryManager,
             RoutingManager routingManager,
+            RoutingGroupSelector routingGroupSelector,
             ProxyHandlerStats proxyHandlerStats,
             HttpServerConfig httpServerConfig,
             Optional<HttpsConfig> httpsConfig)
@@ -212,7 +188,13 @@ public class HaGatewayProviderModule
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
             routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
             routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager, proxyHandlerStats, httpServerConfig, httpsConfig);
+            ProxyHandler proxyHandler = new QueryIdCachingProxyHandler(
+                    queryHistoryManager,
+                    routingManager,
+                    routingGroupSelector,
+                    httpsConfig.map(HttpsConfig::getHttpsPort).orElseGet(httpServerConfig::getHttpPort),
+                    proxyHandlerStats,
+                    extraWhitelistPaths);
             gateway = new ProxyServer(routerProxyConfig, proxyHandler);
         }
         return gateway;
@@ -244,5 +226,17 @@ public class HaGatewayProviderModule
     public BackendStateManager getBackendStateConnectionManager()
     {
         return this.backendStateConnectionManager;
+    }
+
+    @Provides
+    @Singleton
+    public RoutingGroupSelector getRoutingGroupSelector()
+    {
+        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
+        if (routingRulesConfig.isRulesEngineEnabled()) {
+            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
+            return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
+        }
+        return RoutingGroupSelector.byRoutingGroupHeader();
     }
 }
