@@ -29,6 +29,7 @@ import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.QueryIdCachingProxyHandler;
+import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -53,7 +54,6 @@ import io.trino.gateway.proxyserver.ProxyServer;
 import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -68,7 +68,6 @@ public class HaGatewayProviderModule
     private final AuthorizationManager authorizationManager;
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
-    private final List<String> extraWhitelistPaths;
     private final HaGatewayConfiguration configuration;
 
     @Override
@@ -88,7 +87,6 @@ public class HaGatewayProviderModule
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
-        extraWhitelistPaths = configuration.getExtraWhitelistPaths();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
@@ -164,7 +162,7 @@ public class HaGatewayProviderModule
     public ProxyServer provideGateway(
             QueryHistoryManager queryHistoryManager,
             RoutingManager routingManager,
-            RoutingGroupSelector routingGroupSelector,
+            RoutingTargetHandler routingTargetHandler,
             ProxyHandlerStats proxyHandlerStats,
             HttpServerConfig httpServerConfig,
             Optional<HttpsConfig> httpsConfig)
@@ -191,10 +189,9 @@ public class HaGatewayProviderModule
             ProxyHandler proxyHandler = new QueryIdCachingProxyHandler(
                     queryHistoryManager,
                     routingManager,
-                    routingGroupSelector,
+                    routingTargetHandler,
                     httpsConfig.map(HttpsConfig::getHttpsPort).orElseGet(httpServerConfig::getHttpPort),
-                    proxyHandlerStats,
-                    extraWhitelistPaths);
+                    proxyHandlerStats);
             gateway = new ProxyServer(routerProxyConfig, proxyHandler);
         }
         return gateway;
@@ -238,5 +235,17 @@ public class HaGatewayProviderModule
             return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
+    }
+
+    @Provides
+    @Singleton
+    public RoutingTargetHandler getRoutingDestinationHandler(
+            RoutingManager routingManager,
+            RoutingGroupSelector routingGroupSelector)
+    {
+        return new RoutingTargetHandler(
+                routingManager,
+                routingGroupSelector,
+                configuration.getExtraWhitelistPaths());
     }
 }
