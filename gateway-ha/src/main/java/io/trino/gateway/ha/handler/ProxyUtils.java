@@ -62,7 +62,7 @@ public final class ProxyUtils
         QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
         queryDetail.setBackendUrl(request.getHeader(PROXY_TARGET_HEADER));
         queryDetail.setCaptureTime(System.currentTimeMillis());
-        queryDetail.setUser(getQueryUser(request));
+        queryDetail.setUser(getQueryUser(request.getHeader(USER_HEADER), request.getHeader(AUTHORIZATION)));
         queryDetail.setSource(request.getHeader(SOURCE_HEADER));
         String queryText = CharStreams.toString(request.getReader());
         queryDetail.setQueryText(
@@ -72,39 +72,36 @@ public final class ProxyUtils
         return queryDetail;
     }
 
-    public static String getQueryUser(HttpServletRequest request)
+    public static String getQueryUser(String userHeader, String authorization)
     {
-        String trinoUser = request.getHeader(USER_HEADER);
-
-        if (!isNullOrEmpty(trinoUser)) {
-            log.info("user from %s", USER_HEADER);
-            return trinoUser;
+        if (!isNullOrEmpty(userHeader)) {
+            log.debug("User from header %s", USER_HEADER);
+            return userHeader;
         }
 
-        log.info("user from basic auth");
+        log.debug("User from basic authentication");
         String user = "";
-        String header = request.getHeader(AUTHORIZATION);
-        if (header == null) {
-            log.error("didn't find any basic auth header");
+        if (authorization == null) {
+            log.debug("No basic auth header found.");
             return user;
         }
 
-        int space = header.indexOf(' ');
-        if ((space < 0) || !header.substring(0, space).equalsIgnoreCase("basic")) {
-            log.error("basic auth format is incorrect");
+        int space = authorization.indexOf(' ');
+        if ((space < 0) || !authorization.substring(0, space).equalsIgnoreCase("basic")) {
+            log.error("Basic auth format is invalid");
             return user;
         }
 
-        String headerInfo = header.substring(space + 1).trim();
+        String headerInfo = authorization.substring(space + 1).trim();
         if (isNullOrEmpty(headerInfo)) {
-            log.error("The encoded value of basic auth doesn't exist");
+            log.error("Encoded value of basic auth doesn't exist");
             return user;
         }
 
         String info = new String(Base64.getDecoder().decode(headerInfo));
         List<String> parts = Splitter.on(':').limit(2).splitToList(info);
         if (parts.size() < 1) {
-            log.error("no user inside the basic auth text");
+            log.error("No user inside the basic auth text");
             return user;
         }
         return parts.get(0);
