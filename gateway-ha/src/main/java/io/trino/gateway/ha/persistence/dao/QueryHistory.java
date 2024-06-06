@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.persistence.dao;
 
+import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
 import static java.util.Objects.requireNonNull;
@@ -21,8 +22,8 @@ public record QueryHistory(
         @ColumnName("query_id") String queryId,
         @ColumnName("query_text") String queryText,
         @ColumnName("backend_url") String backendUrl,
-        @ColumnName("user_name") String userName,
-        @ColumnName("source") String source,
+        @ColumnName("user_name") @Nullable String userName,
+        @ColumnName("source") @Nullable String source,
         @ColumnName("created") long created)
 {
     public QueryHistory
@@ -30,7 +31,5 @@ public record QueryHistory(
         requireNonNull(queryId, "queryId is null");
         requireNonNull(queryText, "queryText is null");
         requireNonNull(backendUrl, "backendUrl is null");
-        requireNonNull(userName, "userName is null");
-        requireNonNull(source, "source is null");
     }
 }
