@@ -42,8 +42,6 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
               - "java"
-              - "--add-opens=java.base/java.lang=ALL-UNNAMED"
-              - "--add-opens=java.base/java.net=ALL-UNNAMED"
               - "-XX:MinRAMPercentage=80.0"
               - "-XX:MaxRAMPercentage=80.0"
               - "-jar"
