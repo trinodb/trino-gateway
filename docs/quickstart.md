@@ -7,10 +7,8 @@ Gateway server running in the host operating system.
 ## Start Trino Gateway server
 
 The following script starts a Trino Gateway server using the 
-[Quickstart configuration](quickstart-config.yaml) with the request service
-at http://localhost:9080, the application service at http://localhost:9081,
-and the Admin service at http://localhost:9082. It also starts a dockerized
-PostgreSQL database at localhost:5432.
+[Quickstart configuration](quickstart-config.yaml) at http://localhost:8080.
+It also starts a dockerized PostgreSQL database at localhost:5432.
 
 To start the server, copy the script below to a temporary directory 
 under the project root folder, and run it at the temporary directory.
@@ -91,12 +89,12 @@ docker run --name trino1 -d -p 8081:8080 trinodb/trino
 docker run --name trino2 -d -p 8082:8080 trinodb/trino
 
 #Add the trino servers as Gateway backends
-curl -H "Content-Type: application/json" -X POST localhost:9080/gateway/backend/modify/add -d '{"name": "trino1",
+curl -H "Content-Type: application/json" -X POST localhost:8080/gateway/backend/modify/add -d '{"name": "trino1",
                                                                                                 "proxyTo": "http://localhost:8081",
                                                                                                 "active": true,
                                                                                                 "routingGroup": "adhoc"
                                                                                               }'
-curl -H "Content-Type: application/json" -X POST localhost:9080/gateway/backend/modify/add -d '{"name": "trino2",
+curl -H "Content-Type: application/json" -X POST localhost:8080/gateway/backend/modify/add -d '{"name": "trino2",
                                                                                                 "proxyTo": "http://localhost:8082",
                                                                                                 "active": true,
                                                                                                 "routingGroup": "adhoc"
