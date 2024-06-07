@@ -5,6 +5,33 @@ These features are used only to authenticate and authorize its user interface an
 the APIs. All Trino-related requests are passed through to the Trino cluster
 without any authentication or authorization check in Trino Gateway.
 
+## TLS configuration
+
+All authentication and authorization mechanisms require configuring TLS as the
+foundational layer. Your site or cloud environment may already have a load balancer
+or proxy server configured and running with a valid, globally trusted TLS certificate.
+In this case, you can work with your network administrators to set up your Trino
+Gateway behind the load balancer.
+
+You can also configure an end-to-end TLS connection using Trino Gateway.
+This requires you to obtain and install a TLS certificate and configure Trino
+Gateway to use it for client connections. The following configuration
+enables TLS for Trino Gateway.
+
+```yaml
+httpConfig:
+    http-server.http.enabled: false
+    http-server.https.enabled: true
+    http-server.https.port: 8443
+    http-server.https.keystore.path: certificate.pem
+    http-server.https.keystore.key: changeme
+```
+
+For advanced configurations, refer to the [Trino
+TLS documentation](https://trino.io/docs/current/security/tls.html)
+for more details.
+
+
 ## Authentication
 
 The authentication would happen on https protocol only. Add the
@@ -160,4 +187,23 @@ pagePermissions:
   admin: 
   user: dashboard_history 
   api: 
+```
+
+## Extra: Self-signed certificate in Trino Gateway
+
+If Trino Gateway is using a self-signed certificate, client should use the
+`--insecure` config.
+
+```bash
+java -jar trino-cli-executable.jar --server https://localhost:8443 --insecure
+```
+
+## Extra: Self signed certificate in Trino
+
+If Trino is using a self-signed certificate, the following JVM config for
+Trino Gateway should be added:
+
+```properties
+-Djavax.net.ssl.trustStore=<truststore file>
+-Djavax.net.ssl.trustStorePassword=<truststore password>
 ```
