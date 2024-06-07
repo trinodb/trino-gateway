@@ -116,7 +116,10 @@ By default, Trino Gateway only proxies requests to paths starting with
 `/oauth`.
 
 If you want to proxy additional paths, you can add them by adding the
-`extraWhitelistPaths` node to your configuration YAML file:
+`extraWhitelistPaths` node to your configuration YAML file.
+Trino Gateway takes regexes from `extraWhitelistPaths` and forwards only
+those requests with a URI that exactly match. Be sure
+to use single-quoted strings so that escaping is not required.
 
 ```yaml
 extraWhitelistPaths:
