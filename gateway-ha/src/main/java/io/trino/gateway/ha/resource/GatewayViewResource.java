@@ -34,7 +34,7 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-@Path("/")
+@Path("/trino-gateway")
 public class GatewayViewResource
 {
     private final GatewayBackendManager gatewayBackendManager;

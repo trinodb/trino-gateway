@@ -166,7 +166,7 @@ public class TestOIDC
         try (Response response = httpClient.newCall(oidcRequest).execute()) {
             assertThat(response.request().url().host()).isEqualTo("localhost");
             assertThat(response.request().url().port()).isEqualTo(ROUTER_PORT);
-            assertThat(response.request().url().encodedPath()).isEqualTo("/");
+            assertThat(response.request().url().encodedPath()).isEqualTo("/trino-gateway");
             assertThat(response.code()).isEqualTo(200);
         }
     }
