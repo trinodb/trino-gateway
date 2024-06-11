@@ -9,7 +9,7 @@ export enum Theme {
 }
 
 export const DEFAULT_CONFIG = {
-  avatar: "/logo.svg",
+  avatar: "/trino-gateway/logo.svg",
   theme: Theme.Auto as Theme,
 
   fontSize: 14,

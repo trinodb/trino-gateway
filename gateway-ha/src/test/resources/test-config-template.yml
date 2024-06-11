@@ -12,8 +12,8 @@ modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
 
 extraWhitelistPaths:
-  - "/v1/custom"
-  - "/custom/logout"
+  - '/v1/custom.*'
+  - '/custom/logout.*'
 
 gatewayCookieConfiguration:
   enabled: true

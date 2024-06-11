@@ -120,11 +120,12 @@ If you want to proxy additional paths, you can add them by adding the
 
 ```yaml
 extraWhitelistPaths:
-  - "/ui/insights"
-  - "/api/v1/biac"
-  - "/api/v1/dataProduct"
-  - "/api/v1/dataproduct"
-  - "/ext/faster"
+  - '/ui/insights'
+  - '/api/v1/biac'
+  - '/api/v1/dataProduct'
+  - '/api/v1/dataproduct'
+  - '/api/v2/.*'
+  - '/ext/faster'
 ```
 
 ## Running Trino Gateway
