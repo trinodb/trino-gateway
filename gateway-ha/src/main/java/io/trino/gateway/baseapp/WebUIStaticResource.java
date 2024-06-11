@@ -27,11 +27,11 @@ import java.net.URL;
 
 import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 
-@Path("/")
+@Path("/trino-gateway")
 public class WebUIStaticResource
 {
     @GET
-    @Path("/logo.svg")
+    @Path("logo.svg")
     public Response getLogo(@Context ServletContext servletContext)
             throws IOException
     {
@@ -44,7 +44,7 @@ public class WebUIStaticResource
     }
 
     @GET
-    @Path("/assets/{path: .*}")
+    @Path("assets/{path: .*}")
     public Response getAssetsFile(@PathParam("path") String path, @Context ServletContext servletContext)
             throws IOException
     {

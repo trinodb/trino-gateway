@@ -16,7 +16,7 @@ modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
 
 extraWhitelistPaths:
-  - "/v1/custom"
+  - '/v1/custom.*'
 
 authorization:
   admin: .*FOO.*

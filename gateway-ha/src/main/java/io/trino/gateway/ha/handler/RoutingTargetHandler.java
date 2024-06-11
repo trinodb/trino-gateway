@@ -23,8 +23,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewBackend;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.OAUTH_PATH;
@@ -42,7 +44,7 @@ public class RoutingTargetHandler
     private static final Logger log = Logger.get(RoutingTargetHandler.class);
     private final RoutingManager routingManager;
     private final RoutingGroupSelector routingGroupSelector;
-    private final List<String> extraWhitelistPaths;
+    private final List<Pattern> extraWhitelistPaths;
     private final boolean cookiesEnabled;
 
     public RoutingTargetHandler(
@@ -52,7 +54,7 @@ public class RoutingTargetHandler
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
-        this.extraWhitelistPaths = requireNonNull(extraWhitelistPaths);
+        this.extraWhitelistPaths = extraWhitelistPaths.stream().map(Pattern::compile).collect(toImmutableList());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
@@ -74,7 +76,7 @@ public class RoutingTargetHandler
                 || path.startsWith(V1_NODE_PATH)
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
-                || extraWhitelistPaths.stream().anyMatch(s -> path.startsWith(s));
+                || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
     }
 
     private String getBackendFromRoutingGroup(HttpServletRequest request)
