@@ -10,6 +10,7 @@ export default defineConfig((mode: ConfigEnv) => {
   const baseUrl = env.VITE_BASE_URL
   const proxyPath = env.VITE_PROXY_PATH;
   return {
+    base: `/trino-gateway/`,
     plugins: [react(), svgr()],
     server: {
       proxy: {

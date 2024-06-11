@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
 public class RouterPreMatchContainerRequestFilter
         implements ContainerRequestFilter
 {
-    public static final String ROUTE_TO_BACKEND = "/tgw/internal/route_to_backend";
+    public static final String ROUTE_TO_BACKEND = "/trino-gateway/internal/route_to_backend";
 
     private final RoutingTargetHandler routingTargetHandler;
 
