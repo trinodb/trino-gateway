@@ -305,17 +305,12 @@ public class QueryIdCachingProxyHandler
         }
 
         Optional<String> previousBackend = getPreviousBackend(request);
-        if (previousBackend.isPresent()) {
-            logRewrite(previousBackend.orElseThrow(), request);
-            return previousBackend.map(b -> buildUriWithNewBackend(b, request)).orElseThrow();
-        }
+        String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
+        // set target clusterHost so that we could save queryId to cluster mapping later.
+        ((MultiReadHttpServletRequest) request).addHeader(PROXY_TARGET_HEADER, clusterHost);
+        logRewrite(clusterHost, request);
 
-        String backend = getBackendFromRoutingGroup(request);
-        // set target backend so that we could save queryId to backend mapping later.
-        ((MultiReadHttpServletRequest) request).addHeader(PROXY_TARGET_HEADER, backend);
-        logRewrite(backend, request);
-
-        return buildUriWithNewBackend(backend, request);
+        return buildUriWithNewBackend(clusterHost, request);
     }
 
     private void logRewrite(String newBackend, HttpServletRequest request)
