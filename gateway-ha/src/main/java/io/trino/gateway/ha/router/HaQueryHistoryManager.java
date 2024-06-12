@@ -122,7 +122,7 @@ public class HaQueryHistoryManager
         List<DistributionResponse.LineChart> resList = new ArrayList<>();
         for (Map<String, Object> model : results) {
             DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
-            long minute = Long.parseLong(model.get("minute").toString());
+            long minute = (long) Float.parseFloat(model.get("minute").toString());
             Instant instant = Instant.ofEpochSecond(minute * 60L);
             LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
