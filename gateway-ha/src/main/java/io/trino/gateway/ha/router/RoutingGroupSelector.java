@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -35,9 +36,9 @@ public interface RoutingGroupSelector
      * Routing group selector that uses routing engine rules
      * to determine the right routing group.
      */
-    static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath)
+    static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new RuleReloadingRoutingGroupSelector(rulesConfigPath);
+        return new RuleReloadingRoutingGroupSelector(rulesConfigPath, requestAnalyzerConfig);
     }
 
     /**
