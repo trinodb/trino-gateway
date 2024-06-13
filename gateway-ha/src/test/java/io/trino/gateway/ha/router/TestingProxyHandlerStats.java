@@ -13,23 +13,23 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.airlift.stats.CounterStat;
+import io.trino.gateway.ha.handler.ProxyHandlerStats;
 
-import java.util.List;
-
-public interface RoutingManager
+public class TestingProxyHandlerStats
+        implements ProxyHandlerStats
 {
-    void setBackendForQueryId(String queryId, String backend);
+    private final CounterStat requestCount = new CounterStat();
 
-    String provideAdhocBackend(String user);
+    @Override
+    public void recordRequest()
+    {
+        requestCount.update(1);
+    }
 
-    String provideBackendForRoutingGroup(String routingGroup, String user);
-
-    String findBackendForQueryId(String queryId);
-
-    void updateBackEndHealth(String backendId, Boolean value);
-
-    void updateBackEndStats(List<ClusterStats> stats);
-
-    String findBackendForUnknownQueryId(String queryId);
+    @Override
+    public CounterStat getRequestCount()
+    {
+        return requestCount;
+    }
 }
