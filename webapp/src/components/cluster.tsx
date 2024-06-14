@@ -23,7 +23,7 @@ export function Cluster() {
   const list = () => {
     backendsApi({})
       .then(data => {
-        setBackendData(data);
+        setBackendData(data.sort((a, b) => a.name.localeCompare(b.name)));
       }).catch(() => { });
   }
 
