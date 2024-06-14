@@ -100,6 +100,9 @@ public class HaGatewayLauncher
             throws Exception
     {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Expected exactly one argument (path of configuration file)");
+        }
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(new File(args[0]), HaGatewayConfiguration.class);
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
