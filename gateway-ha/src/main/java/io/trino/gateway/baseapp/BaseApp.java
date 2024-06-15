@@ -67,6 +67,9 @@ public abstract class BaseApp
 {
     private static final Logger logger = Logger.get(BaseApp.class);
     private final ImmutableList.Builder<Module> appModules = ImmutableList.builder();
+    // this injector reference is needed to use reflection in
+    // TestGatewayHaSingleBackend and TestGatewayMultipleBackend
+    private Injector injector;
 
     private Module newModule(String clazz, HaGatewayConfiguration configuration, Environment environment)
     {
@@ -128,7 +131,7 @@ public abstract class BaseApp
     {
         appModules.add(new MetricRegistryModule(environment.metrics()));
         appModules.addAll(addModules(configuration, environment));
-        Injector injector = Guice.createInjector(appModules.build());
+        injector = Guice.createInjector(appModules.build());
         injector.injectMembers(this);
         registerWithInjector(configuration, environment, injector);
     }
