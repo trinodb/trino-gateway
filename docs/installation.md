@@ -103,11 +103,11 @@ Find more information in the [routing rules documentation](routing-rules.md).
 ### Configure logging <a name="logging">
 
 To configure the logging level for various classes, specify the path to the 
-`log.properties` file by setting `log.levels-file` in `httpConfig`.
+`log.properties` file by setting `log.levels-file` in `serverConfig`.
 
 For additional configurations, use the `log.*` properties from the 
 [Trino logging properties documentation](https://trino.io/docs/current/admin/properties-logging.html) and specify
-the properties in `httpConfig`.
+the properties in `serverConfig`.
 
 ### Proxying additional paths
 

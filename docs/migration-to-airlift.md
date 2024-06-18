@@ -44,7 +44,7 @@ You must adjust your configuration to the following changes.
 ### Change of service ports
 
 `requestRouter`, `server`, `applicationConnectors`, and `adminConnectors`
-are replaced by `httpConfig`.
+are replaced by `serverConfig`.
 
 Old config:
 ```yaml

@@ -19,7 +19,7 @@ Gateway to use it for client connections. The following configuration
 enables TLS for Trino Gateway.
 
 ```yaml
-httpConfig:
+serverConfig:
     http-server.http.enabled: false
     http-server.https.enabled: true
     http-server.https.port: 8443
