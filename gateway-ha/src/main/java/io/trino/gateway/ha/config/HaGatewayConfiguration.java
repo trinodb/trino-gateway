@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class HaGatewayConfiguration
 {
-    private Map<String, String> httpConfig = new HashMap<>();
+    private Map<String, String> serverConfig = new HashMap<>();
     private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
@@ -43,14 +43,14 @@ public class HaGatewayConfiguration
 
     public HaGatewayConfiguration() {}
 
-    public Map<String, String> getHttpConfig()
+    public Map<String, String> getServerConfig()
     {
-        return this.httpConfig;
+        return this.serverConfig;
     }
 
-    public void setHttpConfig(Map<String, String> httpConfig)
+    public void setServerConfig(Map<String, String> serverConfig)
     {
-        this.httpConfig = httpConfig;
+        this.serverConfig = serverConfig;
     }
 
     public NotifierConfiguration getNotifier()

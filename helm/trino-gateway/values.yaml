@@ -34,7 +34,7 @@ authenticationSecret:
     key: ""
 
 config:
-    httpConfig:
+    serverConfig:
         node.environment: test
         http-server.http.port: 8080
     clusterStatsConfiguration:
