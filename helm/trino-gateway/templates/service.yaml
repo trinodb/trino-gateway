@@ -7,7 +7,7 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ index .Values "config" "httpConfig" "http-server.http.port" }}
+    - port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
       protocol: TCP
       name: request
     {{- range $index, $connector := $.Values.config.server.applicationConnectors}}

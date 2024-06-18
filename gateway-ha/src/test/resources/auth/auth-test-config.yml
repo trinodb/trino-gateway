@@ -1,4 +1,4 @@
-httpConfig:
+serverConfig:
   node.environment: test
   http-server.http.port: REQUEST_ROUTER_PORT
 

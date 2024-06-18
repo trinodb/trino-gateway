@@ -62,7 +62,7 @@ public class HaGatewayLauncher
         modules.addAll(additionalModules);
 
         Bootstrap app = new Bootstrap(modules.build())
-                .setRequiredConfigurationProperties(configuration.getHttpConfig());
+                .setRequiredConfigurationProperties(configuration.getServerConfig());
         try {
             app.initialize();
         }
