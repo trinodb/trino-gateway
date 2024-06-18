@@ -311,7 +311,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
-            <version>448</version>
+            <version>449</version>
             <scope>runtime</scope>
         </dependency>
 
