@@ -24,6 +24,9 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.List;
 import java.util.Properties;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNullElse;
+
 public class EmailNotifier
         implements Notifier
 {
@@ -53,10 +56,11 @@ public class EmailNotifier
     @Override
     public void sendNotification(String subject, String content)
     {
+        content = requireNonNullElse(notifierConfiguration.getCustomContent(), content);
         sendNotification(
                 notifierConfiguration.getSender(),
                 notifierConfiguration.getRecipients(),
-                "Trino Error: " + subject,
+                format("%s error: %s", notifierConfiguration.getGatewayInstance(), subject),
                 content);
     }
 
