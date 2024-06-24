@@ -24,6 +24,7 @@ import io.airlift.http.client.StaticBodyGenerator;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -70,14 +71,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class ProxyRequestHandler
 {
     private static final Logger log = Logger.get(ProxyRequestHandler.class);
-    private static final Duration ASYNC_TIMEOUT = new Duration(2, MINUTES);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
     private final HttpClient httpClient;
     private final RoutingManager routingManager;
@@ -88,12 +88,14 @@ public class ProxyRequestHandler
     public ProxyRequestHandler(
             @ForProxy HttpClient httpClient,
             RoutingManager routingManager,
-            QueryHistoryManager queryHistoryManager)
+            QueryHistoryManager queryHistoryManager,
+            HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
+        asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
     }
 
     @PreDestroy
@@ -198,10 +200,10 @@ public class ProxyRequestHandler
     private void setupAsyncResponse(AsyncResponse asyncResponse, ListenableFuture<Response> future)
     {
         bindAsyncResponse(asyncResponse, future, executor)
-                .withTimeout(ASYNC_TIMEOUT, () -> Response
+                .withTimeout(asyncTimeout, () -> Response
                         .status(BAD_GATEWAY)
                         .type(TEXT_PLAIN_TYPE)
-                        .entity("Request to remote Trino server timed out after" + ASYNC_TIMEOUT)
+                        .entity("Request to remote Trino server timed out after" + asyncTimeout)
                         .build());
     }
 
