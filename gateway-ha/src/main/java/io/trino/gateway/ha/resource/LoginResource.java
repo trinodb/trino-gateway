@@ -167,11 +167,11 @@ public class LoginResource
     public Response loginType()
     {
         String loginType;
-        if (formAuthManager != null) {
-            loginType = "form";
-        }
-        else if (oauthManager != null) {
+        if (oauthManager != null) {
             loginType = "oauth";
+        }
+        else if (formAuthManager != null) {
+            loginType = "form";
         }
         else {
             loginType = "none";
