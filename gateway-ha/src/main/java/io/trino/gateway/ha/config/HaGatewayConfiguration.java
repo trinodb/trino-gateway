@@ -24,6 +24,7 @@ public class HaGatewayConfiguration
     private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
+    private RoutingConfiguration routing = new RoutingConfiguration();
     private RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
     private AuthenticationConfiguration authentication;
     private AuthorizationConfiguration authorization;
@@ -81,6 +82,16 @@ public class HaGatewayConfiguration
     public void setMonitor(MonitorConfiguration monitor)
     {
         this.monitor = monitor;
+    }
+
+    public RoutingConfiguration getRouting()
+    {
+        return routing;
+    }
+
+    public void setRouting(RoutingConfiguration routing)
+    {
+        this.routing = routing;
     }
 
     public RoutingRulesConfiguration getRoutingRules()
