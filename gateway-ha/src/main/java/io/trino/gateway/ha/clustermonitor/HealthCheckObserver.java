@@ -15,6 +15,8 @@ package io.trino.gateway.ha.clustermonitor;
 
 import io.trino.gateway.ha.router.RoutingManager;
 
+import java.util.List;
+
 public class HealthCheckObserver
         implements TrinoClusterStatsObserver
 {
@@ -26,7 +28,7 @@ public class HealthCheckObserver
     }
 
     @Override
-    public void observe(java.util.List<ClusterStats> clustersStats)
+    public void observe(List<ClusterStats> clustersStats)
     {
         routingManager.updateBackEndStats(clustersStats);
     }
