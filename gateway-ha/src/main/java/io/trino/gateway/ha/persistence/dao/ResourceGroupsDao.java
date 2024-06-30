@@ -40,6 +40,36 @@ public interface ResourceGroupsDao
 
     @SqlUpdate("""
             INSERT INTO resource_groups (
+                name,
+                parent,
+                jmx_export,
+                scheduling_policy,
+                scheduling_weight,
+                soft_memory_limit,
+                max_queued,
+                hard_concurrency_limit,
+                soft_concurrency_limit,
+                soft_cpu_limit,
+                hard_cpu_limit,
+                environment)
+            VALUES (
+                :name,
+                :parent,
+                :jmxExport,
+                :schedulingPolicy,
+                :schedulingWeight,
+                :softMemoryLimit,
+                :maxQueued,
+                :hardConcurrencyLimit,
+                :softConcurrencyLimit,
+                :softCpuLimit,
+                :hardCpuLimit,
+                :environment)
+            """)
+    void create(@BindBean ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail);
+
+    @SqlUpdate("""
+            INSERT INTO resource_groups (
                 resource_group_id,
                 name,
                 parent,
