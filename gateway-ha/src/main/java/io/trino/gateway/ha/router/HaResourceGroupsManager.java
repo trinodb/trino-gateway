@@ -51,7 +51,7 @@ public class HaResourceGroupsManager
     public ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
             @Nullable String routingGroupDatabase)
     {
-        getResourceGroupsDao(routingGroupDatabase).insert(resourceGroup);
+        getResourceGroupsDao(routingGroupDatabase).create(resourceGroup);
         return resourceGroup;
     }
 
@@ -92,7 +92,7 @@ public class HaResourceGroupsManager
         ResourceGroupsDao dao = getResourceGroupsDao(routingGroupDatabase);
         ResourceGroups model = dao.findFirstById(resourceGroup.getResourceGroupId());
         if (model == null) {
-            dao.insert(resourceGroup);
+            dao.create(resourceGroup);
         }
         else {
             dao.update(resourceGroup);
