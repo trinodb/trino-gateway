@@ -15,6 +15,8 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestQueryCountBasedRouter
@@ -37,11 +40,13 @@ public class TestQueryCountBasedRouter
     static final int SAME_QUERY_COUNT = 5;
     QueryCountBasedRouter queryCountBasedRouter;
     ImmutableList<ClusterStats> clusters;
+    MultivaluedMap<String, String> headers;
 
     TestQueryCountBasedRouter()
     {
         queryCountBasedRouter = null;
         clusters = null;
+        headers = new MultivaluedHashMap<>();
     }
 
     // Helper function to generate the ClusterStat list
@@ -156,6 +161,7 @@ public class TestQueryCountBasedRouter
 
         queryCountBasedRouter = new QueryCountBasedRouter(null, null);
         queryCountBasedRouter.updateBackEndStats(clusters);
+        headers.clear();
     }
 
     @Test
@@ -163,7 +169,8 @@ public class TestQueryCountBasedRouter
     {
         // The user u1 has same number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queries running
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("etl", "u1");
+        headers.add(USER_HEADER, "u1");
+        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("etl", headers);
 
         assertThat(proxyTo).isEqualTo(BACKEND_URL_3);
         assertThat(proxyTo).isNotEqualTo(BACKEND_URL_UNHEALTHY);
@@ -178,7 +185,7 @@ public class TestQueryCountBasedRouter
         assertThat(c3Stats.userQueuedCount().getOrDefault("u1", 0))
                 .isEqualTo(6);
 
-        proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("etl", "u1");
+        proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("etl", headers);
 
         assertThat(proxyTo).isEqualTo(BACKEND_URL_1);
         assertThat(proxyTo).isNotEqualTo(BACKEND_URL_UNHEALTHY);
@@ -189,7 +196,8 @@ public class TestQueryCountBasedRouter
     {
         // The user u2 has different number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queued for that user
-        String proxyTo = queryCountBasedRouter.provideAdhocBackend("u2");
+        headers.add(USER_HEADER, "u2");
+        String proxyTo = queryCountBasedRouter.provideAdhocBackend(headers);
         assertThat(BACKEND_URL_2).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -197,7 +205,8 @@ public class TestQueryCountBasedRouter
     @Test
     public void testUserWithDifferentQueueLengthUser2()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocBackend("u3");
+        headers.add(USER_HEADER, "u3");
+        String proxyTo = queryCountBasedRouter.provideAdhocBackend(headers);
         assertThat(BACKEND_URL_1).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -205,7 +214,8 @@ public class TestQueryCountBasedRouter
     @Test
     public void testUserWithNoQueuedQueries()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocBackend("u101");
+        headers.add(USER_HEADER, "u101");
+        String proxyTo = queryCountBasedRouter.provideAdhocBackend(headers);
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
     }
 
@@ -213,7 +223,8 @@ public class TestQueryCountBasedRouter
     public void testAdhocRoutingGroupFailOver()
     {
         // The ETL routing group doesn't exist
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        headers.add(USER_HEADER, "u1");
+        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", headers);
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -227,8 +238,9 @@ public class TestQueryCountBasedRouter
                 .add(getClusterWithNoUserQueueAndMinQueueCount())
                 .build();
         queryCountBasedRouter.updateBackEndStats(clusters);
+        headers.add(USER_HEADER, "u1");
 
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", headers);
         assertThat(BACKEND_URL_4).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -244,8 +256,9 @@ public class TestQueryCountBasedRouter
                 .build();
 
         queryCountBasedRouter.updateBackEndStats(clusters);
+        headers.add(USER_HEADER, "u1");
 
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", headers);
         assertThat(BACKEND_URL_5).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }

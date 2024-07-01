@@ -15,12 +15,15 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -29,6 +32,7 @@ public class TestStochasticRoutingManager
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
+    MultivaluedMap<String, String> headers;
 
     @BeforeAll
     public void setUp()
@@ -37,6 +41,7 @@ public class TestStochasticRoutingManager
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
         haRoutingManager = new StochasticRoutingManager(backendManager, historyManager);
+        headers = new MultivaluedHashMap<>();
     }
 
     @Test
@@ -66,7 +71,9 @@ public class TestStochasticRoutingManager
             haRoutingManager.updateBackEndHealth(backend, false);
         }
 
-        assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, ""))
+        headers.add(USER_HEADER, "");
+
+        assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, headers))
                 .isEqualTo("test_group0.trino.example.com");
     }
 }
