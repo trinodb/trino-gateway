@@ -28,6 +28,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.TrinoContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaSingleBackend
@@ -41,6 +42,7 @@ public class TestGatewayHaSingleBackend
             throws Exception
     {
         trino = new TrinoContainer("trinodb/trino");
+        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
 
         int backendPort = trino.getMappedPort(8080);
