@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaMultipleBackend
@@ -66,8 +67,10 @@ public class TestGatewayHaMultipleBackend
             throws Exception
     {
         adhocTrino = new TrinoContainer("trinodb/trino");
+        adhocTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         adhocTrino.start();
         scheduledTrino = new TrinoContainer("trinodb/trino");
+        scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         scheduledTrino.start();
 
         int backend1Port = adhocTrino.getMappedPort(8080);
@@ -136,7 +139,7 @@ public class TestGatewayHaMultipleBackend
                         .post(requestBody)
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
-        assertThat(response1.body().string()).contains("http://localhost:" + adhocTrino.getMappedPort(8080));
+        assertThat(response1.body().string()).contains("http://localhost:" + routerPort);
         // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
         // routing group
         Request request4 =
@@ -147,7 +150,7 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "scheduled")
                         .build();
         Response response4 = httpClient.newCall(request4).execute();
-        assertThat(response4.body().string()).contains("http://localhost:" + scheduledTrino.getMappedPort(8080));
+        assertThat(response4.body().string()).contains("http://localhost:" + routerPort);
     }
 
     @Test
