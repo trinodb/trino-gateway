@@ -230,6 +230,15 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
+    public void testNoUserHeader()
+    {
+        // X-Trino-User user header doesn't exist on purpose
+        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", headers);
+        assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
+        assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
+    }
+
+    @Test
     public void testClusterWithLeastQueueCount()
     {
         // Add a cluster with minimal queuelength

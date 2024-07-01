@@ -18,6 +18,7 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -29,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestStochasticRoutingManager
 {
+    static final String ADHOC = "adhoc";
+    static int numTestBackends;
+    static String groupName;
+
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
@@ -42,15 +47,13 @@ public class TestStochasticRoutingManager
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi());
         haRoutingManager = new StochasticRoutingManager(backendManager, historyManager);
         headers = new MultivaluedHashMap<>();
-    }
 
-    @Test
-    public void addMockBackends()
-    {
-        String groupName = "test_group";
-        int numBackends = 5;
+        // test group
+        groupName = "test_group";
+        numTestBackends = 5;
         String backend;
-        for (int i = 0; i < numBackends; i++) {
+        // add mock backends
+        for (int i = 0; i < numTestBackends; i++) {
             backend = groupName + i;
             ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
             proxyBackend.setActive(true);
@@ -63,17 +66,77 @@ public class TestStochasticRoutingManager
             haRoutingManager.updateBackEndHealth(backend, true);
         }
 
-        //Keep only 1st backend as healthy, mark all the others as unhealthy
-        assertThat(backendManager.getAllActiveBackends()).isNotEmpty();
+        // adhoc group
+        // add mock backend
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setActive(true);
+        proxyBackend.setRoutingGroup(ADHOC);
+        proxyBackend.setName(ADHOC);
+        proxyBackend.setProxyTo(ADHOC + ".trino.example.com");
+        proxyBackend.setExternalUrl("trino.example.com");
+        backendManager.addBackend(proxyBackend);
+        //set backend as healthy start with
+        haRoutingManager.updateBackEndHealth(ADHOC, true);
+    }
 
-        for (int i = 1; i < numBackends; i++) {
-            backend = groupName + i;
+    @BeforeEach
+    public void init()
+    {
+        headers.clear();
+        // before each class, reset health status for all as true
+        haRoutingManager.updateBackEndHealth(ADHOC, true);
+        for (int i = 0; i < numTestBackends; i++) {
+            String backend = groupName + i;
+            haRoutingManager.updateBackEndHealth(backend, true);
+        }
+    }
+
+    @Test
+    public void testActiveBackendCount()
+    {
+        assertThat((long) backendManager.getAllActiveBackends().size()).isEqualTo(numTestBackends + 1);
+    }
+
+    @Test
+    public void testNoHealthyTestBackend()
+    {
+        // set test backends to false
+        for (int i = 0; i < numTestBackends; i++) {
+            String backend = groupName + i;
             haRoutingManager.updateBackEndHealth(backend, false);
         }
+        headers.add(USER_HEADER, "u1");
 
-        headers.add(USER_HEADER, "");
+        assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, headers))
+                .isEqualTo("adhoc.trino.example.com");
+    }
+
+    @Test
+    public void testKeepOnlyFirstTestBackendHealthy()
+    {
+        //Keep only 1st backend as healthy, mark all the others as unhealthy
+        for (int i = 1; i < numTestBackends; i++) {
+            String backend = groupName + i;
+            haRoutingManager.updateBackEndHealth(backend, false);
+        }
+        haRoutingManager.updateBackEndHealth(ADHOC, false);
+        headers.add(USER_HEADER, "u2");
 
         assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, headers))
                 .isEqualTo("test_group0.trino.example.com");
+    }
+
+    @Test
+    public void testNoUserHeader()
+    {
+        // set default backends to false
+        for (int i = 0; i < numTestBackends; i++) {
+            String backend = groupName + i;
+            haRoutingManager.updateBackEndHealth(backend, false);
+        }
+        // adding user header is skipped on purpose
+
+        assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, headers))
+                .isEqualTo(ADHOC + ".trino.example.com");
     }
 }
