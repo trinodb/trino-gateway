@@ -21,10 +21,21 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: quay.io/helmpack/chart-testing
     timeout-minutes: 20
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
+
+      - name: Git safe
+        run: git config --system --add safe.directory /__w/trino-gateway/trino-gateway
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull main branch
+        run: git fetch origin main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install required Java distribution
         uses: actions/setup-java@v4
         with:
@@ -32,27 +43,13 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
+      - name: Install Docker cli for kind
+        run: apk add docker-cli
       - uses: docker/setup-qemu-action@v2
         with:
           platforms: amd64,arm64,ppc64le
       - name: Build and Test Docker Image
         run: docker/build.sh
-  helm:
-    runs-on: ubuntu-latest
-    container: quay.io/helmpack/chart-testing
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v1.2.0
-
-      - name: Git safe
-        run: git config --system --add safe.directory /__w/trino-gateway/trino-gateway
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pull main branch
-        run: git fetch origin main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.6.1
@@ -63,9 +60,6 @@ jobs:
         run: ct lint --chart-dirs helm/trino-gateway --target-branch main --all
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Docker cli for kind
-        run: apk add docker-cli
 
       - name: Get image tag
         run: docker image list
