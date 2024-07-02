@@ -12,7 +12,7 @@ on:
 
 defaults:
   run:
-    shell: bash --noprofile --norc -euo pipefail {0}
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 env:
   # Use Maven wrapper from repo with Maven version and other configs
@@ -82,7 +82,7 @@ jobs:
         uses: helm/kind-action@v1.10.0
 
       - name: Run chart-testing (install)
-        run: ct install --chart-dirs helm/trino-gateway --all --helm-extra-args "--set image.repository=trino-gateway --set image.tag=$(cat ./tag-prefix.txt | tr -d '\n')"
+        run: ct install --chart-dirs helm/trino-gateway --all --helm-extra-args "--set image.repository=trino-gateway --set image.tag=$(cat ./trino-gateway-version.txt | tr -d '\n')"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
