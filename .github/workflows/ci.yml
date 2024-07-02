@@ -12,7 +12,7 @@ on:
 
 defaults:
   run:
-    shell: bash --noprofile --norc -euo pipefail {0}
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 env:
   # Use Maven wrapper from repo with Maven version and other configs
@@ -21,10 +21,21 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # container: quay.io/helmpack/chart-testing
     timeout-minutes: 20
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
+
+#      - name: Git safe
+#        run: git config --system --add safe.directory /__w/trino-gateway/trino-gateway
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull main branch
+        run: git fetch origin main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install required Java distribution
         uses: actions/setup-java@v4
         with:
@@ -32,8 +43,46 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
+#      - name: Install Docker cli for kind
+#        run: apk add docker-cli
       - uses: docker/setup-qemu-action@v2
         with:
           platforms: amd64,arm64,ppc64le
       - name: Build and Test Docker Image
         run: docker/build.sh
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.1
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          check-latest: true
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.0
+
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run chart-testing (lint)
+        run: ct lint --chart-dirs helm/trino-gateway --all
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get image tag
+        run: docker image list
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+
+      - name: Run chart-testing (install)
+        run: ct install --chart-dirs helm/trino-gateway --all --helm-extra-args "--set image.repository=trino-gateway --set image.tag=$(cat ./trino-gateway-version.txt | tr -d '\n')"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

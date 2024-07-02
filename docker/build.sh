@@ -115,6 +115,8 @@ cp -R bin "${GATEWAY_WORK_DIR}"
 cp "${SCRIPT_DIR}/Dockerfile" "${WORK_DIR}"
 
 TAG_PREFIX="trino-gateway:${TRINO_GATEWAY_VERSION}"
+#version file is used by the Helm chart test
+echo "${TRINO_GATEWAY_VERSION}" > "${SOURCE_DIR}"/trino-gateway-version.txt
 
 TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi9/ubi-minimal:latest'}
 
