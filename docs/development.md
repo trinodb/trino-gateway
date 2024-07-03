@@ -85,6 +85,7 @@ Gateway, and can help with pull request reviews and merges.
 * [:fontawesome-brands-github: chaho12 - Jaeho Yoo](https://github.com/chaho12)
 * [:fontawesome-brands-github: ebyhr - Yuya Ebihara](https://github.com/ebyhr)
 * [:fontawesome-brands-github: mosabua - Manfred Moser](https://github.com/mosabua)
+* [:fontawesome-brands-github: oneonestar - Star Poon](https://github.com/oneonestar)
 * [:fontawesome-brands-github: vishalya - Vishal Jadhav](https://github.com/vishalya)
 * [:fontawesome-brands-github: wendigo - Mateusz Gajewski](https://github.com/wendigo)
 * [:fontawesome-brands-github: willmostly - Will Morrison](https://github.com/willmostly)
