@@ -35,10 +35,12 @@ public class ClusterStateListenerModule
         extends AbstractModule
 {
     MonitorConfiguration monitorConfig;
+    NotifierConfiguration notifierConfig;
 
     public ClusterStateListenerModule(HaGatewayConfiguration config)
     {
         monitorConfig = config.getMonitor();
+        notifierConfig = config.getNotifier();
     }
 
     /**
@@ -51,12 +53,11 @@ public class ClusterStateListenerModule
             RoutingManager mgr,
             BackendStateManager backendStateManager)
     {
-        NotifierConfiguration notifierConfiguration = getConfiguration().getNotifier();
         ImmutableList.Builder<TrinoClusterStatsObserver> observerBuilder = ImmutableList.builder();
         observerBuilder.add(new HealthCheckObserver(mgr));
         observerBuilder.add(new ClusterStatsObserver(backendStateManager));
-        if (notifierConfiguration.isEnabled()) {
-            observerBuilder.add(new HealthChecker(new EmailNotifier(notifierConfiguration)));
+        if (notifierConfig.isEnabled()) {
+            observerBuilder.add(new HealthChecker(new EmailNotifier(notifierConfig)));
         }
         return observerBuilder.build();
     }

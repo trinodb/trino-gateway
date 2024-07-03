@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.module;
 
-import io.dropwizard.core.setup.Environment;
 import io.trino.gateway.ha.clustermonitor.HealthChecker;
 import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -47,7 +46,7 @@ public class TestClusterStateListenerModule
         RoutingManager routingManager = mock(RoutingManager.class);
         BackendStateManager backendStateManager = mock(BackendStateManager.class);
 
-        ClusterStateListenerModule module = new ClusterStateListenerModule(config, mock(Environment.class));
+        ClusterStateListenerModule module = new ClusterStateListenerModule(config);
 
         List<TrinoClusterStatsObserver> observers = module.getClusterStatsObservers(routingManager, backendStateManager);
 
