@@ -62,6 +62,8 @@ authentication:
       - s3
 ```
 
+Set the `privilegesField` to retrieve privileges from an OAuth claim.
+
 ### Note
 
 - For OAuth Trino Gateway uses `oidc/callback` where as Trino uses `oauth2` path
@@ -136,6 +138,8 @@ Trino Gateway supports the following roles in regex string format:
 Users with attributes next to the role will be giving those privileges the
 users. You can use the preset users defined in the yaml file. 
 LDAP Authorization is also supported by adding user attribute configs in file.
+An OAuth claim can be used by setting the `privilegesField` in the OAuth
+configuration.
 
 - Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for config details
 
