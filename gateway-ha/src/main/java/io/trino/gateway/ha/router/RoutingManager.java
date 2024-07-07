@@ -19,7 +19,6 @@ import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.HttpMethod;
 
 import java.net.HttpURLConnection;
@@ -147,7 +146,7 @@ public abstract class RoutingManager
 
         Map<String, Future<Integer>> responseCodes = new HashMap<>();
         try {
-            for (ProxyServerConfiguration backend : backends) {
+            for (ProxyBackendConfiguration backend : backends) {
                 String target = backend.getProxyTo() + "/v1/query/" + queryId;
 
                 Future<Integer> call =

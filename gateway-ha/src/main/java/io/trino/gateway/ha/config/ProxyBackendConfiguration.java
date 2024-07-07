@@ -15,16 +15,38 @@ package io.trino.gateway.ha.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 
 public class ProxyBackendConfiguration
-        extends ProxyServerConfiguration
 {
     private boolean active = true;
     private String routingGroup = "adhoc";
     private String externalUrl;
+    private String name;
+    private String proxyTo;
 
-    public ProxyBackendConfiguration() {}
+    @JsonProperty
+    public String getName()
+    {
+        return this.name;
+    }
+
+    @JsonProperty
+    public String getProxyTo()
+    {
+        return this.proxyTo;
+    }
+
+    @JsonSetter
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    @JsonSetter
+    public void setProxyTo(String proxyTo)
+    {
+        this.proxyTo = proxyTo;
+    }
 
     @JsonProperty
     public String getExternalUrl()
