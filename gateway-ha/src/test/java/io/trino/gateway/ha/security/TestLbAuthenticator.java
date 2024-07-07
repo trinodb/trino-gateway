@@ -15,6 +15,7 @@ package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
@@ -22,6 +23,7 @@ import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
+import io.trino.gateway.ha.security.util.AuthenticationException;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
@@ -38,6 +40,7 @@ import static io.trino.gateway.ha.security.SessionCookie.OAUTH_ID_TOKEN;
 import static io.trino.gateway.ha.security.SessionCookie.logOut;
 import static java.util.Collections.unmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestLbAuthenticator
@@ -77,6 +80,86 @@ public class TestLbAuthenticator
 
         assertThat(lbAuth.authenticate(ID_TOKEN).isPresent()).isTrue();
         assertThat(lbAuth.authenticate(ID_TOKEN).orElseThrow()).isEqualTo(principal);
+    }
+
+    @Test
+    public void testAuthorizationListFromOAuthField()
+            throws AuthenticationException
+    {
+        String privilegesField = "role_list";
+        Claim subClaim = Mockito.mock(Claim.class);
+        Mockito.when(subClaim.asString()).thenReturn(USER);
+        Claim privilegesClaim = Mockito.mock(Claim.class);
+        Mockito.when(privilegesClaim.asList(String.class)).thenReturn(ImmutableList.of("admin", "api", "user"));
+
+        LbOAuthManager oAuthManager = Mockito.mock(LbOAuthManager.class);
+        Mockito
+                .when(oAuthManager.getClaimsFromIdToken(ID_TOKEN))
+                .thenReturn(Optional.of(Map.of("sub", subClaim, privilegesField, privilegesClaim)));
+        Mockito
+                .when(oAuthManager.getUserIdField())
+                .thenReturn("sub");
+        Mockito
+                .when(oAuthManager.getPrivilegesField())
+                .thenReturn(Optional.of(privilegesField));
+
+        LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
+        Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
+        assertThat(principal.isPresent()).isTrue();
+        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
+        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api_user");
+    }
+
+    @Test
+    public void testAuthorizationFieldFromOAuthField()
+            throws AuthenticationException
+    {
+        String privilegesField = "role_list";
+        Claim subClaim = Mockito.mock(Claim.class);
+        Mockito.when(subClaim.asString()).thenReturn(USER);
+        Claim privilegesClaim = Mockito.mock(Claim.class);
+        Mockito.when(privilegesClaim.asList(String.class)).thenReturn(null);
+        Mockito.when(privilegesClaim.asString()).thenReturn("admin_api");
+
+        LbOAuthManager oAuthManager = Mockito.mock(LbOAuthManager.class);
+        Mockito
+                .when(oAuthManager.getClaimsFromIdToken(ID_TOKEN))
+                .thenReturn(Optional.of(Map.of("sub", subClaim, privilegesField, privilegesClaim)));
+        Mockito
+                .when(oAuthManager.getUserIdField())
+                .thenReturn("sub");
+        Mockito
+                .when(oAuthManager.getPrivilegesField())
+                .thenReturn(Optional.of(privilegesField));
+
+        LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
+        Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
+        assertThat(principal.isPresent()).isTrue();
+        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
+        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api");
+    }
+
+    @Test
+    public void testAuthorizationFieldNotExist()
+    {
+        String privilegesField = "role_list";
+        Claim subClaim = Mockito.mock(Claim.class);
+        Mockito.when(subClaim.asString()).thenReturn(USER);
+
+        LbOAuthManager oAuthManager = Mockito.mock(LbOAuthManager.class);
+        Mockito
+                .when(oAuthManager.getClaimsFromIdToken(ID_TOKEN))
+                .thenReturn(Optional.of(Map.of("sub", subClaim)));
+        Mockito
+                .when(oAuthManager.getUserIdField())
+                .thenReturn("sub");
+        Mockito
+                .when(oAuthManager.getPrivilegesField())
+                .thenReturn(Optional.of(privilegesField));
+
+        LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
+        assertThatThrownBy(() -> lbAuthenticator.authenticate(ID_TOKEN))
+                .hasMessageStartingWith("Privileges field does not exist");
     }
 
     @Test
