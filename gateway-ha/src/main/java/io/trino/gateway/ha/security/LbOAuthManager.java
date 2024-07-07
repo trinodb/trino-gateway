@@ -78,6 +78,11 @@ public class LbOAuthManager
         return oauthConfig.getUserIdField();
     }
 
+    public Optional<String> getPrivilegesField()
+    {
+        return Optional.ofNullable(oauthConfig.getPrivilegesField());
+    }
+
     /**
      * Exchanges authorization code for access token.
      * Sets it in a cookie and redirects back to a location.
