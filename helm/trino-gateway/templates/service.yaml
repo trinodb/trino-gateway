@@ -10,15 +10,5 @@ spec:
     - port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
       protocol: TCP
       name: request
-    {{- range $index, $connector := $.Values.config.server.applicationConnectors}}
-    - port: {{ $connector.port }}
-      protocol: TCP
-      name: {{print "app-" $index }}
-    {{- end }}
-    {{- range $index, $connector := $.Values.config.server.adminConnectors}}
-    - port: {{ $connector.port }}
-      protocol: TCP
-      name: {{print "admin-" $index }}
-    {{- end }}
   selector:
     {{- include "trino-gateway.selectorLabels" . | nindent 4 }}

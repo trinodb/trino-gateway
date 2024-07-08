@@ -46,34 +46,23 @@ spec:
               - "-XX:MaxRAMPercentage=80.0"
               - "-jar"
               - "/usr/lib/trino/gateway-ha-jar-with-dependencies.jar"
-              - "server"
               - "/etc/gateway/config.yaml"
           ports:
             - name: request
               containerPort: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
               protocol: TCP
-            {{- range $index, $connector := $.Values.config.server.adminConnectors}}
-            - name: {{print "admin-" $index }}
-              protocol: TCP
-              containerPort: {{ $connector.port }}
-            {{- end }}
-            {{- range $index, $connector := $.Values.config.server.applicationConnectors}}
-            - name: {{print "app-" $index }}
-              protocol: TCP
-              containerPort: {{ $connector.port }}
-            {{- end }}
           livenessProbe:
             httpGet:
-                path: /
-                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+                path: /trino-gateway
+                port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           readinessProbe:
             httpGet:
-                path: /
-                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+                path: /trino-gateway
+                port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
