@@ -16,7 +16,9 @@ package io.trino.gateway.ha.config;
 public class RoutingRulesConfiguration
 {
     private boolean rulesEngineEnabled;
+    private RulesType rulesType = RulesType.FILE;
     private String rulesConfigPath;
+    private RulesExternalConfiguration rulesExternalConfiguration;
 
     public RoutingRulesConfiguration() {}
 
@@ -30,6 +32,16 @@ public class RoutingRulesConfiguration
         this.rulesEngineEnabled = rulesEngineEnabled;
     }
 
+    public RulesType getRulesType()
+    {
+        return rulesType;
+    }
+
+    public void setRulesType(RulesType rulesType)
+    {
+        this.rulesType = rulesType;
+    }
+
     public String getRulesConfigPath()
     {
         return this.rulesConfigPath;
@@ -38,5 +50,15 @@ public class RoutingRulesConfiguration
     public void setRulesConfigPath(String rulesConfigPath)
     {
         this.rulesConfigPath = rulesConfigPath;
+    }
+
+    public RulesExternalConfiguration getRulesExternalConfiguration()
+    {
+        return this.rulesExternalConfiguration;
+    }
+
+    public void setRulesExternalConfiguration(RulesExternalConfiguration rulesExternalConfiguration)
+    {
+        this.rulesExternalConfiguration = rulesExternalConfiguration;
     }
 }

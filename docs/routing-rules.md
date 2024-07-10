@@ -6,13 +6,82 @@ By default, Trino Gateway reads the `X-Trino-Routing-Group` request header to
 route requests. If this header is not specified, requests are sent to default
 routing group (adhoc).
 
-The routing rules engine feature enables you to write custom logic to route
+The routing rules engine feature enables you to either write custom logic to route
 requests based on the request info such as any of the [request
-headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers).
-Routing rules are separated from Trino Gateway application code to a
-configuration file, allowing for dynamic rule changes.
+headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers),
+or set a URL address to make an HTTP POST request and route based on the returned result.
 
-### Defining your routing rules
+Routing rules are separated from Trino Gateway application code to a
+configuration file or a separate service. This separate service is specified as a URL
+and can implement any dynamic rule changes or other behavior.
+
+### Enabling the routing rules engine
+
+To enable the routing rules engine, find the following lines in `gateway-ha-config.yml`.
+
+* Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
+* Then either add `rulesConfigPath` to the path to your rules config file or set `rulesExternalConfiguration`
+  to the URL of an external service for routing rules processing.
+  *`rulesType` is by default `FILE` unless specified.
+
+```yaml
+routingRules:
+    rulesEngineEnabled: true
+    rulesType: FILE
+    rulesConfigPath: "app/config/routing_rules.yml" # replace with actual path to your rules config file
+    rulesExternalConfiguration:
+        urlPath: https://router.example.com/gateway-rules # replace with your own API path
+        blacklistHeaders:
+            - 'Authorization'
+```
+
+* Redirect URLs are not supported
+* Optionally add headers to the `BlacklistHeaders` list to exclude requests with corresponding header values
+  from being sent in the POST request.
+
+If there is error parsing the routing rules configuration file, an error is logged,
+and requests are routed using the routing group header `X-Trino-Routing-Group` as default.
+
+### Use an external service for routing rules
+
+You can use an external service for processing your routing by setting the
+`rulesType` to `EXTERNAL` and configuring the `rulesExternalConfiguration`.
+
+Trino Gateway then sends all headers as a map in the body of a POST request to the external service.
+Headers specified in `blacklistHeaders` are excluded. If `requestAnalyzerConfig.isAnalyzeRequest` is set to `true`, 
+`TrinoRequestUser` and `TrinoQueryProperties` are also included. 
+
+Additionally, the following HTTP information is included:
+
+- `remoteUser`
+- `method`
+- `requestURI`
+- `queryString`
+- `session`
+- `remoteAddr`
+- `remoteHost`
+- `parameterMap`
+
+The external service can process the information in any way desired 
+and must return a result with the following criteria:
+
+* Response status code of OK (200)
+* Message in JSON format
+* Only one group can be returned
+* If errors is not null, then query would route to default routing group adhoc 
+
+```json
+{
+    "routingGroup": "test-group",
+    "errors": [
+        "Error1",
+        "Error2",
+        "Error3"
+    ]
+}
+```
+
+### Configure routing rules with a file
 
 To express and fire routing rules, we use the
 [easy-rules](https://github.com/j-easy/easy-rules) engine. These rules should be
@@ -354,18 +423,3 @@ actions:
       result.put(\"routingGroup\", \"etl\")
     }"
 ```
-
-### Enabling routing rules engine
-
-To enable routing rules engine, find the following lines in
-`gateway-ha-config.yml`. Set `rulesEngineEnabled` to True and `rulesConfigPath`
-to the path to your rules config file.
-
-```
-routingRules:
-  rulesEngineEnabled: true
-  rulesConfigPath: "src/test/resources/rules/routing_rules.yml" # replace with path to your rules config file
-```
-
-If there is error opening routing rules configuration file, then request is routed
-using routing group header `X-Trino-Routing-Group` as default.
