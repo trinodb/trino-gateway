@@ -76,7 +76,7 @@ public class LbFormAuthManager
     }
 
     /**
-     * Login REST API
+     * Login API
      *
      * @param loginForm {@link RestLoginRequest}
      * @return token

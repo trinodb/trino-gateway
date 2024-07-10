@@ -23,6 +23,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
+import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
@@ -181,8 +182,21 @@ public class HaGatewayProviderModule
     {
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
-            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-            return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, configuration.getRequestAnalyzerConfig());
+            try {
+                return switch (routingRulesConfig.getRulesType()) {
+                    case FILE -> {
+                        String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
+                        yield RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, configuration.getRequestAnalyzerConfig());
+                    }
+                    case EXTERNAL -> {
+                        RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
+                        yield RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
+                    }
+                };
+            }
+            catch (Exception e) {
+                return RoutingGroupSelector.byRoutingGroupHeader();
+            }
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
     }
