@@ -53,7 +53,7 @@ public class TestRoutingGroupSelector
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
     @BeforeAll
-    void inititalize()
+    void initialize()
     {
         requestAnalyzerConfig.setAnalyzeRequest(true);
     }
