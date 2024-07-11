@@ -12,7 +12,7 @@ on:
 
 defaults:
   run:
-    shell: bash --noprofile --norc -euo pipefail {0}
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 env:
   # Use Maven wrapper from repo with Maven version and other configs
@@ -37,3 +37,25 @@ jobs:
           platforms: amd64,arm64,ppc64le
       - name: Build and Test Docker Image
         run: docker/build.sh
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          check-latest: true
+      - name: Lint chart
+        run: helm lint --strict helm/trino-gateway
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: tgw
+      - name: load images
+        run: kind load docker-image --name tgw trino-gateway:$(cat ./trino-gateway-version.txt | tr -d '\n')-amd64
+      - name: Run chart-testing (install)
+        run: helm install test helm/trino-gateway  --set "image.repository=trino-gateway" --set "image.tag=$(cat ./trino-gateway-version.txt | tr -d '\n')-amd64" --set "limits.memory=100Mi" --set "limits.cpu=0"
+      - name: wait for deployment
+        #the deployment name is the name of the installation from the helm install command above, concatenated with the name from Chart.yaml
+        run: kubectl rollout status deployment test-trino-gateway
+        timeout-minutes: 2
