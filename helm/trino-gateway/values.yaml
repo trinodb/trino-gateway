@@ -4,7 +4,7 @@ image:
     repository: "trinodb/trino-gateway"
     pullPolicy: IfNotPresent
     # Override the image tag whose default is the chart appVersion.
-    # tag: "8-SNAPSHOT"
+    #tag: "10-SNAPSHOT"
 
     # For local testing
     #repository: "trino-gateway"
@@ -37,6 +37,12 @@ config:
     serverConfig:
         node.environment: test
         http-server.http.port: 8080
+    dataStore:
+        # The connection details for the backend database for Trino Gateway and Trino query history
+        jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+        user: postgres
+        password: mysecretpassword
+        driver: org.postgresql.Driver
     clusterStatsConfiguration:
         monitorType: INFO_API
     modules:
