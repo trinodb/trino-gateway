@@ -36,6 +36,9 @@ the provider module and make the new router available.
 - e.g. `QueryCountBasedRouterProvider`
 
 ### Router class
+
+Use the following steps to create a new router:
+
 - Derive a class from `StochasticRoutingManager`
  to create the router that does the actual work
 - Override the methods `provideAdhocBackend` and `provideBackendForRoutingGroup`
