@@ -94,3 +94,21 @@ The first release of Trino Gateway is based on the
 * Remove concurrency issue from repeated rules file loading. ([#9](https://github.com/trinodb/trino-gateway/pull/9))
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/52)
+
+## Breaking changes <a name="breaking">
+
+Starting with Trino Gateway 10, release note entries include a [:warning:
+Breaking change:](#breaking) prefix to highlight any changes as potentially 
+breaking changes. The following changes are considered and may require
+adjustments:
+
+* Removal or renaming of configuration properties that may prevent startup or 
+  require configuration changes.
+* Changes to default values for configuration properties that may significantly
+  change the behavior of a system.
+* Updates to the requirements for external systems or software used with 
+  Trino Gateway.
+* Non-backwards compatible changes which may require router modules to 
+  be updated.
+* Otherwise significant changes that requires specific attention from teams 
+  managing a Trino Gateway deployment.
