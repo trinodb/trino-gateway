@@ -1,0 +1,56 @@
+---
+name: "user"
+description: "if user is will, route to will-group"
+condition: "trinoRequestUser.userExistsAndEquals(\"will\")"
+actions:
+  - "result.put(\"routingGroup\", \"will-group\")"
+---
+name: "query"
+description: "test extraction of tables and schemas in conjunction with default catalog and schema"
+condition: |
+  trinoQueryProperties.tablesContains("cat_default.\"schem_\\\"default\".tblz")
+  && trinoQueryProperties.tablesContains("cat_default.schemy.tbly")
+  && trinoQueryProperties.tablesContains("catx.schemx.tblx")
+  && trinoQueryProperties.getSchemas().contains("schemy")
+  && trinoQueryProperties.getCatalogs().contains("catx")
+actions:
+  - "result.put(\"routingGroup\", \"tbl-group\")"
+---
+name: "catalog-schema"
+description: "test that catalogSchemas with default catalog and schema"
+condition: |
+  trinoQueryProperties.getCatalogSchemas.contains("catx.nondefault")
+  && trinoQueryProperties.getCatalogSchemas.contains("caty.default")
+  && !trinoQueryProperties.getCatalogSchemas.contains("catx.default")
+actions:
+  - "result.put(\"routingGroup\", \"catalog-schema-group\")"
+---
+name: "query-type"
+description: "test table type"
+condition: |
+  trinoQueryProperties.getQueryType().toLowerCase.equals("insert")
+actions:
+  - "result.put(\"routingGroup\", \"type-group\")"
+---
+name: "prepared-statement-header"
+description: "test execute with multiple prepared statements"
+condition: |
+  trinoQueryProperties.getQueryType().toLowerCase.equals("query") && trinoQueryProperties.tablesContains("cat.schem.foo")
+actions:
+  - "result.put(\"routingGroup\", \"statement-header-group\")"
+---
+name: "defaults-group"
+description: "test default schema and catalog"
+condition: |
+  trinoQueryProperties.getDefaultCatalog().equals(java.util.Optional.of("other_catalog"))
+  && trinoQueryProperties.getDefaultCatalog().equals(java.util.Optional.of("other_catalog"))
+
+actions:
+  - "result.put(\"routingGroup\", \"defaults-group\")"
+---
+name: "nomatch"
+priority: -1
+description: "default group to catch if no other rules fired"
+condition: "true"
+actions:
+  - "result.put(\"routingGroup\", \"no-match\")"

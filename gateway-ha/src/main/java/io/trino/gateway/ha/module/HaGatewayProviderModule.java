@@ -182,7 +182,7 @@ public class HaGatewayProviderModule
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
             String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-            return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
+            return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, configuration.getRequestAnalyzerConfig());
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
     }
