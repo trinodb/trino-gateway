@@ -22,7 +22,7 @@ It  copies the following, necessary files to current directory:
 ```shell
 #!/usr/bin/env sh
 
-VERSION=7
+VERSION=10
 
 # Copy necessary files to current directory
 
