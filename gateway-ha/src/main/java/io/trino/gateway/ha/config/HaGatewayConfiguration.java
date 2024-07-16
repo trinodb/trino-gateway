@@ -36,6 +36,8 @@ public class HaGatewayConfiguration
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
 
+    private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -192,6 +194,16 @@ public class HaGatewayConfiguration
     public void setGatewayCookieConfiguration(GatewayCookieConfiguration gatewayCookieConfiguration)
     {
         this.gatewayCookieConfiguration = gatewayCookieConfiguration;
+    }
+
+    public RequestAnalyzerConfig getRequestAnalyzerConfig()
+    {
+        return requestAnalyzerConfig;
+    }
+
+    public void setRequestAnalyzerConfig(RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        this.requestAnalyzerConfig = requestAnalyzerConfig;
     }
 
     public List<String> getModules()
