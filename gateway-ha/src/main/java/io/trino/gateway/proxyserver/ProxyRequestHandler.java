@@ -53,6 +53,7 @@ import static com.google.common.net.HttpHeaders.X_FORWARDED_PORT;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.airlift.http.client.Request.Builder.prepareDelete;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
@@ -102,6 +103,15 @@ public class ProxyRequestHandler
     public void shutdown()
     {
         executor.shutdownNow();
+    }
+
+    public void deleteRequest(
+            HttpServletRequest servletRequest,
+            AsyncResponse asyncResponse,
+            URI remoteUri)
+    {
+        Request.Builder request = prepareDelete();
+        performRequest(remoteUri, servletRequest, asyncResponse, request);
     }
 
     public void getRequest(

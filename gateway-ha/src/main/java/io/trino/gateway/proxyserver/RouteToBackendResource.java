@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -73,5 +74,14 @@ public class RouteToBackendResource
     {
         String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
         proxyRequestHandler.getRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+    }
+
+    @DELETE
+    public void deleteHandler(
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse)
+    {
+        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
+        proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
     }
 }
