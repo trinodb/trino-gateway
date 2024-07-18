@@ -45,6 +45,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -59,7 +62,7 @@ import static java.util.Objects.requireNonNullElse;
 public class GatewayWebAppResource
 {
     private static final LocalDateTime START_TIME = LocalDateTime.now();
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
@@ -159,7 +162,9 @@ public class GatewayWebAppResource
         distributionResponse.setTotalQueryCount(totalQueryCount);
         distributionResponse.setAverageQueryCountSecond(totalQueryCount / (latestHour * 60d * 60d));
         distributionResponse.setAverageQueryCountMinute(totalQueryCount / (latestHour * 60d));
-        distributionResponse.setStartTime(START_TIME.format(formatter));
+        ZonedDateTime zonedLocalTime = START_TIME.atZone(ZoneId.systemDefault());
+        ZonedDateTime utcTime = zonedLocalTime.withZoneSameInstant(ZoneOffset.UTC);
+        distributionResponse.setStartTime(utcTime.format(formatter));
         return Response.ok(Result.ok(distributionResponse)).build();
     }
 
