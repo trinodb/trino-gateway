@@ -1,6 +1,8 @@
 # Routers
 Trino Gateway offers two entry-level router options, providing users with
 a straightforward and easy-to-use starting point for their routing needs.
+The routers would make the decision based on the clusters load reported in
+the [cluster stats](https://github.com/trinodb/trino-gateway/blob/8ed33cacdc414fd8b75b4ada594615c89093d676/gateway-ha/src/main/java/io/trino/gateway/ha/clustermonitor/ClusterStats.java#L22).
 
 ## StochasticRoutingManager
 
@@ -24,7 +26,7 @@ To integrate a new router, you need to create a provider module
 that can be configured via the configuration file. This allows for seamless
 addition of new routers without disrupting existing functionality.
 
-### Router Provider module
+### Add router Provider module
 
 Use the following steps to incorporate a new routing mechanism with advanced capabilities:
 
@@ -33,9 +35,9 @@ Use the following steps to incorporate a new routing mechanism with advanced cap
 - Add the module name to the
 'modules' section of the configuration file to load
 the provider module and make the new router available.
-- e.g. `QueryCountBasedRouterProvider`
+- e.g. `QueryCountBasedRouterProvider` (refer to the config file reference below)
 
-### Router class
+### Add router class
 
 Use the following steps to create a new router:
 
@@ -72,9 +74,5 @@ monitor:
 modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider
 ```
-
-
-
-
 
 
