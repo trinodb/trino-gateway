@@ -87,4 +87,5 @@ nav:
       - Migration to Airlift: migration-to-airlift.md
   - Contribute:
     - Code: development.md
+    - Routers: routers.md
     - Documentation: docs.md
