@@ -14,10 +14,12 @@ spec:
   template:
     metadata:
       annotations:
-          # Include the version of trino-gateway-configuration as an input to the deployment checksum. This causes pods to restart on helm update
-          # whether the chart `config` is updated or if one of the configuration secrets is updated. Helm template must be run with the
-          # --dry-run=server option to prevent a nil pointer
-          checksum/config: {{ (coalesce (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata (dict "resourceVersion" "0")).resourceVersion | sha256sum}}
+        # Include the version of trino-gateway-configuration as an input to the
+        # deployment checksum. This causes pods to restart on helm update
+        # whether the chart `config` is updated or if one of the configuration
+        # secrets is updated. Helm template must be run with the
+        # --dry-run=server option to prevent a nil pointer.
+        checksum/config: {{ (coalesce (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata (dict "resourceVersion" "0")).resourceVersion | sha256sum}}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
