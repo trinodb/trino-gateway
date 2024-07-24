@@ -63,7 +63,7 @@ From a users perspective Trino Gateway acts as a transparent proxy for one
 or more Trino clusters. The following Trino configuration tips should be 
 taken into account for all clusters behind the Trino Gateway.
 
-Process forwarding must be enabled:
+Process forwarded HTTP headers must be enabled:
 
 ```commandline
 http-server.process-forwarded=true
@@ -129,6 +129,18 @@ extraWhitelistPaths:
   - '/api/v1/dataproduct'
   - '/api/v2/.*'
   - '/ext/faster'
+```
+
+## Configure behind a load balancer
+
+A possible deployment of Trino Gateway is to run multiple instances of Trino 
+Gateway behind another generic load balancer, such as a load balancer from 
+your cloud hosting provider. In this deployment you must configure the 
+`serverConfig` to include enabling process forwarded HTTP headers:
+
+```yaml
+serverConfig:
+  http-server.process-forwarded: true
 ```
 
 ## Running Trino Gateway
