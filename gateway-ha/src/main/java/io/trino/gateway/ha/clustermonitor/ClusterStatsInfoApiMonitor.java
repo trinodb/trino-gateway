@@ -16,9 +16,10 @@ package io.trino.gateway.ha.clustermonitor;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.JsonResponseHandler;
 import io.airlift.http.client.Request;
+import io.airlift.http.client.UnexpectedResponseException;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 
@@ -26,18 +27,23 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsInfoApiMonitor
         implements ClusterStatsMonitor
 {
-    private static final Logger log = LoggerFactory.getLogger(ClusterStatsInfoApiMonitor.class);
+    private static final Logger log = Logger.get(ClusterStatsInfoApiMonitor.class);
     private static final JsonResponseHandler<ServerInfo> SERVER_INFO_JSON_RESPONSE_HANDLER = createJsonResponseHandler(jsonCodec(ServerInfo.class));
     private final HttpClient client;
+    int retries;
 
-    public ClusterStatsInfoApiMonitor(HttpClient client)
+    public ClusterStatsInfoApiMonitor(HttpClient client, MonitorConfiguration monitorConfiguration)
     {
         this.client = requireNonNull(client, "client is null");
+        retries = monitorConfiguration.getRetries();
     }
 
     @Override
@@ -51,17 +57,47 @@ public class ClusterStatsInfoApiMonitor
 
     private boolean isReadyStatus(String baseUrl)
     {
+        return isReadyStatus(baseUrl, retries);
+    }
+
+    private boolean isReadyStatus(String baseUrl, int retriesRemaining)
+    {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
                 .build();
-
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
             return !serverInfo.isStarting();
         }
+        catch (UnexpectedResponseException e) {
+            if (shouldRetry(e.getStatusCode())) {
+                if (retriesRemaining > 0) {
+                    log.warn("Retrying health check on error: %s, ", e.toString());
+                    return isReadyStatus(baseUrl, retriesRemaining - 1);
+                }
+                else {
+                    log.error("Encountered error %s, no retries remaining", e.toString());
+                }
+            }
+            else {
+                log.error(e, "Health check failed with non-retryable response. %s", e.toString());
+            }
+        }
         catch (Exception e) {
-            log.error("Exception checking {} for health: {} ", request.getUri(), e.getMessage());
+            log.error(e, "Exception checking %s for health", request.getUri());
         }
         return false;
+    }
+
+    public static boolean shouldRetry(int statusCode)
+    {
+        switch (statusCode) {
+            case HTTP_BAD_GATEWAY:
+            case HTTP_UNAVAILABLE:
+            case HTTP_GATEWAY_TIMEOUT:
+                return true;
+            default:
+                return false;
+        }
     }
 }

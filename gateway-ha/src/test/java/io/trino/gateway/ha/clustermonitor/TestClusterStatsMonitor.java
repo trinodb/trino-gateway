@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.jetty.JettyHttpClient;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,13 +58,16 @@ public class TestClusterStatsMonitor
     @Test
     public void testJdbcMonitor()
     {
-        testClusterStatsMonitor(ClusterStatsJdbcMonitor::new);
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
     }
 
     @Test
     public void testInfoApiMonitor()
     {
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig())));
+        MonitorConfiguration monitorConfigurationWithRetries = new MonitorConfiguration();
+        monitorConfigurationWithRetries.setRetries(10);
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), new MonitorConfiguration()));
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfigurationWithRetries));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)

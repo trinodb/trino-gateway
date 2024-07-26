@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.net.MalformedURLException;
@@ -43,7 +44,7 @@ public class ClusterStatsJdbcMonitor
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
 
-    public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration)
+    public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration, MonitorConfiguration monitorConfiguration)
     {
         properties = new Properties();
         properties.setProperty("user", backendStateConfiguration.getUsername());
@@ -73,8 +74,8 @@ public class ClusterStatsJdbcMonitor
         }
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties)) {
-            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor())
-                    .callWithTimeout(() -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS);
+            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
+                    () -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS);
             stmt.setString(1, (String) properties.get("user"));
             Map<String, Integer> partialState = new HashMap<>();
             ResultSet rs = stmt.executeQuery();
