@@ -42,12 +42,12 @@ public class ClusterStatsMonitorModule
     {
         ClusterStatsConfiguration clusterStatsConfig = config.getClusterStatsConfiguration();
         if (config.getBackendState() == null) {
-            return new ClusterStatsInfoApiMonitor();
+            return new ClusterStatsInfoApiMonitor(config.getMonitor());
         }
         return switch (clusterStatsConfig.getMonitorType()) {
-            case INFO_API -> new ClusterStatsInfoApiMonitor();
+            case INFO_API -> new ClusterStatsInfoApiMonitor(config.getMonitor());
             case UI_API -> new ClusterStatsHttpMonitor(config.getBackendState());
-            case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState());
+            case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState(), config.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
     }
