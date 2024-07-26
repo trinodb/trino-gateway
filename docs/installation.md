@@ -248,6 +248,72 @@ configuration. Note that the `subPath` is not strictly necessary, and if it
 is not specified the file is mounted at `mountPath/<configMap key>`. 
 Kubernetes updates the mounted file when the ConfigMap is updated.
 
-Standard Helm oœptions such as `replicaCount`, `image`, `imagePullSecrets`, 
+Standard Helm options such as `replicaCount`, `image`, `imagePullSecrets`, 
 `service`, `ingress` and `resources` are supported. These are defined in 
 `helm/values.yaml`. 
+
+### Health Checks
+
+Trino Gateway checks the health of each backend and **deactivates it if 
+unhealthy**. A backend that fails a health check must be manually reset to 
+active. Automatic recovery is not supported.
+
+The type of health check is configured by setting
+
+```yaml
+clusterStatsConfiguration:
+  monitorType: ""
+```
+
+to one of the following values.
+
+#### INFO_API (default)
+
+By default Trino Gateway uses the `v1/info` REST endpoint. A successful check is
+defined as a 200 response with `starting: false`. Connection timeout parameters 
+can be defined through the `monitor` node, for example
+
+```yaml
+monitor:
+  connectTimeoutSeconds: 5
+  requestTimeoutSeconds: 10
+  idleTimeoutSeconds: 1
+  retries: 1
+```
+
+All timeout parameters are optional.
+
+#### JDBC
+
+This uses a JDBC connection to query `system.runtime` tables for cluster 
+information. It is required for the query count based routing strategy. This is
+recommended over `UI_API` since it does not restrict the Web UI authentication
+method of backend clusters. Configure a username and password by adding
+`backendState` to your configuration. The username and password must be valid 
+across all backends.
+
+```yaml
+backendState:
+  username: "user"
+  password: "password"
+```
+
+The request timeout can be set through
+
+```yaml
+monitor:
+  requestTimeoutSeconds: 10
+```
+
+Other timeout parameters are not applicable to the JDBC connection.
+
+#### UI_API
+
+This pulls cluster information from the `ui/api/stats` REST endpoint. This is
+supported for legacy reasons and may be deprecated in the future. It is only 
+supported for backend clusters with `web-ui.authentication.type = PASSWORD`. Set
+a username and password using `backendState` as with the `JDBC` option.
+
+#### NOOP
+
+This option disables health checks.

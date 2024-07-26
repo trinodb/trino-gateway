@@ -19,6 +19,8 @@ public class MonitorConfiguration
 {
     private int taskDelaySeconds = ActiveClusterMonitor.MONITOR_TASK_DELAY_SECONDS;
 
+    private int retries;
+
     public MonitorConfiguration() {}
 
     public int getTaskDelaySeconds()
@@ -29,5 +31,15 @@ public class MonitorConfiguration
     public void setTaskDelaySeconds(int taskDelaySeconds)
     {
         this.taskDelaySeconds = taskDelaySeconds;
+    }
+
+    public int getRetries()
+    {
+        return retries;
+    }
+
+    public void setRetries(int retries)
+    {
+        this.retries = retries;
     }
 }
