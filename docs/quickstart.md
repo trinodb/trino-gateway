@@ -65,7 +65,7 @@ fi
 
 
 #Start Trino Gateway server.
-java -Xmx1g --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar ./gateway-ha.jar server ./quickstart-config.yaml
+java -Xmx1g -jar ./gateway-ha.jar ./quickstart-config.yaml
 ```
 
 You can clean up by running
