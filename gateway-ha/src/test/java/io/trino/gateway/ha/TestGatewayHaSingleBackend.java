@@ -30,8 +30,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.TrinoContainer;
 
+import java.io.IOException;
 import java.util.List;
 
+import static java.util.Locale.ENGLISH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -60,6 +62,26 @@ final class TestGatewayHaSingleBackend
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(
                 "trino1", "http://localhost:" + backendPort, "externalUrl", true, "adhoc", routerPort);
+    }
+
+    @ParameterizedTest
+    @MethodSource("protocols")
+    void testEmptyBody(Protocol protocol)
+            throws IOException
+    {
+        OkHttpClient httpClient = new OkHttpClient.Builder().protocols(ImmutableList.of(protocol)).build();
+
+        RequestBody requestBody = RequestBody.create("", null);
+        Request request =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .addHeader("Host", "test.host.com")
+                        .post(requestBody)
+                        .build();
+        Response response = httpClient.newCall(request).execute();
+        String responseBody = response.body().string();
+        assertThat(responseBody.toLowerCase(ENGLISH)).matches(".*statement is empty");
     }
 
     @ParameterizedTest
