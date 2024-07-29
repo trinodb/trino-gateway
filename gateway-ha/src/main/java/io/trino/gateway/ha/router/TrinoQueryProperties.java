@@ -14,11 +14,13 @@
 package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.compress.zstd.ZstdDecompressor;
@@ -29,6 +31,7 @@ import io.trino.sql.parser.ParsingException;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AddColumn;
 import io.trino.sql.tree.Analyze;
+import io.trino.sql.tree.Call;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateMaterializedView;
 import io.trino.sql.tree.CreateSchema;
@@ -86,6 +89,7 @@ public class TrinoQueryProperties
 {
     private final Logger log = Logger.get(TrinoQueryProperties.class);
     private final boolean isClientsUseV2Format;
+    private final int maxBodySize;
     private String body = "";
     private String queryType = "";
     private String resourceGroupQueryType = "";
@@ -95,6 +99,8 @@ public class TrinoQueryProperties
     private Set<String> catalogs = ImmutableSet.of();
     private Set<String> schemas = ImmutableSet.of();
     private Set<String> catalogSchemas = ImmutableSet.of();
+    private Optional<QualifiedName> procedure = Optional.empty();
+    private List<SerializableCallArgument> procedureArguments = ImmutableList.of();
     private boolean isNewQuerySubmission;
     private Optional<String> errorMessage = Optional.empty();
 
@@ -113,6 +119,8 @@ public class TrinoQueryProperties
             @JsonProperty("catalogs") Set<String> catalogs,
             @JsonProperty("schemas") Set<String> schemas,
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
+            @JsonProperty("procedure") Optional<String> procedure,
+            @JsonProperty("procedureArguments") List<SerializableCallArgument> procedureArguments,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
             @JsonProperty("errorMessage") Optional<String> errorMessage)
     {
@@ -126,23 +134,33 @@ public class TrinoQueryProperties
         this.schemas = requireNonNullElse(schemas, ImmutableSet.of());
         this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
         this.isNewQuerySubmission = isNewQuerySubmission;
+        this.procedureArguments = requireNonNullElse(procedureArguments, ImmutableList.of());
+        this.procedure = procedure.map(this::parseIdentifierStringToQualifiedName);
         this.errorMessage = requireNonNullElse(errorMessage, Optional.empty());
         isClientsUseV2Format = false;
+        maxBodySize = -1;
     }
 
     public TrinoQueryProperties(HttpServletRequest request, RequestAnalyzerConfig config)
     {
-        isClientsUseV2Format = config.isClientsUseV2Format();
+        this(request, config.isClientsUseV2Format(), config.getMaxBodySize());
+    }
+
+    public TrinoQueryProperties(HttpServletRequest request, boolean isClientsUseV2Format, int maxBodySize)
+    {
+        requireNonNull(request, "request is null");
+        this.isClientsUseV2Format = isClientsUseV2Format;
+        this.maxBodySize = maxBodySize;
 
         defaultCatalog = Optional.ofNullable(request.getHeader(TRINO_CATALOG_HEADER_NAME));
         defaultSchema = Optional.ofNullable(request.getHeader(TRINO_SCHEMA_HEADER_NAME));
         if (request.getMethod().equals(HttpMethod.POST)) {
             isNewQuerySubmission = true;
-            processRequestBody(request, config);
+            processRequestBody(request);
         }
     }
 
-    private void processRequestBody(HttpServletRequest request, RequestAnalyzerConfig config)
+    private void processRequestBody(HttpServletRequest request)
     {
         try (BufferedReader reader = request.getReader()) {
             if (reader == null) {
@@ -153,11 +171,11 @@ public class TrinoQueryProperties
 
             Map<String, String> preparedStatements = getPreparedStatements(request);
             SqlParser parser = new SqlParser();
-            reader.mark(config.getMaxBodySize());
-            char[] buffer = new char[config.getMaxBodySize()];
-            int nChars = reader.read(buffer, 0, config.getMaxBodySize());
+            reader.mark(maxBodySize);
+            char[] buffer = new char[maxBodySize];
+            int nChars = reader.read(buffer, 0, maxBodySize);
             reader.reset();
-            if (nChars == config.getMaxBodySize()) {
+            if (nChars == maxBodySize) {
                 log.warn("Query length greater or equal to requestAnalyzerConfig.maxBodySize detected");
                 return;
                 //The body is truncated - there is a chance that it could still be syntactically valid SQL, for example if truncated on
@@ -199,7 +217,7 @@ public class TrinoQueryProperties
             ImmutableSet.Builder<String> schemaBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> catalogSchemaBuilder = ImmutableSet.builder();
 
-            getNames(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             tables = tableBuilder.build();
             catalogBuilder.addAll(tables.stream().map(q -> q.getParts().getFirst()).iterator());
             catalogs = catalogBuilder.build();
@@ -260,7 +278,7 @@ public class TrinoQueryProperties
         return new String(preparedStatement, UTF_8);
     }
 
-    private void getNames(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
+    private void visitNode(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
             ImmutableSet.Builder<String> catalogSchemaBuilder)
@@ -269,6 +287,12 @@ public class TrinoQueryProperties
         switch (node) {
             case AddColumn s -> tableBuilder.add(qualifyName(s.getName()));
             case Analyze s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Call call -> {
+                setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(call.getName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+                procedure = Optional.of(call.getName());
+                procedureArguments = call.getArguments().stream().map(SerializableCallArgument::new).toList();
+                return;
+            }
             case CreateCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
             case CreateMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
             case CreateSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
@@ -342,7 +366,7 @@ public class TrinoQueryProperties
         }
 
         for (Node child : node.getChildren()) {
-            getNames(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
         }
     }
 
@@ -381,15 +405,16 @@ public class TrinoQueryProperties
         return new RequestParsingException("Name not fully qualified");
     }
 
-    private QualifiedName qualifyName(QualifiedName table)
+    private QualifiedName qualifyName(QualifiedName name)
             throws RequestParsingException
     {
-        List<String> tableParts = table.getParts();
-        return switch (tableParts.size()) {
-            case 1 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst());
-            case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst(), tableParts.get(1));
-            case 3 -> QualifiedName.of(tableParts.getFirst(), tableParts.get(1), tableParts.get(2));
-            default -> throw new RequestParsingException("Unexpected table name: " + table.getParts());
+        List<String> nameParts = name.getParts();
+        return switch (nameParts.size()) {
+            case 1 ->
+                    QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst());
+            case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst(), nameParts.get(1));
+            case 3 -> QualifiedName.of(nameParts.getFirst(), nameParts.get(1), nameParts.get(2));
+            default -> throw new RequestParsingException("Unexpected qualified name: " + name.getParts());
         };
     }
 
@@ -417,7 +442,7 @@ public class TrinoQueryProperties
         return defaultSchema;
     }
 
-    @JsonSerialize(using = QualifiedNameJsonSerializer.class)
+    @JsonSerialize(using = SetQualifiedNameJsonSerializer.class)
     public Set<QualifiedName> getTables()
     {
         return tables;
@@ -478,6 +503,18 @@ public class TrinoQueryProperties
         }
     }
 
+    public boolean procedureNameEquals(String name)
+    {
+        return procedure.map(p -> {
+            try {
+                return qualifyName(p).equals(parseIdentifierStringToQualifiedName(name));
+            }
+            catch (RequestParsingException e) {
+                return false;
+            }
+        }).orElse(false);
+    }
+
     @JsonProperty
     public Optional<String> getDefaultCatalog()
     {
@@ -518,6 +555,25 @@ public class TrinoQueryProperties
     public Optional<String> getErrorMessage()
     {
         return errorMessage;
+    }
+
+    @JsonIgnore
+    public List<SerializableCallArgument> getProcedureArguments()
+    {
+        return procedureArguments;
+    }
+
+    @JsonProperty("procedure")
+    @JsonSerialize(using = OptionalQualifiedNameJsonSerializer.class)
+    public Optional<QualifiedName> getProcedure()
+    {
+        return procedure;
+    }
+
+    @JsonProperty("procedureArguments")
+    public List<SerializableCallArgument> getSerializableProcedureArguments()
+    {
+        return procedureArguments;
     }
 
     public static class AlternateStatementRequestBodyFormat
@@ -568,15 +624,15 @@ public class TrinoQueryProperties
         }
     }
 
-    public static class QualifiedNameJsonSerializer
+    public static class SetQualifiedNameJsonSerializer
             extends StdSerializer<Set<QualifiedName>>
     {
-        public QualifiedNameJsonSerializer()
+        public SetQualifiedNameJsonSerializer()
         {
             this(null);
         }
 
-        public QualifiedNameJsonSerializer(Class<Set<QualifiedName>> t)
+        public SetQualifiedNameJsonSerializer(Class<Set<QualifiedName>> t)
         {
             super(t);
         }
@@ -586,6 +642,27 @@ public class TrinoQueryProperties
                 throws IOException
         {
             jsonGenerator.writeArray(qualifiedNames.stream().map(QualifiedName::toString).toList().toArray(new String[0]), 0, qualifiedNames.size());
+        }
+    }
+
+    public static class OptionalQualifiedNameJsonSerializer
+            extends StdSerializer<Optional<QualifiedName>>
+    {
+        public OptionalQualifiedNameJsonSerializer()
+        {
+            this(null);
+        }
+
+        public OptionalQualifiedNameJsonSerializer(Class<Optional<QualifiedName>> t)
+        {
+            super(t);
+        }
+
+        @Override
+        public void serialize(Optional<QualifiedName> qualifiedName, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+                throws IOException
+        {
+            jsonGenerator.writeString(qualifiedName.map(QualifiedName::toString).orElse(null));
         }
     }
 }
