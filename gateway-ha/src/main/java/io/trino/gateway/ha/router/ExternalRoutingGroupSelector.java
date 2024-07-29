@@ -118,7 +118,7 @@ public class ExternalRoutingGroupSelector
         TrinoQueryProperties trinoQueryProperties = null;
         TrinoRequestUser trinoRequestUser = null;
         if (requestAnalyzerConfig.isAnalyzeRequest()) {
-            trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig);
+            trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig.isClientsUseV2Format(), requestAnalyzerConfig.getMaxBodySize());
             trinoRequestUser = trinoRequestUserProvider.getInstance(request);
         }
 
