@@ -1,24 +1,28 @@
 # Design
 
-Trino Gateway is composed of the following main components:
+There are two types of requests: one is a request to Trino Gateway, and the
+other is a request that needs to be forwarded to Trino.
 
-1. **BaseApp** provides boilerplate code to add/remove pluggable components
-   with config and metrics registration module. Located in the 
-   `io.trino.gateway.baseapp` package of the `gateway-ha` module.
+## Request forwarding
 
-![BaseApp Class Diagram](assets/BaseApp-classes.png)
+Trino Gateway forwards some pre-defined URIs automatically to Trino. You can
+configure additional URIs to forward with the `extraWhitelistPaths`
+configuration.
 
-2. **ProxyServer** is a library built on top of jetty proxy which provides a
-   proxy server with a pluggable proxy-handler. Located in the
-   `io.trino.gateway.proxyserver` package of the `gateway-ha` module.
+In order to support additional URIs that are only known at runtime, the
+`RouterPreMatchContainerRequestFilter` is used to process every request before
+the actual resource matching occurs. If the requests URI matches, the request
+is forwarded to `RouteToBackendResource`.
 
-![ProxyServer Class Diagram](assets/ProxyServer-classes.png)
+Flow of request forwarding:
 
-3. **Trino Gateway** acts as container for proxy-server and plugs in
-   ProxyHandlers to provide proxy, routing and load balancing functionalities. It
-   also exposes few end points and UI to activate, deactivate backends and view
-   query history for recently submitted queries. Located in the
-   `io.trino.gateway` package of the `gateway-ha` module.
-
-![TrinoGateway Class Diagram](assets/TrinoGateway-classes.png)
-
+1. Determine to which Trino cluster a query should be routed to.
+2. Prepare a request to send to Trino by adding `Via` headers and `X-Forwarded`
+   headers. Most headers are forwarded to Trino unmodified.
+3. Some request URI require special handling. For example, a
+   request which submit a new query, Trino Gateway retrieves the queryId from the
+   response from Trino. Some requests to the web UI require setting a session
+   cookie to ensure OIDC works. These are done by chaining asynchronous
+   operations using `Future`.
+4. The execution of requests to Trino and the response to the client are handled
+   by `airlift.jaxrs.AsyncResponseHandler`.

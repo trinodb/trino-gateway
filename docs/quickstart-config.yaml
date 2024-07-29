@@ -1,13 +1,7 @@
-httpConfig:
+serverConfig:
     node.environment: test
-    http-server.http.port: 9081
+    http-server.http.port: 8080
     log.levels-file: gateway-ha/etc/log.properties
-
-requestRouter:
-  #SQL clients connect to the request port
-  port: 9080
-  name: testTrinoRouter
-  historySize: 1000
 
 dataStore:
   #This stores the URLs of backend Trino servers and query history
@@ -25,5 +19,4 @@ modules:
   - io.trino.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
-  - io.trino.gateway.ha.GatewayManagedApp
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor

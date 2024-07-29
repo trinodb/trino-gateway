@@ -32,45 +32,13 @@ and update the mysql db information.
 
 ```
 cd gateway-ha/target/
-java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
+java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
 ```
 
 #### In Docker
 
 Follow the separate instructions for building the container and running Trino
 Gateway with docker compose from the `README.md` file in the `docker` folder.
-
-#### Common Run Failures
-
-If you encounter a `Failed to connect to JDBC URL` error with the MySQL backend,
-this may be due to newer versions of Java disabling certain algorithms when
-using SSL/TLS, in particular `TLSv1` and `TLSv1.1`. This causes `Bad handshake`
-errors when connecting to the MySQL server. You can avoid this by enabling
-`TLSv1` and `TLSv1.1` in your JDK, or by adding `sslMode=DISABLED` to your
-connection string.
-
-To enable TLS1 and 1.1, in
-
-```
-${JAVA_HOME}/jre/lib/security/java.security
-```
-
-search for `jdk.tls.disabledAlgorithms`, it should look something like this:
-
-```
-jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
-    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    include jdk.disabled.namedCurves
-```
-
-Remove `TLSv1, TLSv1.1` and redo the above steps to build and run
-`trino-gateway`.
-
-If you see test failures while building `trino-gateway` or in an IDE, please run
-`mvn process-classes` to instrument javalite models which are used by the tests.
-Refer to the
-[javalite-examples](https://github.com/javalite/javalite-examples/tree/master/simple-example#instrumentation)
-for more details.
 
 ## Contributing
 
@@ -85,6 +53,7 @@ Gateway, and can help with pull request reviews and merges.
 * [:fontawesome-brands-github: chaho12 - Jaeho Yoo](https://github.com/chaho12)
 * [:fontawesome-brands-github: ebyhr - Yuya Ebihara](https://github.com/ebyhr)
 * [:fontawesome-brands-github: mosabua - Manfred Moser](https://github.com/mosabua)
+* [:fontawesome-brands-github: oneonestar - Star Poon](https://github.com/oneonestar)
 * [:fontawesome-brands-github: vishalya - Vishal Jadhav](https://github.com/vishalya)
 * [:fontawesome-brands-github: wendigo - Mateusz Gajewski](https://github.com/wendigo)
 * [:fontawesome-brands-github: willmostly - Will Morrison](https://github.com/willmostly)

@@ -51,7 +51,7 @@ export const RootLayout = (props: {
             header={{
               logo: (
                 <img
-                  src="/logo.svg"
+                  src="/trino-gateway/logo.svg"
                   className={styles.navigationHeaderLogo}
                 />
               ),

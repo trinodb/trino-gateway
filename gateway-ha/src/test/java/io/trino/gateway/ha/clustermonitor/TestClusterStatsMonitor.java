@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(PER_CLASS)
 public class TestClusterStatsMonitor
@@ -35,6 +36,7 @@ public class TestClusterStatsMonitor
     public void setUp()
     {
         trino = new TrinoContainer("trinodb/trino");
+        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
     }
 

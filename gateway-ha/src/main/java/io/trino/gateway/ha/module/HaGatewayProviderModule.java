@@ -17,20 +17,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.airlift.http.server.HttpServerConfig;
-import io.airlift.http.server.HttpsConfig;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
-import io.trino.gateway.ha.config.RequestRouterConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import io.trino.gateway.ha.handler.ProxyHandlerStats;
-import io.trino.gateway.ha.handler.QueryIdCachingProxyHandler;
+import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
-import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
@@ -48,14 +43,9 @@ import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
-import io.trino.gateway.proxyserver.ProxyHandler;
-import io.trino.gateway.proxyserver.ProxyServer;
-import io.trino.gateway.proxyserver.ProxyServerConfiguration;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.util.Objects.requireNonNull;
@@ -68,7 +58,6 @@ public class HaGatewayProviderModule
     private final AuthorizationManager authorizationManager;
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
-    private final List<String> extraWhitelistPaths;
     private final HaGatewayConfiguration configuration;
 
     @Override
@@ -88,7 +77,6 @@ public class HaGatewayProviderModule
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
-        extraWhitelistPaths = configuration.getExtraWhitelistPaths();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
@@ -144,31 +132,6 @@ public class HaGatewayProviderModule
         return new ChainedAuthFilter(authFilters.build());
     }
 
-    private ProxyHandler getProxyHandler(
-            QueryHistoryManager queryHistoryManager,
-            RoutingManager routingManager,
-            ProxyHandlerStats proxyHandlerStats,
-            HttpServerConfig httpServerConfig,
-            Optional<HttpsConfig> httpsConfig)
-    {
-        // By default, use routing group header to route
-        RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
-        // Use rules engine if enabled
-        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
-        if (routingRulesConfig.isRulesEngineEnabled()) {
-            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-            routingGroupSelector = RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath);
-        }
-
-        return new QueryIdCachingProxyHandler(
-                queryHistoryManager,
-                routingManager,
-                routingGroupSelector,
-                httpsConfig.map(HttpsConfig::getHttpsPort).orElseGet(httpServerConfig::getHttpPort),
-                proxyHandlerStats,
-                extraWhitelistPaths);
-    }
-
     private ResourceSecurityDynamicFeature getAuthFilter(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
@@ -182,40 +145,6 @@ public class HaGatewayProviderModule
         }
 
         return new ResourceSecurityDynamicFeature(new NoopFilter());
-    }
-
-    @Provides
-    @Singleton
-    public ProxyServer provideGateway(
-            QueryHistoryManager queryHistoryManager,
-            RoutingManager routingManager,
-            ProxyHandlerStats proxyHandlerStats,
-            HttpServerConfig httpServerConfig,
-            Optional<HttpsConfig> httpsConfig)
-    {
-        ProxyServer gateway = null;
-        if (configuration.getRequestRouter() != null) {
-            // Setting up request router
-            RequestRouterConfiguration routerConfiguration = configuration.getRequestRouter();
-
-            ProxyServerConfiguration routerProxyConfig = new ProxyServerConfiguration();
-            routerProxyConfig.setLocalPort(routerConfiguration.getPort());
-            routerProxyConfig.setName(routerConfiguration.getName());
-            routerProxyConfig.setProxyTo("");
-            routerProxyConfig.setSsl(routerConfiguration.isSsl());
-            routerProxyConfig.setKeystorePath(routerConfiguration.getKeystorePath());
-            routerProxyConfig.setKeystorePass(routerConfiguration.getKeystorePass());
-            routerProxyConfig.setForwardKeystore(routerConfiguration.isForwardKeystore());
-            routerProxyConfig.setPreserveHost("false");
-            routerProxyConfig.setOutputBufferSize(routerConfiguration.getOutputBufferSize());
-            routerProxyConfig.setRequestHeaderSize(routerConfiguration.getRequestHeaderSize());
-            routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseHeaderSize());
-            routerProxyConfig.setRequestBufferSize(routerConfiguration.getRequestBufferSize());
-            routerProxyConfig.setResponseHeaderSize(routerConfiguration.getResponseBufferSize());
-            ProxyHandler proxyHandler = getProxyHandler(queryHistoryManager, routingManager, proxyHandlerStats, httpServerConfig, httpsConfig);
-            gateway = new ProxyServer(routerProxyConfig, proxyHandler);
-        }
-        return gateway;
     }
 
     @Provides
@@ -244,5 +173,29 @@ public class HaGatewayProviderModule
     public BackendStateManager getBackendStateConnectionManager()
     {
         return this.backendStateConnectionManager;
+    }
+
+    @Provides
+    @Singleton
+    public RoutingGroupSelector getRoutingGroupSelector()
+    {
+        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
+        if (routingRulesConfig.isRulesEngineEnabled()) {
+            String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
+            return RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, configuration.getRequestAnalyzerConfig());
+        }
+        return RoutingGroupSelector.byRoutingGroupHeader();
+    }
+
+    @Provides
+    @Singleton
+    public RoutingTargetHandler getRoutingTargetHandler(
+            RoutingManager routingManager,
+            RoutingGroupSelector routingGroupSelector)
+    {
+        return new RoutingTargetHandler(
+                routingManager,
+                routingGroupSelector,
+                configuration.getExtraWhitelistPaths());
     }
 }

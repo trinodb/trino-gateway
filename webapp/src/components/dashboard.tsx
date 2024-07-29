@@ -10,6 +10,7 @@ import { IconHelpCircle } from "@douyinfe/semi-icons";
 import { useNavigate } from "react-router-dom";
 import { hasPagePermission, routersMapper } from "../router";
 import { useAccessStore } from "../store";
+import { formatZonedDateTime } from "../utils/time";
 
 export function Dashboard() {
   const access = useAccessStore();
@@ -26,7 +27,7 @@ export function Dashboard() {
   const data = [
     {
       key: Locale.Dashboard.StartTime,
-      value: distributionDetail?.startTime
+      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime)
     },
     {
       key: Locale.Dashboard.Backends,

@@ -13,14 +13,19 @@
  */
 package io.trino.gateway.ha.security;
 
+import com.auth0.jwt.interfaces.Claim;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.security.util.AuthenticationException;
 import io.trino.gateway.ha.security.util.IdTokenAuthenticator;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class LbAuthenticator
         implements IdTokenAuthenticator
 {
+    private static final Logger log = Logger.get(LbAuthenticator.class);
     private final LbOAuthManager oauthManager;
     private final AuthorizationManager authorizationManager;
 
@@ -43,6 +48,30 @@ public class LbAuthenticator
             throws AuthenticationException
     {
         String userIdField = oauthManager.getUserIdField();
+        Optional<String> privilegesField = oauthManager.getPrivilegesField();
+        if (privilegesField.isPresent()) {
+            Map<String, Claim> claims = oauthManager.getClaimsFromIdToken(idToken).orElseThrow();
+            String userId = claims.get(userIdField).asString().replace("\"", "");
+
+            Claim claim = claims.get(privilegesField.orElseThrow());
+            if (claim == null) {
+                log.error("Required privileges field %s not found", privilegesField.orElseThrow());
+                throw new AuthenticationException("Privileges field does not exist");
+            }
+            Optional<String> privileges;
+            List<String> roles = claim.asList(String.class);
+            if (roles != null) {
+                // claim is List<String>
+                privileges = Optional.of(String.join("_", roles));
+            }
+            else {
+                // claim is String
+                String role = claim.asString();
+                privileges = Optional.ofNullable(role);
+            }
+
+            return Optional.of(new LbPrincipal(userId, privileges));
+        }
         return oauthManager
                 .getClaimsFromIdToken(idToken)
                 .map(c -> c.get(userIdField))

@@ -20,11 +20,11 @@ import java.util.Map;
 
 public class HaGatewayConfiguration
 {
-    private Map<String, String> httpConfig = new HashMap<>();
-    private RequestRouterConfiguration requestRouter;
+    private Map<String, String> serverConfig = new HashMap<>();
     private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
+    private RoutingConfiguration routing = new RoutingConfiguration();
     private RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
     private AuthenticationConfiguration authentication;
     private AuthorizationConfiguration authorization;
@@ -36,6 +36,8 @@ public class HaGatewayConfiguration
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
 
+    private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -44,24 +46,14 @@ public class HaGatewayConfiguration
 
     public HaGatewayConfiguration() {}
 
-    public Map<String, String> getHttpConfig()
+    public Map<String, String> getServerConfig()
     {
-        return this.httpConfig;
+        return this.serverConfig;
     }
 
-    public void setHttpConfig(Map<String, String> httpConfig)
+    public void setServerConfig(Map<String, String> serverConfig)
     {
-        this.httpConfig = httpConfig;
-    }
-
-    public RequestRouterConfiguration getRequestRouter()
-    {
-        return this.requestRouter;
-    }
-
-    public void setRequestRouter(RequestRouterConfiguration requestRouter)
-    {
-        this.requestRouter = requestRouter;
+        this.serverConfig = serverConfig;
     }
 
     public NotifierConfiguration getNotifier()
@@ -92,6 +84,16 @@ public class HaGatewayConfiguration
     public void setMonitor(MonitorConfiguration monitor)
     {
         this.monitor = monitor;
+    }
+
+    public RoutingConfiguration getRouting()
+    {
+        return routing;
+    }
+
+    public void setRouting(RoutingConfiguration routing)
+    {
+        this.routing = routing;
     }
 
     public RoutingRulesConfiguration getRoutingRules()
@@ -192,6 +194,16 @@ public class HaGatewayConfiguration
     public void setGatewayCookieConfiguration(GatewayCookieConfiguration gatewayCookieConfiguration)
     {
         this.gatewayCookieConfiguration = gatewayCookieConfiguration;
+    }
+
+    public RequestAnalyzerConfig getRequestAnalyzerConfig()
+    {
+        return requestAnalyzerConfig;
+    }
+
+    public void setRequestAnalyzerConfig(RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        this.requestAnalyzerConfig = requestAnalyzerConfig;
     }
 
     public List<String> getModules()

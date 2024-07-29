@@ -2,54 +2,8 @@
 
 set -euo pipefail
 
-function get_2nd_level_yaml_key() {
-    local parent_key=$1
-    local target_key=$2
-    local yaml_file_path=$3
-
-    # In order to get the nested key we will leverage awk to do some parsing
-    awk -v parent_key=${parent_key} \
-        -v target_key=${target_key} \
-        '
-        function count_indentation(line) {
-            match(line, /^[[:space:]]*/);
-            return RLENGTH;
-        }
-        # First we search for the parent_key, once we find it we set in_block to true
-        match($0, "^" parent_key ":") {
-            in_block=1;
-            parent_indent_level = count_indentation($0);
-            next;
-        } \
-        in_block {
-            # All lines we deem to be a comment will be skipped.
-            if (match($0, "^[[:space:]]*#")) { next; }
-
-            # If we determine that we have left the parent_key block we will exit.
-            if ($0 ~ /^[^\t  #]/) { exit; }
-
-            current_indent_level = count_indentation($0);
-
-            # Next, because we dont know the indentation levels being provided, we will attempt
-            # to find the indentation level of the 2nd level keys.
-            if ( !first_level_indentation \
-              && match($0, "^[[:space:]]+.*:") \
-              && current_indent_level > parent_indent_level) {
-                first_level_indentation = current_indent_level;
-            }
-
-            # Then we will attempt to find the 2nd level target key based on:
-            #  1. Theres only spaces before the target_key
-            #  2. The indentation level is equal to the found 2nd level indentation
-            if (match($0, "^[[:space:]]+" target_key ":") \
-              && current_indent_level == first_level_indentation) {
-                # If we decide that the key matches our expectations, we will print the matched value
-               sub(/:/, "", $2);
-               print $2;
-            }
-        }
-        ' \
-        ${yaml_file_path}
+function get_property() {
+    grep "$1" "$2" | cut -d':' -f2 | tr -d '[:space:]' || true
 }
 
 config=/opt/trino/gateway-ha-config.yml
@@ -57,13 +11,17 @@ scheme=http
 port=8080
 
 # prefer to use http even if https is enabled
-if [ "$(get_2nd_level_yaml_key 'requestRouter' 'ssl' "$config")" == "true" ]; then
+if [ "$(get_property 'http-server.https.enabled' "$config")" == "true" ]; then
     scheme=https
-fi
-
-potential_port=$(get_2nd_level_yaml_key 'requestRouter' 'port' "$config")
-if [ "${potential_port}" != "" ]; then
-    port=${potential_port}
+    potential_port=$(get_property http-server.https.port "$config")
+    if [ "${potential_port}" != "" ]; then
+        port=${potential_port}
+    fi
+else
+    potential_port=$(get_property http-server.http.port "$config")
+    if [ "${potential_port}" != "" ]; then
+        port=${potential_port}
+    fi
 fi
 
 endpoint="${scheme}://localhost:${port}/api/public/backends"

@@ -53,12 +53,12 @@ public class TestSpecificDbResourceGroupsManager
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 
-    private void createResourceGroup()
+    private void createResourceGroup(String groupName)
     {
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
 
         resourceGroup.setResourceGroupId(1L);
-        resourceGroup.setName("admin2");
+        resourceGroup.setName(groupName);
         resourceGroup.setHardConcurrencyLimit(20);
         resourceGroup.setMaxQueued(200);
         resourceGroup.setJmxExport(true);
@@ -77,7 +77,7 @@ public class TestSpecificDbResourceGroupsManager
     @Test
     public void testReadSpecificDbResourceGroup()
     {
-        this.createResourceGroup();
+        this.createResourceGroup("admin2");
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
                 .readAllResourceGroups(specificDb);
         assertThat(resourceGroups).isNotNull();
@@ -87,7 +87,7 @@ public class TestSpecificDbResourceGroupsManager
     @Test
     public void testReadSpecificDbSelector()
     {
-        this.createResourceGroup();
+        this.createResourceGroup("admin3");
         ResourceGroupsManager.SelectorsDetail selector = new ResourceGroupsManager.SelectorsDetail();
         selector.setResourceGroupId(1L);
         selector.setPriority(0L);

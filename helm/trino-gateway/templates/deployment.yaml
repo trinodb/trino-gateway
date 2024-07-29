@@ -14,10 +14,12 @@ spec:
   template:
     metadata:
       annotations:
-          # Include the version of trino-gateway-configuration as an input to the deployment checksum. This causes pods to restart on helm update
-          # whether the chart `config` is updated or if one of the configuration secrets is updated. Helm template must be run with the
-          # --dry-run=server option to prevent a nil pointer
-          checksum/config: {{ (coalesce (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata (dict "resourceVersion" "0")).resourceVersion | sha256sum}}
+        # Include the version of trino-gateway-configuration as an input to the
+        # deployment checksum. This causes pods to restart on helm update
+        # whether the chart `config` is updated or if one of the configuration
+        # secrets is updated. Helm template must be run with the
+        # --dry-run=server option to prevent a nil pointer.
+        checksum/config: {{ (coalesce (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata (dict "resourceVersion" "0")).resourceVersion | sha256sum}}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -42,40 +44,27 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
               - "java"
-              - "--add-opens=java.base/java.lang=ALL-UNNAMED"
-              - "--add-opens=java.base/java.net=ALL-UNNAMED"
               - "-XX:MinRAMPercentage=80.0"
               - "-XX:MaxRAMPercentage=80.0"
               - "-jar"
               - "/usr/lib/trino/gateway-ha-jar-with-dependencies.jar"
-              - "server"
               - "/etc/gateway/config.yaml"
           ports:
             - name: request
-              containerPort: {{ .Values.config.requestRouter.port }}
+              containerPort: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
               protocol: TCP
-            {{- range $index, $connector := $.Values.config.server.adminConnectors}}
-            - name: {{print "admin-" $index }}
-              protocol: TCP
-              containerPort: {{ $connector.port }}
-            {{- end }}
-            {{- range $index, $connector := $.Values.config.server.applicationConnectors}}
-            - name: {{print "app-" $index }}
-              protocol: TCP
-              containerPort: {{ $connector.port }}
-            {{- end }}
           livenessProbe:
             httpGet:
-                path: /
-                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+                path: /trino-gateway
+                port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
           readinessProbe:
             httpGet:
-                path: /
-                port: {{ (index .Values.config.server.adminConnectors 0).port}}
+                path: /trino-gateway
+                port: {{ index .Values "config" "serverConfig" "http-server.http.port" }}
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.readinessProbe.failureThreshold }}

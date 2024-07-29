@@ -11,7 +11,7 @@
 
     <groupId>io.trino.gateway</groupId>
     <artifactId>trino-gateway-parent</artifactId>
-    <version>10-SNAPSHOT</version>
+    <version>11-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>trino-gateway-parent</name>
@@ -44,7 +44,6 @@
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
-        <dep.jetty.version>12.0.9</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -52,23 +51,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>248</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-bom</artifactId>
-                <version>${dep.jetty.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.jetty.ee10</groupId>
-                <artifactId>jetty-ee10-bom</artifactId>
-                <version>${dep.jetty.version}</version>
+                <version>249</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -98,7 +81,7 @@
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
-                <version>3.1.6</version>
+                <version>3.1.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

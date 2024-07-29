@@ -1,11 +1,6 @@
-httpConfig:
+serverConfig:
   node.environment: test
-  http-server.http.port: 9081
-
-requestRouter:
-  port: REQUEST_ROUTER_PORT
-  name: testTrinoRouter
-  historySize: 1000
+  http-server.http.port: REQUEST_ROUTER_PORT
 
 dataStore:
   jdbcUrl: jdbc:h2:DB_FILE_PATH
@@ -16,11 +11,8 @@ dataStore:
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
 
-managedApps:
-  - io.trino.gateway.ha.GatewayManagedApp
-
 extraWhitelistPaths:
-  - "/v1/custom"
+  - '/v1/custom.*'
 
 authorization:
   admin: .*FOO.*

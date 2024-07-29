@@ -28,6 +28,7 @@ public class OAuthConfiguration
     private List<String> scopes;
     private URI redirectUrl;
     private String userIdField;
+    private String privilegesField;
     private List<String> audiences;
     private URI redirectWebUrl;
 
@@ -116,6 +117,16 @@ public class OAuthConfiguration
     public String getUserIdField()
     {
         return this.userIdField;
+    }
+
+    public String getPrivilegesField()
+    {
+        return privilegesField;
+    }
+
+    public void setPrivilegesField(String privilegesField)
+    {
+        this.privilegesField = privilegesField;
     }
 
     public void setUserIdField(String userIdField)

@@ -1,5 +1,40 @@
 # Release notes
 
+## Trino Gateway 10 (24 July 2024)
+
+[JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar),
+Docker container `trinodb/trino-gateway:10`
+
+* [:warning: Breaking change:](#breaking) Remove support for Dropwizard and
+  Jetty Proxy integration and usage. Add
+  [Airlift](https://github.com/airlift/airlift) as the base application
+  framework as
+  used in Trino. This changes the supported Trino Gateway startup, configuration
+  files, and relevant properties. Find details in the
+  [documentation](quickstart.md), and specifically refer to the
+  [upgrade guide](migration-to-airlift.md) when migrating from older releases.
+  ([#41](https://github.com/trinodb/trino-gateway/issues/41))
+* [:warning: Breaking change:](#breaking) Improve Helm chart reliability and
+  adjust to new Airlift base framework.
+  ([#401](https://github.com/trinodb/trino-gateway/pull/401))
+* Enable routing rules to use query and user details extracted from the HTTP
+  request.
+  ([#325](https://github.com/trinodb/trino-gateway/pull/325))
+* Add support for using an OIDC claim for authorization.
+  ([#322](https://github.com/trinodb/trino-gateway/pull/322))
+* Improve OIDC spec compliance, and add state and nonce verification.
+  ([#348](https://github.com/trinodb/trino-gateway/pull/339))
+* Allow null values for `userName` and `source` in the query history.
+  ([#381](https://github.com/trinodb/trino-gateway/pull/381))
+* Show times in query distribution graph in UI in local time instead of UTC.
+  ([#369](https://github.com/trinodb/trino-gateway/pull/369))
+* Fix problems with secrets, liveness, and readiness templates in Helm chart.
+  ([#348](https://github.com/trinodb/trino-gateway/pull/348))
+* Fix cluster reordering issue in the cluster user interface.
+  ([#331](https://github.com/trinodb/trino-gateway/pull/331))
+* Fix creation of new resource groups.
+  ([#379](https://github.com/trinodb/trino-gateway/pull/379))
+
 ## Trino Gateway 9 (8 May 2024)
 
 [JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar),
@@ -94,3 +129,21 @@ The first release of Trino Gateway is based on the
 * Remove concurrency issue from repeated rules file loading. ([#9](https://github.com/trinodb/trino-gateway/pull/9))
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/52)
+
+## Breaking changes <a name="breaking">
+
+Starting with Trino Gateway 10, release note entries include a [:warning:
+Breaking change:](#breaking) prefix to highlight any changes as potentially 
+breaking changes. The following changes are considered and may require
+adjustments:
+
+* Removal or renaming of configuration properties that may prevent startup or 
+  require configuration changes.
+* Changes to default values for configuration properties that may significantly
+  change the behavior of a system.
+* Updates to the requirements for external systems or software used with 
+  Trino Gateway.
+* Non-backwards compatible changes which may require router modules to 
+  be updated.
+* Otherwise significant changes that requires specific attention from teams 
+  managing a Trino Gateway deployment.

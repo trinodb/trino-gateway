@@ -5,7 +5,7 @@ import { Button, Card, Form, Table, Tag, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
 import { HistoryData, HistoryDetail } from "../types/history";
-import { formatYYYYMMddHHMMSS } from "../utils/time";
+import { formatTimestamp } from "../utils/time";
 import { backendsApi } from "../api/webapp/cluster";
 import { Role, useAccessStore } from "../store";
 import { BackendData } from "../types/cluster";
@@ -66,7 +66,7 @@ export function History() {
 
   const timeRender = (text: number) => {
     return (
-      <Text>{formatYYYYMMddHHMMSS(text)}</Text>
+      <Text>{formatTimestamp(text)}</Text>
     );
   }
 

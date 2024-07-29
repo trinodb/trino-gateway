@@ -84,6 +84,8 @@ nav:
       - Gateway API: gateway-api.md
       - Resource groups API: resource-groups-api.md
       - Code architecture: design.md
+      - Migration to Airlift: migration-to-airlift.md
   - Contribute:
     - Code: development.md
+    - Routers: routers.md
     - Documentation: docs.md

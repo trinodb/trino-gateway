@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import org.jeasy.rules.api.Facts;
 import org.jeasy.rules.api.Rules;
@@ -43,10 +44,14 @@ public class RuleReloadingRoutingGroupSelector
     private volatile Rules rules = new Rules();
     private volatile long lastUpdatedTime;
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
+    private final RequestAnalyzerConfig requestAnalyzerConfig;
+    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
 
-    RuleReloadingRoutingGroupSelector(String rulesConfigPath)
+    RuleReloadingRoutingGroupSelector(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         this.rulesConfigPath = rulesConfigPath;
+        this.requestAnalyzerConfig = requestAnalyzerConfig;
+        trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
         try {
             rules = ruleFactory.createRules(
                     new FileReader(rulesConfigPath, UTF_8));
@@ -84,9 +89,17 @@ public class RuleReloadingRoutingGroupSelector
                     writeLock.unlock();
                 }
             }
+
             Facts facts = new Facts();
             HashMap<String, String> result = new HashMap<String, String>();
+
             facts.put("request", request);
+            if (requestAnalyzerConfig.isAnalyzeRequest()) {
+                TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig);
+                TrinoRequestUser trinoRequestUser = trinoRequestUserProvider.getInstance(request);
+                facts.put("trinoQueryProperties", trinoQueryProperties);
+                facts.put("trinoRequestUser", trinoRequestUser);
+            }
             facts.put("result", result);
             Lock readLock = readWriteLock.readLock();
             readLock.lock();

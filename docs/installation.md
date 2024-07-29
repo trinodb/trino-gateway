@@ -63,7 +63,7 @@ From a users perspective Trino Gateway acts as a transparent proxy for one
 or more Trino clusters. The following Trino configuration tips should be 
 taken into account for all clusters behind the Trino Gateway.
 
-Process forwarding must be enabled:
+Process forwarded HTTP headers must be enabled:
 
 ```commandline
 http-server.process-forwarded=true
@@ -103,11 +103,11 @@ Find more information in the [routing rules documentation](routing-rules.md).
 ### Configure logging <a name="logging">
 
 To configure the logging level for various classes, specify the path to the 
-`log.properties` file by setting `log.levels-file` in `httpConfig`.
+`log.properties` file by setting `log.levels-file` in `serverConfig`.
 
 For additional configurations, use the `log.*` properties from the 
 [Trino logging properties documentation](https://trino.io/docs/current/admin/properties-logging.html) and specify
-the properties in `httpConfig`.
+the properties in `serverConfig`.
 
 ### Proxying additional paths
 
@@ -116,15 +116,31 @@ By default, Trino Gateway only proxies requests to paths starting with
 `/oauth`.
 
 If you want to proxy additional paths, you can add them by adding the
-`extraWhitelistPaths` node to your configuration YAML file:
+`extraWhitelistPaths` node to your configuration YAML file.
+Trino Gateway takes regexes from `extraWhitelistPaths` and forwards only
+those requests with a URI that exactly match. Be sure
+to use single-quoted strings so that escaping is not required.
 
 ```yaml
 extraWhitelistPaths:
-  - "/ui/insights"
-  - "/api/v1/biac"
-  - "/api/v1/dataProduct"
-  - "/api/v1/dataproduct"
-  - "/ext/faster"
+  - '/ui/insights'
+  - '/api/v1/biac'
+  - '/api/v1/dataProduct'
+  - '/api/v1/dataproduct'
+  - '/api/v2/.*'
+  - '/ext/faster'
+```
+
+## Configure behind a load balancer
+
+A possible deployment of Trino Gateway is to run multiple instances of Trino 
+Gateway behind another generic load balancer, such as a load balancer from 
+your cloud hosting provider. In this deployment you must configure the 
+`serverConfig` to include enabling process forwarded HTTP headers:
+
+```yaml
+serverConfig:
+  http-server.process-forwarded: true
 ```
 
 ## Running Trino Gateway
@@ -134,9 +150,7 @@ JAR and YAML files:
 
 ```shell
 java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
-    --add-opens=java.base/java.lang=ALL-UNNAMED \
-    --add-opens=java.base/java.net=ALL-UNNAMED \
-    -jar gateway-ha.jar server gateway-config.yml
+    -jar gateway-ha.jar gateway-config.yml
 ```
 
 ### Helm

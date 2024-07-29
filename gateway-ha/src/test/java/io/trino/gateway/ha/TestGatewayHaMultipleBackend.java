@@ -15,6 +15,8 @@ package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import io.airlift.json.JsonCodec;
+import io.trino.client.QueryResults;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
@@ -39,6 +41,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaMultipleBackend
@@ -66,8 +69,10 @@ public class TestGatewayHaMultipleBackend
             throws Exception
     {
         adhocTrino = new TrinoContainer("trinodb/trino");
+        adhocTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         adhocTrino.start();
         scheduledTrino = new TrinoContainer("trinodb/trino");
+        scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         scheduledTrino.start();
 
         int backend1Port = adhocTrino.getMappedPort(8080);
@@ -136,7 +141,7 @@ public class TestGatewayHaMultipleBackend
                         .post(requestBody)
                         .build();
         Response response1 = httpClient.newCall(request1).execute();
-        assertThat(response1.body().string()).contains("http://localhost:" + adhocTrino.getMappedPort(8080));
+        assertThat(response1.body().string()).contains("http://localhost:" + routerPort);
         // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the
         // routing group
         Request request4 =
@@ -147,7 +152,32 @@ public class TestGatewayHaMultipleBackend
                         .addHeader("X-Trino-Routing-Group", "scheduled")
                         .build();
         Response response4 = httpClient.newCall(request4).execute();
-        assertThat(response4.body().string()).contains("http://localhost:" + scheduledTrino.getMappedPort(8080));
+        assertThat(response4.body().string()).contains("http://localhost:" + routerPort);
+    }
+
+    @Test
+    public void testDeleteQueryId()
+            throws IOException
+    {
+        RequestBody requestBody =
+                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+        Request request =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "scheduled")
+                        .build();
+        Response response = httpClient.newCall(request).execute();
+        JsonCodec<QueryResults> responseCodec = JsonCodec.jsonCodec(QueryResults.class);
+        QueryResults queryResults = responseCodec.fromJson(response.body().string());
+
+        Request deleteRequest = new Request.Builder()
+                .url(queryResults.getNextUri().toURL())
+                .delete()
+                .build();
+        Response deleteResponse = httpClient.newCall(deleteRequest).execute();
+        assertThat(deleteResponse.code()).isBetween(200, 204);
     }
 
     @Test

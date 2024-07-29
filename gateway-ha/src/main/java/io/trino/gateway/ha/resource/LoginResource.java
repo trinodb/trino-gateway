@@ -38,6 +38,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,12 @@ public class LoginResource
     {
         this.oauthManager = oauthManager;
         this.formAuthManager = formAuthManager;
+    }
+
+    @GET
+    public Response getRoot()
+    {
+        return Response.seeOther(URI.create("/trino-gateway")).build();
     }
 
     @POST
