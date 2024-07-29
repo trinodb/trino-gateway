@@ -63,9 +63,9 @@ final class TestTrinoQueryProperties
     {
         JsonCodec<TrinoQueryProperties> codec = JsonCodec.jsonCodec(TrinoQueryProperties.class);
         TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
-                "SELECT c1 from c.s.t1",
-                "SELECT",
-                "SELECT",
+                "",
+                "",
+                "",
                 ImmutableList.of(),
                 Optional.empty(),
                 Optional.empty(),

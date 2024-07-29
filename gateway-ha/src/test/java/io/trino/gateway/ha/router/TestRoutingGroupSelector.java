@@ -397,7 +397,10 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
 
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
 
         assertThat(trinoQueryProperties.getTables()).isEqualTo(tables);
         assertThat(trinoQueryProperties.getSchemas()).isEqualTo(schemas);
@@ -418,8 +421,10 @@ final class TestRoutingGroupSelector
         BufferedReader bufferedReader = new BufferedReader(new FileReader("src/test/resources/wide_select.sql", UTF_8));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
-
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
         assertThat(trinoQueryProperties.tablesContains("kat.schem.widetable")).isTrue();
     }
 }

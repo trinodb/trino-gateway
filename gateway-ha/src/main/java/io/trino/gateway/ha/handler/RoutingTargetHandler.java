@@ -47,6 +47,8 @@ public class RoutingTargetHandler
     private final RoutingGroupSelector routingGroupSelector;
     private final List<String> statementPaths;
     private final List<Pattern> extraWhitelistPaths;
+    private final boolean requestAnalyserClientsUseV2Format;
+    private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
 
     @Inject
@@ -57,8 +59,10 @@ public class RoutingTargetHandler
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
-        this.statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        this.extraWhitelistPaths = requireNonNull(haGatewayConfiguration.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
+        statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
+        extraWhitelistPaths = requireNonNull(haGatewayConfiguration.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
+        requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
+        requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
@@ -96,9 +100,9 @@ public class RoutingTargetHandler
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)
     {
-        String queryId = extractQueryIdIfPresent(request, statementPaths);
-        if (!isNullOrEmpty(queryId)) {
-            return Optional.of(routingManager.findBackendForQueryId(queryId));
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+        if (queryId.isPresent()) {
+            return queryId.map(routingManager::findBackendForQueryId);
         }
         if (cookiesEnabled && request.getCookies() != null) {
             List<GatewayCookie> cookies = Arrays.stream(request.getCookies())
