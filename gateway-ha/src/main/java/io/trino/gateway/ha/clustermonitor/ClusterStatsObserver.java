@@ -13,18 +13,23 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import io.trino.gateway.ha.router.BackendStateMBeanExporter;
 import io.trino.gateway.ha.router.BackendStateManager;
 
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsObserver
         implements TrinoClusterStatsObserver
 {
     private final BackendStateManager backendStateManager;
+    private final BackendStateMBeanExporter backendStateMBeanExporter;
 
-    public ClusterStatsObserver(BackendStateManager backendStateManager)
+    public ClusterStatsObserver(BackendStateManager backendStateManager, BackendStateMBeanExporter backendStateMBeanExporter)
     {
-        this.backendStateManager = backendStateManager;
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
+        this.backendStateMBeanExporter = requireNonNull(backendStateMBeanExporter, "backendStateMBeanExporter is null");
     }
 
     @Override
@@ -33,5 +38,6 @@ public class ClusterStatsObserver
         for (ClusterStats clusterStats : clustersStats) {
             backendStateManager.updateStates(clusterStats.clusterId(), clusterStats);
         }
+        backendStateMBeanExporter.updateExport();
     }
 }

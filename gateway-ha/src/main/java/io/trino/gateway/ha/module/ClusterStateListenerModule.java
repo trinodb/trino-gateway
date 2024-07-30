@@ -23,6 +23,7 @@ import io.trino.gateway.ha.clustermonitor.HealthCheckObserver;
 import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
+import io.trino.gateway.ha.router.BackendStateMBeanExporter;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingManager;
 
@@ -46,11 +47,12 @@ public class ClusterStateListenerModule
     @Singleton
     public List<TrinoClusterStatsObserver> getClusterStatsObservers(
             RoutingManager mgr,
-            BackendStateManager backendStateManager)
+            BackendStateManager backendStateManager,
+            BackendStateMBeanExporter backendStateMBeanExporter)
     {
         return ImmutableList.<TrinoClusterStatsObserver>builder()
                 .add(new HealthCheckObserver(mgr))
-                .add(new ClusterStatsObserver(backendStateManager))
+                .add(new ClusterStatsObserver(backendStateManager, backendStateMBeanExporter))
                 .build();
     }
 
