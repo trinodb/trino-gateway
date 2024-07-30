@@ -48,6 +48,14 @@ condition: |
 actions:
   - "result.put(\"routingGroup\", \"defaults-group\")"
 ---
+name: "system-group"
+description: "capture queries to system catalog"
+condition: |
+  trinoQueryProperties.getCatalogs().contains("system")
+actions:
+  - "result.put(\"routingGroup\", \"system\")"
+
+---
 name: "nomatch"
 priority: -1
 description: "default group to catch if no other rules fired"

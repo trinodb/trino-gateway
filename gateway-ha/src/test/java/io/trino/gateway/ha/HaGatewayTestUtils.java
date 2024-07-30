@@ -103,7 +103,8 @@ public class HaGatewayTestUtils
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
                         .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
-                        .replace("LOCALHOST_JKS", Paths.get(resource.toURI()).toFile().getAbsolutePath());
+                        .replace("LOCALHOST_JKS", Paths.get(resource.toURI()).toFile().getAbsolutePath())
+                        .replace("RESOURCES_DIR", Paths.get("src", "test", "resources").toFile().getAbsolutePath());
 
         File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
 
