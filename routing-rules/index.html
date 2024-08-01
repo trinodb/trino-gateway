@@ -1,0 +1,1656 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Overview, guides, reference documentation and other reosurces for Trino Gateway.">
+      
+      
+        <meta name="author" content="Trino Gateway contributors">
+      
+      
+        <link rel="canonical" href="https://trinodb.github.io/trino-gateway/routing-rules/">
+      
+      
+        <link rel="prev" href="../security/">
+      
+      
+        <link rel="next" href="../routing-logic/">
+      
+      
+      <link rel="icon" href="../assets/logos/trino-favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.30">
+    
+    
+      
+        <title>Routing rules - Trino Gateway</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Routing rules - Trino Gateway" >
+      
+        <meta  property="og:description"  content="Overview, guides, reference documentation and other reosurces for Trino Gateway." >
+      
+        <meta  property="og:image"  content="https://trinodb.github.io/trino-gateway/assets/images/social/routing-rules.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="https://trinodb.github.io/trino-gateway/routing-rules/" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Routing rules - Trino Gateway" >
+      
+        <meta  name="twitter:description"  content="Overview, guides, reference documentation and other reosurces for Trino Gateway." >
+      
+        <meta  name="twitter:image"  content="https://trinodb.github.io/trino-gateway/assets/images/social/routing-rules.png" >
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#routing-rules" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Trino Gateway" class="md-header__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trino Gateway
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Routing rules
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
+    
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+    
+  
+  Contribute
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Trino Gateway" class="md-nav__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    Trino Gateway
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Get started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Get started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Operation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Routing rules
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Routing rules
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#defining-your-routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining your routing rules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trinorequestuser" class="md-nav__link">
+    <span class="md-ellipsis">
+      TrinoRequestUser
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trinoqueryproperties" class="md-nav__link">
+    <span class="md-ellipsis">
+      TrinoQueryProperties
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#isanalyzerequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      isAnalyzeRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maxbodysize" class="md-nav__link">
+    <span class="md-ellipsis">
+      maxBodySize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isclientsusev2format" class="md-nav__link">
+    <span class="md-ellipsis">
+      isClientsUseV2Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tokenuserfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      tokenUserField
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oauthtokeninfourl" class="md-nav__link">
+    <span class="md-ellipsis">
+      oauthTokenInfoUrl
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-of-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution of Rules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution of Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rule-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rule Priority
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rule Priority">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#composite-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composite Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-statements-mvel-flow-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      If statements (MVEL Flow Control)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enabling-routing-rules-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling routing rules engine
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing-logic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routing logic
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gateway-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gateway API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resource-groups-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resource groups API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-to-airlift/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Migration to Airlift
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contribute
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Contribute
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#defining-your-routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defining your routing rules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trinorequestuser" class="md-nav__link">
+    <span class="md-ellipsis">
+      TrinoRequestUser
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#trinoqueryproperties" class="md-nav__link">
+    <span class="md-ellipsis">
+      TrinoQueryProperties
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#isanalyzerequest" class="md-nav__link">
+    <span class="md-ellipsis">
+      isAnalyzeRequest
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maxbodysize" class="md-nav__link">
+    <span class="md-ellipsis">
+      maxBodySize
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isclientsusev2format" class="md-nav__link">
+    <span class="md-ellipsis">
+      isClientsUseV2Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tokenuserfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      tokenUserField
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oauthtokeninfourl" class="md-nav__link">
+    <span class="md-ellipsis">
+      oauthTokenInfoUrl
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-of-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Execution of Rules
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution of Rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rule-priority" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rule Priority
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rule Priority">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#composite-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Composite Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-statements-mvel-flow-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      If statements (MVEL Flow Control)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#enabling-routing-rules-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling routing rules engine
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/trinodb/trino-gateway/edit/main/docs/routing-rules.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway/raw/main/docs/routing-rules.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
+    </a>
+  
+
+
+<h1 id="routing-rules">Routing rules<a class="headerlink" href="#routing-rules" title="Permanent link">&para;</a></h1>
+<p>Trino Gateway includes a routing rules engine.</p>
+<p>By default, Trino Gateway reads the <code>X-Trino-Routing-Group</code> request header to
+route requests. If this header is not specified, requests are sent to default
+routing group (adhoc).</p>
+<p>The routing rules engine feature enables you to write custom logic to route
+requests based on the request info such as any of the <a href="https://trino.io/docs/current/develop/client-protocol.html#client-request-headers">request
+headers</a>.
+Routing rules are separated from Trino Gateway application code to a
+configuration file, allowing for dynamic rule changes.</p>
+<h3 id="defining-your-routing-rules">Defining your routing rules<a class="headerlink" href="#defining-your-routing-rules" title="Permanent link">&para;</a></h3>
+<p>To express and fire routing rules, we use the
+<a href="https://github.com/j-easy/easy-rules">easy-rules</a> engine. These rules should be
+stored in a YAML file. Rules consist of a name, description, condition, and list
+of actions. If the condition of a particular rule evaluates to true, its actions
+are fired.</p>
+<pre><code class="language-yaml">---
+name: &quot;airflow&quot;
+description: &quot;if query from airflow, route to etl group&quot;
+condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot;'
+actions:
+  - 'result.put(&quot;routingGroup&quot;, &quot;etl&quot;)'
+---
+name: &quot;airflow special&quot;
+description: &quot;if query from airflow with special label, route to etl-special group&quot;
+condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot; &amp;&amp; request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=special&quot;'
+actions:
+  - 'result.put(&quot;routingGroup&quot;, &quot;etl-special&quot;)'
+</code></pre>
+<p>In the condition, you can access the methods of a
+<a href="https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html">HttpServletRequest</a>
+object called <code>request</code>. Rules may also utilize <a href="#trinorequestuser">trinoRequestUser</a> 
+and <a href="#TrinoQueryProperties">trinoQueryProperties</a> 
+objects, which provide information about the user and query respectively.
+There should be at least one action of the form
+<code>result.put(\"routingGroup\", \"foo\")</code> which says that if a request satisfies
+the condition, it should be routed to <code>foo</code>.</p>
+<p>The condition and actions are written in <a href="http://mvel.documentnode.com/">MVEL</a>,
+an expression language with Java-like syntax. In most cases, users can write
+their conditions/actions in Java syntax and expect it to work. There are some
+MVEL-specific operators that could be useful though. For example, instead of
+doing a null-check before accessing the <code>String.contains</code> method like this:</p>
+<pre><code class="language-yaml">condition: 'request.getHeader(&quot;X-Trino-Client-Tags&quot;) != null &amp;&amp; request.getHeader(&quot;X-Trino-Client-Tags&quot;).contains(&quot;label=foo&quot;)'
+</code></pre>
+<p>You can use the <code>contains</code> operator</p>
+<pre><code class="language-yaml">condition: 'request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=foo&quot;'
+</code></pre>
+<p>If no rules match, then request is routed to adhoc.</p>
+<h3 id="trinorequestuser">TrinoRequestUser<a class="headerlink" href="#trinorequestuser" title="Permanent link">&para;</a></h3>
+<p>This class attempts to extract the user from a request. In order, it attempts
+1. The <code>X-Trino-User</code> header
+2. The <code>Authorization: Basic</code> header
+3. The <code>Authorization: Bearer</code> header. Requires configuring an OAuth2 User Info URL
+4. The <code>Trino-UI-Token</code> or <code>__Secure-Trino-ID-Token</code> cookie</p>
+<p>Kerberos and Certificate authentication are not currently supported. 
+If the request contains the <code>Authorization: Bearer</code> header, an attempt will be made to treat the
+token as a JWT and deserialize it. If this is successful, the value of the claim named in <code>requestAnalyzerConfig.tokenUserField</code>
+is used as the username. By default, this is the <code>email</code> claim. If the token is not a valid JWT,
+and <code>requestAnalyzerConfig.oauthTokenInfoUrl</code> is configured, then the token will be exchanged with the
+Info URL. Responses are cached for 10 minutes to avoid triggering rate limits. </p>
+<p>You may call <code>trinoRequestUser.getUser()</code> and<br />
+<code>trinoRequestUser.getUserInfo()</code> in your routing rules. If a user was not successfully extracted,
+<code>trinoRequestUser.getUser()</code> will return an empty <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html">Optional</a>.
+<code>trinoRequestUser.getUserInfo()</code> will return an <a href="https://www.javadoc.io/doc/com.nimbusds/oauth2-oidc-sdk/5.34/com/nimbusds/openid/connect/sdk/claims/UserInfo.html">Optional\&lt;UserInfo&gt;</a>
+if a token is successfully exchanged with the <code>oauthTokenInfoUrl</code>, and an empty <code>Optional</code> otherwise.</p>
+<p><code>trinoRequestUser.userExistsAndEquals("usernameToTest")</code> can be used to check a username against the extracted user. It
+will return <code>False</code> if a user has not been extracted.</p>
+<p>User extraction is only available if enabled by configuring <code>requestAnalyzerConfig.isAnalyzeRequest = True</code></p>
+<h3 id="trinoqueryproperties">TrinoQueryProperties<a class="headerlink" href="#trinoqueryproperties" title="Permanent link">&para;</a></h3>
+<p>This class attempts to parse the body of a request as SQL. Note that only a syntactic analysis is performed! If a query
+references a view, then that view will not be expanded, and tables referenced by the view will not be recognized. Note 
+that Views and Materialized Views are treated as tables and added to the list of tables in all contexts, including 
+statements such as <code>CREATE VIEW</code>. 
+A routing rule can call the following methods on the <code>trinoQueryProperties</code> object: <br />
+* <code>boolean isNewQuerySubmission()</code>: is the request a POST to the <code>v1/statement</code> query endpoint. 
+* <code>boolean isQueryParsingSuccessful()</code>: was the request successfully parsed. 
+* <code>String getQueryType()</code>: the class name of the <code>Statement</code>, e.g. <code>ShowCreate</code>. Note that these are not mapped
+to the <code>ResourceGroup</code> query types. For a full list of potential query types, see the classes in 
+<a href="https://github.com/trinodb/trino/blob/2a882933937427e28ea0a3906ab13a60bcb4faad/core/trino-main/src/main/java/io/trino/util/StatementUtils.java#L170">STATEMENT_QUERY_TYPES</a>
+* <code>String getResourceGroupQueryType()</code>: the Resource Group query type, e.g. <code>SELECT</code>, <code>DATA_DEFINITION</code>. For a full list
+see <a href="https://trino.io/docs/current/admin/resource-groups.html#selector-rules">queryType in the Trino documentation</a> 
+* <code>String getDefaultCatalog()</code>: the default catalog, if set. It may or may not be referenced in the actual SQL
+* <code>String getDefaultSchema()</code>: the default schema,  if set. It may or may not be referenced in the actual SQL
+* <code>Set&lt;String&gt; getCatalogs()</code>: the set of catalogs used in the query. Includes the default catalog if used by 
+a non-fully qualified table reference
+* <code>Set&lt;String&gt; getSchemas()</code>: the set of schemas used in the query. Includes the default schema if used by
+  a non-fully qualified table reference
+* <code>Set&lt;String&gt; getCatalogSchemas()</code> the set of qualified schemas used in the query, in the form <code>cat.schem</code> 
+* <code>boolean tablesContains(String testName)</code> returns true if the query contains a reference to the table <code>testName</code>.
+<code>testName</code> should be fully qualified, for example <code>testcat.testschema.testtable</code>
+* <code>Set&lt;QualifiedName&gt; getTables()</code>: the set of tables used in the query. These are fully qualified, any partially
+qualified table reference in the SQL will be qualified by the default catalog and schema.
+* <code>String getBody()</code>: the raw request body</p>
+<h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
+<p>The <code>trinoQueryProperties</code>  are configured under the <code>requestAnalyzerConfig</code> configuration 
+node.</p>
+<h4 id="isanalyzerequest">isAnalyzeRequest<a class="headerlink" href="#isanalyzerequest" title="Permanent link">&para;</a></h4>
+<p>Set to <code>True</code> to make <code>trinoQueryProperties</code> and <code>trinoRequestUser</code> available</p>
+<h4 id="maxbodysize">maxBodySize<a class="headerlink" href="#maxbodysize" title="Permanent link">&para;</a></h4>
+<p>By default, the max body size is 1,000,000 characters. This can be modified by configuring 
+<code>maxBodySize</code>. If the request body is greater or equal to this limit, Trino Gateway will not 
+process the query. A buffer of length <code>maxBodySize</code> will be allocated per query, so reduce 
+this value if you observe excessive GC. <code>maxBodySize</code> cannot be set to values larger than 2**31-1, 
+the max size of a Java String.</p>
+<h4 id="isclientsusev2format">isClientsUseV2Format<a class="headerlink" href="#isclientsusev2format" title="Permanent link">&para;</a></h4>
+<p>Some commercial extensions to Trino use the V2 Request Structure
+<a href="https://github.com/trinodb/trino/wiki/Trino-v2-client-protocol#submit-a-query">V2 style request structure</a>. Support for V2-style requests can be enabled by setting this 
+property to true. If you use a commercial version of Trino, ask your vendor how to set this configuration. </p>
+<h4 id="tokenuserfield">tokenUserField<a class="headerlink" href="#tokenuserfield" title="Permanent link">&para;</a></h4>
+<p>When extracting the user from a JWT token, this field is used as the username. By default, the <code>email</code> 
+claim is used. </p>
+<h4 id="oauthtokeninfourl">oauthTokenInfoUrl<a class="headerlink" href="#oauthtokeninfourl" title="Permanent link">&para;</a></h4>
+<p>If configured, then Trino will attempt to retrieve user info by exchanging potential authorization tokens
+with this URL. Responses are cached for 10 minutes to avoid triggering rate limits.</p>
+<h3 id="execution-of-rules">Execution of Rules<a class="headerlink" href="#execution-of-rules" title="Permanent link">&para;</a></h3>
+<p>All rules whose conditions are satisfied will fire. For example, in the
+"airflow" and "airflow special" example rules given above, a query with source
+<code>airflow</code> and label <code>special</code> will satisfy both rules. The <code>routingGroup</code> is set
+to <code>etl</code> and then to <code>etl-special</code> because of the order in which the rules of
+defined. If we swap the order of the rules, then we would possibly get <code>etl</code>
+instead, which is undesirable.</p>
+<p>One could solve this by writing the rules such that they're atomic (any query
+will match exactly one rule). For example we can change the first rule to</p>
+<pre><code class="language-yaml">---
+name: &quot;airflow&quot;
+description: &quot;if query from airflow, route to etl group&quot;
+condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot; &amp;&amp; request.getHeader(&quot;X-Trino-Client-Tags&quot;) == null'
+actions:
+  - 'result.put(&quot;routingGroup&quot;, &quot;etl&quot;)'
+---
+</code></pre>
+<p>This could be hard to maintain as we add more rules. To have better control over
+the execution of rules, we could use rule priorities and composite rules.
+Overall, with priorities, composite rules, and the constructs that MVEL support,
+you should likely be able to express your routing logic.</p>
+<h4 id="rule-priority">Rule Priority<a class="headerlink" href="#rule-priority" title="Permanent link">&para;</a></h4>
+<p>We can assign an integer value <code>priority</code> to a rule. The lower this integer is,
+the earlier it will fire. If the priority is not specified, the priority is
+defaulted to INT_MAX. We can add priorities to our airflow and airflow special
+rule like so:</p>
+<pre><code class="language-yaml">---
+name: &quot;airflow&quot;
+description: &quot;if query from airflow, route to etl group&quot;
+priority: 0
+condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot;'
+actions:
+  - 'result.put(&quot;routingGroup&quot;, &quot;etl&quot;)'
+---
+name: &quot;airflow special&quot;
+description: &quot;if query from airflow with special label, route to etl-special group&quot;
+priority: 1
+condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot; &amp;&amp; request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=special&quot;'
+actions:
+  - 'result.put(&quot;routingGroup&quot;, &quot;etl-special&quot;)'
+</code></pre>
+<p>Note that both rules will still fire. The difference is that we've guaranteed
+that the first rule (priority 0) is fired before the second rule (priority 1).
+Thus <code>routingGroup</code> is set to <code>etl</code> and then to <code>etl-special</code>, so the
+<code>routingGroup</code> will always be <code>etl-special</code> in the end.</p>
+<p>Above, the more specific rules have less priority since we want them to be the
+last to set <code>routingGroup</code>. This is a little counterintuitive. To further
+control the execution of rules, for example to have only one rule fire, we can
+use composite rules.</p>
+<h5 id="composite-rules">Composite Rules<a class="headerlink" href="#composite-rules" title="Permanent link">&para;</a></h5>
+<p>First, please refer to easy-rule composite rules docs:
+https://github.com/j-easy/easy-rules/wiki/defining-rules#composite-rules</p>
+<p>Above, we saw how to control the order of rule execution using priorities. In
+addition to this, we could have only the first rule matched to be fired (the
+highest priority one) and the rest ignored. We can use <code>ActivationRuleGroup</code> to
+achieve this.</p>
+<pre><code class="language-yaml">---
+name: &quot;airflow rule group&quot;
+description: &quot;routing rules for query from airflow&quot;
+compositeRuleType: &quot;ActivationRuleGroup&quot;
+composingRules:
+  - name: &quot;airflow special&quot;
+    description: &quot;if query from airflow with special label, route to etl-special group&quot;
+    priority: 0
+    condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot; &amp;&amp; request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=special&quot;'
+    actions:
+      - 'result.put(&quot;routingGroup&quot;, &quot;etl-special&quot;)'
+  - name: &quot;airflow&quot;
+    description: &quot;if query from airflow, route to etl group&quot;
+    priority: 1
+    condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot;'
+    actions:
+      - 'result.put(&quot;routingGroup&quot;, &quot;etl&quot;)'
+</code></pre>
+<p>Note that the priorities have switched. The more specific rule has a higher
+priority, since we want it to be fired first. A query coming from airflow with
+special label is matched to the "airflow special" rule first, since it's higher
+priority, and the second rule is ignored. A query coming from airflow with no
+labels does not match the first rule, and is then tested and matched to the
+second rule.</p>
+<p>We can also use <code>ConditionalRuleGroup</code> and <code>ActivationRuleGroup</code> to implement an
+if/else workflow. The following logic in pseudocode:</p>
+<pre><code>if source == &quot;airflow&quot;:
+  if clientTags[&quot;label&quot;] == &quot;foo&quot;:
+    return &quot;etl-foo&quot;
+  else if clientTags[&quot;label&quot;] = &quot;bar&quot;:
+    return &quot;etl-bar&quot;
+  else
+    return &quot;etl&quot;
+</code></pre>
+<p>Can be implemented with these rules:</p>
+<pre><code class="language-yaml">name: &quot;airflow rule group&quot;
+description: &quot;routing rules for query from airflow&quot;
+compositeRuleType: &quot;ConditionalRuleGroup&quot;
+composingRules:
+  - name: &quot;main condition&quot;
+    description: &quot;source is airflow&quot;
+    priority: 0 # rule with the highest priority acts as main condition
+    condition: 'request.getHeader(&quot;X-Trino-Source&quot;) == &quot;airflow&quot;'
+    actions:
+      - &quot;&quot;
+  - name: &quot;airflow subrules&quot;
+    compositeRuleType: &quot;ActivationRuleGroup&quot; # use ActivationRuleGroup to simulate if/else
+    composingRules:
+      - name: &quot;label foo&quot;
+        description: &quot;label client tag is foo&quot;
+        priority: 0
+        condition: 'request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=foo&quot;'
+        actions:
+          - 'result.put(&quot;routingGroup&quot;, &quot;etl-foo&quot;)'
+      - name: &quot;label bar&quot;
+        description: &quot;label client tag is bar&quot;
+        priority: 0
+        condition: 'request.getHeader(&quot;X-Trino-Client-Tags&quot;) contains &quot;label=bar&quot;'
+        actions:
+          - 'result.put(&quot;routingGroup&quot;, &quot;etl-bar&quot;)'
+      - name: &quot;airflow default&quot;
+        description: &quot;airflow queries default to etl&quot;
+        condition: &quot;true&quot;
+        actions:
+          - 'result.put(&quot;routingGroup&quot;, &quot;etl&quot;)'
+</code></pre>
+<h5 id="if-statements-mvel-flow-control">If statements (MVEL Flow Control)<a class="headerlink" href="#if-statements-mvel-flow-control" title="Permanent link">&para;</a></h5>
+<p>Above, we saw how we can use <code>ConditionalRuleGroup</code> and <code>ActivationRuleGroup</code> to
+implement and <code>if/else</code> workflow. We could also take advantage of the fact that
+MVEL supports <code>if</code> statements and other flow control (loops, etc). The following
+logic in pseudocode:</p>
+<pre><code>if source == &quot;airflow&quot;:
+  if clientTags[&quot;label&quot;] == &quot;foo&quot;:
+    return &quot;etl-foo&quot;
+  else if clientTags[&quot;label&quot;] = &quot;bar&quot;:
+    return &quot;etl-bar&quot;
+  else
+    return &quot;etl&quot;
+</code></pre>
+<p>Can be implemented with these rules:</p>
+<pre><code class="language-yaml">---
+name: &quot;airflow rules&quot;
+description: &quot;if query from airflow&quot;
+condition: &quot;request.getHeader(\&quot;X-Trino-Source\&quot;) == \&quot;airflow\&quot;&quot;
+actions:
+  - &quot;if (request.getHeader(\&quot;X-Trino-Client-Tags\&quot;) contains \&quot;label=foo\&quot;) {
+      result.put(\&quot;routingGroup\&quot;, \&quot;etl-foo\&quot;)
+    }
+    else if (request.getHeader(\&quot;X-Trino-Client-Tags\&quot;) contains \&quot;label=bar\&quot;) {
+      result.put(\&quot;routingGroup\&quot;, \&quot;etl-bar\&quot;)
+    }
+    else {
+      result.put(\&quot;routingGroup\&quot;, \&quot;etl\&quot;)
+    }&quot;
+</code></pre>
+<h3 id="enabling-routing-rules-engine">Enabling routing rules engine<a class="headerlink" href="#enabling-routing-rules-engine" title="Permanent link">&para;</a></h3>
+<p>To enable routing rules engine, find the following lines in
+<code>gateway-ha-config.yml</code>. Set <code>rulesEngineEnabled</code> to True and <code>rulesConfigPath</code>
+to the path to your rules config file.</p>
+<pre><code>routingRules:
+  rulesEngineEnabled: true
+  rulesConfigPath: &quot;src/test/resources/rules/routing_rules.yml&quot; # replace with path to your rules config file
+</code></pre>
+<p>If there is error opening routing rules configuration file, then request is routed
+using routing group header <code>X-Trino-Routing-Group</code> as default.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Trino Gateway is open source software licensed under the
+<a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE"Apache License 2.0</a>
+and supported by the <a href="https://trino.io/foundation">Trino Software Foundation</a>.
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.youtube.com/c/trinodb" target="_blank" rel="noopener" title="www.youtube.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://trino.io/slack" target="_blank" rel="noopener" title="trino.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/trino-software-foundation" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "navigation.instant", "navigation.path", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+        <script src="../assets/js/extra.js"></script>
+      
+    
+  </body>
+</html>

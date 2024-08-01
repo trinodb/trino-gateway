@@ -1,0 +1,1587 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Overview, guides, reference documentation and other reosurces for Trino Gateway.">
+      
+      
+        <meta name="author" content="Trino Gateway contributors">
+      
+      
+        <link rel="canonical" href="https://trinodb.github.io/trino-gateway/installation/">
+      
+      
+        <link rel="prev" href="../quickstart/">
+      
+      
+        <link rel="next" href="../operation/">
+      
+      
+      <link rel="icon" href="../assets/logos/trino-favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.30">
+    
+    
+      
+        <title>Installation - Trino Gateway</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Installation - Trino Gateway" >
+      
+        <meta  property="og:description"  content="Overview, guides, reference documentation and other reosurces for Trino Gateway." >
+      
+        <meta  property="og:image"  content="https://trinodb.github.io/trino-gateway/assets/images/social/installation.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="https://trinodb.github.io/trino-gateway/installation/" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Installation - Trino Gateway" >
+      
+        <meta  name="twitter:description"  content="Overview, guides, reference documentation and other reosurces for Trino Gateway." >
+      
+        <meta  name="twitter:image"  content="https://trinodb.github.io/trino-gateway/assets/images/social/installation.png" >
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#installation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Trino Gateway" class="md-header__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trino Gateway
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Installation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
+    
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../routing-rules/" class="md-tabs__link">
+          
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+    
+  
+  Contribute
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Trino Gateway" class="md-nav__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    Trino Gateway
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Release notes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Get started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Get started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java" class="md-nav__link">
+    <span class="md-ellipsis">
+      Java
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operating-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Operating system
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processor-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Processor architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backend database
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trino-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trino clusters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trino-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trino configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure routing rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure logging
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proxying-additional-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      Proxying additional paths
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-behind-a-load-balancer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure behind a load balancer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-trino-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Trino Gateway
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Trino Gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helm
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Operation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing-rules/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routing rules
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing-logic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routing logic
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gateway-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Gateway API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resource-groups-api/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Resource groups API
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code architecture
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-to-airlift/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Migration to Airlift
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Contribute
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Contribute
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Code
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Documentation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Requirements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#java" class="md-nav__link">
+    <span class="md-ellipsis">
+      Java
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operating-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Operating system
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#processor-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      Processor architecture
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-database" class="md-nav__link">
+    <span class="md-ellipsis">
+      Backend database
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trino-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trino clusters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trino-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trino configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configure-routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure routing rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure logging
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proxying-additional-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      Proxying additional paths
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-behind-a-load-balancer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure behind a load balancer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-trino-gateway" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Trino Gateway
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Trino Gateway">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#helm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helm
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/trinodb/trino-gateway/edit/main/docs/installation.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway/raw/main/docs/installation.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
+    </a>
+  
+
+
+<h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>Trino Gateway is distributed as an executable JAR file. The <a href="../release-notes/">release
+notes</a> contain links to download specific versions.
+Alternatively, you can look at the <a href="../development/">development instructions</a> to
+build the JAR file or use the TrinoGatewayRunner for local testing.
+The <a href="../quickstart/">quickstart guide</a> contains instructions for running the
+application locally. </p>
+<p>Following are instructions for installing Trino Gateway for production
+environments.</p>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
+<p>Consider the following requirements for your Trino Gateway installation.</p>
+<h3 id="java">Java<a class="headerlink" href="#java" title="Permanent link">&para;</a></h3>
+<p>Trino Gateway requires a Java 21 runtime. Older versions of Java can not be
+used. Newer versions might work but are not tested.</p>
+<p>Verify the Java version on your system with <code>java -version</code>.</p>
+<h3 id="operating-system">Operating system<a class="headerlink" href="#operating-system" title="Permanent link">&para;</a></h3>
+<p>No specific operating system is required. All testing and development is
+performed with Linux and MacOS.</p>
+<h3 id="processor-architecture">Processor architecture<a class="headerlink" href="#processor-architecture" title="Permanent link">&para;</a></h3>
+<p>No specific processor architecture is required, as long as a suitable Java
+distribution is installed.  </p>
+<h3 id="backend-database">Backend database<a class="headerlink" href="#backend-database" title="Permanent link">&para;</a></h3>
+<p>Trino Gateway requires a MySQL or PostgreSQL database.</p>
+<p>Use the following scripts in the <code>gateway-ha/src/main/resources/</code> folder to
+initialize the database:</p>
+<ul>
+<li><code>gateway-ha-persistence-mysql.sql</code> for MySQL</li>
+<li><code>gateway-ha-persistence-postgres.sql</code> for PostgreSQL</li>
+</ul>
+<p>The files are also included in the JAR file.</p>
+<h3 id="trino-clusters">Trino clusters<a class="headerlink" href="#trino-clusters" title="Permanent link">&para;</a></h3>
+<p>The proxied Trino clusters behind the Trino Gateway must support the Trino JDBC
+driver and the Trino REST API for cluster and node health information.
+Typically, this means that Trino versions 354 and higher should work, however
+newer Trino versions are strongly recommended.</p>
+<p>Trino-derived projects and platforms may work if the Trino JDBC driver and the
+REST API are supported. For example, Starburst Galaxy and Starburst Enterprise
+are known to work. Trino deployments with the Helm chart and other means on
+various cloud platforms, such as Amazon EKS also work. However Amazon Athena
+does not work since it uses alternative, custom protocols and lacks the concept
+of individual clusters.</p>
+<h3 id="trino-configuration">Trino configuration<a class="headerlink" href="#trino-configuration" title="Permanent link">&para;</a></h3>
+<p>From a users perspective Trino Gateway acts as a transparent proxy for one 
+or more Trino clusters. The following Trino configuration tips should be 
+taken into account for all clusters behind the Trino Gateway.</p>
+<p>Process forwarded HTTP headers must be enabled:</p>
+<pre><code class="language-commandline">http-server.process-forwarded=true
+</code></pre>
+<p>Without this setting, first requests go from the user to Trino Gateway and then
+to Trino correctly. However, the URL for subsequent next URIs for more results
+in a query provided by Trino is then using the local URL of the Trino cluster,
+and not the URL of the Trino Gateway. This circumvents the Trino Gateway for all
+these requests, and is contrary to the purpose of using the Trino Gateway. In
+scenarios, where the local URL of the Trino cluster is private to the Trino
+cluster on the DNS/network level, these following calls might not work at all
+for users.</p>
+<p>This setting is also required for Trino to authenticate in the case TLS is 
+terminated at the Trino Gateway. Normally it refuses to authenticate plain HTTP 
+requests, but if <code>http-server.process-forwarded=true</code> it authenticates over 
+HTTP if the request includes <code>X-Forwarded-Proto: HTTPS</code>.</p>
+<p>Find more information in <a href="https://trino.io/docs/current/security/tls.html#use-a-load-balancer-to-terminate-tls-https">the related Trino documentation</a>.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<p>After downloading or building the JAR, rename it to <code>gateway-ha.jar</code>,
+and place it in a directory with read and write access such as <code>/opt/trinogateway</code>.</p>
+<p>Copy the example config file <code>gateway-ha-config.yml</code> from the <code>gateway-ha/</code>
+directory into the same directory, and update the configuration as needed.</p>
+<p>Each component of the Trino Gateway has a corresponding node in the
+configuration YAML file.</p>
+<h3 id="configure-routing-rules">Configure routing rules<a class="headerlink" href="#configure-routing-rules" title="Permanent link">&para;</a></h3>
+<p>Find more information in the <a href="../routing-rules/">routing rules documentation</a>.</p>
+<h3 id="configure-logging">Configure logging <a name="logging"><a class="headerlink" href="#configure-logging" title="Permanent link">&para;</a></h3>
+<p>To configure the logging level for various classes, specify the path to the 
+<code>log.properties</code> file by setting <code>log.levels-file</code> in <code>serverConfig</code>.</p>
+<p>For additional configurations, use the <code>log.*</code> properties from the 
+<a href="https://trino.io/docs/current/admin/properties-logging.html">Trino logging properties documentation</a> and specify
+the properties in <code>serverConfig</code>.</p>
+<h3 id="proxying-additional-paths">Proxying additional paths<a class="headerlink" href="#proxying-additional-paths" title="Permanent link">&para;</a></h3>
+<p>By default, Trino Gateway only proxies requests to paths starting with
+<code>/v1/statement</code>, <code>/v1/query</code>, <code>/ui</code>, <code>/v1/info</code>, <code>/v1/node</code>, <code>/ui/api/stats</code> and
+<code>/oauth</code>.</p>
+<p>If you want to proxy additional paths, you can add them by adding the
+<code>extraWhitelistPaths</code> node to your configuration YAML file.
+Trino Gateway takes regexes from <code>extraWhitelistPaths</code> and forwards only
+those requests with a URI that exactly match. Be sure
+to use single-quoted strings so that escaping is not required.</p>
+<pre><code class="language-yaml">extraWhitelistPaths:
+  - '/ui/insights'
+  - '/api/v1/biac'
+  - '/api/v1/dataProduct'
+  - '/api/v1/dataproduct'
+  - '/api/v2/.*'
+  - '/ext/faster'
+</code></pre>
+<h2 id="configure-behind-a-load-balancer">Configure behind a load balancer<a class="headerlink" href="#configure-behind-a-load-balancer" title="Permanent link">&para;</a></h2>
+<p>A possible deployment of Trino Gateway is to run multiple instances of Trino 
+Gateway behind another generic load balancer, such as a load balancer from 
+your cloud hosting provider. In this deployment you must configure the 
+<code>serverConfig</code> to include enabling process forwarded HTTP headers:</p>
+<pre><code class="language-yaml">serverConfig:
+  http-server.process-forwarded: true
+</code></pre>
+<h2 id="running-trino-gateway">Running Trino Gateway<a class="headerlink" href="#running-trino-gateway" title="Permanent link">&para;</a></h2>
+<p>Start Trino Gateway with the following java command in the directory of the
+JAR and YAML files:</p>
+<pre><code class="language-shell">java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
+    -jar gateway-ha.jar gateway-config.yml
+</code></pre>
+<h3 id="helm">Helm<a class="headerlink" href="#helm" title="Permanent link">&para;</a></h3>
+<p>Helm manages the deployment of Kubernetes applications by templating Kubernetes
+resources with a set of Helm charts. The Trino Gateway Helm chart consists 
+of the following components:</p>
+<ul>
+<li>A <code>config</code> node for general configuration</li>
+<li><code>dataStoreSecret</code>, <code>backendStateSecret</code> and <code>authenticationSecret</code> for 
+  providing sensitive configurations through Kubernetes secrets, </li>
+<li>Standard Helm options such as <code>replicaCount</code>, <code>resources</code> and <code>ingress</code>.</li>
+</ul>
+<p>The default <code>values.yaml</code> found in the <code>helm/trino-gateway</code> folder includes
+basic configuration options as an example. For a simple deployment, proceed with 
+the following steps:</p>
+<p>Create a yaml file containing the configuration for your <code>datastore</code>:</p>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; datastore.yaml
+dataStore:
+   jdbcUrl: jdbc:postgresql://yourdatabasehost:5432/gateway
+   user: postgres
+   password: secretpassword
+   driver: org.postgresql.Driver
+EOF
+</code></pre>
+<p>Create a Kubernetes secret from this file:</p>
+<pre><code class="language-shell">kubectl create secret generic datastore-yaml --from-file datastore.yaml --dry-run=client -o yaml | kubectl apply -f -
+</code></pre>
+<p>Create a values override with a name such as <code>values-override.yaml</code> and
+reference this secret in the <code>backendStateSecret</code> node:</p>
+<pre><code class="language-yaml">backendStateSecret:
+    name: &quot;datastore-yaml&quot;
+    key: &quot;datastore.yaml&quot;
+</code></pre>
+<p>When a Secret is created with the <code>--from-file</code> option, the filename is used as
+the key. Finally, you can deploy Trino Gateway with the chart from the root 
+of this repository:</p>
+<pre><code class="language-shell">helm install tg --values values-override.yaml helm/trino-gateway 
+</code></pre>
+<p>Secrets for <code>authenticationSecret</code> and <code>backendState</code> can be provisioned
+similarly. Alternatively,  you can directly define the <code>config.backEndState</code> 
+node in <code>values-override.yaml</code> and leave <code>backendStateSecret</code> undefined. 
+However, a <a href="https://kubernetes.
+io/docs/concepts/configuration/secret/">Secret</a>
+is recommended to protect the  database credentials required for this 
+configuration.</p>
+<h4 id="additional-options">Additional options<a class="headerlink" href="#additional-options" title="Permanent link">&para;</a></h4>
+<p>To implement routing rules, create a ConfigMap from your routing rules yaml
+definition:</p>
+<pre><code class="language-shell">kubectl create cm routing-rules --from-file your-routing-rules.yaml
+</code></pre>
+<p>Then mount it to your container:</p>
+<pre><code class="language-yaml">volumes:
+    - name: routing-rules
+      configMap:
+          name: routing-rules
+          items:
+              name: your-routing-rules.yaml
+              path: your-routing-rules.yaml
+
+volumeMounts:
+    - name: routing-rules
+      mountPath: &quot;/etc/routing-rules/your-routing-rules.yaml&quot;
+      subPath: your-routing-rules.yaml
+</code></pre>
+<p>Ensure that the <code>mountPath</code> matches the <code>rulesConfigPath</code> specified in your
+configuration. Note that the <code>subPath</code> is not strictly necessary, and if it 
+is not specified the file is mounted at <code>mountPath/&lt;configMap key&gt;</code>. 
+Kubernetes updates the mounted file when the ConfigMap is updated.</p>
+<p>Standard Helm oœptions such as <code>replicaCount</code>, <code>image</code>, <code>imagePullSecrets</code>, 
+<code>service</code>, <code>ingress</code> and <code>resources</code> are supported. These are defined in 
+<code>helm/values.yaml</code>. </p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Trino Gateway is open source software licensed under the
+<a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE"Apache License 2.0</a>
+and supported by the <a href="https://trino.io/foundation">Trino Software Foundation</a>.
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.youtube.com/c/trinodb" target="_blank" rel="noopener" title="www.youtube.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://trino.io/slack" target="_blank" rel="noopener" title="trino.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M94.12 315.1c0 25.9-21.16 47.06-47.06 47.06S0 341 0 315.1c0-25.9 21.16-47.06 47.06-47.06h47.06v47.06zm23.72 0c0-25.9 21.16-47.06 47.06-47.06s47.06 21.16 47.06 47.06v117.84c0 25.9-21.16 47.06-47.06 47.06s-47.06-21.16-47.06-47.06V315.1zm47.06-188.98c-25.9 0-47.06-21.16-47.06-47.06S139 32 164.9 32s47.06 21.16 47.06 47.06v47.06H164.9zm0 23.72c25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06H47.06C21.16 243.96 0 222.8 0 196.9s21.16-47.06 47.06-47.06H164.9zm188.98 47.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06s-21.16 47.06-47.06 47.06h-47.06V196.9zm-23.72 0c0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06V79.06c0-25.9 21.16-47.06 47.06-47.06 25.9 0 47.06 21.16 47.06 47.06V196.9zM283.1 385.88c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06-25.9 0-47.06-21.16-47.06-47.06v-47.06h47.06zm0-23.72c-25.9 0-47.06-21.16-47.06-47.06 0-25.9 21.16-47.06 47.06-47.06h117.84c25.9 0 47.06 21.16 47.06 47.06 0 25.9-21.16 47.06-47.06 47.06H283.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/trino-software-foundation" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.indexes", "navigation.instant", "navigation.path", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+        <script src="../assets/js/extra.js"></script>
+      
+    
+  </body>
+</html>
