@@ -1,0 +1,27 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: REQUEST_ROUTER_PORT
+
+dataStore:
+  jdbcUrl: jdbc:h2:DB_FILE_PATH
+  user: sa
+  password: sa
+  driver: org.h2.Driver
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+
+extraWhitelistPaths:
+  - '/v1/custom.*'
+  - '/custom/logout.*'
+
+gatewayCookieConfiguration:
+  enabled: true
+  cookieSigningSecret: "kjlhbfrewbyuo452cds3dc1234ancdsjh"
+
+oauth2GatewayCookieConfiguration:
+  deletePaths:
+    - "/custom/logout"
+
+routing:
+  addXForwardedHeaders: false

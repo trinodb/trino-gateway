@@ -63,7 +63,8 @@ From a users perspective Trino Gateway acts as a transparent proxy for one
 or more Trino clusters. The following Trino configuration tips should be 
 taken into account for all clusters behind the Trino Gateway.
 
-Process forwarded HTTP headers must be enabled:
+If all client and server communication is routed through Trino Gateway, 
+then process forwarded HTTP headers must be enabled:
 
 ```commandline
 http-server.process-forwarded=true
@@ -73,15 +74,21 @@ Without this setting, first requests go from the user to Trino Gateway and then
 to Trino correctly. However, the URL for subsequent next URIs for more results
 in a query provided by Trino is then using the local URL of the Trino cluster,
 and not the URL of the Trino Gateway. This circumvents the Trino Gateway for all
-these requests, and is contrary to the purpose of using the Trino Gateway. In
-scenarios, where the local URL of the Trino cluster is private to the Trino
-cluster on the DNS/network level, these following calls might not work at all
-for users.
+these requests. In scenarios, where the local URL of the Trino cluster is private 
+to the Trino cluster on the network level, these following calls do not work
+at all for users.
 
 This setting is also required for Trino to authenticate in the case TLS is 
 terminated at the Trino Gateway. Normally it refuses to authenticate plain HTTP 
 requests, but if `http-server.process-forwarded=true` it authenticates over 
 HTTP if the request includes `X-Forwarded-Proto: HTTPS`.
+
+To prevent Trino Gateway from sending `X-Forwarded-*` headers, add the following configuration:
+
+```yaml
+routing:
+  addXForwardedHeaders: false
+```
 
 Find more information in [the related Trino documentation](https://trino.io/docs/current/security/tls.html#use-a-load-balancer-to-terminate-tls-https).
 
