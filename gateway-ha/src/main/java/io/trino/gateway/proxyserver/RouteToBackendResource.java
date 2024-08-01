@@ -60,11 +60,12 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        if (servletRequest.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
+        MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
+        if (multiReadHttpServletRequest.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
             proxyHandlerStats.recordRequest();
         }
-        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
-        proxyRequestHandler.postRequest(body, servletRequest, asyncResponse, URI.create(remoteUri));
+        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+        proxyRequestHandler.postRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
     }
 
     @GET
