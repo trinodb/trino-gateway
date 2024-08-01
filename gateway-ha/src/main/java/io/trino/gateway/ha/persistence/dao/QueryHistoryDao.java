@@ -62,7 +62,7 @@ public interface QueryHistoryDao
     Long count(@Define("condition") String condition);
 
     @SqlQuery("""
-            SELECT CONCAT(FLOOR(created / 1000 / 60)) AS minute,
+            SELECT FLOOR(created / 1000 / 60) AS minute,
                    backend_url AS backend_url,
                    COUNT(1) AS query_count
             FROM query_history
