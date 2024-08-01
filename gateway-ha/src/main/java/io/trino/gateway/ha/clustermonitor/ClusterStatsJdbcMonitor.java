@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.net.MalformedURLException;
@@ -24,12 +25,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static java.lang.Math.max;
 
 public class ClusterStatsJdbcMonitor
         implements ClusterStatsMonitor
@@ -43,12 +48,15 @@ public class ClusterStatsJdbcMonitor
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
 
-    public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration)
+    private Optional<Integer> networkTimeoutMillis = Optional.empty();
+
+    public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration, MonitorConfiguration monitorConfiguration)
     {
         properties = new Properties();
         properties.setProperty("user", backendStateConfiguration.getUsername());
         properties.setProperty("password", backendStateConfiguration.getPassword());
         properties.setProperty("SSL", String.valueOf(backendStateConfiguration.getSsl()));
+        monitorConfiguration.getRequestTimeoutSeconds().ifPresent(t -> networkTimeoutMillis = Optional.of(t * 1000));
         log.info("state check configured");
     }
 
@@ -73,8 +81,16 @@ public class ClusterStatsJdbcMonitor
         }
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties)) {
-            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor())
-                    .callWithTimeout(() -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS);
+            networkTimeoutMillis.ifPresent(t -> {
+                try {
+                    conn.setNetworkTimeout(Executors.newSingleThreadExecutor(), 10); //executor is unused in TrinoConnection.setNetworkTimeout
+                }
+                catch (SQLException e) {
+                    log.error(e, "Could not set network timeout for JDBC health monitor");
+                }
+            });
+            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
+                    () -> conn.prepareStatement(STATE_QUERY), max(10, 1000 * networkTimeoutMillis.orElse(0)) + 1, TimeUnit.SECONDS);
             stmt.setString(1, (String) properties.get("user"));
             Map<String, Integer> partialState = new HashMap<>();
             ResultSet rs = stmt.executeQuery();

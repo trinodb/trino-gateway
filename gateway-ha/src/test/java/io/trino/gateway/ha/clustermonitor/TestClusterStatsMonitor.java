@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import io.trino.gateway.ha.config.BackendStateConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,13 +56,19 @@ public class TestClusterStatsMonitor
     @Test
     public void testJdbcMonitor()
     {
-        testClusterStatsMonitor(ClusterStatsJdbcMonitor::new);
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
     }
 
     @Test
     public void testInfoApiMonitor()
     {
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor());
+        MonitorConfiguration monitorConfigurationWithHttpOptions = new MonitorConfiguration();
+        monitorConfigurationWithHttpOptions.setRetries(10);
+        monitorConfigurationWithHttpOptions.setConnectTimeoutSeconds(10);
+        monitorConfigurationWithHttpOptions.setIdleTimeoutSeconds(5);
+        monitorConfigurationWithHttpOptions.setRequestTimeoutSeconds(30);
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new MonitorConfiguration()));
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(monitorConfigurationWithHttpOptions));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)

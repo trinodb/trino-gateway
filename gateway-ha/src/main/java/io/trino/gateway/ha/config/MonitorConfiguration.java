@@ -15,9 +15,19 @@ package io.trino.gateway.ha.config;
 
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 
+import java.util.Optional;
+
 public class MonitorConfiguration
 {
     private int taskDelaySeconds = ActiveClusterMonitor.MONITOR_TASK_DELAY_SECONDS;
+
+    private Optional<Integer> connectTimeoutSeconds = Optional.empty();
+
+    private Optional<Integer> requestTimeoutSeconds = Optional.empty();
+
+    private Optional<Integer> idleTimeoutSeconds = Optional.empty();
+
+    private int retries;
 
     public MonitorConfiguration() {}
 
@@ -29,5 +39,45 @@ public class MonitorConfiguration
     public void setTaskDelaySeconds(int taskDelaySeconds)
     {
         this.taskDelaySeconds = taskDelaySeconds;
+    }
+
+    public Optional<Integer> getConnectTimeoutSeconds()
+    {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(Integer connectTimeoutSeconds)
+    {
+        this.connectTimeoutSeconds = Optional.of(connectTimeoutSeconds);
+    }
+
+    public Optional<Integer> getRequestTimeoutSeconds()
+    {
+        return requestTimeoutSeconds;
+    }
+
+    public void setRequestTimeoutSeconds(Integer requestTimeoutSeconds)
+    {
+        this.requestTimeoutSeconds = Optional.of(requestTimeoutSeconds);
+    }
+
+    public Optional<Integer> getIdleTimeoutSeconds()
+    {
+        return idleTimeoutSeconds;
+    }
+
+    public void setIdleTimeoutSeconds(Integer idleTimeoutSeconds)
+    {
+        this.idleTimeoutSeconds = Optional.of(idleTimeoutSeconds);
+    }
+
+    public int getRetries()
+    {
+        return retries;
+    }
+
+    public void setRetries(int retries)
+    {
+        this.retries = retries;
     }
 }

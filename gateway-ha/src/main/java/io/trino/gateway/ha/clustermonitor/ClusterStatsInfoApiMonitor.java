@@ -17,25 +17,41 @@ import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.JsonResponseHandler;
 import io.airlift.http.client.Request;
+import io.airlift.http.client.UnexpectedResponseException;
 import io.airlift.http.client.jetty.JettyHttpClient;
+import io.airlift.log.Logger;
+import io.airlift.units.Duration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 
 public class ClusterStatsInfoApiMonitor
         implements ClusterStatsMonitor
 {
-    //TODO: make client options configurable
-    private static final HttpClient client = new JettyHttpClient(new HttpClientConfig());
-    private static final Logger log = LoggerFactory.getLogger(ClusterStatsInfoApiMonitor.class);
+    private static HttpClient client;
+    private static final Logger log = Logger.get(ClusterStatsInfoApiMonitor.class);
     private static final JsonResponseHandler<ServerInfo> SERVER_INFO_JSON_RESPONSE_HANDLER = createJsonResponseHandler(jsonCodec(ServerInfo.class));
+    int retries;
+
+    public ClusterStatsInfoApiMonitor(MonitorConfiguration monitorConfiguration)
+    {
+        HttpClientConfig httpClientConfig = new HttpClientConfig();
+        monitorConfiguration.getConnectTimeoutSeconds().ifPresent(t -> httpClientConfig.setConnectTimeout(new Duration(t, TimeUnit.SECONDS)));
+        monitorConfiguration.getRequestTimeoutSeconds().ifPresent(t -> httpClientConfig.setRequestTimeout(new Duration(t, TimeUnit.SECONDS)));
+        monitorConfiguration.getIdleTimeoutSeconds().ifPresent(t -> httpClientConfig.setIdleTimeout(new Duration(t, TimeUnit.SECONDS)));
+        retries = monitorConfiguration.getRetries();
+        client = new JettyHttpClient(httpClientConfig);
+    }
 
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
@@ -48,17 +64,41 @@ public class ClusterStatsInfoApiMonitor
 
     private boolean isReadyStatus(String baseUrl)
     {
+        return isReadyStatus(baseUrl, retries);
+    }
+
+    private boolean isReadyStatus(String baseUrl, int retriesRemaining)
+    {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
                 .build();
-
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
             return !serverInfo.isStarting();
         }
+        catch (UnexpectedResponseException e) {
+            if (shouldRetry(e.getStatusCode())) {
+                if (retriesRemaining > 0) {
+                    return isReadyStatus(baseUrl, retriesRemaining - 1);
+                }
+            }
+            log.warn(e, "Health check failed with non-retryable response. %s", e.toString());
+        }
         catch (Exception e) {
-            log.error("Exception checking {} for health: {} ", request.getUri(), e.getMessage());
+            log.error(e, "Exception checking %s for health", request.getUri());
         }
         return false;
+    }
+
+    public static boolean shouldRetry(int statusCode)
+    {
+        switch (statusCode) {
+            case HTTP_BAD_GATEWAY:
+            case HTTP_UNAVAILABLE:
+            case HTTP_GATEWAY_TIMEOUT:
+                return true;
+            default:
+                return false;
+        }
     }
 }
