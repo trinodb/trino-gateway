@@ -54,7 +54,7 @@ public class ClusterStatsInfoApiMonitor
 
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
-            return !serverInfo.isStarting();
+            return !serverInfo.starting();
         }
         catch (Exception e) {
             log.error("Exception checking {} for health: {} ", request.getUri(), e.getMessage());

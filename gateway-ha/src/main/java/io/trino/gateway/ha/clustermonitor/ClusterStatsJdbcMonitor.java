@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
+import com.google.common.util.concurrent.TimeLimiter;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -42,6 +43,8 @@ public class ClusterStatsJdbcMonitor
             + "FROM runtime.queries "
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
+
+    private static final TimeLimiter TIME_LIMITER = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor());
 
     public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration)
     {
@@ -73,25 +76,25 @@ public class ClusterStatsJdbcMonitor
         }
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties)) {
-            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor())
-                    .callWithTimeout(() -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS);
-            stmt.setString(1, (String) properties.get("user"));
-            Map<String, Integer> partialState = new HashMap<>();
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                partialState.put(rs.getString("state"), rs.getInt("count"));
+            try (PreparedStatement statement = TIME_LIMITER.callWithTimeout(() -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS)) {
+                statement.setString(1, (String) properties.get("user"));
+                Map<String, Integer> partialState = new HashMap<>();
+                ResultSet rs = statement.executeQuery();
+                while (rs.next()) {
+                    partialState.put(rs.getString("state"), rs.getInt("count"));
+                }
+                return clusterStats
+                        .healthy(true)
+                        .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
+                        .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
+                        .build();
             }
-            return clusterStats
-                    .healthy(true)
-                    .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
-                    .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
-                    .build();
         }
         catch (TimeoutException e) {
-            log.error(e, "timed out fetching status for %s backend", url);
+            log.error(e, "Timed out fetching status for %s backend", url);
         }
         catch (Exception e) {
-            log.error(e, "could not fetch status for %s backend", url);
+            log.error(e, "Could not fetch status for %s backend", url);
         }
         return clusterStats.build();
     }
