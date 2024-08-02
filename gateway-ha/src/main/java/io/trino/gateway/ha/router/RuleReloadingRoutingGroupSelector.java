@@ -60,8 +60,8 @@ public class RuleReloadingRoutingGroupSelector
             lastUpdatedTime = attr.lastModifiedTime().toMillis();
         }
         catch (Exception e) {
-            log.error(e, "Error opening rules configuration file, using "
-                    + "routing group header as default.");
+            throw new RuntimeException("Error opening rules configuration file, using "
+                    + "routing group header as default.", e);
         }
     }
 

@@ -6,13 +6,72 @@ By default, Trino Gateway reads the `X-Trino-Routing-Group` request header to
 route requests. If this header is not specified, requests are sent to default
 routing group (adhoc).
 
-The routing rules engine feature enables you to write custom logic to route
+The routing rules engine feature enables you to either write custom logic to route
 requests based on the request info such as any of the [request
-headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers).
-Routing rules are separated from Trino Gateway application code to a
-configuration file, allowing for dynamic rule changes.
+headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers),
+or set a URL address to make HTTP POST request and route based on returned result. 
 
-### Defining your routing rules
+Routing rules are separated from Trino Gateway application code to a
+configuration file and url, allowing for dynamic rule changes.
+
+### Enabling routing rules engine
+
+To enable routing rules engine, find the following lines in `gateway-ha-config.yml`.
+Set `rulesEngineEnabled` to True, then `rulesType` as `FILE` or `API`.
+Then either add `rulesConfigPath` to the path to your rules config file or set `rulesRESTConfiguration`
+to requesting url. `rulesType` is by default `FILE` unless specified.
+
+```yaml
+routingRules:
+  rulesEngineEnabled: true
+  rulesType: FILE
+  rulesConfigPath: "src/test/resources/rules/routing_rules.yml" # replace with path to your rules config file
+  rulesRESTConfiguration:
+    urlPath: localhost:8080/api/public/gateway_rules # replace with your own API path
+    blacklistHeaders:
+      - 'Authorization'
+```
+
+- Redirect URLs are not supported
+- You can add headers to the `BlacklistHeaders` list to exclude them from being sent in the POST request.
+       
+If there is error opening routing rules configuration file, error will be logged,
+then request is routed using routing group header `X-Trino-Routing-Group` as default.
+
+### Defining your routing rules (API)
+
+#### Body of REST API 
+
+By default, all headers, except for `blacklistHeaders`, are sent as a map in the body of the POST request. 
+If `requestAnalyzerConfig.isAnalyzeRequest` is set to true, `TrinoRequestUser` and `TrinoQueryProperties` 
+are also included. Additionally, the following HTTP information is included:
+
+- `remoteUser`
+- `method`
+- `requestURI`
+- `queryString`
+- `session`
+- `remoteAddr`
+- `remoteHost`
+- `parameterMap`
+
+#### API Response
+
+REST API endpoint must have response status code of OK (200) AND message in JSON format
+
+```json
+{
+    "routingGroup": "test-group",
+    "errors": [
+        "Error1",
+        "Error2",
+        "Error3"
+    ]
+}
+
+```
+
+### Defining your routing rules (file)
 
 To express and fire routing rules, we use the
 [easy-rules](https://github.com/j-easy/easy-rules) engine. These rules should be
@@ -320,18 +379,3 @@ actions:
       result.put(\"routingGroup\", \"etl\")
     }"
 ```
-
-### Enabling routing rules engine
-
-To enable routing rules engine, find the following lines in
-`gateway-ha-config.yml`. Set `rulesEngineEnabled` to True and `rulesConfigPath`
-to the path to your rules config file.
-
-```
-routingRules:
-  rulesEngineEnabled: true
-  rulesConfigPath: "src/test/resources/rules/routing_rules.yml" # replace with path to your rules config file
-```
-
-If there is error opening routing rules configuration file, then request is routed
-using routing group header `X-Trino-Routing-Group` as default.

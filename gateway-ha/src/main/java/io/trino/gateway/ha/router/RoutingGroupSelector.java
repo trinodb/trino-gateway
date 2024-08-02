@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.config.RulesRESTConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -39,6 +40,15 @@ public interface RoutingGroupSelector
     static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         return new RuleReloadingRoutingGroupSelector(rulesConfigPath, requestAnalyzerConfig);
+    }
+
+    /**
+     * Routing group selector that uses RESTful API
+     * to determine the right routing group.
+     */
+    static RoutingGroupSelector byRoutingRestfulApi(RulesRESTConfiguration rulesRESTConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        return new RESTApiRoutingGroupSelector(rulesRESTConfiguration, requestAnalyzerConfig);
     }
 
     /**
