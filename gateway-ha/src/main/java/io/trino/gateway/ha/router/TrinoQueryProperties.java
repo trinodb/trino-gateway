@@ -15,6 +15,10 @@ package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.compress.zstd.ZstdDecompressor;
@@ -60,17 +64,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.io.BaseEncoding.base64Url;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static java.lang.Math.toIntExact;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 
 public class TrinoQueryProperties
 {
@@ -91,6 +98,34 @@ public class TrinoQueryProperties
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
     public static final String TRINO_SCHEMA_HEADER_NAME = "X-Trino-Schema";
     public static final String TRINO_PREPARED_STATEMENT_HEADER_NAME = "X-Trino-Prepared-Statement";
+
+    @JsonCreator
+    public TrinoQueryProperties(
+            @JsonProperty("body") String body,
+            @JsonProperty("queryType") String queryType,
+            @JsonProperty("resourceGroupQueryType") String resourceGroupQueryType,
+            @JsonProperty("tables") String[] tables,
+            @JsonProperty("defaultCatalog") Optional<String> defaultCatalog,
+            @JsonProperty("defaultSchema") Optional<String> defaultSchema,
+            @JsonProperty("catalogs") Set<String> catalogs,
+            @JsonProperty("schemas") Set<String> schemas,
+            @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
+            @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
+            @JsonProperty("isQueryParsingSuccessful") boolean isQueryParsingSuccessful)
+    {
+        this.body = requireNonNullElse(body, "");
+        this.queryType = requireNonNullElse(queryType, "");
+        this.resourceGroupQueryType = resourceGroupQueryType;
+        this.tables = Arrays.stream(requireNonNullElse(tables, new String[] {})).map(this::parseIdentifierStringToQualifiedName).collect(Collectors.toSet());
+        this.defaultCatalog = requireNonNullElse(defaultCatalog, Optional.empty());
+        this.defaultSchema = requireNonNullElse(defaultSchema, Optional.empty());
+        this.catalogs = requireNonNullElse(catalogs, ImmutableSet.of());
+        this.schemas = requireNonNullElse(schemas, ImmutableSet.of());
+        this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
+        this.isNewQuerySubmission = isNewQuerySubmission;
+        this.isQueryParsingSuccessful = isQueryParsingSuccessful;
+        isClientsUseV2Format = false;
+    }
 
     public TrinoQueryProperties(HttpServletRequest request, RequestAnalyzerConfig config)
     {
@@ -355,36 +390,37 @@ public class TrinoQueryProperties
         };
     }
 
-    @SuppressWarnings("unused")
+    @JsonProperty
     public String getBody()
     {
         return body;
     }
 
-    @SuppressWarnings("unused")
+    @JsonProperty
     public String getQueryType()
     {
         return queryType;
     }
 
-    @SuppressWarnings("unused")
+    @JsonProperty
     public String getResourceGroupQueryType()
     {
         return resourceGroupQueryType;
     }
 
-    @SuppressWarnings("unused")
+    @JsonProperty
     public Optional<String> getDefaultSchema()
     {
         return defaultSchema;
     }
 
+    @JsonSerialize(using = QualifiedNameJsonSerializer.class)
     public Set<QualifiedName> getTables()
     {
         return tables;
     }
 
-    public boolean tablesContains(String testName)
+    private QualifiedName parseIdentifierStringToQualifiedName(String name)
     {
         char dot = '.';
         char quote = '"';
@@ -392,71 +428,84 @@ public class TrinoQueryProperties
         int start = 0;
         boolean inQuotes = false;
         boolean partQuoted = false;
-        for (int i = 0; i < testName.length(); i++) {
-            if (testName.charAt(i) == quote) {
+        for (int i = 0; i < name.length(); i++) {
+            if (name.charAt(i) == quote) {
                 if (!inQuotes) {
                     if (i != start) {
-                        log.error("Illegal position for first quote character in table name: %s", testName);
-                        return false;
+                        log.error("Illegal position for first quote character in table name: %s", name);
+                        throw new ParsingException("Illegal position for first quote character in table name: %s");
                     }
                     start = start + 1;
                     partQuoted = true;
                 }
-                if (inQuotes && testName.charAt(i - 1) == '\\') {
+                if (inQuotes && name.charAt(i - 1) == '\\') {
                     continue;
                 }
 
                 inQuotes = !inQuotes;
                 continue;
             }
-            if (testName.charAt(i) == dot && !inQuotes) {
+            if (name.charAt(i) == dot && !inQuotes) {
                 if (partQuoted) {
-                    parts.add(new Identifier(testName.substring(start, i - 1)));
+                    parts.add(new Identifier(name.substring(start, i - 1)));
                 }
                 else {
-                    parts.add(new Identifier(testName.substring(start, i)));
+                    parts.add(new Identifier(name.substring(start, i)));
                 }
                 start = i + 1;
                 partQuoted = false;
             }
         }
         if (partQuoted) {
-            parts.add(new Identifier(testName.substring(start, testName.length() - 1)));
+            parts.add(new Identifier(name.substring(start, name.length() - 1)));
         }
         else {
-            parts.add(new Identifier(testName.substring(start, testName.length())));
+            parts.add(new Identifier(name.substring(start, name.length())));
         }
-
-        return tables.contains(QualifiedName.of(parts));
+        return QualifiedName.of(parts);
     }
 
-    @SuppressWarnings("unused")
+    public boolean tablesContains(String testName)
+    {
+        try {
+            return tables.contains(parseIdentifierStringToQualifiedName(testName));
+        }
+        catch (ParsingException e) {
+            return false;
+        }
+    }
+
+    @JsonProperty
     public Optional<String> getDefaultCatalog()
     {
         return defaultCatalog;
     }
 
+    @JsonProperty
     public Set<String> getCatalogs()
     {
         return catalogs;
     }
 
+    @JsonProperty
     public Set<String> getSchemas()
     {
         return schemas;
     }
 
-    @SuppressWarnings("unused")
+    @JsonProperty
     public Set<String> getCatalogSchemas()
     {
         return catalogSchemas;
     }
 
+    @JsonProperty("isNewQuerySubmission")
     public boolean isNewQuerySubmission()
     {
         return isNewQuerySubmission;
     }
 
+    @JsonProperty("isQueryParsingSuccessful")
     public boolean isQueryParsingSuccessful()
     {
         return isQueryParsingSuccessful;
@@ -507,6 +556,27 @@ public class TrinoQueryProperties
         public RequestParsingException(String message)
         {
             super(message);
+        }
+    }
+
+    public static class QualifiedNameJsonSerializer
+            extends StdSerializer<Set<QualifiedName>>
+    {
+        public QualifiedNameJsonSerializer()
+        {
+            this(null);
+        }
+
+        public QualifiedNameJsonSerializer(Class<Set<QualifiedName>> t)
+        {
+            super(t);
+        }
+
+        @Override
+        public void serialize(Set<QualifiedName> qualifiedNames, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+                throws IOException
+        {
+            jsonGenerator.writeArray(qualifiedNames.stream().map(QualifiedName::toString).toList().toArray(new String[0]), 0, qualifiedNames.size());
         }
     }
 }
