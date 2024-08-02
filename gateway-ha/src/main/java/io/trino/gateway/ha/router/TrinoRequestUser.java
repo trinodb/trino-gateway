@@ -16,6 +16,12 @@ package io.trino.gateway.ha.router;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -61,13 +67,33 @@ public class TrinoRequestUser
         user = extractUser(request, userField);
     }
 
+    @JsonCreator
+    public TrinoRequestUser(
+            @JsonProperty("user") Optional<String> user,
+            @JsonProperty("userInfo") String userInfo)
+    {
+        this.user = user;
+        this.userInfo = Optional.ofNullable(userInfo).map(u -> {
+            try {
+                return UserInfo.parse(u);
+            }
+            catch (ParseException e) {
+                log.error(e, "Could not parse UserInfo %s", u);
+                return null;
+            }
+        });
+        userInfoCache = Optional.empty();
+    }
+
     @SuppressWarnings("unused")
+    @JsonProperty
     public Optional<String> getUser()
     {
         return user;
     }
 
     @SuppressWarnings("unused")
+    @JsonSerialize(using = UserInfoJsonSerializer.class)
     public Optional<UserInfo> getUserInfo()
     {
         return userInfo;
@@ -221,6 +247,34 @@ public class TrinoRequestUser
                 throw new RuntimeException(e);
             }
             return null;
+        }
+    }
+
+    public static class UserInfoJsonSerializer
+            extends StdSerializer<Optional<UserInfo>>
+    {
+        public UserInfoJsonSerializer()
+        {
+            this(null);
+        }
+
+        public UserInfoJsonSerializer(Class<Optional<UserInfo>> t)
+        {
+            super(t);
+        }
+
+        @Override
+        public void serialize(Optional<UserInfo> userInfo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
+                throws IOException
+        {
+            userInfo.ifPresent(u -> {
+                try {
+                    jsonGenerator.writeString(u.toJSONString());
+                }
+                catch (IOException e) {
+                    log.error(e, "Error serializing userInfo");
+                }
+            });
         }
     }
 }
