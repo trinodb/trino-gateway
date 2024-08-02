@@ -85,8 +85,8 @@ to the Trino Gateway server started by the preceding script.
 #!/usr/bin/env sh
 
 #Start a pair of trino servers on different ports
-docker run --name trino1 -d -p 8081:8080 trinodb/trino
-docker run --name trino2 -d -p 8082:8080 trinodb/trino
+docker run --name trino1 -d -p 8081:8080 -e JAVA_TOOL_OPTIONS="-Dhttp-server.process-forwarded=true" trinodb/trino
+docker run --name trino2 -d -p 8082:8080 -e JAVA_TOOL_OPTIONS="-Dhttp-server.process-forwarded=true" trinodb/trino
 
 #Add the trino servers as Gateway backends
 curl -H "Content-Type: application/json" -X POST localhost:8080/gateway/backend/modify/add -d '{"name": "trino1",
