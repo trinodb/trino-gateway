@@ -28,6 +28,7 @@ import io.airlift.json.JsonModule;
 import io.airlift.log.LogJmxModule;
 import io.airlift.log.Logger;
 import io.airlift.node.NodeModule;
+import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -54,6 +55,7 @@ public class HaGatewayLauncher
                 new HttpServerModule(),
                 new JmxModule(),
                 new JmxHttpModule(),
+                new JmxOpenMetricsModule(),
                 new LogJmxModule(),
                 new MBeanModule(),
                 new JsonModule(),

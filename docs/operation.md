@@ -54,3 +54,15 @@ modules:
 monitor:
   taskDelaySeconds: 10
 ```
+
+## Monitoring
+
+Prometheus can be configured to hit the OpenMetrics endpoint using:
+
+```
+scrape_configs:
+- job_name: trino_gateway
+  static_configs:
+    - targets:
+        - localhost:8080
+```
