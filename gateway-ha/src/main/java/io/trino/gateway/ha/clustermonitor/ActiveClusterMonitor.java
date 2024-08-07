@@ -39,9 +39,9 @@ public class ActiveClusterMonitor
 
     private final int taskDelaySeconds;
     private final ClusterStatsMonitor clusterStatsMonitor;
-    private volatile boolean monitorActive = true;
     private final ExecutorService executorService = Executors.newFixedThreadPool(DEFAULT_THREAD_POOL_SIZE);
     private final ExecutorService singleTaskExecutor = Executors.newSingleThreadExecutor();
+    private volatile boolean monitorActive = true;
 
     @Inject
     public ActiveClusterMonitor(
@@ -79,6 +79,10 @@ public class ActiveClusterMonitor
                             List<ClusterStats> stats = new ArrayList<>();
                             for (Future<ClusterStats> clusterStatsFuture : futures) {
                                 ClusterStats clusterStats = clusterStatsFuture.get();
+                                if (!clusterStats.healthy()) {
+                                    log.error("cluster %s is unhealthy", clusterStats.clusterId());
+                                    log.debug("cluster stats: %s", clusterStats);
+                                }
                                 stats.add(clusterStats);
                             }
 

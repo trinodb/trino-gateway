@@ -125,7 +125,6 @@ public abstract class RoutingManager
 
     public void updateBackEndHealth(String backendId, Boolean value)
     {
-        log.info("backend %s isHealthy %s", backendId, value);
         backendToHealth.put(backendId, value);
     }
 
