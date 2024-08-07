@@ -19,6 +19,8 @@ import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,11 +34,11 @@ import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.OAUTH_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_INFO_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_NODE_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
+import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -81,13 +83,19 @@ public class RoutingTargetHandler
 
     private String getBackendFromRoutingGroup(HttpServletRequest request)
     {
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        for (String name : list(request.getHeaderNames())) {
+            for (String value : list(request.getHeaders(name))) {
+                headers.add(name, value);
+            }
+        }
+
         String routingGroup = routingGroupSelector.findRoutingGroup(request);
-        String user = request.getHeader(USER_HEADER);
         if (!isNullOrEmpty(routingGroup)) {
             // This falls back on adhoc backend if there is no cluster found for the routing group.
-            return routingManager.provideBackendForRoutingGroup(routingGroup, user);
+            return routingManager.provideBackendForRoutingGroup(routingGroup, headers);
         }
-        return routingManager.provideAdhocBackend(user);
+        return routingManager.provideAdhocBackend(headers);
     }
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)

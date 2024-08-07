@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 
 public class QueryCountBasedRouter
         extends StochasticRoutingManager
@@ -209,7 +212,7 @@ public class QueryCountBasedRouter
             stats.userQueuedCount().put(user, count + 1);
             return;
         }
-        // Else the we assume that the query would be running
+        // Else we assume that the query would be running
         // so update the clusterstat with the +1 running queries
         stats.runningQueryCount(stats.runningQueryCount() + 1);
     }
@@ -222,16 +225,16 @@ public class QueryCountBasedRouter
     }
 
     @Override
-    public String provideAdhocBackend(String user)
+    public String provideAdhocBackend(MultivaluedMap<String, String> headers)
     {
-        return getBackendForRoutingGroup("adhoc", user).orElseThrow();
+        return getBackendForRoutingGroup("adhoc", headers.getFirst(USER_HEADER)).orElseThrow();
     }
 
     @Override
-    public String provideBackendForRoutingGroup(String routingGroup, String user)
+    public String provideBackendForRoutingGroup(String routingGroup, MultivaluedMap<String, String> headers)
     {
-        return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideAdhocBackend(user));
+        return getBackendForRoutingGroup(routingGroup, headers.getFirst(USER_HEADER))
+                .orElse(provideAdhocBackend(headers));
     }
 
     @Override

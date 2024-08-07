@@ -20,6 +20,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -80,7 +81,7 @@ public abstract class RoutingManager
     /**
      * Performs routing to an adhoc backend.
      */
-    public String provideAdhocBackend(String user)
+    public String provideAdhocBackend(MultivaluedMap<String, String> headers)
     {
         List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
@@ -95,13 +96,13 @@ public abstract class RoutingManager
      * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
      * backend is found.
      */
-    public String provideBackendForRoutingGroup(String routingGroup, String user)
+    public String provideBackendForRoutingGroup(String routingGroup, MultivaluedMap<String, String> headers)
     {
         List<ProxyBackendConfiguration> backends =
                 gatewayBackendManager.getActiveBackends(routingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
-            return provideAdhocBackend(user);
+            return provideAdhocBackend(headers);
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId).getProxyTo();
