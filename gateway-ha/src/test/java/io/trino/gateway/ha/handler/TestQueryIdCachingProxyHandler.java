@@ -13,19 +13,24 @@
  */
 package io.trino.gateway.ha.handler;
 
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.AUTHORIZATION;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestQueryIdCachingProxyHandler
@@ -59,6 +64,44 @@ public class TestQueryIdCachingProxyHandler
                 .isNull();
         assertThat(extractQueryIdIfPresent("/ui/", "lang=en&p=1&id=0_1_2_a"))
                 .isNull();
+    }
+
+    @Test
+    public void testQueryIdFromKill()
+            throws IOException
+    {
+        HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
+
+        String query = "CALL system.runtime.kill_query(query_id ==> '20200416_160256_03078_6b4yt', message ==> 'If he dies, he dies')";
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8));
+        when(req.getInputStream()).thenReturn(new ServletInputStream()
+        {
+            @Override
+            public boolean isFinished()
+            {
+                return byteArrayInputStream.available() > 0;
+            }
+
+            @Override
+            public boolean isReady()
+            {
+                return true;
+            }
+
+            @Override
+            public void setReadListener(ReadListener readListener)
+            {}
+
+            public int read()
+                    throws IOException
+            {
+                return byteArrayInputStream.read();
+            }
+        });
+
+        when(req.getQueryString()).thenReturn("");
+
+        assertThat(extractQueryIdIfPresent(req)).isEqualTo("20200416_160256_03078_6b4yt");
     }
 
     @Test
