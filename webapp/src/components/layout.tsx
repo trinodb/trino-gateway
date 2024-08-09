@@ -1,11 +1,11 @@
 import { Nav, Avatar, Layout, Dropdown, Button, Toast, Modal, Tag } from '@douyinfe/semi-ui';
-import { IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard } from '@douyinfe/semi-icons';
+import { IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard, IconUserSetting, IconUser } from '@douyinfe/semi-icons';
 import styles from './layout.module.scss';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { hasPagePermission, routers, routersMapper } from '../router';
 import { Theme, useAccessStore, useConfigStore } from '../store';
-import { logoutApi } from '../api/webapp/login';
+import { getUIConfiguration, logoutApi } from '../api/webapp/login';
 import Locale from "../locales";
 
 export const RootLayout = (props: {
@@ -18,6 +18,28 @@ export const RootLayout = (props: {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState(location.pathname.substring(location.pathname.lastIndexOf('/') + 1));
   const [userProfile, setUserProfile] = useState(false);
+  const [disabledPages, setDisabledPages] = useState<string[]>(['']);
+  const [filteredRouters, setFilteredRouters] = useState(routers);
+
+  useEffect(() => {
+      getUIConfiguration().then((res) => {
+          if (Object.keys(res).length == 0) {
+              setDisabledPages(res)
+          } else {
+              setDisabledPages(res.disablePages)
+          }
+      })
+  }, []);
+
+    useEffect(() => {
+        const routerFilters = disabledPages.length > 0 ?
+                routers
+                        .filter(router => router.itemKey && !disabledPages.includes(router.itemKey))
+                        .filter(router => hasPagePermission(router, access))
+                : routers
+                        .filter(router => hasPagePermission(router, access))
+        setFilteredRouters(routerFilters);
+    }, [disabledPages, access]);
 
   useEffect(() => {
     const router = routersMapper[location.pathname];
@@ -83,14 +105,19 @@ export const RootLayout = (props: {
                     </Dropdown.Menu>
                   }
                 >
-                  <Avatar
-                    size="small"
-                    src={access.avatar || config.avatar}
-                    color="blue"
-                    className={styles.avatar}
-                  >
-                    {access.nickName}
-                  </Avatar>
+                {access.roles.includes('ADMIN') ? (
+                    <Button icon={<IconUserSetting
+                        size="extra-large"
+                        color="orange"
+                        className={styles.semiIconsBell} />}>
+                    </Button>
+                    ) : (
+                    <Button icon={<IconUser
+                        size="extra-large"
+                        color="blue"
+                        className={styles.semiIconsBell} />}>
+                    </Button>
+                 )}
                 </Dropdown>
               </div>
             }
@@ -125,7 +152,7 @@ export const RootLayout = (props: {
                   return itemElement
                 }
               }}
-              items={routers.filter(router => hasPagePermission(router, access))}
+              items={filteredRouters}
             >
               <Nav.Footer style={{ padding: 0 }}>
                 {collapsed ? (
