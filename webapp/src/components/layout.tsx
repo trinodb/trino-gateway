@@ -1,5 +1,5 @@
 import { Nav, Avatar, Layout, Dropdown, Button, Toast, Modal, Tag } from '@douyinfe/semi-ui';
-import { IconGithubLogo, IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard } from '@douyinfe/semi-icons';
+import { IconGithubLogo, IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard, IconUserSetting, IconUser } from '@douyinfe/semi-icons';
 import styles from './layout.module.scss';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
@@ -87,14 +87,19 @@ export const RootLayout = (props: {
                     </Dropdown.Menu>
                   }
                 >
-                  <Avatar
-                    size="small"
-                    src={access.avatar || config.avatar}
-                    color="blue"
-                    className={styles.avatar}
-                  >
-                    {access.nickName}
-                  </Avatar>
+                {access.roles.includes('ADMIN') ? (
+                    <Button icon={<IconUserSetting
+                        size="extra-large"
+                        color="orange"
+                        className={styles.semiIconsBell} />}>
+                    </Button>
+                    ) : (
+                    <Button icon={<IconUser
+                        size="extra-large"
+                        color="blue"
+                        className={styles.semiIconsBell} />}>
+                    </Button>
+                 )}
                 </Dropdown>
               </div>
             }
