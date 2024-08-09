@@ -91,3 +91,16 @@ Will return a JSON array of active Trino cluster backends:
 curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 ```
 
+## Update Routing Rules
+
+This API can be used to programmatically update the Routing Rules.
+Rule will be updated based on the rule name.
+```shell
+curl -X POST http://localhost:8080/webapp/updateRoutingRules \
+ -d '{  "name": "trino-rule",
+        "description": "updated rule description",
+        "priority": 0,
+        "actions": ["updated action"],
+        "condition": "updated condition"
+    }'
+```
