@@ -13,11 +13,16 @@
  */
 package io.trino.gateway.ha.resource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.Result;
+import io.trino.gateway.ha.domain.RoutingRules;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.GlobalPropertyRequest;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
@@ -36,6 +41,7 @@ import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -44,11 +50,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,18 +77,21 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
+    private final HaGatewayConfiguration configuration;
 
     @Inject
     public GatewayWebAppResource(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
-            ResourceGroupsManager resourceGroupsManager)
+            ResourceGroupsManager resourceGroupsManager,
+            HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
+        this.configuration = requireNonNull(configuration, "configuration is null");
     }
 
     @POST
@@ -422,5 +435,68 @@ public class GatewayWebAppResource
     {
         List<ResourceGroupsManager.ExactSelectorsDetail> selectorsDetailList = resourceGroupsManager.readExactMatchSourceSelector();
         return Response.ok(Result.ok(selectorsDetailList)).build();
+    }
+
+    @GET
+    @RolesAllowed("USER")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getRoutingRules")
+    public Response readRoutingRules()
+    {
+        String content = null;
+        try {
+            String rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
+            content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)));
+            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+            YAMLParser parser = new YAMLFactory().createParser(content);
+            List<RoutingRules> routingRulesList = new ArrayList<>();
+            while (parser.nextToken() != null) {
+                RoutingRules routingRules = yamlReader.readValue(parser, RoutingRules.class);
+                routingRulesList.add(routingRules);
+            }
+            return Response.ok(Result.ok(routingRulesList)).build();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/updateRoutingRules")
+    public Response updateRoutingRules(RoutingRules routingRules)
+    {
+        String rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
+        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
+        List<RoutingRules> routingRulesList = new ArrayList<>();
+
+        try {
+            String content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)));
+            YAMLParser parser = new YAMLFactory().createParser(content);
+            while (parser.nextToken() != null) {
+                RoutingRules routingRule = yamlReader.readValue(parser, RoutingRules.class);
+                routingRulesList.add(routingRule);
+            }
+
+            for (int i = 0; i < routingRulesList.size(); i++) {
+                if (routingRulesList.get(i).name().equals(routingRules.name())) {
+                    routingRulesList.set(i, routingRules);
+                    break;
+                }
+            }
+
+            ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
+            StringBuilder yamlContent = new StringBuilder();
+            for (RoutingRules rule : routingRulesList) {
+                yamlContent.append(yamlWriter.writeValueAsString(rule));
+            }
+            Files.write(Paths.get(rulesConfigPath), yamlContent.toString().getBytes());
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return Response.ok(Result.ok(routingRulesList)).build();
     }
 }
