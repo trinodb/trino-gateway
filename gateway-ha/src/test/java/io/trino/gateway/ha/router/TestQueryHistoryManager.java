@@ -15,12 +15,14 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
@@ -91,5 +93,21 @@ public class TestQueryHistoryManager
         // Should return 1 entry
         resList = queryHistoryManager.findDistribution(currentTime);
         assertThat(resList).hasSize(1);
+    }
+
+    @Test
+    public void testTimestampParsing()
+    {
+        long result = 30338640;
+
+        // postgres: minute -> {Double@9333} 3.033864E7
+        String postgresTimestamp = "3.033864E7";
+        long parsedLongTimestamp = (long) Float.parseFloat(postgresTimestamp);
+        assertThat(parsedLongTimestamp).isEqualTo(result);
+
+        // mysql: minute -> {BigDecimal@9775} "30338640"
+        String mysqlTimestamp = "30338640";
+        long parsedLongTimestamp2 = (long) Float.parseFloat(mysqlTimestamp);
+        assertThat(parsedLongTimestamp2).isEqualTo(result);
     }
 }
