@@ -18,6 +18,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.module.RouterBaseModule;
@@ -166,5 +167,6 @@ public class BaseApp
         jaxrsBinder(binder).bind(RouterPreMatchContainerRequestFilter.class);
         jaxrsBinder(binder).bind(ProxyRequestHandler.class);
         httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
+        httpClientBinder(binder).bindHttpClient("monitor", ForMonitor.class);
     }
 }

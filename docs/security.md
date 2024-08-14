@@ -211,3 +211,11 @@ Trino Gateway should be added:
 -Djavax.net.ssl.trustStore=<truststore file>
 -Djavax.net.ssl.trustStorePassword=<truststore password>
 ```
+
+If you want to skip the hostname validation for a self-signed certificate, 
+the `serverConfig` configuration file should contain the following:
+
+```
+proxy.http-client.https.hostname-verification: false
+monitor.http-client.https.hostname-verification: false
+```

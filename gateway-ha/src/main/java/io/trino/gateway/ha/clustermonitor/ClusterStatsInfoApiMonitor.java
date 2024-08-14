@@ -14,10 +14,8 @@
 package io.trino.gateway.ha.clustermonitor;
 
 import io.airlift.http.client.HttpClient;
-import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.JsonResponseHandler;
 import io.airlift.http.client.Request;
-import io.airlift.http.client.jetty.JettyHttpClient;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +26,19 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsInfoApiMonitor
         implements ClusterStatsMonitor
 {
-    //TODO: make client options configurable
-    private static final HttpClient client = new JettyHttpClient(new HttpClientConfig());
     private static final Logger log = LoggerFactory.getLogger(ClusterStatsInfoApiMonitor.class);
     private static final JsonResponseHandler<ServerInfo> SERVER_INFO_JSON_RESPONSE_HANDLER = createJsonResponseHandler(jsonCodec(ServerInfo.class));
+    private final HttpClient client;
+
+    public ClusterStatsInfoApiMonitor(HttpClient client)
+    {
+        this.client = requireNonNull(client, "client is null");
+    }
 
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
