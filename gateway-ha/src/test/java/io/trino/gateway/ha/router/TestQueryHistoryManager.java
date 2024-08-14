@@ -15,14 +15,12 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
