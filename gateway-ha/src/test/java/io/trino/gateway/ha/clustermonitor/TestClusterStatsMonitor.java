@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import io.airlift.http.client.HttpClientConfig;
+import io.airlift.http.client.jetty.JettyHttpClient;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.junit.jupiter.api.AfterAll;
@@ -61,7 +63,7 @@ public class TestClusterStatsMonitor
     @Test
     public void testInfoApiMonitor()
     {
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor());
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig())));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)

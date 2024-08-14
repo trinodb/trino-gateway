@@ -16,10 +16,12 @@ package io.trino.gateway.ha.module;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
+import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -38,14 +40,14 @@ public class ClusterStatsMonitorModule
 
     @Provides
     @Singleton
-    public ClusterStatsMonitor getClusterStatsMonitor()
+    public ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient)
     {
         ClusterStatsConfiguration clusterStatsConfig = config.getClusterStatsConfiguration();
         if (config.getBackendState() == null) {
-            return new ClusterStatsInfoApiMonitor();
+            return new ClusterStatsInfoApiMonitor(httpClient);
         }
         return switch (clusterStatsConfig.getMonitorType()) {
-            case INFO_API -> new ClusterStatsInfoApiMonitor();
+            case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient);
             case UI_API -> new ClusterStatsHttpMonitor(config.getBackendState());
             case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState());
             case NOOP -> new NoopClusterStatsMonitor();
