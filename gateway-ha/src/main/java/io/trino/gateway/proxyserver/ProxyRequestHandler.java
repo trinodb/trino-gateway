@@ -84,6 +84,7 @@ public class ProxyRequestHandler
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
     private final boolean cookiesEnabled;
+    private final boolean addXForwardedHeaders;
 
     @Inject
     public ProxyRequestHandler(
@@ -97,6 +98,7 @@ public class ProxyRequestHandler
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
+        addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
     }
 
     @PreDestroy
@@ -145,13 +147,17 @@ public class ProxyRequestHandler
         for (String name : list(servletRequest.getHeaderNames())) {
             for (String value : list(servletRequest.getHeaders(name))) {
                 // TODO: decide what should and shouldn't be forwarded
-                if (!name.equalsIgnoreCase("Accept-Encoding") && !name.equalsIgnoreCase("Host")) {
+                if (!name.equalsIgnoreCase("Accept-Encoding")
+                        && !name.equalsIgnoreCase("Host")
+                        && (addXForwardedHeaders || !name.startsWith("X-Forwarded"))) {
                     requestBuilder.addHeader(name, value);
                 }
             }
         }
         requestBuilder.addHeader(VIA, format("%s TrinoGateway", servletRequest.getProtocol()));
-        addXForwardedHeaders(servletRequest, requestBuilder);
+        if (addXForwardedHeaders) {
+            addXForwardedHeaders(servletRequest, requestBuilder);
+        }
 
         ImmutableList<NewCookie> oauth2GatewayCookie = getOAuth2GatewayCookie(remoteUri, servletRequest);
 

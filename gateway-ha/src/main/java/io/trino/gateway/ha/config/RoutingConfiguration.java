@@ -21,6 +21,8 @@ public class RoutingConfiguration
 {
     private Duration asyncTimeout = new Duration(2, MINUTES);
 
+    private boolean addXForwardedHeaders = true;
+
     public Duration getAsyncTimeout()
     {
         return asyncTimeout;
@@ -29,5 +31,15 @@ public class RoutingConfiguration
     public void setAsyncTimeout(Duration asyncTimeout)
     {
         this.asyncTimeout = asyncTimeout;
+    }
+
+    public boolean isAddXForwardedHeaders()
+    {
+        return addXForwardedHeaders;
+    }
+
+    public void setAddXForwardedHeaders(boolean addXForwardedHeaders)
+    {
+        this.addXForwardedHeaders = addXForwardedHeaders;
     }
 }
