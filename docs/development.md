@@ -65,9 +65,19 @@ notes and other details are available on GitHub](https://github.com/trinodb/trin
 
 ## Release process
 
-A full release process consists of the following steps:
+A full release process consists a number of steps:
 
-Merge the pull request for the release notes and pull the changes locally:
+Create a release notes pull request including the following changes:
+
+- Add new release notes in `docs/release-notes.md`.
+- Update `VERSION` in `docs/quickstart.md`.
+- Update `appVersion` to new version and `version` to new version with `.0.0`
+  appended in `helm/trino-gateway/Chart.yaml`. For example, update to
+  `appVersion: "10"` and `version: "10.0.0"`. 
+
+Organize review, approval, and merge for the PR.
+
+Pull the changes locally:
 
 ```shell
 cd trino-gateway
