@@ -39,11 +39,15 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.targetJdk>21</project.build.targetJdk>
-        <air.java.version>21</air.java.version>
+        <project.build.targetJdk>22</project.build.targetJdk>
+        <air.java.version>22</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
+
+        <!-- Dependency versions, keep sorted -->
+        <dep.errorprone.version>2.29.2</dep.errorprone.version>
+        <dep.trino.version>454</dep.trino.version>
     </properties>
 
     <dependencyManagement>
