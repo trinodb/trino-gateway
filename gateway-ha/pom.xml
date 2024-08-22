@@ -63,7 +63,7 @@
         <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
-            <optional>true</optional>
+            <version>${dep.errorprone.version}</version>
         </dependency>
 
         <dependency>
@@ -191,7 +191,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-parser</artifactId>
-            <version>440</version>
+            <version>${dep.trino.version}</version>
         </dependency>
 
         <dependency>
@@ -292,7 +292,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
-            <version>449</version>
+            <version>${dep.trino.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -335,7 +335,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-client</artifactId>
-            <version>444</version>
+            <version>${dep.trino.version}</version>
             <scope>test</scope>
         </dependency>
 
