@@ -41,6 +41,7 @@ import io.trino.sql.tree.DropTable;
 import io.trino.sql.tree.Execute;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Node;
+import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
@@ -434,7 +435,7 @@ public class TrinoQueryProperties
                 if (!inQuotes) {
                     if (i != start) {
                         log.error("Illegal position for first quote character in table name: %s", name);
-                        throw new ParsingException(format("Illegal position for first quote character in table name: %s", name));
+                        throw new ParsingException(format("Illegal position for first quote character in table name: %s", name), new NodeLocation(1, i));
                     }
                     start = start + 1;
                     partQuoted = true;
