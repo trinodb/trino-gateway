@@ -19,8 +19,8 @@ export function History() {
   const [page, setPage] = useState(1);
   const [size] = useState(15);
   const [form, setForm] = useState(() => {
-    const savedForm = sessionStorage.getItem('historyForm');
-    return savedForm ? JSON.parse(savedForm) : { user: access.userName };
+    const username = sessionStorage.getItem('username');
+    return username ? JSON.parse(username) : { user: access.userName };
   });
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function History() {
   }, [form]);
 
   useEffect(() => {
-    sessionStorage.setItem('historyForm', JSON.stringify(form));
+    sessionStorage.setItem('username', JSON.stringify({ user: form.user }));
   }, [form]);
 
   const list = (p: number) => {
