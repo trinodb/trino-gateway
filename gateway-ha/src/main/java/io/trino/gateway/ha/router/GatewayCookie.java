@@ -177,10 +177,6 @@ public class GatewayCookie
 
     public boolean matchesRoutingPath(String path)
     {
-        if (matchesDeletePath(path)) {
-            return false;
-        }
-
         return unsignedGatewayCookie.getRoutingPaths().stream().anyMatch(path::startsWith);
     }
 
