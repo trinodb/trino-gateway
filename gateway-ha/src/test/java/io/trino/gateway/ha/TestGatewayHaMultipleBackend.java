@@ -49,6 +49,8 @@ public class TestGatewayHaMultipleBackend
     public static final String CUSTOM_RESPONSE = "123";
     public static final String CUSTOM_PATH = "/v1/custom/extra";
 
+    public static final String CUSTOM_LOGOUT = "/custom/logout"; //defined in src/test/resources/test-config-template.yml
+
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
 
@@ -82,7 +84,8 @@ public class TestGatewayHaMultipleBackend
         HaGatewayTestUtils.setPathSpecificResponses(customBackend, ImmutableMap.of(
                 oauthInitiatePath, oauthInitialResponse,
                 oauthCallbackPath, oauthCallbackResponse,
-                CUSTOM_PATH, CUSTOM_RESPONSE));
+                CUSTOM_PATH, CUSTOM_RESPONSE,
+                CUSTOM_LOGOUT, ""));
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
@@ -242,7 +245,7 @@ public class TestGatewayHaMultipleBackend
 
         Request logoutRequest =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/custom/logout")
+                        .url("http://localhost:" + routerPort + CUSTOM_LOGOUT)
                         .post(requestBody)
                         .addHeader("Cookie", initiateResponse.header("set-cookie"))
                         .build();
