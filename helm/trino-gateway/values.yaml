@@ -54,6 +54,7 @@ config:
 
 service:
   type: ClusterIP
+  port: 8080
 
 ingress:
   enabled: false
@@ -109,6 +110,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# -- Labels that get applied to every resource's metadata
+commonLabels: {}
+  # example: "some label"
 
 podAnnotations: {}
 
