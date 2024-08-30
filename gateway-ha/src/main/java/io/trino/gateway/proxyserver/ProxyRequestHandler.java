@@ -45,7 +45,6 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.net.HttpHeaders.HOST;
 import static com.google.common.net.HttpHeaders.VIA;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_HOST;
@@ -290,9 +289,9 @@ public class ProxyRequestHandler
         requestBuilder.addHeader(X_FORWARDED_FOR, servletRequest.getRemoteAddr());
         requestBuilder.addHeader(X_FORWARDED_PROTO, servletRequest.getScheme());
         requestBuilder.addHeader(X_FORWARDED_PORT, String.valueOf(servletRequest.getServerPort()));
-        String hostHeader = servletRequest.getHeader(HOST);
-        if (hostHeader != null) {
-            requestBuilder.addHeader(X_FORWARDED_HOST, hostHeader);
+        String serverName = servletRequest.getServerName();
+        if (serverName != null) {
+            requestBuilder.addHeader(X_FORWARDED_HOST, serverName);
         }
     }
 }

@@ -14,18 +14,23 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.TrinoContainer;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
@@ -33,7 +38,6 @@ import static org.testcontainers.utility.MountableFile.forClasspathResource;
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestGatewayHaSingleBackend
 {
-    private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
@@ -58,8 +62,18 @@ public class TestGatewayHaSingleBackend
                 "trino1", "http://localhost:" + backendPort, "externalUrl", true, "adhoc", routerPort);
     }
 
-    @Test
-    public void testRequestDelivery()
+    public Stream<OkHttpClient> getOkHttpClient()
+    {
+        OkHttpClient.Builder http1Builder = new OkHttpClient.Builder();
+        http1Builder.protocols(ImmutableList.of(Protocol.HTTP_1_1));
+        OkHttpClient.Builder http2Builder = new OkHttpClient.Builder();
+        http2Builder.protocols(ImmutableList.of(Protocol.H2_PRIOR_KNOWLEDGE));
+        return Stream.of(http1Builder.build(), http2Builder.build());
+    }
+
+    @ParameterizedTest
+    @MethodSource("getOkHttpClient")
+    public void testRequestDelivery(OkHttpClient httpClient)
             throws Exception
     {
         RequestBody requestBody =
@@ -68,18 +82,23 @@ public class TestGatewayHaSingleBackend
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
                         .addHeader("X-Trino-User", "test")
+                        .addHeader("Host", "test.host.com")
                         .post(requestBody)
                         .build();
         Response response = httpClient.newCall(request).execute();
-        assertThat(response.body().string()).contains("nextUri");
+        String responseBody = response.body().string();
+        assertThat(responseBody).contains("nextUri");
+        assertThat(responseBody).contains("test.host.com");
     }
 
-    @Test
-    public void testBackendConfiguration()
+    @ParameterizedTest
+    @MethodSource("getOkHttpClient")
+    public void testBackendConfiguration(OkHttpClient httpClient)
             throws Exception
     {
         Request request = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/entity/GATEWAY_BACKEND")
+                .addHeader("Host", "test.host.com")
                 .method("GET", null)
                 .build();
         Response response = httpClient.newCall(request).execute();
