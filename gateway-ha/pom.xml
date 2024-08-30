@@ -25,6 +25,7 @@
         <dep.mockito.version>5.13.0</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
         <dep.mysqlconnector.version>8.3.0</dep.mysqlconnector.version>
+        <dep.trino.version>446</dep.trino.version>
     </properties>
 
     <dependencies>
@@ -191,7 +192,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-parser</artifactId>
-            <version>440</version>
+            <version>${dep.trino.version}</version>
         </dependency>
 
         <dependency>
@@ -292,7 +293,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
-            <version>449</version>
+            <version>${dep.trino.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -335,7 +336,7 @@
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-client</artifactId>
-            <version>444</version>
+            <version>${dep.trino.version}</version>
             <scope>test</scope>
         </dependency>
 
