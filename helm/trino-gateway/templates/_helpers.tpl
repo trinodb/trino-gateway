@@ -40,6 +40,9 @@ helm.sh/chart: {{ include "trino-gateway.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.commonLabels }}
+{{ tpl (toYaml .Values.commonLabels) . }}
+{{- end }}
 {{- end }}
 
 {{/*
