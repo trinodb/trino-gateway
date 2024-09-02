@@ -18,8 +18,9 @@ export function History() {
   const [backendMapping, setBackendMapping] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [size] = useState(15);
-  const [form, setForm] = useState({
-    user: access.userName
+  const [form, setForm] = useState(() => {
+    const username = sessionStorage.getItem('username');
+    return username ? JSON.parse(username) : { user: access.userName };
   });
 
   useEffect(() => {
@@ -39,6 +40,10 @@ export function History() {
 
   useEffect(() => {
     list(1);
+  }, [form]);
+
+  useEffect(() => {
+    sessionStorage.setItem('username', JSON.stringify({ user: form.user }));
   }, [form]);
 
   const list = (p: number) => {
