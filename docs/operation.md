@@ -55,14 +55,16 @@ monitor:
   taskDelaySeconds: 10
 ```
 
-## Monitoring
+## Monitoring <a name="monitoring"></a>
 
-Prometheus can be configured to hit the OpenMetrics endpoint using:
+Trino Gateway provides a metrics endpoint that uses the OpenMetrics format at 
+`/metrics`. Use it to monitor Trino Gateway instances with Prometheus and 
+other compatible systems with the following Prometheus configuration:
 
-```
+```yaml
 scrape_configs:
 - job_name: trino_gateway
   static_configs:
     - targets:
-        - localhost:8080
+        - gateway1.example.com:8080
 ```
