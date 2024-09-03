@@ -3,6 +3,6 @@ name: trino-gateway
 description: A Helm chart for Trino Gateway
 type: application
 # Trino Gateway Helm chart version. Should be appVersion with .0.0 appended.
-version: "10.0.0"
+version: "11.0.0"
 # Trino Gateway version
-appVersion: "10"
+appVersion: "11"
