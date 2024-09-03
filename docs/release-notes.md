@@ -1,6 +1,6 @@
 # Release notes
 
-## Trino Gateway 10 (24 July 2024)
+## Trino Gateway 10 (24 Jul 2024)
 
 [JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar),
 Docker container `trinodb/trino-gateway:10`
