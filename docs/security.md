@@ -179,6 +179,7 @@ To limit page access, you can set page permissions by pages
 and `_` as separator field.
 
 The following pages are available:
+
 - `dashboard`
 - `cluster`
 - `resource-group`
@@ -202,7 +203,7 @@ If Trino Gateway is using a self-signed certificate, client should use the
 java -jar trino-cli-executable.jar --server https://localhost:8443 --insecure
 ```
 
-## Extra: Self signed certificate in Trino
+## Extra: Self-signed certificate in Trino <a name="cert-trino"></a>
 
 If Trino is using a self-signed certificate, the following JVM config for
 Trino Gateway should be added:
@@ -213,9 +214,10 @@ Trino Gateway should be added:
 ```
 
 If you want to skip the hostname validation for a self-signed certificate, 
-the `serverConfig` configuration file should contain the following:
+the `serverConfig` configuration should contain the following:
 
-```
-proxy.http-client.https.hostname-verification: false
-monitor.http-client.https.hostname-verification: false
+```yaml
+serverConfig:
+  proxy.http-client.https.hostname-verification: false
+  monitor.http-client.https.hostname-verification: false
 ```
