@@ -41,6 +41,13 @@ Access the site in your browser at http://127.0.0.1:8000/
 Edit the site sources as desired and refresh pages as needed. Some changes 
 require a restart of mkdocs.
 
+Alternatively, use a container to run mkdocs and avoid the need to install 
+mkdocs-material and all dependencies locally.
+
+```
+docker run --rm -it -v ${PWD}:/docs -p8000:8000 squidfunk/mkdocs-material 
+```
+
 ## Configuring MKDocs
 
 MkDocs is configured in `mkdocs.yml`. Refer to the source, the 
