@@ -24,14 +24,22 @@ Refer to the
 
 Install `python` and `pipx`, for example with brew.
 
-Install mkdocs-material and all required dependencies:
+Install `mkdocs-material` and all required dependencies in the `mkdocs-material` 
+virtual environment for Python:
+
+```shell
+pipx install --include-deps mkdocs-material 
 ```
-pipx install --install-deps mkdocs-material
+
+Add plugins to the virtual environment:
+
+```shell
+pipx inject --include-deps mkdocs-material cairosvg
 ```
 
 Start the local site in the project root folder:
 
-```
+```shell
 cd trino-gateway
 mkdocs serve
 ```
