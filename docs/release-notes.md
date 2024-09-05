@@ -3,7 +3,7 @@
 ## Trino Gateway 10 (24 Jul 2024)
 
 [JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar),
-Docker container `trinodb/trino-gateway:10`
+Container image `trinodb/trino-gateway:10`
 
 * [:warning: Breaking change:](#breaking) Remove support for Dropwizard and
   Jetty Proxy integration and usage. Add
@@ -38,14 +38,14 @@ Docker container `trinodb/trino-gateway:10`
 ## Trino Gateway 9 (8 May 2024)
 
 [JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar),
-Docker container `trinodb/trino-gateway:9`
+Container image `trinodb/trino-gateway:9`
 
 * Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
 
 ## Trino Gateway 8 (6 May 2024)
 
 [JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar),
-Docker container `trinodb/trino-gateway:8`
+Container image `trinodb/trino-gateway:8`
 
 * Add support for configurable router policies. ([#98](https://github.com/trinodb/trino-gateway/pull/98))
 * Add a router policy based on query count per cluster. ([#98](https://github.com/trinodb/trino-gateway/pull/98))
@@ -59,7 +59,7 @@ Docker container `trinodb/trino-gateway:8`
 ## Trino Gateway 7 (21 Mar 2024)
 
 [JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar),
-Docker container `trinodb/trino-gateway:7`
+Container image `trinodb/trino-gateway:7`
 
 * Replace user interface with a new modern UI. ([#116](https://github.com/trinodb/trino-gateway/pull/116))
 * Improve logging configurability. Users must update to the 
@@ -73,7 +73,7 @@ Docker container `trinodb/trino-gateway:7`
 ## Trino Gateway 6 (16 Feb 2024)
 
 [JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar),
-Docker container `trinodb/trino-gateway:6`
+Container image `trinodb/trino-gateway:6`
 
 * Add Docker container build, publishing, and usage setup and instructions. ([#86](https://github.com/trinodb/trino-gateway/issues/86))
 
