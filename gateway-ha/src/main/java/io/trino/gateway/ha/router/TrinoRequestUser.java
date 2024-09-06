@@ -267,14 +267,23 @@ public class TrinoRequestUser
         public void serialize(Optional<UserInfo> userInfo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
                 throws IOException
         {
-            userInfo.ifPresent(u -> {
-                try {
-                    jsonGenerator.writeString(u.toJSONString());
-                }
-                catch (IOException e) {
-                    log.error(e, "Error serializing userInfo");
-                }
-            });
+            userInfo.ifPresentOrElse(
+                    u -> {
+                        try {
+                            jsonGenerator.writeString(u.toJSONString());
+                        }
+                        catch (IOException e) {
+                            log.error(e, "Error serializing userInfo");
+                        }
+                    },
+                    () -> {
+                        try {
+                            jsonGenerator.writeNull();
+                        }
+                        catch (IOException e) {
+                            log.error(e, "Error writing null for absent userInfo");
+                        }
+                    });
         }
     }
 }
