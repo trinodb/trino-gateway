@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -156,6 +157,43 @@ public class TestGatewayHaMultipleBackend
                         .build();
         Response response4 = httpClient.newCall(request4).execute();
         assertThat(response4.body().string()).contains("http://localhost:" + routerPort);
+    }
+
+    @Test
+    public void testTrinoClusterHostCookie()
+            throws Exception
+    {
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
+
+        // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the routing group
+        Request requestWithoutCookie =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "scheduled")
+                        .build();
+        Response responseWithoutCookie = httpClient.newCall(requestWithoutCookie).execute();
+        assertThat(responseWithoutCookie.body().string()).contains("http://localhost:" + routerPort);
+        List<Cookie> cookies = Cookie.parseAll(responseWithoutCookie.request().url(), responseWithoutCookie.headers());
+        Cookie clusterHostCookie = cookies.stream().filter(c -> c.name().equals("trinoClusterHost")).collect(onlyElement());
+        assertThat(clusterHostCookie.value()).isEqualTo("localhost");
+
+        // test with sending the request which includes trinoClusterHost in the cookie
+        // when X-Trino-Routing-Group is set in header, query should be routed to cluster under the routing group
+        Request requestWithCookie =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "scheduled")
+                        .addHeader("Cookie", "trinoClientHost=foo.example.com")
+                        .build();
+        Response responseWithCookie = httpClient.newCall(requestWithCookie).execute();
+        assertThat(responseWithCookie.body().string()).contains("http://localhost:" + routerPort);
+        List<Cookie> overridenCookies = Cookie.parseAll(responseWithCookie.request().url(), responseWithCookie.headers());
+        Cookie overridenClusterHostCookie = overridenCookies.stream().filter(c -> c.name().equals("trinoClusterHost")).collect(onlyElement());
+        assertThat(overridenClusterHostCookie.value()).isEqualTo("localhost");
     }
 
     @Test

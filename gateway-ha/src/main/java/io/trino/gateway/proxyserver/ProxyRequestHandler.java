@@ -85,6 +85,7 @@ public class ProxyRequestHandler
     private final boolean cookiesEnabled;
     private final boolean addXForwardedHeaders;
     private final List<String> statementPaths;
+    private final boolean includeClusterInfoInResponse;
 
     @Inject
     public ProxyRequestHandler(
@@ -100,6 +101,7 @@ public class ProxyRequestHandler
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
         statementPaths = haGatewayConfiguration.getStatementPaths();
+        this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
     }
 
     @PreDestroy
@@ -160,7 +162,8 @@ public class ProxyRequestHandler
             addXForwardedHeaders(servletRequest, requestBuilder);
         }
 
-        ImmutableList<NewCookie> oauth2GatewayCookie = getOAuth2GatewayCookie(remoteUri, servletRequest);
+        ImmutableList.Builder<NewCookie> cookieBuilder = ImmutableList.builder();
+        cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
 
         Request request = requestBuilder
                 .setPreserveAuthorizationOnRedirect(true)
@@ -171,11 +174,14 @@ public class ProxyRequestHandler
 
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
             future = future.transform(response -> recordBackendForQueryId(request, response), executor);
+            if (includeClusterInfoInResponse) {
+                cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
+            }
         }
 
         setupAsyncResponse(
                 asyncResponse,
-                future.transform(response -> buildResponse(response, oauth2GatewayCookie), executor)
+                future.transform(response -> buildResponse(response, cookieBuilder.build()), executor)
                         .catching(ProxyException.class, e -> handleProxyException(request, e), directExecutor()));
     }
 
