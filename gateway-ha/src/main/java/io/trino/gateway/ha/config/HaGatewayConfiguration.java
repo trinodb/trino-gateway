@@ -41,6 +41,7 @@ public class HaGatewayConfiguration
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
+    private boolean includeClusterHostInResponse;
 
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
@@ -242,6 +243,16 @@ public class HaGatewayConfiguration
         // remove trailing slashes to ensure predictable behavior when splitting on "/"
         this.statementPaths = Streams.concat(ImmutableList.of(V1_STATEMENT_PATH).stream(),
                 statementPaths.stream().peek(s -> validateStatementPath(s, statementPaths)).map(s -> s.replaceAll("/+$", ""))).toList();
+    }
+
+    public boolean isIncludeClusterHostInResponse()
+    {
+        return includeClusterHostInResponse;
+    }
+
+    public void setIncludeClusterHostInResponse(boolean includeClusterHostInResponse)
+    {
+        this.includeClusterHostInResponse = includeClusterHostInResponse;
     }
 
     private void validateStatementPath(String statementPath, List<String> statementPaths)
