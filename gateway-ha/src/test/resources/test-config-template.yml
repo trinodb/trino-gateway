@@ -2,6 +2,7 @@ serverConfig:
   node.environment: test
   http-server.http.port: REQUEST_ROUTER_PORT
 
+includeClusterHostInResponse: true
 dataStore:
   jdbcUrl: jdbc:h2:DB_FILE_PATH
   user: sa
