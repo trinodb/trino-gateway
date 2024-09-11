@@ -48,7 +48,7 @@ You can use an external service for processing your routing by setting the
 `rulesType` to `EXTERNAL` and configuring the `rulesExternalConfiguration`.
 
 Trino Gateway then sends all headers as a map in the body of a POST request to the external service.
-Headers specified in `blacklistHeaders` are excluded. If `requestAnalyzerConfig.isAnalyzeRequest` is set to `true`, 
+Headers specified in `blacklistHeaders` are excluded. If `requestAnalyzerConfig.analyzeRequest` is set to `true`, 
 `TrinoRequestUser` and `TrinoQueryProperties` are also included. 
 
 Additionally, the following HTTP information is included:
@@ -164,7 +164,7 @@ username against the extracted user. It will return `False` if a user has not
 been extracted.
 
 User extraction is only available if enabled by configuring
-`requestAnalyzerConfig.isAnalyzeRequest = True`
+`requestAnalyzerConfig.analyzeRequest = True`
 
 ### TrinoQueryProperties
 
@@ -211,7 +211,7 @@ object:
 The `trinoQueryProperties`  are configured under the `requestAnalyzerConfig`
 configuration  node.
 
-#### isAnalyzeRequest
+#### analyzeRequest
 
 Set to `True` to make `trinoQueryProperties` and `trinoRequestUser` available
 
