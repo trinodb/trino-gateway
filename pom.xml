@@ -11,7 +11,7 @@
 
     <groupId>io.trino.gateway</groupId>
     <artifactId>trino-gateway-parent</artifactId>
-    <version>11</version>
+    <version>12-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>trino-gateway-parent</name>
@@ -32,7 +32,7 @@
     </modules>
     <scm>
         <connection>scm:git:git://github.com/trinodb/trino-gateway.git</connection>
-        <tag>11</tag>
+        <tag>HEAD</tag>
         <url>https://github.com/trinodb/trino-gateway</url>
     </scm>
 
