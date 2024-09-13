@@ -31,12 +31,12 @@ routingRules:
     rulesConfigPath: "app/config/routing_rules.yml" # replace with actual path to your rules config file
     rulesExternalConfiguration:
         urlPath: https://router.example.com/gateway-rules # replace with your own API path
-        blacklistHeaders:
+        excludeHeaders:
             - 'Authorization'
 ```
 
 * Redirect URLs are not supported
-* Optionally add headers to the `BlacklistHeaders` list to exclude requests with corresponding header values
+* Optionally add headers to the `excludeHeaders` list to exclude requests with corresponding header values
   from being sent in the POST request.
 
 If there is error parsing the routing rules configuration file, an error is logged,
@@ -48,7 +48,7 @@ You can use an external service for processing your routing by setting the
 `rulesType` to `EXTERNAL` and configuring the `rulesExternalConfiguration`.
 
 Trino Gateway then sends all headers as a map in the body of a POST request to the external service.
-Headers specified in `blacklistHeaders` are excluded. If `requestAnalyzerConfig.analyzeRequest` is set to `true`, 
+Headers specified in `excludeHeaders` are excluded. If `requestAnalyzerConfig.analyzeRequest` is set to `true`, 
 `TrinoRequestUser` and `TrinoQueryProperties` are also included. 
 
 Additionally, the following HTTP information is included:
