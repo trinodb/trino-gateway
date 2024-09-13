@@ -49,7 +49,7 @@ public class ExternalRoutingGroupSelector
         implements RoutingGroupSelector
 {
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
-    private final Set<String> blacklistHeaders;
+    private final Set<String> excludeHeaders;
     private final URI uri;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
@@ -61,10 +61,9 @@ public class ExternalRoutingGroupSelector
     @VisibleForTesting
     ExternalRoutingGroupSelector(RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        Set<String> defaultBlacklistHeaders = ImmutableSet.of("Content-Length");
-        this.blacklistHeaders = ImmutableSet.<String>builder()
-                .addAll(defaultBlacklistHeaders)
-                .addAll(rulesExternalConfiguration.getBlackListHeaders())
+        this.excludeHeaders = ImmutableSet.<String>builder()
+                .add("Content-Length")
+                .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
@@ -142,8 +141,7 @@ public class ExternalRoutingGroupSelector
         Multimap<String, String> headers = ArrayListMultimap.create();
         for (String name : list(servletRequest.getHeaderNames())) {
             for (String value : list(servletRequest.getHeaders(name))) {
-                // Add all headers to ListMultimap except those in blacklist
-                if (!blacklistHeaders.contains(name)) {
+                if (!excludeHeaders.contains(name)) {
                     headers.put(name, value);
                 }
             }

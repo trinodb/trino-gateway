@@ -29,8 +29,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,13 +37,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
@@ -80,19 +76,19 @@ public class TestRoutingGroupSelectorExternal
         httpClient = Mockito.mock(HttpClient.class);
     }
 
-    static Stream<RulesExternalConfiguration> provideRoutingRuleExternalConfig()
+    static RulesExternalConfiguration provideRoutingRuleExternalConfig()
     {
         RulesExternalConfiguration restConfig = new RulesExternalConfiguration();
         restConfig.setUrlPath("http://localhost:8080/api/public/gateway_rules");
-        restConfig.setBlackListHeaders(new ArrayList<>(List.of("Authorization")));
-        return Stream.of(restConfig);
+        restConfig.setExcludeHeaders(List.of("Authorization"));
+        return restConfig;
     }
 
-    @ParameterizedTest
-    @MethodSource("provideRoutingRuleExternalConfig")
-    void testByRoutingRulesExternalEngine(RulesExternalConfiguration rulesExternalConfiguration)
+    @Test
+    void testByRoutingRulesExternalEngine()
             throws URISyntaxException
     {
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
         HttpServletRequest mockRequest = prepareMockRequest();
 
         // Create a mock response
@@ -132,10 +128,10 @@ public class TestRoutingGroupSelectorExternal
         assertThat(ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER).isEqualTo(handlerCaptor.getValue());
     }
 
-    @ParameterizedTest
-    @MethodSource("provideRoutingRuleExternalConfig")
-    void testApiFailure(RulesExternalConfiguration rulesExternalConfiguration)
+    @Test
+    void testApiFailure()
     {
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, requestAnalyzerConfig);
 
@@ -162,38 +158,36 @@ public class TestRoutingGroupSelectorExternal
     @Test
     void testNullUri()
     {
-        RulesExternalConfiguration restConfig = new RulesExternalConfiguration();
-        restConfig.setBlackListHeaders(new ArrayList<>(List.of("Authorization")));
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setUrlPath(null);
 
         // Assert that a RuntimeException is thrown with message
-        assertThatThrownBy(() -> RoutingGroupSelector.byRoutingExternal(restConfig, requestAnalyzerConfig))
+        assertThatThrownBy(() -> RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, requestAnalyzerConfig))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Invalid URL provided, using routing group header as default.");
     }
 
     @Test
-    void testBlackListHeader()
+    void testExcludeHeader()
             throws IllegalAccessException, NoSuchMethodException, InvocationTargetException
     {
-        // set custom RulesExternalConfiguration config
-        RulesExternalConfiguration restConfig = new RulesExternalConfiguration();
-        restConfig.setUrlPath("http://localhost:8080/api/public/gateway_rules");
-        restConfig.setBlackListHeaders(new ArrayList<>(List.of("test-blackList-header")));
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setExcludeHeaders(List.of("test-exclude-header"));
 
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingExternal(restConfig, requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, requestAnalyzerConfig);
 
         // Mock headers to be read by mockRequest
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        List<String> customHeaderNames = List.of("test-blackList-header", "not-blacklisted-header");
-        List<String> customBlackListHeaderValues = List.of("test-blacklist-value");
-        List<String> customValidHeaderValues = List.of("not-blacklist-value");
+        List<String> customHeaderNames = List.of("test-exclude-header", "not-excluded-header");
+        List<String> customExcludeHeaderValues = List.of("test-excludeHeader-value");
+        List<String> customValidHeaderValues = List.of("not-excludeHeader-value");
         Enumeration<String> headerNamesEnumeration = Collections.enumeration(customHeaderNames);
         when(mockRequest.getHeaderNames()).thenReturn(headerNamesEnumeration);
-        when(mockRequest.getHeaders("test-blackList-header")).thenReturn(Collections.enumeration(customBlackListHeaderValues));
-        when(mockRequest.getHeaders("not-blacklisted-header")).thenReturn(Collections.enumeration(customValidHeaderValues));
+        when(mockRequest.getHeaders("test-exclude-header")).thenReturn(Collections.enumeration(customExcludeHeaderValues));
+        when(mockRequest.getHeaders("not-excluded-header")).thenReturn(Collections.enumeration(customValidHeaderValues));
 
-        // Use reflection to get valid headers after removing blacklist headers
+        // Use reflection to get valid headers after removing excludeHeaders headers
         Method getValidHeaders = ExternalRoutingGroupSelector.class.getDeclaredMethod("getValidHeaders", HttpServletRequest.class);
         getValidHeaders.setAccessible(true);
 
