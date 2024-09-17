@@ -328,7 +328,7 @@ Other timeout parameters are not applicable to the JDBC connection.
 
 This pulls cluster information from the `ui/api/stats` REST endpoint. This is
 supported for legacy reasons and may be deprecated in the future. It is only 
-supported for backend clusters with `web-ui.authentication.type = PASSWORD`. Set
+supported for backend clusters with `web-ui.authentication.type=FORM`. Set
 a username and password using `backendState` as with the `JDBC` option.
 
 #### NOOP
