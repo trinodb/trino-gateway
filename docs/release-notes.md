@@ -1,5 +1,43 @@
 # Release notes
 
+## Trino Gateway 12 (7 Nov 2024) { id="12" }
+
+Artifacts:
+
+* [JAR file gateway-ha-12-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/12/gateway-ha-12-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:12`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/12.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/12.zip)
+* Helm chart `12.0.0` in `helm/trino-gateway` of the tagged source code
+
+Changes:
+
+* Add support for parsing `EXECUTE IMMEDIATE` statements for routing.
+  ([#484](https://github.com/trinodb/trino-gateway/issues/484))
+* Add support to set configuration values from environment variables.
+  ([#483](https://github.com/trinodb/trino-gateway/issues/483))
+* Add support to include information about the cluster used for query processing
+  to the response cookie.
+  ([#465](https://github.com/trinodb/trino-gateway/issues/465))
+* Add support for configuring the startup command for Trino Gateway in the
+  Helm chart with the `command` node.
+  ([#505](https://github.com/trinodb/trino-gateway/pull/505))
+* [:warning: Breaking change:](#breaking) Require Java 23 for build and 
+  runtime. Use Java 23 as runtime in the container.
+  ([#486](https://github.com/trinodb/trino-gateway/issues/486))
+* [:warning: Breaking change:](#breaking) Rename routing rule configuration
+  `blackListHeaders` to`excludeHeaders`.
+  ([#470](https://github.com/trinodb/trino-gateway/pull/470))
+* Prevent request analyzer failures for some queries without a defined catalog.
+  ([#478](https://github.com/trinodb/trino-gateway/issues/478))
+* Fix parsing failure and therefore routing problems for queries using `WITH` 
+  clauses.
+  ([#528](https://github.com/trinodb/trino-gateway/issues/528))
+
+More details and a list of all merged pull requests are [available in the
+milestone 12 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A12+is%3Aclosed).
+
 ## Trino Gateway 11 (12 Sep 2024) { id="11" }
 
 Artifacts:
