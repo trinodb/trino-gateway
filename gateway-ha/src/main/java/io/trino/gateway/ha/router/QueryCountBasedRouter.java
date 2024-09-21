@@ -17,9 +17,8 @@ package io.trino.gateway.ha.router;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +31,7 @@ import java.util.stream.Collectors;
 public class QueryCountBasedRouter
         extends StochasticRoutingManager
 {
-    private static final Logger log = LoggerFactory.getLogger(QueryCountBasedRouter.class);
+    private static final Logger log = Logger.get(QueryCountBasedRouter.class);
     @GuardedBy("this")
     private List<LocalStats> clusterStats;
 
@@ -185,7 +184,7 @@ public class QueryCountBasedRouter
 
     private synchronized Optional<LocalStats> getClusterToRoute(String user, String routingGroup)
     {
-        log.debug("sorting cluster stats for {} {}", user, routingGroup);
+        log.debug("sorting cluster stats for %s %s", user, routingGroup);
         List<LocalStats> filteredList = clusterStats.stream()
                     .filter(stats -> stats.healthy())
                     .filter(stats -> routingGroup.equals(stats.routingGroup()))
