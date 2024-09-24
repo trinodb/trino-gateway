@@ -51,6 +51,8 @@ public class TestGatewayHaMultipleBackend
 
     public static final String CUSTOM_LOGOUT = "/custom/logout"; //defined in src/test/resources/test-config-template.yml
 
+    private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
 
@@ -109,8 +111,7 @@ public class TestGatewayHaMultipleBackend
     public void testCustomPath()
             throws Exception
     {
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "abc");
+        RequestBody requestBody = RequestBody.create("abc", MEDIA_TYPE);
         Request request1 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + CUSTOM_PATH)
@@ -135,8 +136,7 @@ public class TestGatewayHaMultipleBackend
             throws Exception
     {
         // Default request should be routed to adhoc backend
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
         Request request1 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
@@ -162,8 +162,7 @@ public class TestGatewayHaMultipleBackend
     public void testDeleteQueryId()
             throws IOException
     {
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
@@ -221,9 +220,7 @@ public class TestGatewayHaMultipleBackend
                 .readTimeout(60, TimeUnit.SECONDS)
                 .build();
         String oauthInitiateBody = "anything";
-        RequestBody requestBody =
-                RequestBody.create(
-                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+        RequestBody requestBody = RequestBody.create(oauthInitiateBody, MEDIA_TYPE);
 
         Request initiateRequest =
                 new Request.Builder()
@@ -271,9 +268,7 @@ public class TestGatewayHaMultipleBackend
                 .readTimeout(60, TimeUnit.SECONDS)
                 .build();
         String oauthInitiateBody = "anything";
-        RequestBody requestBody =
-                RequestBody.create(
-                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+        RequestBody requestBody = RequestBody.create(oauthInitiateBody, MEDIA_TYPE);
 
         Request initiateRequest =
                 new Request.Builder()
