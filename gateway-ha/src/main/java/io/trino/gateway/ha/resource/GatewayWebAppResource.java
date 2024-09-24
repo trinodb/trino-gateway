@@ -497,4 +497,13 @@ public class GatewayWebAppResource
         }
         return Response.ok(Result.ok(routingRulesList)).build();
     }
+
+    @GET
+    @RolesAllowed("USER")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getUIConfiguration")
+    public Response getUIConfiguration()
+    {
+        return Response.ok(Result.ok(configuration.getUiConfiguration())).build();
+    }
 }
