@@ -43,7 +43,7 @@ name: "defaults-group"
 description: "test default schema and catalog"
 condition: |
   trinoQueryProperties.getDefaultCatalog().equals(java.util.Optional.of("other_catalog"))
-  && trinoQueryProperties.getDefaultCatalog().equals(java.util.Optional.of("other_catalog"))
+  && trinoQueryProperties.getDefaultSchema().equals(java.util.Optional.of("other_schema"))
 
 actions:
   - "result.put(\"routingGroup\", \"defaults-group\")"
