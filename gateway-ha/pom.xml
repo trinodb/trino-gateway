@@ -24,7 +24,7 @@
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.13.0</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
-        <dep.mysqlconnector.version>8.3.0</dep.mysqlconnector.version>
+        <dep.mysqlconnector.version>9.0.0</dep.mysqlconnector.version>
         <dep.trino.version>446</dep.trino.version>
     </properties>
 
