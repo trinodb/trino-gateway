@@ -26,6 +26,7 @@ public class QueryIdCachingProxyHandler
     public static final String OAUTH_PATH = "/oauth2";
     public static final String AUTHORIZATION = "Authorization";
     public static final String USER_HEADER = "X-Trino-User";
+    public static final String JMX_PATH = "/v1/jmx/mbean";
 
     private QueryIdCachingProxyHandler() {}
 }
