@@ -489,8 +489,8 @@
                             <goal>install-node-and-pnpm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v18.9.1</nodeVersion>
-                            <pnpmVersion>8.6.12</pnpmVersion>
+                            <nodeVersion>v20.17.0</nodeVersion>
+                            <pnpmVersion>9.11.0</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
