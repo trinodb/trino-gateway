@@ -39,6 +39,7 @@ import io.trino.sql.tree.DropCatalog;
 import io.trino.sql.tree.DropSchema;
 import io.trino.sql.tree.DropTable;
 import io.trino.sql.tree.Execute;
+import io.trino.sql.tree.ExecuteImmediate;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
@@ -184,6 +185,10 @@ public class TrinoQueryProperties
                     return;
                 }
                 body = preparedStatements.get(statementName);
+                statement = parser.createStatement(body);
+            }
+            else if (statement instanceof ExecuteImmediate executeImmediate) {
+                body = executeImmediate.getStatement().getValue();
                 statement = parser.createStatement(body);
             }
 
