@@ -13,8 +13,10 @@
  */
 package io.trino.gateway.ha.handler;
 
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -47,16 +49,16 @@ public class RoutingTargetHandler
     private final List<Pattern> extraWhitelistPaths;
     private final boolean cookiesEnabled;
 
+    @Inject
     public RoutingTargetHandler(
             RoutingManager routingManager,
             RoutingGroupSelector routingGroupSelector,
-            List<String> statementPaths,
-            List<String> extraWhitelistPaths)
+            HaGatewayConfiguration haGatewayConfiguration)
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
-        this.statementPaths = requireNonNull(statementPaths);
-        this.extraWhitelistPaths = extraWhitelistPaths.stream().map(Pattern::compile).collect(toImmutableList());
+        this.statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
+        this.extraWhitelistPaths = requireNonNull(haGatewayConfiguration.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 

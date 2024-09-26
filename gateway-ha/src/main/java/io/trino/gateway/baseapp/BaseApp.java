@@ -21,6 +21,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
+import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import io.trino.gateway.ha.resource.EntityEditorResource;
@@ -119,6 +120,7 @@ public class BaseApp
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);
+        jaxrsBinder(binder).bind(RoutingTargetHandler.class);
         addManagedApps(this.haGatewayConfiguration, binder);
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
