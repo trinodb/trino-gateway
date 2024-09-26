@@ -379,7 +379,11 @@ public class TestRoutingGroupSelector
                 Arguments.of("SELECT * FROM TABLE(kat.system.funk(arg => 'expr'))",
                         ImmutableSet.of("kat"),
                         ImmutableSet.of("system"),
-                        ImmutableSet.of(QualifiedName.of("kat", "system", "funk"))));
+                        ImmutableSet.of(QualifiedName.of("kat", "system", "funk"))),
+                Arguments.of("EXECUTE IMMEDIATE 'SELECT * FROM cat.schem.tbl'",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("schem"),
+                        ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))));
     }
 
     @ParameterizedTest
