@@ -103,6 +103,25 @@ directory into the same directory, and update the configuration as needed.
 Each component of the Trino Gateway has a corresponding node in the
 configuration YAML file.
 
+### Secrets in configuration file
+
+Environment variables can be used as values in the configuration file.
+You can manually set an environment variable on the command line.
+
+```shell
+export DB_PASSWORD=my-super-secret-pwd
+```
+
+To use this variable in the configuration file, you reference it with the 
+syntax `${ENV:VARIABLE}`. For example:
+
+```yaml
+dataStore:
+  jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+  user: postgres
+  password: ${ENV:DB_PASSWORD}
+```
+
 ### Configure routing rules
 
 Find more information in the [routing rules documentation](routing-rules.md).
