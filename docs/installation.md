@@ -21,7 +21,7 @@ Consider the following requirements for your Trino Gateway installation.
 
 ### Java
 
-Trino Gateway requires a Java 22 runtime. Older versions of Java can not be
+Trino Gateway requires a Java 23 runtime. Older versions of Java can not be
 used. Newer versions might work but are not tested.
 
 Verify the Java version on your system with `java -version`.
