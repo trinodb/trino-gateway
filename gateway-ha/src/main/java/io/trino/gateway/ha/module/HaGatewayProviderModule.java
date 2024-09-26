@@ -25,10 +25,8 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
-import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
-import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.BasicAuthFilter;
@@ -199,18 +197,5 @@ public class HaGatewayProviderModule
             }
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
-    }
-
-    @Provides
-    @Singleton
-    public RoutingTargetHandler getRoutingTargetHandler(
-            RoutingManager routingManager,
-            RoutingGroupSelector routingGroupSelector)
-    {
-        return new RoutingTargetHandler(
-                routingManager,
-                routingGroupSelector,
-                configuration.getStatementPaths(),
-                configuration.getExtraWhitelistPaths());
     }
 }
