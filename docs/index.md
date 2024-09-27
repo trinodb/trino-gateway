@@ -22,6 +22,10 @@ gateway for multiple [Trino](https://trino.io) clusters.
 ## Other resources
 
 * [Trino Gateway announcement blog post](https://trino.io/blog/2023/09/28/trino-gateway)
+* Trino Gateway - because one Trino cluster is not enough
+    * Presented by Will Morrison and Manfred Moser at Open Source Data Summit
+    in October 2024
+    * [Slide deck](./assets/misc/trino-gateway-at-osds-2024.pdf)
 * Many clusters and only one gateway:
     * Project announcement and overview at Trino Summit 2023 with use cases 
       from Bloomberg and Naver
