@@ -33,11 +33,13 @@ routingRules:
         urlPath: https://router.example.com/gateway-rules # replace with your own API path
         excludeHeaders:
             - 'Authorization'
+            - 'Accept-Encoding'
 ```
 
 * Redirect URLs are not supported
 * Optionally add headers to the `excludeHeaders` list to exclude requests with corresponding header values
   from being sent in the POST request.
+* Check headers to exclude when making API requests, specifics depend on the network configuration.
 
 If there is error parsing the routing rules configuration file, an error is logged,
 and requests are routed using the routing group header `X-Trino-Routing-Group` as default.
