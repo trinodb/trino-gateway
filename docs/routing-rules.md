@@ -195,9 +195,10 @@ added to the list of tables in all contexts, including  statements such as
 A routing rule can call the following methods on the `trinoQueryProperties`
 object:
 
+* `String errorMessage()`: the error message only if there was any error while
+  creating `trinoQueryProperties` object. 
 * `boolean isNewQuerySubmission()`: is the request a POST to the `v1/statement`
-  query endpoint.
-* `boolean isQueryParsingSuccessful()`: was the request successfully parsed. 
+  query endpoint. 
 * `String getQueryType()`: the class name of the `Statement`, e.g. `ShowCreate`.
   Note that these are not mapped to the `ResourceGroup` query types. For a full
   list of potential query types, see the classes in
