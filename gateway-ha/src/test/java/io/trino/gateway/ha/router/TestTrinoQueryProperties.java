@@ -38,7 +38,7 @@ final class TestTrinoQueryProperties
                 ImmutableSet.of("s"),
                 ImmutableSet.of("c.s"),
                 true,
-                true);
+                Optional.empty());
 
         String trinoQueryPropertiesJson = codec.toJson(trinoQueryProperties);
         TrinoQueryProperties deserializedTrinoQueryProperties = codec.fromJson(trinoQueryPropertiesJson);
@@ -54,5 +54,6 @@ final class TestTrinoQueryProperties
         assertThat(deserializedTrinoQueryProperties.getCatalogSchemas()).isEqualTo(trinoQueryProperties.getCatalogSchemas());
         assertThat(deserializedTrinoQueryProperties.isNewQuerySubmission()).isEqualTo(trinoQueryProperties.isNewQuerySubmission());
         assertThat(deserializedTrinoQueryProperties.isQueryParsingSuccessful()).isEqualTo(trinoQueryProperties.isQueryParsingSuccessful());
+        assertThat(deserializedTrinoQueryProperties.getErrorMessage()).isEqualTo(trinoQueryProperties.getErrorMessage());
     }
 }

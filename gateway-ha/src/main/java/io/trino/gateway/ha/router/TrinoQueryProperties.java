@@ -96,7 +96,7 @@ public class TrinoQueryProperties
     private Set<String> schemas = ImmutableSet.of();
     private Set<String> catalogSchemas = ImmutableSet.of();
     private boolean isNewQuerySubmission;
-    private boolean isQueryParsingSuccessful;
+    private Optional<String> errorMessage = Optional.empty();
 
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
     public static final String TRINO_SCHEMA_HEADER_NAME = "X-Trino-Schema";
@@ -114,7 +114,7 @@ public class TrinoQueryProperties
             @JsonProperty("schemas") Set<String> schemas,
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
-            @JsonProperty("isQueryParsingSuccessful") boolean isQueryParsingSuccessful)
+            @JsonProperty("errorMessage") Optional<String> errorMessage)
     {
         this.body = requireNonNullElse(body, "");
         this.queryType = requireNonNullElse(queryType, "");
@@ -126,7 +126,7 @@ public class TrinoQueryProperties
         this.schemas = requireNonNullElse(schemas, ImmutableSet.of());
         this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
         this.isNewQuerySubmission = isNewQuerySubmission;
-        this.isQueryParsingSuccessful = isQueryParsingSuccessful;
+        this.errorMessage = requireNonNullElse(errorMessage, Optional.empty());
         isClientsUseV2Format = false;
     }
 
@@ -208,19 +208,18 @@ public class TrinoQueryProperties
             catalogSchemaBuilder.addAll(
                     tables.stream().map(qualifiedName -> format("%s.%s", qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
             catalogSchemas = catalogSchemaBuilder.build();
-            isQueryParsingSuccessful = true;
         }
         catch (IOException e) {
             log.warn("Error extracting request body for rules processing: %s", e.getMessage());
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
         catch (ParsingException e) {
             log.info("Could not parse request body as SQL: %s; Message: %s", body, e.getMessage());
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
         catch (RequestParsingException e) {
             log.warn(e, "Error parsing request for rules");
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
     }
 
@@ -291,7 +290,7 @@ public class TrinoQueryProperties
                         targetSchema = QualifiedName.of(defaultCatalog.orElseThrow(), s.getTarget().getValue());
                     }
                     else {
-                        isQueryParsingSuccessful = false;
+                        errorMessage = Optional.of("defaultCatalog is not present");
                         return;
                     }
                 }
@@ -379,7 +378,6 @@ public class TrinoQueryProperties
 
     private RequestParsingException unsetDefaultExceptionSupplier()
     {
-        isQueryParsingSuccessful = false;
         return new RequestParsingException("Name not fully qualified");
     }
 
@@ -513,7 +511,13 @@ public class TrinoQueryProperties
     @JsonProperty("isQueryParsingSuccessful")
     public boolean isQueryParsingSuccessful()
     {
-        return isQueryParsingSuccessful;
+        return errorMessage.isEmpty();
+    }
+
+    @JsonProperty
+    public Optional<String> getErrorMessage()
+    {
+        return errorMessage;
     }
 
     public static class AlternateStatementRequestBodyFormat
