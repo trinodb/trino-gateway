@@ -13,34 +13,6 @@
  */
 package io.trino.gateway.ha.router.schema;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
-public class RoutingGroupExternalResponse
-{
-    private final String routingGroup;
-    private final List<String> errors;
-
-    @JsonCreator
-    public RoutingGroupExternalResponse(
-            @JsonProperty("routingGroup") String routingGroup,
-            @JsonProperty("errors") List<String> errors)
-    {
-        this.routingGroup = routingGroup;
-        this.errors = errors;
-    }
-
-    @JsonProperty
-    public String getRoutingGroup()
-    {
-        return routingGroup;
-    }
-
-    @JsonProperty
-    public List<String> getErrors()
-    {
-        return errors;
-    }
-}
+public record RoutingGroupExternalResponse(String routingGroup, List<String> errors) {}

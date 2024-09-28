@@ -117,7 +117,7 @@ public class TestRoutingGroupSelectorExternal
         RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER);
 
         // Verify the response
-        assertThat(response.getRoutingGroup())
+        assertThat(response.routingGroup())
                 .isEqualTo("test-group");
 
         // Verify that the execute method was called with the correct parameters
