@@ -101,10 +101,10 @@ public class ExternalRoutingGroupSelector
             if (response == null) {
                 throw new RuntimeException("Unexpected response: null");
             }
-            else if (response.getErrors() != null && !response.getErrors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.getErrors()));
+            else if (response.errors() != null && !response.errors().isEmpty()) {
+                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
             }
-            return response.getRoutingGroup();
+            return response.routingGroup();
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "
