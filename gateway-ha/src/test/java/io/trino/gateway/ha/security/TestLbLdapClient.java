@@ -29,6 +29,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
@@ -62,55 +63,50 @@ public class TestLbLdapClient
 
     @Test
     public void testAuthenticate()
+            throws Exception
     {
         String user = "user1";
         String password = "pass1";
 
-        try {
-            String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
+        String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
 
-            Mockito
-                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray()))
-                    .thenReturn(null);
+        Mockito
+                .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                        filter,
+                        SearchScope.SUBTREE,
+                        password.toCharArray()))
+                .thenReturn(null);
 
-            //Success case
-            assertThat(lbLdapClient.authenticate(user, password)).isTrue();
+        //Success case
+        assertThat(lbLdapClient.authenticate(user, password)).isTrue();
 
-            Mockito
-                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray()))
-                    .thenReturn(new TestLbLdapClient.DummyPasswordWarning());
+        Mockito
+                .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                        filter,
+                        SearchScope.SUBTREE,
+                        password.toCharArray()))
+                .thenReturn(new TestLbLdapClient.DummyPasswordWarning());
 
-            //Warning case
-            assertThat(lbLdapClient.authenticate(user, password)).isTrue();
+        //Warning case
+        assertThat(lbLdapClient.authenticate(user, password)).isTrue();
 
-            Mockito
-                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray()))
-                    .thenThrow(PasswordException.class);
+        Mockito
+                .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                        filter,
+                        SearchScope.SUBTREE,
+                        password.toCharArray()))
+                .thenThrow(PasswordException.class);
 
-            //failure case
-            assertThat(lbLdapClient.authenticate(user, password)).isFalse();
+        //failure case
+        assertThat(lbLdapClient.authenticate(user, password)).isFalse();
 
-            Mockito
-                    .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray()))
-                    .thenReturn(null);
-        }
-        catch (PasswordException ex) {
-            log.error("This should not fail");
-            //Force the test to fail
-            assertThat(false).isFalse();
-        }
+        assertThatThrownBy(() -> Mockito
+                .when(ldapConnectionTemplate.authenticate(ldapConfig.getLdapUserBaseDn(),
+                        filter,
+                        SearchScope.SUBTREE,
+                        password.toCharArray()))
+                .thenReturn(null))
+                .isInstanceOf(PasswordException.class);
     }
 
     @Test
