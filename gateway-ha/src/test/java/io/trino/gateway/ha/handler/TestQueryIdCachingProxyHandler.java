@@ -30,10 +30,10 @@ import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestQueryIdCachingProxyHandler
+final class TestQueryIdCachingProxyHandler
 {
     @Test
-    public void testExtractQueryIdFromUrl()
+    void testExtractQueryIdFromUrl()
             throws IOException
     {
         List<String> statementPaths = ImmutableList.of("/v1/statement", "/custom/api/statement");
@@ -67,7 +67,7 @@ public class TestQueryIdCachingProxyHandler
     }
 
     @Test
-    public void testUserFromRequest()
+    void testUserFromRequest()
             throws IOException
     {
         HttpServletRequest req = Mockito.mock(HttpServletRequest.class);

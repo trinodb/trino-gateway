@@ -27,19 +27,19 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestQueryHistoryManager
+final class TestQueryHistoryManager
 {
     private QueryHistoryManager queryHistoryManager;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         queryHistoryManager = new HaQueryHistoryManager(connectionManager.getJdbi());
     }
 
     @Test
-    public void testSubmitAndFetchQueryHistory()
+    void testSubmitAndFetchQueryHistory()
     {
         List<QueryHistoryManager.QueryDetail> queryDetails =
                 queryHistoryManager.fetchQueryHistory(Optional.empty());
@@ -72,7 +72,7 @@ public class TestQueryHistoryManager
     }
 
     @Test
-    public void testFindDistribution()
+    void testFindDistribution()
     {
         long currentTime = System.currentTimeMillis();
         List<DistributionResponse.LineChart> resList = queryHistoryManager.findDistribution(currentTime);
@@ -94,7 +94,7 @@ public class TestQueryHistoryManager
     }
 
     @Test
-    public void testTimestampParsing()
+    void testTimestampParsing()
     {
         long result = 30338640;
 

@@ -24,14 +24,14 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestStochasticRoutingManager
+final class TestStochasticRoutingManager
 {
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
@@ -40,7 +40,7 @@ public class TestStochasticRoutingManager
     }
 
     @Test
-    public void addMockBackends()
+    void testAddMockBackends()
     {
         String groupName = "test_group";
         int numBackends = 5;

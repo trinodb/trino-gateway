@@ -30,14 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestSpecificDbResourceGroupsManager
+final class TestSpecificDbResourceGroupsManager
         extends TestResourceGroupsManager
 {
     private String specificDb;
 
     @BeforeAll
     @Override
-    public void setUp()
+    void setUp()
     {
         specificDb = "h2db-" + System.currentTimeMillis();
         File baseDir = new File(System.getProperty("java.io.tmpdir"));
@@ -68,14 +68,14 @@ public class TestSpecificDbResourceGroupsManager
     }
 
     @Test
-    public void testReadSpecificDbResourceGroupCauseException()
+    void testReadSpecificDbResourceGroupCauseException()
     {
         assertThatThrownBy(() -> resourceGroupManager.readAllResourceGroups("abcd"))
                 .isInstanceOf(Exception.class);
     }
 
     @Test
-    public void testReadSpecificDbResourceGroup()
+    void testReadSpecificDbResourceGroup()
     {
         this.createResourceGroup("admin2");
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
@@ -85,7 +85,7 @@ public class TestSpecificDbResourceGroupsManager
     }
 
     @Test
-    public void testReadSpecificDbSelector()
+    void testReadSpecificDbSelector()
     {
         this.createResourceGroup("admin3");
         ResourceGroupsManager.SelectorsDetail selector = new ResourceGroupsManager.SelectorsDetail();

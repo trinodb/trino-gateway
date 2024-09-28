@@ -34,7 +34,7 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
 @ExtendWith(MockitoExtension.class)
-public class TestLbLdapClient
+final class TestLbLdapClient
 {
     private static final Logger log = Logger.get(TestLbLdapClient.class);
     @Mock
@@ -62,7 +62,7 @@ public class TestLbLdapClient
     }
 
     @Test
-    public void testAuthenticate()
+    void testAuthenticate()
             throws Exception
     {
         String user = "user1";
@@ -110,7 +110,7 @@ public class TestLbLdapClient
     }
 
     @Test
-    public void testMemberof()
+    void testMemberof()
     {
         String user = "user1";
         String[] attributes = new String[] {"memberOf"};
