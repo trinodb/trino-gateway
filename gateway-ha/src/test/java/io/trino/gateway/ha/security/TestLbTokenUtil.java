@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestLbTokenUtil
+final class TestLbTokenUtil
 {
     private String idToken;
     private final String rsaPrivateKey = "auth/test_private_key.pem";
@@ -39,7 +39,7 @@ public class TestLbTokenUtil
     private DecodedJWT jwt;
 
     @BeforeAll
-    public void setup()
+    void setup()
     {
         lbKeyProvider = new LbKeyProvider(new SelfSignKeyPairConfiguration(
                 requireNonNull(getClass().getClassLoader().getResource(rsaPrivateKey)).getFile(),
@@ -57,25 +57,25 @@ public class TestLbTokenUtil
     }
 
     @Test
-    public void testAudiencesShouldPassIfNoAudiencesAreRequired()
+    void testAudiencesShouldPassIfNoAudiencesAreRequired()
     {
         assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.empty())).isTrue();
     }
 
     @Test
-    public void testAudiencesShouldPassIfAnAudienceIsRequired()
+    void testAudiencesShouldPassIfAnAudienceIsRequired()
     {
         assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("test.com")))).isTrue();
     }
 
     @Test
-    public void testAudiencesShouldFailIfAudienceDoesNotMatch()
+    void testAudiencesShouldFailIfAudienceDoesNotMatch()
     {
         assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("no_match.com")))).isFalse();
     }
 
     @Test
-    public void testAudiencesShouldPassIfAnyAudienceIsMatched()
+    void testAudiencesShouldPassIfAnyAudienceIsMatched()
     {
         assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("test.com", "test1.com")))).isTrue();
     }

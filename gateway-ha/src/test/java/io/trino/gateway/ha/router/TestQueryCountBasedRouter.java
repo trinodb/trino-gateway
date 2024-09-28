@@ -24,7 +24,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestQueryCountBasedRouter
+final class TestQueryCountBasedRouter
 {
     static final String BACKEND_URL_1 = "http://c1";
     static final String BACKEND_URL_2 = "http://c2";
@@ -159,7 +159,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testUserWithSameNoOfQueuedQueries()
+    void testUserWithSameNoOfQueuedQueries()
     {
         // The user u1 has same number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queries running
@@ -185,7 +185,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testUserWithDifferentQueueLengthUser1()
+    void testUserWithDifferentQueueLengthUser1()
     {
         // The user u2 has different number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queued for that user
@@ -195,7 +195,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testUserWithDifferentQueueLengthUser2()
+    void testUserWithDifferentQueueLengthUser2()
     {
         String proxyTo = queryCountBasedRouter.provideAdhocBackend("u3");
         assertThat(BACKEND_URL_1).isEqualTo(proxyTo);
@@ -203,14 +203,14 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testUserWithNoQueuedQueries()
+    void testUserWithNoQueuedQueries()
     {
         String proxyTo = queryCountBasedRouter.provideAdhocBackend("u101");
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
     }
 
     @Test
-    public void testAdhocRoutingGroupFailOver()
+    void testAdhocRoutingGroupFailOver()
     {
         // The ETL routing group doesn't exist
         String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
@@ -219,7 +219,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testClusterWithLeastQueueCount()
+    void testClusterWithLeastQueueCount()
     {
         // Add a cluster with minimal queuelength
         clusters = new ImmutableList.Builder<ClusterStats>()
@@ -234,7 +234,7 @@ public class TestQueryCountBasedRouter
     }
 
     @Test
-    public void testClusterWithLeastRunningCount()
+    void testClusterWithLeastRunningCount()
     {
         // Add a cluster with minimal queuelength
         clusters = new ImmutableList.Builder<ClusterStats>()

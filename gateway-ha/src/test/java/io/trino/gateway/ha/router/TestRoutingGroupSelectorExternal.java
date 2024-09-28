@@ -61,7 +61,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestRoutingGroupSelectorExternal
+final class TestRoutingGroupSelectorExternal
 {
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private HttpClient httpClient;

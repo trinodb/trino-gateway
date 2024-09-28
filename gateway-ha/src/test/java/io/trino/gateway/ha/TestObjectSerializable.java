@@ -40,12 +40,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestObjectSerializable
+final class TestObjectSerializable
 {
     private final ObjectMapper objectMapper = new ObjectMapperProvider().get();
 
     @Test
-    public void testServerInfo()
+    void testServerInfo()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new ServerInfo(true)))
@@ -53,7 +53,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testProxyBackendConfiguration()
+    void testProxyBackendConfiguration()
             throws JsonProcessingException
     {
         ProxyBackendConfiguration proxyBackendConfiguration = new ProxyBackendConfiguration();
@@ -65,7 +65,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testResult()
+    void testResult()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(Result.ok()))
@@ -77,7 +77,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testTableData()
+    void testTableData()
             throws JsonProcessingException
     {
         TableData<String> tableData = new TableData<>(ImmutableList.of("t1", "t2"), 2);
@@ -86,7 +86,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testGlobalPropertyRequest()
+    void testGlobalPropertyRequest()
             throws JsonProcessingException
     {
         ResourceGroupsManager.GlobalPropertiesDetail data = new ResourceGroupsManager.GlobalPropertiesDetail("cpu_quota_period");
@@ -97,7 +97,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testQueryDistributionRequest()
+    void testQueryDistributionRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new QueryDistributionRequest(null)))
@@ -107,7 +107,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testQueryGlobalPropertyRequest()
+    void testQueryGlobalPropertyRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest(null, null)))
@@ -119,7 +119,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testQueryHistoryRequest()
+    void testQueryHistoryRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id")))
@@ -129,7 +129,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testQueryResourceGroupsRequest()
+    void testQueryResourceGroupsRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new QueryResourceGroupsRequest(null, 123L)))
@@ -139,7 +139,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testQuerySelectorsRequest()
+    void testQuerySelectorsRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new QuerySelectorsRequest(null, 123L)))
@@ -149,7 +149,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testResourceGroupsRequest()
+    void testResourceGroupsRequest()
             throws JsonProcessingException
     {
         ResourceGroupsManager.ResourceGroupsDetail data = new ResourceGroupsManager.ResourceGroupsDetail();
@@ -160,7 +160,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testRestLoginRequest()
+    void testRestLoginRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new RestLoginRequest("user", "pass")))
@@ -168,7 +168,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testSelectorsRequest()
+    void testSelectorsRequest()
             throws JsonProcessingException
     {
         ResourceGroupsManager.SelectorsDetail data = new ResourceGroupsManager.SelectorsDetail();
@@ -180,7 +180,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testBackendResponse()
+    void testBackendResponse()
             throws JsonProcessingException
     {
         BackendResponse backendResponse = new BackendResponse();
@@ -196,7 +196,7 @@ public class TestObjectSerializable
     }
 
     @Test
-    public void testDistributionResponse()
+    void testDistributionResponse()
             throws JsonProcessingException
     {
         DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();

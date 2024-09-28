@@ -30,14 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestGatewayHaWithRoutingRulesSingleBackend
+final class TestGatewayHaWithRoutingRulesSingleBackend
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         trino = new TrinoContainer("trinodb/trino");
@@ -58,7 +58,7 @@ public class TestGatewayHaWithRoutingRulesSingleBackend
     }
 
     @Test
-    public void testRequestDelivery()
+    void testRequestDelivery()
             throws Exception
     {
         RequestBody requestBody =
@@ -75,7 +75,7 @@ public class TestGatewayHaWithRoutingRulesSingleBackend
 
     // Do not allow trino gateway to fall back to the adhoc routing group if the desired backend is not found
     @Test
-    public void testVerifyNoAdhoc()
+    void testVerifyNoAdhoc()
             throws Exception
     {
         Request request = new Request.Builder()
@@ -94,7 +94,7 @@ public class TestGatewayHaWithRoutingRulesSingleBackend
     }
 
     @AfterAll
-    public void cleanup()
+    void cleanup()
     {
         trino.close();
     }

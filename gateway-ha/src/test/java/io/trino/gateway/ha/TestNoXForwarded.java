@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestNoXForwarded
+final class TestNoXForwarded
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
@@ -39,7 +39,7 @@ public class TestNoXForwarded
     int backendPort;
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         trino = new TrinoContainer("trinodb/trino");
@@ -60,7 +60,7 @@ public class TestNoXForwarded
     }
 
     @Test
-    public void testRequestDelivery()
+    void testRequestDelivery()
             throws Exception
     {
         RequestBody requestBody =
@@ -80,7 +80,7 @@ public class TestNoXForwarded
     }
 
     @AfterAll
-    public void cleanup()
+    void cleanup()
     {
         trino.close();
     }

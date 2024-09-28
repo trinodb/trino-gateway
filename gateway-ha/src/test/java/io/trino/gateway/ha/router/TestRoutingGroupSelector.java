@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestRoutingGroupSelector
+final class TestRoutingGroupSelector
 {
     public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
     public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
@@ -73,7 +73,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingGroupHeader()
+    void testByRoutingGroupHeader()
     {
         HttpServletRequest mockRequest = prepareMockRequest();
 
@@ -246,7 +246,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingRulesEngineFileChange()
+    void testByRoutingRulesEngineFileChange()
             throws Exception
     {
         File file = File.createTempFile("routing_rules", ".yml");
@@ -388,7 +388,7 @@ public class TestRoutingGroupSelector
 
     @ParameterizedTest
     @MethodSource("provideTableExtractionQueries")
-    public void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
+    void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new StringReader(query));
@@ -412,7 +412,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testLongQuery()
+    void testLongQuery()
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new FileReader("src/test/resources/wide_select.sql", UTF_8));

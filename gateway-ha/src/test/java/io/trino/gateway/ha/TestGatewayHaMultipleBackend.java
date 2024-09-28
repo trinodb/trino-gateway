@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestGatewayHaMultipleBackend
+final class TestGatewayHaMultipleBackend
 {
     public static final String CUSTOM_RESPONSE = "123";
     public static final String CUSTOM_PATH = "/v1/custom/extra";
@@ -70,7 +70,7 @@ public class TestGatewayHaMultipleBackend
     private final OkHttpClient httpClient = new OkHttpClient();
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         adhocTrino = new TrinoContainer("trinodb/trino");
@@ -109,7 +109,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCustomPath()
+    void testCustomPath()
             throws Exception
     {
         RequestBody requestBody = RequestBody.create("abc", MEDIA_TYPE);
@@ -133,7 +133,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testQueryDeliveryToMultipleRoutingGroups()
+    void testQueryDeliveryToMultipleRoutingGroups()
             throws Exception
     {
         // Default request should be routed to adhoc backend
@@ -160,7 +160,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testTrinoClusterHostCookie()
+    void testTrinoClusterHostCookie()
             throws Exception
     {
         RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
@@ -197,7 +197,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testDeleteQueryId()
+    void testDeleteQueryId()
             throws IOException
     {
         RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
@@ -221,7 +221,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testBackendConfiguration()
+    void testBackendConfiguration()
             throws Exception
     {
         Request request = new Request.Builder()
@@ -248,7 +248,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCookieBasedRouting()
+    void testCookieBasedRouting()
             throws IOException
     {
         // This simulates the Trino oauth handshake
@@ -297,7 +297,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCookieSigning()
+    void testCookieSigning()
             throws IOException
     {
         OkHttpClient httpClient = new OkHttpClient.Builder()
@@ -339,7 +339,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @AfterAll
-    public void cleanup()
+    void cleanup()
     {
         adhocTrino.stop();
         scheduledTrino.stop();
