@@ -36,13 +36,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestGatewayHaSingleBackend
+final class TestGatewayHaSingleBackend
 {
     private TrinoContainer trino;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         trino = new TrinoContainer("trinodb/trino");
@@ -64,7 +64,7 @@ public class TestGatewayHaSingleBackend
 
     @ParameterizedTest
     @MethodSource("protocols")
-    public void testRequestDelivery(Protocol protocol)
+    void testRequestDelivery(Protocol protocol)
             throws Exception
     {
         OkHttpClient httpClient = new OkHttpClient.Builder().protocols(ImmutableList.of(protocol)).build();
@@ -88,7 +88,7 @@ public class TestGatewayHaSingleBackend
 
     @ParameterizedTest
     @MethodSource("protocols")
-    public void testBackendConfiguration(Protocol protocol)
+    void testBackendConfiguration(Protocol protocol)
             throws Exception
     {
         OkHttpClient httpClient = new OkHttpClient.Builder().protocols(ImmutableList.of(protocol)).build();
@@ -116,7 +116,7 @@ public class TestGatewayHaSingleBackend
     }
 
     @AfterAll
-    public void cleanup()
+    void cleanup()
     {
         trino.close();
     }

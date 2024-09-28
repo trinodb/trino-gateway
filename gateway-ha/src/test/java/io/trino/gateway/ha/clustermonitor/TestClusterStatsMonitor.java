@@ -31,12 +31,12 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(PER_CLASS)
-public class TestClusterStatsMonitor
+final class TestClusterStatsMonitor
 {
     private TrinoContainer trino;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         trino = new TrinoContainer("trinodb/trino");
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
@@ -44,25 +44,25 @@ public class TestClusterStatsMonitor
     }
 
     @AfterAll
-    public void setup()
+    void setup()
     {
         trino.close();
     }
 
     @Test
-    public void testHttpMonitor()
+    void testHttpMonitor()
     {
         testClusterStatsMonitor(ClusterStatsHttpMonitor::new);
     }
 
     @Test
-    public void testJdbcMonitor()
+    void testJdbcMonitor()
     {
         testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
     }
 
     @Test
-    public void testInfoApiMonitor()
+    void testInfoApiMonitor()
     {
         MonitorConfiguration monitorConfigurationWithRetries = new MonitorConfiguration();
         monitorConfigurationWithRetries.setRetries(10);
