@@ -78,8 +78,7 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-        assertThat(lbAuth.authenticate(ID_TOKEN).isPresent()).isTrue();
-        assertThat(lbAuth.authenticate(ID_TOKEN).orElseThrow()).isEqualTo(principal);
+        assertThat(lbAuth.authenticate(ID_TOKEN)).hasValue(principal);
     }
 
     @Test
@@ -105,9 +104,7 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal.isPresent()).isTrue();
-        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
-        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api_user");
+        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api_user")));
     }
 
     @Test
@@ -134,9 +131,7 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal.isPresent()).isTrue();
-        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
-        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api");
+        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api")));
     }
 
     @Test
@@ -178,7 +173,7 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-        assertThat(lbAuth.authenticate(ID_TOKEN).isPresent()).isFalse();
+        assertThat(lbAuth.authenticate(ID_TOKEN)).isEmpty();
     }
 
     @Test
