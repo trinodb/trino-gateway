@@ -78,10 +78,11 @@ public class TestGatewayHaSingleBackend
                         .addHeader("Host", "test.host.com")
                         .post(requestBody)
                         .build();
-        Response response = httpClient.newCall(request).execute();
-        String responseBody = response.body().string();
-        assertThat(responseBody).contains("nextUri");
-        assertThat(responseBody).contains("test.host.com");
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body().string();
+            assertThat(responseBody).contains("nextUri");
+            assertThat(responseBody).contains("test.host.com");
+        }
     }
 
     @ParameterizedTest
@@ -96,16 +97,15 @@ public class TestGatewayHaSingleBackend
                 .addHeader("Host", "test.host.com")
                 .method("GET", null)
                 .build();
-        Response response = httpClient.newCall(request).execute();
 
-        final ObjectMapper objectMapper = new ObjectMapper();
-        ProxyBackendConfiguration[] backendConfiguration =
-                objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
-
-        assertThat(backendConfiguration).hasSize(1);
-        assertThat(backendConfiguration[0].isActive()).isTrue();
-        assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
-        assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
+        try (Response response = httpClient.newCall(request).execute()) {
+            final ObjectMapper objectMapper = new ObjectMapper();
+            ProxyBackendConfiguration[] backendConfiguration = objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
+            assertThat(backendConfiguration).hasSize(1);
+            assertThat(backendConfiguration[0].isActive()).isTrue();
+            assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
+            assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
+        }
     }
 
     List<Protocol> protocols()
