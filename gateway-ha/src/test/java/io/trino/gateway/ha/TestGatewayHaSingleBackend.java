@@ -79,6 +79,7 @@ public class TestGatewayHaSingleBackend
                         .post(requestBody)
                         .build();
         try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.body()).isNotNull();
             String responseBody = response.body().string();
             assertThat(responseBody).contains("nextUri");
             assertThat(responseBody).contains("test.host.com");
@@ -100,6 +101,7 @@ public class TestGatewayHaSingleBackend
 
         try (Response response = httpClient.newCall(request).execute()) {
             final ObjectMapper objectMapper = new ObjectMapper();
+            assertThat(response.body()).isNotNull();
             ProxyBackendConfiguration[] backendConfiguration = objectMapper.readValue(response.body().string(), ProxyBackendConfiguration[].class);
             assertThat(backendConfiguration).hasSize(1);
             assertThat(backendConfiguration[0].isActive()).isTrue();
