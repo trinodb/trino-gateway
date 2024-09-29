@@ -30,7 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.TrinoContainer;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
@@ -62,20 +62,13 @@ public class TestGatewayHaSingleBackend
                 "trino1", "http://localhost:" + backendPort, "externalUrl", true, "adhoc", routerPort);
     }
 
-    public Stream<OkHttpClient> getOkHttpClient()
-    {
-        OkHttpClient.Builder http1Builder = new OkHttpClient.Builder();
-        http1Builder.protocols(ImmutableList.of(Protocol.HTTP_1_1));
-        OkHttpClient.Builder http2Builder = new OkHttpClient.Builder();
-        http2Builder.protocols(ImmutableList.of(Protocol.H2_PRIOR_KNOWLEDGE));
-        return Stream.of(http1Builder.build(), http2Builder.build());
-    }
-
     @ParameterizedTest
-    @MethodSource("getOkHttpClient")
-    public void testRequestDelivery(OkHttpClient httpClient)
+    @MethodSource("protocols")
+    public void testRequestDelivery(Protocol protocol)
             throws Exception
     {
+        OkHttpClient httpClient = new OkHttpClient.Builder().protocols(ImmutableList.of(protocol)).build();
+
         RequestBody requestBody =
                 RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
         Request request =
@@ -92,10 +85,12 @@ public class TestGatewayHaSingleBackend
     }
 
     @ParameterizedTest
-    @MethodSource("getOkHttpClient")
-    public void testBackendConfiguration(OkHttpClient httpClient)
+    @MethodSource("protocols")
+    public void testBackendConfiguration(Protocol protocol)
             throws Exception
     {
+        OkHttpClient httpClient = new OkHttpClient.Builder().protocols(ImmutableList.of(protocol)).build();
+
         Request request = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/entity/GATEWAY_BACKEND")
                 .addHeader("Host", "test.host.com")
@@ -111,6 +106,11 @@ public class TestGatewayHaSingleBackend
         assertThat(backendConfiguration[0].isActive()).isTrue();
         assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
         assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
+    }
+
+    List<Protocol> protocols()
+    {
+        return ImmutableList.of(Protocol.HTTP_1_1, Protocol.H2_PRIOR_KNOWLEDGE);
     }
 
     @AfterAll
