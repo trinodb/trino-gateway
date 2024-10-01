@@ -140,7 +140,6 @@ public class HaGatewayTestUtils
     {
         RequestBody requestBody =
                 RequestBody.create(
-                        MediaType.parse("application/json; charset=utf-8"),
                         "{ \"name\": \""
                                 + name
                                 + "\",\"proxyTo\": \""
@@ -151,7 +150,8 @@ public class HaGatewayTestUtils
                                 + active
                                 + ",\"routingGroup\": \""
                                 + routingGroup
-                                + "\"}");
+                                + "\"}",
+                        MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/entity?entityType=GATEWAY_BACKEND")

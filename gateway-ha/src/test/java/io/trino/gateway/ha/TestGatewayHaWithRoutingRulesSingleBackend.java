@@ -62,7 +62,7 @@ final class TestGatewayHaWithRoutingRulesSingleBackend
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT * from system.runtime.nodes");
+                RequestBody.create("SELECT * from system.runtime.nodes", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")

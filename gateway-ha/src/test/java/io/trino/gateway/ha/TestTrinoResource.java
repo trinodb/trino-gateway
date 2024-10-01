@@ -214,7 +214,7 @@ final class TestTrinoResource
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/3")
@@ -230,7 +230,7 @@ final class TestTrinoResource
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/")
@@ -246,7 +246,7 @@ final class TestTrinoResource
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/globalproperty/delete/cpu_quota_period")
@@ -262,7 +262,7 @@ final class TestTrinoResource
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/globalproperty/delete/")
