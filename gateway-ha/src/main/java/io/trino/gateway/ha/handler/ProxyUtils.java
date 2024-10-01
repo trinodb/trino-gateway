@@ -29,6 +29,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class ProxyUtils
 {
@@ -80,7 +81,7 @@ public final class ProxyUtils
             return user;
         }
 
-        String info = new String(Base64.getDecoder().decode(headerInfo));
+        String info = new String(Base64.getDecoder().decode(headerInfo), UTF_8);
         List<String> parts = Splitter.on(':').limit(2).splitToList(info);
         if (parts.size() < 1) {
             log.error("No user inside the basic auth text");
@@ -94,7 +95,7 @@ public final class ProxyUtils
         String path = request.getRequestURI();
         String queryParams = request.getQueryString();
         try {
-            String queryText = CharStreams.toString(new InputStreamReader(request.getInputStream()));
+            String queryText = CharStreams.toString(new InputStreamReader(request.getInputStream(), UTF_8));
             if (!isNullOrEmpty(queryText)
                     && queryText.toLowerCase().contains("system.runtime.kill_query")) {
                 // extract and return the queryId

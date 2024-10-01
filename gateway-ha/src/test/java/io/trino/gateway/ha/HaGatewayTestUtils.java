@@ -122,7 +122,7 @@ public class HaGatewayTestUtils
         StringBuilder sb = new StringBuilder();
         InputStream inputStream =
                 HaGatewayTestUtils.class.getClassLoader().getResourceAsStream(fileName);
-        Scanner scn = new Scanner(inputStream);
+        Scanner scn = new Scanner(inputStream, UTF_8);
         while (scn.hasNextLine()) {
             sb.append(scn.nextLine()).append("\n");
         }
