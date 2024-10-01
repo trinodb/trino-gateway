@@ -103,6 +103,7 @@
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
                             -Xep:EqualsGetClass:OFF \
+                            -Xep:InvalidThrows:ERROR \
                             -Xep:MissingOverride:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
