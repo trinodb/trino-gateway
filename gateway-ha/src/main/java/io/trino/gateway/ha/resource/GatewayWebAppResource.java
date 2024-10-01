@@ -61,7 +61,7 @@ import static java.util.Objects.requireNonNullElse;
 @Path("/webapp")
 public class GatewayWebAppResource
 {
-    private static final LocalDateTime START_TIME = LocalDateTime.now();
+    private static final LocalDateTime START_TIME = LocalDateTime.now(ZoneId.systemDefault());
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
