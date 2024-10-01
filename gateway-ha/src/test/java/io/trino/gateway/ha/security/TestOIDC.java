@@ -233,7 +233,7 @@ final class TestOIDC
         clientBuilder.hostnameVerifier((hostname, session) -> true);
     }
 
-    public class BadCookieJar
+    public static class BadCookieJar
             implements CookieJar
     {
         private JavaNetCookieJar cookieJar;
