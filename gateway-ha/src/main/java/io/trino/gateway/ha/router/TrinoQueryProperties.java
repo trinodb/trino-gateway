@@ -388,13 +388,10 @@ public class TrinoQueryProperties
     {
         List<String> tableParts = table.getParts();
         return switch (tableParts.size()) {
-            case 1:
-                yield QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst());
-            case 2:
-                yield QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst(), tableParts.get(1));
-            case 3:
-            default:
-                yield QualifiedName.of(tableParts.getFirst(), tableParts.get(1), tableParts.get(2));
+            case 1 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst());
+            case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst(), tableParts.get(1));
+            case 3 -> QualifiedName.of(tableParts.getFirst(), tableParts.get(1), tableParts.get(2));
+            default -> throw new RequestParsingException("Unexpected table name: " + table.getParts());
         };
     }
 
