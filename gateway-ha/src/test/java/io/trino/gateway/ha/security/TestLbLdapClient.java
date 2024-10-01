@@ -145,7 +145,7 @@ final class TestLbLdapClient
         assertThat(lbLdapClient.getMemberOf(user)).isNotEqualTo("Admin,User");
     }
 
-    class DummyPasswordWarning
+    static class DummyPasswordWarning
             implements org.apache.directory.ldap.client.template.PasswordWarning
     {
         @Override
