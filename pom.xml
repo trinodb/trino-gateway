@@ -100,6 +100,7 @@
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:DefaultCharset:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
                             -Xep:UnusedMethod:ERROR \
                             -Xep:UnusedVariable:ERROR</arg>
