@@ -30,6 +30,7 @@ import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PA
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ENGLISH;
 
 public final class ProxyUtils
 {
@@ -97,7 +98,7 @@ public final class ProxyUtils
         try {
             String queryText = CharStreams.toString(new InputStreamReader(request.getInputStream(), UTF_8));
             if (!isNullOrEmpty(queryText)
-                    && queryText.toLowerCase().contains("system.runtime.kill_query")) {
+                    && queryText.toLowerCase(ENGLISH).contains("system.runtime.kill_query")) {
                 // extract and return the queryId
                 String[] parts = queryText.split(",");
                 for (String part : parts) {
