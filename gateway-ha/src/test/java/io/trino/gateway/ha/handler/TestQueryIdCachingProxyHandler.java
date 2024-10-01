@@ -14,19 +14,15 @@
 package io.trino.gateway.ha.handler;
 
 import com.google.common.collect.ImmutableList;
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.List;
 
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.AUTHORIZATION;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -67,19 +63,9 @@ final class TestQueryIdCachingProxyHandler
     }
 
     @Test
-    void testUserFromRequest()
-            throws IOException
+    void testGetQueryUser()
     {
-        HttpServletRequest req = Mockito.mock(HttpServletRequest.class);
-
-        String authHeader = "Basic dGVzdDoxMjPCow==";
-        Mockito.when(req.getHeader(AUTHORIZATION))
-                .thenReturn(authHeader);
-        assertThat(getQueryUser(req.getHeader(USER_HEADER), req.getHeader(AUTHORIZATION))).isEqualTo("test");
-
-        String user = "trino_user";
-        Mockito.when(req.getHeader(QueryIdCachingProxyHandler.USER_HEADER))
-                .thenReturn(user);
-        assertThat(getQueryUser(req.getHeader(USER_HEADER), req.getHeader(AUTHORIZATION))).isEqualTo(user);
+        assertThat(getQueryUser(null, "Basic dGVzdDoxMjPCow==")).isEqualTo("test");
+        assertThat(getQueryUser("trino_user", "Basic dGVzdDoxMjPCow==")).isEqualTo("trino_user");
     }
 }
