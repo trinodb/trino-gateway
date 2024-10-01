@@ -64,7 +64,7 @@ final class TestNoXForwarded
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+                RequestBody.create("SELECT 1", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")

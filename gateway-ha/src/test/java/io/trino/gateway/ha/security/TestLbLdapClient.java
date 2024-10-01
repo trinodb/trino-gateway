@@ -50,7 +50,7 @@ final class TestLbLdapClient
     public void initMocks()
     {
         log.info("initializing test");
-        org.mockito.MockitoAnnotations.initMocks(this);
+        org.mockito.MockitoAnnotations.openMocks(this);
     }
 
     @AfterEach
