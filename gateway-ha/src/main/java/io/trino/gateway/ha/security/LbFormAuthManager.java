@@ -98,7 +98,6 @@ public class LbFormAuthManager
      *
      * @param idToken the access token provided back by the authorization server.
      * @return a map with the token claims
-     * @throws Exception is thrown if the access token is invalid
      */
     public Optional<Map<String, Claim>> getClaimsFromIdToken(String idToken)
     {
