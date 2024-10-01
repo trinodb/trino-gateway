@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
 public class TrinoRequestUser
@@ -161,7 +162,7 @@ public class TrinoRequestUser
             }
         }
 
-        if (header.toLowerCase().contains("bearer")) {
+        if (header.toLowerCase(ENGLISH).contains("bearer")) {
             return extractUserFromBearerAuth(header, userField);
         }
         return Optional.empty();
