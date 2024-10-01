@@ -102,6 +102,7 @@
                         <arg>-Xplugin:ErrorProne \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
+                            -Xep:EqualsGetClass:OFF \
                             -Xep:MissingOverride:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
