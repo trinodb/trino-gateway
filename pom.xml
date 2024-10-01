@@ -107,6 +107,7 @@
                             -Xep:JavaTimeDefaultTimeZone:ERROR \
                             -Xep:MissingOverride:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
+                            -Xep:TraditionalSwitchExpression:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
                             -Xep:UnusedMethod:ERROR \
                             -Xep:UnusedVariable:ERROR</arg>
