@@ -101,7 +101,7 @@ final class TestAuthorization
     private Response makeRequest(Optional<String> credentials)
             throws IOException
     {
-        RequestBody emptyRequestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+        RequestBody emptyRequestBody = RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request.Builder builder = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/userinfo")
                 .post(emptyRequestBody);

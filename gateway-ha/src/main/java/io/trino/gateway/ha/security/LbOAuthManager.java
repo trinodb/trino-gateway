@@ -98,7 +98,8 @@ public class LbOAuthManager
         TokenRequest tokenRequest = new TokenRequest(
                 oauthConfig.getTokenEndpoint(),
                 new ClientSecretBasic(new ClientID(oauthConfig.getClientId()), new Secret(oauthConfig.getClientSecret())),
-                new AuthorizationCodeGrant(new AuthorizationCode(code), oauthConfig.getRedirectUrl()));
+                new AuthorizationCodeGrant(new AuthorizationCode(code), oauthConfig.getRedirectUrl()),
+                null);
 
         TokenResponse tokenResponse;
         try {
