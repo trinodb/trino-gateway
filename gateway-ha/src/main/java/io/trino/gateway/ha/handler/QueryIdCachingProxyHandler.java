@@ -24,7 +24,6 @@ public class QueryIdCachingProxyHandler
     public static final String UI_API_QUEUED_LIST_PATH = "/ui/api/query?state=QUEUED";
     public static final String TRINO_UI_PATH = "/ui";
     public static final String OAUTH_PATH = "/oauth2";
-    public static final String AUTHORIZATION = "Authorization";
     public static final String USER_HEADER = "X-Trino-User";
 
     private QueryIdCachingProxyHandler() {}
