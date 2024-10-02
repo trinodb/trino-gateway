@@ -235,7 +235,7 @@ public class ProxyRequestHandler
         return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler()));
     }
 
-    private static <T> T handleProxyException(Request request, ProxyException e)
+    private static Response handleProxyException(Request request, ProxyException e)
     {
         log.warn(e, "Proxy request failed: %s %s", request.getMethod(), request.getUri());
         throw badRequest(e.getMessage());
