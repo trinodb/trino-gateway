@@ -27,7 +27,7 @@ import jakarta.ws.rs.core.Context;
 
 import java.net.URI;
 
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
+import static io.trino.gateway.ha.util.Constants.V1_STATEMENT_PATH;
 import static io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter.ROUTE_TO_BACKEND;
 import static java.util.Objects.requireNonNull;
 

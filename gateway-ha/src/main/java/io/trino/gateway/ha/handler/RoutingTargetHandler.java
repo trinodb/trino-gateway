@@ -31,13 +31,13 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewBackend;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.OAUTH_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_INFO_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_NODE_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
+import static io.trino.gateway.ha.util.Constants.OAUTH_PATH;
+import static io.trino.gateway.ha.util.Constants.TRINO_UI_PATH;
+import static io.trino.gateway.ha.util.Constants.UI_API_STATS_PATH;
+import static io.trino.gateway.ha.util.Constants.USER_HEADER;
+import static io.trino.gateway.ha.util.Constants.V1_INFO_PATH;
+import static io.trino.gateway.ha.util.Constants.V1_NODE_PATH;
+import static io.trino.gateway.ha.util.Constants.V1_QUERY_PATH;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
