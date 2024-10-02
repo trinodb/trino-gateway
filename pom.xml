@@ -100,6 +100,7 @@
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:CatchAndPrintStackTrace:ERROR \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
                             -Xep:EmptyCatch:ERROR \
