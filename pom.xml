@@ -102,6 +102,7 @@
                         <arg>-Xplugin:ErrorProne \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
+                            -Xep:EmptyCatch:ERROR \
                             -Xep:EqualsGetClass:OFF \
                             -Xep:InvalidThrows:ERROR \
                             -Xep:JavaTimeDefaultTimeZone:ERROR \
