@@ -62,7 +62,7 @@ import static io.trino.gateway.ha.handler.ProxyUtils.AUTHORIZATION;
 import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTORY;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
+import static io.trino.gateway.ha.util.Constants.USER_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;

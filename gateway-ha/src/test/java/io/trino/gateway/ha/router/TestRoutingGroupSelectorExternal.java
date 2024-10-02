@@ -46,7 +46,7 @@ import java.util.Optional;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.json.JsonCodec.jsonCodec;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
+import static io.trino.gateway.ha.util.Constants.USER_HEADER;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME;
