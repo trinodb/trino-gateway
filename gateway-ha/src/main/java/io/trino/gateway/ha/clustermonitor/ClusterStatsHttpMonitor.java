@@ -125,7 +125,7 @@ public class ClusterStatsHttpMonitor
             return client;
         }
         catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e, "login request failed");
         }
         return null;
     }
@@ -163,7 +163,7 @@ public class ClusterStatsHttpMonitor
             }
         }
         catch (IOException e) {
-            e.printStackTrace();
+            log.warn(e, "Failed to fetch cluster stats");
         }
         return null;
     }
