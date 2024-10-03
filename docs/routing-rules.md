@@ -345,7 +345,7 @@ second rule.
 We can also use `ConditionalRuleGroup` and `ActivationRuleGroup` to implement an
 if/else workflow. The following logic in pseudocode:
 
-```
+```text
 if source == "airflow":
   if clientTags["label"] == "foo":
     return "etl-foo"
@@ -397,7 +397,7 @@ implement and `if/else` workflow. We could also take advantage of the fact that
 MVEL supports `if` statements and other flow control (loops, etc). The following
 logic in pseudocode:
 
-```
+```text
 if source == "airflow":
   if clientTags["label"] == "foo":
     return "etl-foo"

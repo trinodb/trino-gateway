@@ -13,7 +13,7 @@ The best way to run Trino Gateway for development is to run the
 You need to run `io.trino.gateway.TrinoGatewayRunner.main()` method on your IDE
 or execute the following command:
 
-```sh
+```shell
 ./mvnw test-compile exec:java -pl gateway-ha -Dexec.classpathScope=test -Dexec.mainClass="io.trino.gateway.TrinoGatewayRunner"
 ```
 
@@ -30,7 +30,7 @@ compilation and testing are specified in `.mvn/jvm.config`.
 Edit the configuration file `gateway-ha-config.yml` in the `gateway-ha` folder
 and update the mysql db information.
 
-```
+```shell
 cd gateway-ha/target/
 java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
 ```
