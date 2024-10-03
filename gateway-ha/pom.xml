@@ -24,7 +24,6 @@
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.13.0</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
-        <dep.mysqlconnector.version>8.3.0</dep.mysqlconnector.version>
         <dep.trino.version>454</dep.trino.version>
     </properties>
 
@@ -280,7 +279,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${dep.mysqlconnector.version}</version>
+            <version>8.3.0</version>
             <scope>runtime</scope>
         </dependency>
 
