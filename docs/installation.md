@@ -66,7 +66,7 @@ taken into account for all clusters behind the Trino Gateway.
 If all client and server communication is routed through Trino Gateway, 
 then process forwarded HTTP headers must be enabled:
 
-```commandline
+```properties
 http-server.process-forwarded=true
 ```
 

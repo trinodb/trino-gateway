@@ -52,7 +52,7 @@ require a restart of mkdocs.
 Alternatively, use a container to run mkdocs and avoid the need to install 
 mkdocs-material and all dependencies locally.
 
-```
+```shell
 docker run --rm -it -v ${PWD}:/docs -p8000:8000 squidfunk/mkdocs-material 
 ```
 

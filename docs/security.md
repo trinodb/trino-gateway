@@ -43,7 +43,7 @@ supported.
 
 It can be configured as below
 
-```
+```yaml
 authentication:
   defaultType: "oauth"
   oauth:
@@ -71,7 +71,7 @@ Set the `privilegesField` to retrieve privileges from an OAuth claim.
 - All the Trino backend clusters should have a single client id.
 - Trino Gateway needs to pass thorugh the Trino Oauth2 requests only to one of the clusters.
 - One way to handle it is to set a special rule like below:
-```
+```yaml
   ---
   name: "Oauth requests"
   description: "Oauth requests need to go to a single backed"
@@ -88,7 +88,7 @@ The authentication happens with the pre-defined users from the configuration
 file. To define the preset user use the following section.
 Please note that 'privileges' can only be a combination of 'ADMIN', 'USER', and 'API', with '_' used for segmentation.
 
-```
+```yaml
 presetUsers:
   user1:
     password: <password>
@@ -100,7 +100,7 @@ presetUsers:
 
 Also provide a random key pair in RSA format.
 
-```
+```yaml
 authentication:
   defaultType: "form"
   form:
@@ -113,7 +113,7 @@ authentication:
 
 LDAP requires both random key pair and config path for LDAP
 
-```
+```yaml
 authentication:
   defaultType: "form"
   form:
@@ -143,7 +143,7 @@ configuration.
 
 - Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for config details
 
-```
+```yaml
 # Roles should be in regex format
 authorization:
   admin: (.*)ADMIN(.*)
@@ -154,7 +154,7 @@ authorization:
 
 The LDAP config file should have the following contents:
 
-```
+```yaml
   ldapHost: '<ldap sever>'
   ldapPort: <port>
   useTls: <true/false>
@@ -199,7 +199,7 @@ pagePermissions:
 If Trino Gateway is using a self-signed certificate, client should use the
 `--insecure` config.
 
-```bash
+```shell
 java -jar trino-cli-executable.jar --server https://localhost:8443 --insecure
 ```
 
