@@ -1,0 +1,22 @@
+serverConfig:
+    node.environment: test
+    http-server.http.port: 8080
+    log.levels-file: gateway-ha/etc/log.properties
+
+dataStore:
+  #This stores the URLs of backend Trino servers and query history
+  jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+  user: postgres
+  password: mysecretpassword
+  driver: org.postgresql.Driver
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
