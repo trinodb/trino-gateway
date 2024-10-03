@@ -47,7 +47,6 @@
 
         <!-- Dependency versions, keep sorted -->
         <dep.errorprone.version>2.29.2</dep.errorprone.version>
-        <dep.trino.version>454</dep.trino.version>
     </properties>
 
     <dependencyManagement>
