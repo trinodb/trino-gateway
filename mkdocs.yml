@@ -2,7 +2,7 @@ site_name: Trino Gateway
 site_url: https://trinodb.github.io/trino-gateway/
 site_author: Trino Gateway contributors
 site_description: >-
-  Overview, guides, reference documentation and other reosurces for Trino Gateway.
+  Overview, guides, reference documentation and other resources for Trino Gateway.
 
 copyright: |
   Trino Gateway is open source software licensed under the
