@@ -22,7 +22,7 @@ To enable the routing rules engine, find the following lines in `gateway-ha-conf
 * Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
 * Then either add `rulesConfigPath` to the path to your rules config file or set `rulesExternalConfiguration`
   to the URL of an external service for routing rules processing.
-  *`rulesType` is by default `FILE` unless specified.
+* `rulesType` is by default `FILE` unless specified.
 
 ```yaml
 routingRules:
