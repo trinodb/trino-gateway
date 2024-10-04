@@ -96,6 +96,8 @@ public class TrinoQueryProperties
     private Set<String> schemas = ImmutableSet.of();
     private Set<String> catalogSchemas = ImmutableSet.of();
     private boolean isNewQuerySubmission;
+    @SuppressWarnings("unused")
+    private boolean isQueryParsingSuccessful;
     private Optional<String> errorMessage;
 
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
@@ -114,6 +116,7 @@ public class TrinoQueryProperties
             @JsonProperty("schemas") Set<String> schemas,
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
+            @JsonProperty("isQueryParsingSuccessful") boolean isQueryParsingSuccessful,
             @JsonProperty("errorMessage") Optional<String> errorMessage)
     {
         this.body = requireNonNullElse(body, "");
@@ -126,6 +129,7 @@ public class TrinoQueryProperties
         this.schemas = requireNonNullElse(schemas, ImmutableSet.of());
         this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
         this.isNewQuerySubmission = isNewQuerySubmission;
+        this.isQueryParsingSuccessful = isQueryParsingSuccessful;
         this.errorMessage = requireNonNullElse(errorMessage, Optional.empty());
         isClientsUseV2Format = false;
     }
@@ -378,8 +382,7 @@ public class TrinoQueryProperties
 
     private RequestParsingException unsetDefaultExceptionSupplier()
     {
-        String errorString = "Name not fully qualified";
-        return new RequestParsingException(errorString);
+        return new RequestParsingException("Name not fully qualified");
     }
 
     private QualifiedName qualifyName(QualifiedName table)
@@ -507,6 +510,12 @@ public class TrinoQueryProperties
     public boolean isNewQuerySubmission()
     {
         return isNewQuerySubmission;
+    }
+
+    @JsonProperty("isQueryParsingSuccessful")
+    public boolean isQueryParsingSuccessful()
+    {
+        return errorMessage.isEmpty();
     }
 
     @JsonProperty
