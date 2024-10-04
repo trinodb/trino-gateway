@@ -2,14 +2,21 @@
 
 The Docker image of Trino Gateway is designed for the following use cases:
 
-* Manual usage in front of Trino clusters by mounting in a configuration file
-* Automated usage with an orchestration system like Kubernetes to simplify
-  deployment
+* Manual usage in front of Trino clusters with `docker` or `docker-compose` 
+  commands for development and testing.
+* Automated usage with [Helm chart for deployment of the container on
+  Kubernetes](installation.md#helm).
+
+The latest version of the Trino Gateway container image is available on 
+DockerHub with the identifier `trinodb/trino-gateway`. Append  where 
+`:<version>` with a version number to use a specific release, for example 
+`trinodb/trino-gateway:11`.
 
 ## Production setup
 
-The healthcheck configurations in the `docker-compose` file is for suitable for development and testing purposes only.
-Change the configuration for your production deployment based on the workload and your specific requirements.
+The healthcheck configurations in the `docker-compose` file is for suitable 
+for development and testing purposes only. Change the configuration for 
+your production deployment based on the workload and your specific requirements.
 
 ## Build requirements
 
@@ -18,12 +25,12 @@ This docker build process requires the following software:
 * [Docker Compose V2](https://docs.docker.com/compose/)
 * jq
 
-# Building a custom Docker image
+## Building a custom Docker image
 
 Use the following steps to build a Docker image from your local Trino Gateway
 codebase
 
-First, run the [Maven build in the project root](../docs/development.md).
+First, run the [Maven build in the project root](development.md).
 
 Then build the image for your desired processor architecture in the `docker` directory:
 
@@ -44,10 +51,10 @@ number and`-yyy` is the processor architecture:
 
 ```bash
 $ docker images
-REPOSITORY                     TAG                  IMAGE ID       CREATED          SIZE
-trino-gateway                  6-SNAPSHOT-ppc64le   a72b750d2745   33 seconds ago   547MB
-trino-gateway                  6-SNAPSHOT-arm64     bc5e8b0db63c   35 seconds ago   523MB
-trino-gateway                  6-SNAPSHOT-amd64     6c066fa5b0c5   36 seconds ago   518MB
+REPOSITORY            TAG                  IMAGE ID       CREATED          SIZE
+trino-gateway         6-SNAPSHOT-ppc64le   a72b750d2745   33 seconds ago   547MB
+trino-gateway         6-SNAPSHOT-arm64     bc5e8b0db63c   35 seconds ago   523MB
+trino-gateway         6-SNAPSHOT-amd64     6c066fa5b0c5   36 seconds ago   518MB
 ...
 ```
 
@@ -58,8 +65,8 @@ the `-r` option. The build script downloads all the required artifacts:
 ./build.sh -r 4
 ```
 
-Set the environment variable `TRINO_GATEWAY_BASE_IMAGE` to use a specific base image
-to build Trino Gateway image.
+Set the environment variable `TRINO_GATEWAY_BASE_IMAGE` to use a specific base
+image to build Trino Gateway image.
 
 ```bash
 export TRINO_GATEWAY_BASE_IMAGE=<image>
@@ -92,7 +99,7 @@ Use a published image from Docker Hub.
 export TRINO_GATEWAY_IMAGE="trinodb/trino-gateway:latest"
 ```
 
-The release process publishes images for Trino Gateway 6 and newer to Docker Hub.
+The release process publishes images for Trino Gateway 6 and newer to DockerHub.
 
 Next set the image and platform:
 
