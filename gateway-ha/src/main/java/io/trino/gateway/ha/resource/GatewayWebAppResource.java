@@ -13,16 +13,16 @@
  */
 package io.trino.gateway.ha.resource;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingRulesConfiguration;
+import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRules;
 import io.trino.gateway.ha.domain.TableData;
@@ -41,6 +41,7 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
+import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -53,14 +54,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +78,10 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
-    private final HaGatewayConfiguration configuration;
+    private final RoutingRulesManager routingRulesManager;
+    private final ObjectMapper yamlReader;
+    private final RoutingRulesConfiguration routingRulesConfiguration;
+    private final UIConfiguration uiConfiguration;
 
     @Inject
     public GatewayWebAppResource(
@@ -88,13 +89,17 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
+            RoutingRulesManager routingRulesManager,
             HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
-        this.configuration = requireNonNull(configuration, "configuration is null");
+        this.yamlReader = new ObjectMapper(new YAMLFactory());
+        this.routingRulesManager = requireNonNull(routingRulesManager, "resourceGroupsManager is null");
+        this.routingRulesConfiguration = configuration.getRoutingRules();
+        this.uiConfiguration = configuration.getUiConfiguration();
     }
 
     @POST
@@ -445,20 +450,10 @@ public class GatewayWebAppResource
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/getRoutingRules")
     public Response getRoutingRules()
+            throws IOException
     {
-        try {
-            String rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
-            YAMLFactory yamlFactory = new YAMLFactory();
-            ObjectMapper yamlReader = new ObjectMapper(yamlFactory);
-            YAMLParser yamlParser = yamlFactory.createParser(new String(Files.readAllBytes(Paths.get(rulesConfigPath))));
-            List<RoutingRules> routingRulesList = yamlReader
-                    .readValues(yamlParser, new TypeReference<RoutingRules>() {})
-                    .readAll();
-            return Response.ok(Result.ok(routingRulesList)).build();
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        List<RoutingRules> routingRulesList = routingRulesManager.getRoutingRules(routingRulesConfiguration, yamlReader);
+        return Response.ok(Result.ok(routingRulesList)).build();
     }
 
     @POST
@@ -467,34 +462,9 @@ public class GatewayWebAppResource
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/updateRoutingRules")
     public synchronized Response updateRoutingRules(RoutingRules routingRules)
+            throws IOException
     {
-        String rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
-        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-        List<RoutingRules> routingRulesList = new ArrayList<>();
-        YAMLFactory yamlFactory = new YAMLFactory();
-        try {
-            YAMLParser yamlParser = yamlFactory.createParser(new String(Files.readAllBytes(Paths.get(rulesConfigPath))));
-            routingRulesList = yamlReader
-                    .readValues(yamlParser, new TypeReference<RoutingRules>() {})
-                    .readAll();
-
-            for (int i = 0; i < routingRulesList.size(); i++) {
-                if (routingRulesList.get(i).name().equals(routingRules.name())) {
-                    routingRulesList.set(i, routingRules);
-                    break;
-                }
-            }
-
-            ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
-            StringBuilder yamlContent = new StringBuilder();
-            for (RoutingRules rule : routingRulesList) {
-                yamlContent.append(yamlWriter.writeValueAsString(rule));
-            }
-            Files.write(Paths.get(rulesConfigPath), yamlContent.toString().getBytes());
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        List<RoutingRules> routingRulesList = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration, yamlReader);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
@@ -504,6 +474,6 @@ public class GatewayWebAppResource
     @Path("/getUIConfiguration")
     public Response getUIConfiguration()
     {
-        return Response.ok(Result.ok(configuration.getUiConfiguration())).build();
+        return Response.ok(Result.ok(uiConfiguration)).build();
     }
 }
