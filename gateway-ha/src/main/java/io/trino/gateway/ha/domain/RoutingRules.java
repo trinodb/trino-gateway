@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha.domain;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 /**
@@ -27,10 +25,10 @@ import java.util.List;
  * @param condition condition of the routing rule
  */
 public record RoutingRules(
-        @JsonProperty("name") String name,
-        @JsonProperty("description") String description,
-        @JsonProperty("priority") Integer priority,
-        @JsonProperty("actions") List<String> actions,
-        @JsonProperty("condition") String condition)
+        String name,
+        String description,
+        Integer priority,
+        List<String> actions,
+        String condition)
 {
 }

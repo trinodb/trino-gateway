@@ -25,6 +25,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class RoutingRulesManager
 {
     public List<RoutingRules> getRoutingRules(RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
@@ -33,7 +35,7 @@ public class RoutingRulesManager
         String content = null;
         try {
             String rulesConfigPath = configuration.getRulesConfigPath();
-            content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)));
+            content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)), UTF_8);
             YAMLParser parser = new YAMLFactory().createParser(content);
             List<RoutingRules> routingRulesList = new ArrayList<>();
             while (parser.nextToken() != null) {
@@ -53,7 +55,7 @@ public class RoutingRulesManager
         String rulesConfigPath = configuration.getRulesConfigPath();
         List<RoutingRules> routingRulesList = new ArrayList<>();
         try {
-            String content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)));
+            String content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)), UTF_8);
             YAMLParser parser = new YAMLFactory().createParser(content);
             while (parser.nextToken() != null) {
                 RoutingRules routingRule = yamlReader.readValue(parser, RoutingRules.class);
@@ -72,7 +74,7 @@ public class RoutingRulesManager
             for (RoutingRules rule : routingRulesList) {
                 yamlContent.append(yamlWriter.writeValueAsString(rule));
             }
-            Files.write(Paths.get(rulesConfigPath), yamlContent.toString().getBytes());
+            Files.write(Paths.get(rulesConfigPath), yamlContent.toString().getBytes(UTF_8));
         }
         catch (IOException e) {
             throw new IOException(e);
