@@ -72,7 +72,7 @@ public class ClusterStatsHttpMonitor
                     .numWorkerNodes(activeWorkers)
                     .queuedQueryCount((int) result.get("queuedQueries"))
                     .runningQueryCount((int) result.get("runningQueries"))
-                    .healthy(activeWorkers > 0)
+                    .trinoStatus(activeWorkers > 0 ? TrinoStatus.HEALTHY : TrinoStatus.UNHEALTHY)
                     .proxyTo(backend.getProxyTo())
                     .externalUrl(backend.getExternalUrl())
                     .routingGroup(backend.getRoutingGroup());

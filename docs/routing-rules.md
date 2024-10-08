@@ -134,6 +134,21 @@ condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
 
 If no rules match, then request is routed to adhoc.
 
+### TrinoStatus
+
+This class attempts to track the current state of Trino cluster. It is updated per every healthcheck.
+There are three possible states
+
+- PENDING
+    - A Trino cluster will show this state when it is still starting up. It will be treated as
+      unhealthy by RoutingManager, and therefore requests will not be routed to PENDING clusters
+- HEALTHY
+    - A Trino cluster will show this state when healthchecks report clusters as healthy and ready.
+      RoutingManager will only route requests to healthy clusters
+- UNHEALTHY
+    - A Trino cluster will show this state when healthchecks report clusters as unhealthy. RoutingManager
+      will not route requests to unhealthy clusters.
+
 ### TrinoRequestUser
 
 This class attempts to extract the user from a request. In order, it attempts

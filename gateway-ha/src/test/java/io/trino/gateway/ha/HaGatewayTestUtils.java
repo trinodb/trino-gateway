@@ -13,16 +13,19 @@
  */
 package io.trino.gateway.ha;
 
+import com.google.common.base.Stopwatch;
+import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 
@@ -32,12 +35,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.Map;
+import java.time.Duration;
 import java.util.Random;
 import java.util.Scanner;
 
 import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -69,23 +73,6 @@ public class HaGatewayTestUtils
                 .setBody(expectedResonse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
-    }
-
-    public static void setPathSpecificResponses(
-            MockWebServer backend, Map<String, String> pathResponseMap)
-    {
-        Dispatcher dispatcher = new Dispatcher()
-        {
-            @Override
-            public MockResponse dispatch(RecordedRequest request)
-            {
-                if (pathResponseMap.containsKey(request.getPath())) {
-                    return new MockResponse().setResponseCode(200).setBody(pathResponseMap.get(request.getPath()));
-                }
-                return new MockResponse().setResponseCode(404);
-            }
-        };
-        backend.setDispatcher(dispatcher);
     }
 
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
@@ -159,6 +146,31 @@ public class HaGatewayTestUtils
                         .build();
         Response response = httpClient.newCall(request).execute();
         assertThat(response.isSuccessful()).isTrue();
+        TrinoStatus newTrinoStatus = TrinoStatus.PENDING;
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        // pull cluster health states for 10 seconds
+        // It should be enough as the healthcheck is run every second
+        Duration timeout = Duration.ofSeconds(10);
+        while (newTrinoStatus != TrinoStatus.HEALTHY && stopwatch.elapsed().compareTo(timeout) < 0) {
+            // check the state of newly added cluster every second
+            Request getBackendStateRequest = new Request.Builder()
+                    .url(format("http://localhost:%s/api/public/backends/%s/state", routerPort, name))
+                    .get()
+                    .build();
+            try (Response getBackendStateResponse = httpClient.newCall(getBackendStateRequest).execute()) {
+                if (getBackendStateResponse.isSuccessful()) {
+                    JsonCodec<ClusterStats> responseCodec = JsonCodec.jsonCodec(ClusterStats.class);
+                    ResponseBody getBackendStateResponseBody = getBackendStateResponse.body();
+                    if (getBackendStateResponseBody != null) {
+                        ClusterStats clusterStats = responseCodec.fromJson(getBackendStateResponseBody.string());
+                        newTrinoStatus = clusterStats.trinoStatus();
+                        log.debug("status for new trino cluster %s is %s", name, newTrinoStatus);
+                    }
+                }
+            }
+            Thread.sleep(1000);
+        }
+        assertThat(newTrinoStatus).isEqualTo(TrinoStatus.HEALTHY);
     }
 
     public record TestConfig(String configFilePath, String h2DbFilePath)
