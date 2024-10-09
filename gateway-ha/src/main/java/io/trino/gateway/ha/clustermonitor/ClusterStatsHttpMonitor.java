@@ -34,9 +34,9 @@ import java.util.List;
 import java.util.Map;
 
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
-import static io.trino.gateway.ha.util.Constants.UI_API_QUEUED_LIST_PATH;
-import static io.trino.gateway.ha.util.Constants.UI_API_STATS_PATH;
-import static io.trino.gateway.ha.util.Constants.UI_LOGIN_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.UI_API_QUEUED_LIST_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.UI_API_STATS_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.UI_LOGIN_PATH;
 
 public class ClusterStatsHttpMonitor
         implements ClusterStatsMonitor

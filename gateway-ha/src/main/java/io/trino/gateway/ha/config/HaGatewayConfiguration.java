@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.trino.gateway.ha.util.Constants.V1_STATEMENT_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.V1_STATEMENT_PATH;
 
 public class HaGatewayConfiguration
 {

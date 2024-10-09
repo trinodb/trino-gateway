@@ -26,9 +26,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.trino.gateway.ha.util.Constants.TRINO_UI_PATH;
-import static io.trino.gateway.ha.util.Constants.USER_HEADER;
-import static io.trino.gateway.ha.util.Constants.V1_QUERY_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.TRINO_UI_PATH;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.USER_HEADER;
+import static io.trino.gateway.ha.util.TrinoHttpSpecUtil.V1_QUERY_PATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
 
