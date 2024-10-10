@@ -15,7 +15,8 @@ package io.trino.gateway.ha.util;
 
 public final class TrinoHttpSpecUtil
 {
-
+    private TrinoHttpSpecUtil() {}
+        
     public static final String V1_STATEMENT_PATH = "/v1/statement";
     public static final String V1_QUERY_PATH = "/v1/query";
     public static final String V1_INFO_PATH = "/v1/info";
