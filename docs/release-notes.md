@@ -1,6 +1,6 @@
 # Release notes
 
-## Trino Gateway 11 (12 Sep 2024)
+## Trino Gateway 11 (12 Sep 2024) { id="11" }
 
 [JAR file gateway-ha-11-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/11/gateway-ha-11-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:11`
@@ -39,7 +39,7 @@ Container image `trinodb/trino-gateway:11`
 More details and a list of all merged pull requests are [available in the 
 milestone 11 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A11+is%3Aclosed).
 
-## Trino Gateway 10 (24 Jul 2024)
+## Trino Gateway 10 (24 Jul 2024) { id="10" }
 
 [JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:10`
@@ -74,14 +74,14 @@ Container image `trinodb/trino-gateway:10`
 * Fix creation of new resource groups.
   ([#379](https://github.com/trinodb/trino-gateway/pull/379))
 
-## Trino Gateway 9 (8 May 2024)
+## Trino Gateway 9 (8 May 2024) { id="9" }
 
 [JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:9`
 
 * Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
 
-## Trino Gateway 8 (6 May 2024)
+## Trino Gateway 8 (6 May 2024) { id="8" }
 
 [JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:8`
@@ -95,7 +95,7 @@ Container image `trinodb/trino-gateway:8`
 * Fix the `userInfo` resource to pass role information used by the API, so that
   the webapp authentication matches the API authentication. ([#310](https://github.com/trinodb/trino-gateway/pull/310))
 
-## Trino Gateway 7 (21 Mar 2024)
+## Trino Gateway 7 (21 Mar 2024) { id="7" }
 
 [JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:7`
@@ -109,7 +109,7 @@ Container image `trinodb/trino-gateway:7`
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A7+is%3Aclosed)
 
-## Trino Gateway 6 (16 Feb 2024)
+## Trino Gateway 6 (16 Feb 2024) { id="6" }
 
 [JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar),
 Container image `trinodb/trino-gateway:6`
@@ -118,7 +118,7 @@ Container image `trinodb/trino-gateway:6`
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A6+is%3Aclosed)
 
-## Trino Gateway 5 (24 Jan 2024)
+## Trino Gateway 5 (24 Jan 2024) { id="5" }
 
 [gateway-ha-5-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar)
 
@@ -129,7 +129,7 @@ Container image `trinodb/trino-gateway:6`
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/168)
 
-## Trino Gateway 4 (30 Nov 2023)
+## Trino Gateway 4 (30 Nov 2023) { id="4" }
 
 [gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
 
@@ -146,7 +146,7 @@ Container image `trinodb/trino-gateway:6`
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/73)
 
-## Trino Gateway 3 (26 Sep 2023)
+## Trino Gateway 3 (26 Sep 2023) { id="3" }
 
 [gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
 
