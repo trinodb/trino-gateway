@@ -52,7 +52,7 @@ config:
     managedApps:
         - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
 
-# Startup command for Trino Gateway process. Add additional java options here if required
+# Startup command for Trino Gateway process. Add additional Java options and other modifications as desired.
 command:
   - "java"
   - "-XX:MinRAMPercentage=80.0"

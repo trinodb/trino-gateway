@@ -248,10 +248,22 @@ helm install tg --values values-override.yaml helm/trino-gateway
 Secrets for `authenticationSecret` and `backendState` can be provisioned
 similarly. Alternatively,  you can directly define the `config.backEndState` 
 node in `values-override.yaml` and leave `backendStateSecret` undefined. 
-However, a [Secret](https://kubernetes.
-io/docs/concepts/configuration/secret/)
-is recommended to protect the  database credentials required for this 
+However, a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
+is recommended to protect the database credentials required for this 
 configuration.
+
+By default, the Trino Gateway process is started with the following command:
+
+```shell
+java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar /etc/gateway/config.yaml
+```
+
+You can customize details with the `command` node. It accepts a list, that must
+begin with an executable such as `java` or `bash` that is available on the PATH.
+The following list elements are provided as arguments to the executable. It is
+not typically necessary to modify this node. You can use it to change of JVM
+startup parameters to control memory settings and other aspects, or to use other
+configuration file names.
 
 #### Additional options
 
