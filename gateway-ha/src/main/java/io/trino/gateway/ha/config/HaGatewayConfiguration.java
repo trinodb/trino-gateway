@@ -46,16 +46,6 @@ public class HaGatewayConfiguration
 
     private UIConfiguration uiConfiguration = new UIConfiguration();
 
-    public UIConfiguration getUiConfiguration()
-    {
-        return uiConfiguration;
-    }
-
-    public void setUiConfiguration(UIConfiguration uiConfiguration)
-    {
-        this.uiConfiguration = uiConfiguration;
-    }
-
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -222,6 +212,16 @@ public class HaGatewayConfiguration
     public void setRequestAnalyzerConfig(RequestAnalyzerConfig requestAnalyzerConfig)
     {
         this.requestAnalyzerConfig = requestAnalyzerConfig;
+    }
+
+    public UIConfiguration getUiConfiguration()
+    {
+        return uiConfiguration;
+    }
+
+    public void setUiConfiguration(UIConfiguration uiConfiguration)
+    {
+        this.uiConfiguration = uiConfiguration;
     }
 
     public List<String> getModules()

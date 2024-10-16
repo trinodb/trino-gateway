@@ -16,26 +16,29 @@ package io.trino.gateway.ha.router;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
+import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.domain.RoutingRules;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class RoutingRulesManager
+public final class RoutingRulesManager
 {
-    public List<RoutingRules> getRoutingRules(RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
+    private RoutingRulesManager() {}
+
+    public static List<RoutingRules> getRoutingRules(RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
             throws IOException
     {
-        String content = null;
+        String rulesConfigPath = configuration.getRulesConfigPath();
         try {
-            String rulesConfigPath = configuration.getRulesConfigPath();
-            content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)), UTF_8);
+            String content = Files.readString(Paths.get(rulesConfigPath), UTF_8);
             YAMLParser parser = new YAMLFactory().createParser(content);
             List<RoutingRules> routingRulesList = new ArrayList<>();
             while (parser.nextToken() != null) {
@@ -45,40 +48,34 @@ public class RoutingRulesManager
             return routingRulesList;
         }
         catch (IOException e) {
-            throw new IOException(e);
+            throw new IOException("Failed to read or parse routing rules configuration from path : " + rulesConfigPath, e);
         }
     }
 
-    public List<RoutingRules> updateRoutingRules(RoutingRules routingRules, RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
+    public static List<RoutingRules> updateRoutingRules(RoutingRules routingRules, RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
             throws IOException
     {
+        ImmutableList.Builder<RoutingRules> routingRulesBuilder = ImmutableList.builder();
         String rulesConfigPath = configuration.getRulesConfigPath();
-        List<RoutingRules> routingRulesList = new ArrayList<>();
         try {
-            String content = new String(Files.readAllBytes(Paths.get(rulesConfigPath)), UTF_8);
-            YAMLParser parser = new YAMLFactory().createParser(content);
-            while (parser.nextToken() != null) {
-                RoutingRules routingRule = yamlReader.readValue(parser, RoutingRules.class);
-                routingRulesList.add(routingRule);
-            }
-
+            List<RoutingRules> routingRulesList = getRoutingRules(configuration, yamlReader);
             for (int i = 0; i < routingRulesList.size(); i++) {
                 if (routingRulesList.get(i).name().equals(routingRules.name())) {
                     routingRulesList.set(i, routingRules);
                     break;
                 }
             }
-
             ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
             StringBuilder yamlContent = new StringBuilder();
             for (RoutingRules rule : routingRulesList) {
                 yamlContent.append(yamlWriter.writeValueAsString(rule));
+                routingRulesBuilder.add(rule);
             }
-            Files.write(Paths.get(rulesConfigPath), yamlContent.toString().getBytes(UTF_8));
+            Files.writeString(Paths.get(rulesConfigPath), yamlContent.toString(), UTF_8);
         }
         catch (IOException e) {
-            throw new IOException(e);
+            throw new IOException("Failed to parse or update routing rules configuration form path : " + rulesConfigPath, e);
         }
-        return routingRulesList;
+        return routingRulesBuilder.build();
     }
 }

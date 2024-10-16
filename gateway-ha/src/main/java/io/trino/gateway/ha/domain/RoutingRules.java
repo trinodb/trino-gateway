@@ -13,22 +13,32 @@
  */
 package io.trino.gateway.ha.domain;
 
+import com.google.common.collect.ImmutableList;
+import jakarta.annotation.Nullable;
+
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * RoutingRules
  *
  * @param name name of the routing rule
  * @param description description of the routing rule
- * @param priority priority of the routing rule
+ * @param priority priority of the routing rule. Higher number represents higher priority. If two rules have same priority then order of execution is not guaranteed.
  * @param actions actions of the routing rule
  * @param condition condition of the routing rule
  */
 public record RoutingRules(
         String name,
-        String description,
-        Integer priority,
+        @Nullable String description,
+        @Nullable Integer priority,
         List<String> actions,
         String condition)
 {
+    public RoutingRules {
+        requireNonNull(name, "name must not be null");
+        requireNonNull(condition, "condition must not be null");
+        actions = ImmutableList.copyOf(actions);
+    }
 }

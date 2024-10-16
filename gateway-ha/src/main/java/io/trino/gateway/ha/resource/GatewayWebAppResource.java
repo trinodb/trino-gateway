@@ -78,7 +78,6 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
-    private final RoutingRulesManager routingRulesManager;
     private final ObjectMapper yamlReader;
     private final RoutingRulesConfiguration routingRulesConfiguration;
     private final UIConfiguration uiConfiguration;
@@ -89,7 +88,6 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
-            RoutingRulesManager routingRulesManager,
             HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
@@ -97,7 +95,6 @@ public class GatewayWebAppResource
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.yamlReader = new ObjectMapper(new YAMLFactory());
-        this.routingRulesManager = requireNonNull(routingRulesManager, "resourceGroupsManager is null");
         this.routingRulesConfiguration = configuration.getRoutingRules();
         this.uiConfiguration = configuration.getUiConfiguration();
     }
@@ -452,7 +449,7 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
-        List<RoutingRules> routingRulesList = routingRulesManager.getRoutingRules(routingRulesConfiguration, yamlReader);
+        List<RoutingRules> routingRulesList = RoutingRulesManager.getRoutingRules(routingRulesConfiguration, yamlReader);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
@@ -464,7 +461,7 @@ public class GatewayWebAppResource
     public synchronized Response updateRoutingRules(RoutingRules routingRules)
             throws IOException
     {
-        List<RoutingRules> routingRulesList = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration, yamlReader);
+        List<RoutingRules> routingRulesList = RoutingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration, yamlReader);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
