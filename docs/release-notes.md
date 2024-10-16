@@ -2,8 +2,16 @@
 
 ## Trino Gateway 11 (12 Sep 2024) { id="11" }
 
-[JAR file gateway-ha-11-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/11/gateway-ha-11-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:11`
+Artifacts:
+
+* [JAR file gateway-ha-11-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/11/gateway-ha-11-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:11`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/11.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/11.zip)
+* Helm chart `11.0.0` in `helm/trino-gateway` of the tagged source code
+
+Changes:
 
 * [:warning: Breaking change:](#breaking) Require Java 22 for build and runtime.
   ([#441](https://github.com/trinodb/trino-gateway/pull/441))
@@ -41,8 +49,16 @@ milestone 11 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+mile
 
 ## Trino Gateway 10 (24 Jul 2024) { id="10" }
 
-[JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:10`
+Artifacts:
+
+* [JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:10`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/10.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/10.zip)
+* Helm chart `10.0.0` in `helm/trino-gateway` of the tagged source code
+
+Changes:
 
 * [:warning: Breaking change:](#breaking) Remove support for Dropwizard and
   Jetty Proxy integration and usage. Add
@@ -76,15 +92,29 @@ Container image `trinodb/trino-gateway:10`
 
 ## Trino Gateway 9 (8 May 2024) { id="9" }
 
-[JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:9`
+Artifacts:
+
+* [JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:9`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/9.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/9.zip)
+
+Changes:
 
 * Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
 
 ## Trino Gateway 8 (6 May 2024) { id="8" }
 
-[JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:8`
+Artifacts:
+
+* [JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:8`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/8.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/8.zip)
+
+Changes:
 
 * Add support for configurable router policies. ([#98](https://github.com/trinodb/trino-gateway/pull/98))
 * Add a router policy based on query count per cluster. ([#98](https://github.com/trinodb/trino-gateway/pull/98))
@@ -97,9 +127,15 @@ Container image `trinodb/trino-gateway:8`
 
 ## Trino Gateway 7 (21 Mar 2024) { id="7" }
 
-[JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:7`
+Artifacts:
 
+* [JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:7`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/7.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/7.zip)
+
+Changes:
 * Replace user interface with a new modern UI. ([#116](https://github.com/trinodb/trino-gateway/pull/116))
 * Improve logging configurability. Users must update to the 
   [new logging configuration](./installation.md#logging). ([#260](https://github.com/trinodb/trino-gateway/pull/260))
@@ -111,8 +147,15 @@ Container image `trinodb/trino-gateway:7`
 
 ## Trino Gateway 6 (16 Feb 2024) { id="6" }
 
-[JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar),
-Container image `trinodb/trino-gateway:6`
+Artifacts:
+
+* [JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:6`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/6.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/6.zip)
+
+Changes:
 
 * Add Docker container build, publishing, and usage setup and instructions. ([#86](https://github.com/trinodb/trino-gateway/issues/86))
 
@@ -120,7 +163,15 @@ Container image `trinodb/trino-gateway:6`
 
 ## Trino Gateway 5 (24 Jan 2024) { id="5" }
 
-[gateway-ha-5-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar)
+Artifacts:
+
+* [gateway-ha-5-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar)
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/5.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/5.zip)
+
+
+Changes:
 
 * Add support for OAuth 2 audience use. ([#164](https://github.com/trinodb/trino-gateway/pull/164))
 * Add quickstart scripts and documentation. ([#110](https://github.com/trinodb/trino-gateway/pull/110))
@@ -131,7 +182,14 @@ Container image `trinodb/trino-gateway:6`
 
 ## Trino Gateway 4 (30 Nov 2023) { id="4" }
 
-[gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
+Artifacts:
+
+* [gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/4.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/4.zip)
+
+Changes:
 
 * Add support for configuring additional whitelisted URL paths. ([#63](https://github.com/trinodb/trino-gateway/pull/63))
 * Improve flexibility of user and group name matching for authorization. ([#32](https://github.com/trinodb/trino-gateway/pull/32))
@@ -148,7 +206,14 @@ Container image `trinodb/trino-gateway:6`
 
 ## Trino Gateway 3 (26 Sep 2023) { id="3" }
 
-[gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
+Artifacts:
+
+* [gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/3.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/3.zip)
+
+Changes:
 
 The first release of Trino Gateway is based on the 
 [Presto Gateway](https://github.com/lyft/presto-gateway/) 1.9.5 codebase
