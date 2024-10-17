@@ -69,7 +69,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +112,7 @@ public class TrinoQueryProperties
             @JsonProperty("body") String body,
             @JsonProperty("queryType") String queryType,
             @JsonProperty("resourceGroupQueryType") String resourceGroupQueryType,
-            @JsonProperty("tables") String[] tables,
+            @JsonProperty("tables") List<String> tables,
             @JsonProperty("defaultCatalog") Optional<String> defaultCatalog,
             @JsonProperty("defaultSchema") Optional<String> defaultSchema,
             @JsonProperty("catalogs") Set<String> catalogs,
@@ -127,7 +126,8 @@ public class TrinoQueryProperties
         this.body = requireNonNullElse(body, "");
         this.queryType = requireNonNullElse(queryType, "");
         this.resourceGroupQueryType = resourceGroupQueryType;
-        this.tables = Arrays.stream(requireNonNullElse(tables, new String[] {})).map(this::parseIdentifierStringToQualifiedName).collect(Collectors.toSet());
+        List<String> defaultTables = ImmutableList.of();
+        this.tables = requireNonNullElse(tables, defaultTables).stream().map(this::parseIdentifierStringToQualifiedName).collect(Collectors.toSet());
         this.defaultCatalog = requireNonNullElse(defaultCatalog, Optional.empty());
         this.defaultSchema = requireNonNullElse(defaultSchema, Optional.empty());
         this.catalogs = requireNonNullElse(catalogs, ImmutableSet.of());
