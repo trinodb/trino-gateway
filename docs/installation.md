@@ -2,10 +2,15 @@
 
 Trino Gateway is distributed as an executable JAR file. The [release
 notes](release-notes.md) contain links to download specific versions.
-Alternatively, you can look at the [development instructions](development.md) to
-build the JAR file or use the TrinoGatewayRunner for local testing.
+
+Every Trino Gateway release includes a [Docker container](docker.md) and a 
+[Helm chart](installation.md#helm) as alternative deployment methods.
+
+Follow the [development instructions](development.md) to
+build the JAR file and the Docker image instructions  or use the 
+`TrinoGatewayRunner` class for local testing.
 The [quickstart guide](quickstart.md) contains instructions for running the
-application locally. 
+application locally.
 
 Following are instructions for installing Trino Gateway for production
 environments.
@@ -196,7 +201,7 @@ java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
     -jar gateway-ha.jar gateway-config.yml
 ```
 
-### Helm
+### Helm <a name="helm"></a>
 
 Helm manages the deployment of Kubernetes applications by templating Kubernetes
 resources with a set of Helm charts. The Trino Gateway Helm chart consists 
