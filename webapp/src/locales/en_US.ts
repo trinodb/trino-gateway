@@ -32,6 +32,7 @@ const en_US = {
       History: "History",
       ResourceGroup: "Resource Group",
       Selector: "Selector",
+      RoutingRules: "Routing Rules"
     }
   },
   Auth: {
