@@ -13,13 +13,11 @@
  */
 package io.trino.gateway.ha.handler;
 
-import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import io.airlift.log.Logger;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.InputStreamReader;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -27,7 +25,6 @@ import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
@@ -55,41 +52,6 @@ public final class ProxyUtils
     private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
     private ProxyUtils() {}
-
-    public static String getQueryUser(String userHeader, String authorization)
-    {
-        if (!isNullOrEmpty(userHeader)) {
-            log.debug("User from header %s", USER_HEADER);
-            return userHeader;
-        }
-
-        log.debug("User from basic authentication");
-        String user = "";
-        if (authorization == null) {
-            log.debug("No basic auth header found.");
-            return user;
-        }
-
-        int space = authorization.indexOf(' ');
-        if ((space < 0) || !authorization.substring(0, space).equalsIgnoreCase("basic")) {
-            log.error("Basic auth format is invalid");
-            return user;
-        }
-
-        String headerInfo = authorization.substring(space + 1).trim();
-        if (isNullOrEmpty(headerInfo)) {
-            log.error("Encoded value of basic auth doesn't exist");
-            return user;
-        }
-
-        String info = new String(Base64.getDecoder().decode(headerInfo), UTF_8);
-        List<String> parts = Splitter.on(':').limit(2).splitToList(info);
-        if (parts.size() < 1) {
-            log.error("No user inside the basic auth text");
-            return user;
-        }
-        return parts.get(0);
-    }
 
     public static String extractQueryIdIfPresent(HttpServletRequest request, List<String> statementPaths)
     {
