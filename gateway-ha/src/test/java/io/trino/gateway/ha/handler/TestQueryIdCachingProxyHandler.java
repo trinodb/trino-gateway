@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
-import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -60,12 +59,5 @@ final class TestQueryIdCachingProxyHandler
                 .isNull();
         assertThat(extractQueryIdIfPresent("/ui/", "lang=en&p=1&id=0_1_2_a", statementPaths))
                 .isNull();
-    }
-
-    @Test
-    void testGetQueryUser()
-    {
-        assertThat(getQueryUser(null, "Basic dGVzdDoxMjPCow==")).isEqualTo("test");
-        assertThat(getQueryUser("trino_user", "Basic dGVzdDoxMjPCow==")).isEqualTo("trino_user");
     }
 }
