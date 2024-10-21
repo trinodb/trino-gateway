@@ -59,6 +59,7 @@ import io.trino.sql.tree.ShowTables;
 import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.Table;
 import io.trino.sql.tree.TableFunctionInvocation;
+import io.trino.sql.tree.WithQuery;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 
@@ -68,12 +69,14 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.io.BaseEncoding.base64Url;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static java.lang.Math.toIntExact;
@@ -90,6 +93,7 @@ public class TrinoQueryProperties
     private String queryType = "";
     private String resourceGroupQueryType = "";
     private Set<QualifiedName> tables = ImmutableSet.of();
+    private final Set<QualifiedName> temporaryTables = new HashSet<>();
     private final Optional<String> defaultCatalog;
     private final Optional<String> defaultSchema;
     private Set<String> catalogs = ImmutableSet.of();
@@ -201,12 +205,17 @@ public class TrinoQueryProperties
 
             getNames(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             tables = tableBuilder.build();
-            catalogBuilder.addAll(tables.stream().map(q -> q.getParts().getFirst()).iterator());
+
+            Set<QualifiedName> filteredTables = tables.stream()
+                    .filter(table -> !temporaryTables.contains(table))
+                    .collect(toImmutableSet());
+
+            catalogBuilder.addAll(filteredTables.stream().map(q -> q.getParts().getFirst()).iterator());
             catalogs = catalogBuilder.build();
-            schemaBuilder.addAll(tables.stream().map(q -> q.getParts().get(1)).iterator());
+            schemaBuilder.addAll(filteredTables.stream().map(q -> q.getParts().get(1)).iterator());
             schemas = schemaBuilder.build();
             catalogSchemaBuilder.addAll(
-                    tables.stream().map(qualifiedName -> format("%s.%s", qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
+                    filteredTables.stream().map(qualifiedName -> format("%s.%s", qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
             catalogSchemas = catalogSchemaBuilder.build();
         }
         catch (IOException e) {
@@ -336,8 +345,14 @@ public class TrinoQueryProperties
             case SetSchemaAuthorization s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case SetTableAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
             case SetViewAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
-            case Table s -> tableBuilder.add(qualifyName(s.getName()));
+            case Table s -> {
+                // ignore temporary tables as they can have various table parts
+                if (!temporaryTables.contains(s.getName())) {
+                    tableBuilder.add(qualifyName(s.getName()));
+                }
+            }
             case TableFunctionInvocation s -> tableBuilder.add(qualifyName(s.getName()));
+            case WithQuery withQuery -> temporaryTables.add(QualifiedName.of(withQuery.getName().getValue()));
             default -> {}
         }
 
@@ -385,6 +400,7 @@ public class TrinoQueryProperties
             throws RequestParsingException
     {
         List<String> tableParts = table.getParts();
+
         return switch (tableParts.size()) {
             case 1 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst());
             case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst(), tableParts.get(1));
