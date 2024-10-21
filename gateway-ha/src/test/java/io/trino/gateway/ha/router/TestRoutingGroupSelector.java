@@ -404,6 +404,36 @@ final class TestRoutingGroupSelector
         assertThat(trinoQueryProperties.getCatalogs()).isEqualTo(catalogs);
     }
 
+    @Test
+    void testWithQueryNameExcluded()
+            throws IOException
+    {
+        String query = """
+                WITH dos (c1) as (select c1 from uno),
+                uno(c1) as (select c1 from cat.schem.tbl1)
+                SELECT c1 from uno, dos
+                """;
+        BufferedReader bufferedReader = new BufferedReader(new StringReader(query));
+        HttpServletRequest mockRequestWithDefaults = prepareMockRequest();
+        when(mockRequestWithDefaults.getReader()).thenReturn(bufferedReader);
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+
+        TrinoQueryProperties trinoQueryPropertiesWithDefaults = new TrinoQueryProperties(mockRequestWithDefaults, requestAnalyzerConfig);
+
+        assertThat(trinoQueryPropertiesWithDefaults.tablesContains(String.format("%s.%s.%s", DEFAULT_CATALOG, DEFAULT_SCHEMA, "uno"))).isFalse();
+        assertThat(trinoQueryPropertiesWithDefaults.tablesContains(String.format("%s.%s.%s", DEFAULT_CATALOG, DEFAULT_SCHEMA, "does"))).isFalse();
+        assertThat(trinoQueryPropertiesWithDefaults.tablesContains("cat.schem.tbl1")).isTrue();
+
+        HttpServletRequest mockRequestNoDefaults = prepareMockRequest();
+        bufferedReader = new BufferedReader(new StringReader(query));
+        when(mockRequestNoDefaults.getReader()).thenReturn(bufferedReader);
+
+        TrinoQueryProperties trinoQueryPropertiesNoDefaults = new TrinoQueryProperties(mockRequestNoDefaults, requestAnalyzerConfig);
+        assertThat(trinoQueryPropertiesNoDefaults.getTables().size()).isEqualTo(1);
+        assertThat(trinoQueryPropertiesNoDefaults.tablesContains("cat.schem.tbl1")).isTrue();
+    }
+
     private HttpServletRequest prepareMockRequest()
     {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
