@@ -407,6 +407,38 @@ final class TestRoutingGroupSelector
         assertThat(trinoQueryProperties.getCatalogs()).isEqualTo(catalogs);
     }
 
+    @Test
+    void testWithQueryNameExcluded()
+            throws IOException
+    {
+        String query = """
+                WITH dos AS (SELECT c1 from cat.schem.tbl1),
+                uno as (SELECT c1 FROM dos)
+                SELECT c1 FROM uno, dos
+                """;
+        HttpServletRequest mockRequestWithDefaults = prepareMockRequest();
+        when(mockRequestWithDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+
+        TrinoQueryProperties trinoQueryPropertiesWithDefaults = new TrinoQueryProperties(
+                mockRequestWithDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
+        assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
+
+        HttpServletRequest mockRequestNoDefaults = prepareMockRequest();
+        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+
+        TrinoQueryProperties trinoQueryPropertiesNoDefaults = new TrinoQueryProperties(
+                mockRequestNoDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();
+        assertThat(tablesNoDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
+    }
+
     private HttpServletRequest prepareMockRequest()
     {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
