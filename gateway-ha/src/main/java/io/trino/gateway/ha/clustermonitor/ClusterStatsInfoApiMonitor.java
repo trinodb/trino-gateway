@@ -67,7 +67,7 @@ public class ClusterStatsInfoApiMonitor
                 .build();
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
-            return serverInfo.isStarting() ? TrinoStatus.PENDING : TrinoStatus.HEALTHY;
+            return serverInfo.starting() ? TrinoStatus.PENDING : TrinoStatus.HEALTHY;
         }
         catch (UnexpectedResponseException e) {
             if (shouldRetry(e.getStatusCode())) {
