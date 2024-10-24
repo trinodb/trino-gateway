@@ -15,7 +15,6 @@ package io.trino.gateway.ha.clustermonitor;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import io.airlift.http.client.HttpStatus;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
@@ -33,15 +32,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_QUEUED_LIST_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_LOGIN_PATH;
+import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsHttpMonitor
         implements ClusterStatsMonitor
 {
     private static final Logger log = Logger.get(ClusterStatsHttpMonitor.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String SESSION_USER = "sessionUser";
 
     private final String username;
@@ -59,14 +61,13 @@ public class ClusterStatsHttpMonitor
         ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         // Fetch Cluster level Stats.
         String response = queryCluster(backend, UI_API_STATS_PATH);
-        if (Strings.isNullOrEmpty(response)) {
+        if (isNullOrEmpty(response)) {
             log.error("Received null/empty response for %s", UI_API_STATS_PATH);
             return clusterStats.build();
         }
 
         try {
-            HashMap<String, Object> result = new ObjectMapper().readValue(response, HashMap.class);
-
+            HashMap<String, Object> result = OBJECT_MAPPER.readValue(response, new TypeReference<>() {});
             int activeWorkers = (int) result.get("activeWorkers");
             clusterStats
                     .numWorkerNodes(activeWorkers)
@@ -84,18 +85,14 @@ public class ClusterStatsHttpMonitor
         // Fetch User Level Stats.
         Map<String, Integer> clusterUserStats = new HashMap<>();
         response = queryCluster(backend, UI_API_QUEUED_LIST_PATH);
-        if (Strings.isNullOrEmpty(response)) {
+        if (isNullOrEmpty(response)) {
             log.error("Received null/empty response for %s", UI_API_QUEUED_LIST_PATH);
             return clusterStats.build();
         }
         try {
-            List<Map<String, Object>> queries = new ObjectMapper().readValue(response,
-                    new TypeReference<List<Map<String, Object>>>()
-                    {
-                    });
-
-            for (Map<String, Object> q : queries) {
-                String user = (String) q.get(SESSION_USER);
+            List<Map<String, Object>> queries = OBJECT_MAPPER.readValue(response, new TypeReference<>() {});
+            for (Map<String, Object> query : queries) {
+                String user = (String) query.get(SESSION_USER);
                 clusterUserStats.put(user, clusterUserStats.getOrDefault(user, 0) + 1);
             }
         }
@@ -148,19 +145,15 @@ public class ClusterStatsHttpMonitor
         Call call = client.newCall(request);
 
         try (Response res = call.execute()) {
-            switch (fromStatusCode(res.code())) {
-                case HttpStatus.OK:
-                    return res.body().string();
-                case HttpStatus.UNAUTHORIZED:
+            return switch (fromStatusCode(res.code())) {
+                case HttpStatus.OK -> requireNonNull(res.body(), "body is null").string();
+                case HttpStatus.UNAUTHORIZED -> {
                     log.info("Unauthorized to fetch cluster stats");
-                    log.debug("username: %s, targetUrl: %s, cookieStore: %s",
-                            username,
-                            targetUrl,
-                            client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl)));
-                    return null;
-                default:
-                    return null;
-            }
+                    log.debug("username: %s, targetUrl: %s, cookieStore: %s", username, targetUrl, client.cookieJar().loadForRequest(HttpUrl.parse(targetUrl)));
+                    yield null;
+                }
+                default -> null;
+            };
         }
         catch (IOException e) {
             log.warn(e, "Failed to fetch cluster stats");
