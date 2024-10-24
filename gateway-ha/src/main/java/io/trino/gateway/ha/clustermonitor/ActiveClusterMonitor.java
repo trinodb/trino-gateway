@@ -26,7 +26,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Objects.requireNonNull;
 
 public class ActiveClusterMonitor
 {
@@ -39,9 +42,8 @@ public class ActiveClusterMonitor
 
     private final int taskDelaySeconds;
     private final ClusterStatsMonitor clusterStatsMonitor;
-    private volatile boolean monitorActive = true;
     private final ExecutorService executorService = Executors.newFixedThreadPool(DEFAULT_THREAD_POOL_SIZE);
-    private final ExecutorService singleTaskExecutor = Executors.newSingleThreadExecutor();
+    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
     public ActiveClusterMonitor(
@@ -50,65 +52,54 @@ public class ActiveClusterMonitor
             MonitorConfiguration monitorConfiguration,
             ClusterStatsMonitor clusterStatsMonitor)
     {
-        this.clusterStatsObservers = clusterStatsObservers;
-        this.gatewayBackendManager = gatewayBackendManager;
+        this.clusterStatsMonitor = requireNonNull(clusterStatsMonitor, "clusterStatsMonitor is null");
+        this.clusterStatsObservers = requireNonNull(clusterStatsObservers, "clusterStatsObservers is null");
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.taskDelaySeconds = monitorConfiguration.getTaskDelaySeconds();
-        this.clusterStatsMonitor = clusterStatsMonitor;
-        log.info("Running cluster monitor with connection task delay of %d seconds", taskDelaySeconds);
     }
 
-    /**
-     * Run an app that queries all active trino clusters for stats.
-     */
     @PostConstruct
     public void start()
     {
-        singleTaskExecutor.submit(
-                () -> {
-                    while (monitorActive) {
-                        try {
-                            log.info("Getting the stats for the active clusters");
-                            List<ProxyBackendConfiguration> activeClusters =
-                                    gatewayBackendManager.getAllActiveBackends();
-                            List<Future<ClusterStats>> futures = new ArrayList<>();
-                            for (ProxyBackendConfiguration backend : activeClusters) {
-                                Future<ClusterStats> call =
-                                        executorService.submit(() -> clusterStatsMonitor.monitor(backend));
-                                futures.add(call);
-                            }
-                            List<ClusterStats> stats = new ArrayList<>();
-                            for (Future<ClusterStats> clusterStatsFuture : futures) {
-                                ClusterStats clusterStats = clusterStatsFuture.get();
-                                stats.add(clusterStats);
-                            }
+        log.info("Running cluster monitor with connection task delay of %d seconds", taskDelaySeconds);
+        scheduledExecutor.scheduleAtFixedRate(() -> {
+            try {
+                log.info("Getting stats for all active clusters");
+                List<ProxyBackendConfiguration> activeClusters =
+                        gatewayBackendManager.getAllActiveBackends();
+                List<Future<ClusterStats>> futures = new ArrayList<>();
+                for (ProxyBackendConfiguration backend : activeClusters) {
+                    Future<ClusterStats> call = executorService.submit(() -> clusterStatsMonitor.monitor(backend));
+                    futures.add(call);
+                }
+                List<ClusterStats> stats = new ArrayList<>();
+                for (Future<ClusterStats> clusterStatsFuture : futures) {
+                    ClusterStats clusterStats = clusterStatsFuture.get();
+                    stats.add(clusterStats);
+                }
 
-                            if (clusterStatsObservers != null) {
-                                for (TrinoClusterStatsObserver observer : clusterStatsObservers) {
-                                    observer.observe(stats);
-                                }
-                            }
-                        }
-                        catch (Exception e) {
-                            log.error(e, "Error performing backend monitor tasks");
-                        }
-                        try {
-                            Thread.sleep(TimeUnit.SECONDS.toMillis(taskDelaySeconds));
-                        }
-                        catch (Exception e) {
-                            log.error(e, "Error with monitor task");
-                        }
+                if (clusterStatsObservers != null) {
+                    for (TrinoClusterStatsObserver observer : clusterStatsObservers) {
+                        observer.observe(stats);
                     }
-                });
+                }
+            }
+            catch (Exception e) {
+                log.error(e, "Error performing backend monitor tasks");
+            }
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(taskDelaySeconds));
+            }
+            catch (Exception e) {
+                log.error(e, "Error with monitor task");
+            }
+        }, 0, taskDelaySeconds, TimeUnit.SECONDS);
     }
 
-    /**
-     * Shut down the app.
-     */
     @PreDestroy
     public void stop()
     {
-        this.monitorActive = false;
-        this.executorService.shutdown();
-        this.singleTaskExecutor.shutdown();
+        executorService.shutdownNow();
+        scheduledExecutor.shutdownNow();
     }
 }
