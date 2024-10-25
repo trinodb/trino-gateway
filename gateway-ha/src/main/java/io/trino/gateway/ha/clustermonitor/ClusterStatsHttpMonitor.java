@@ -34,9 +34,9 @@ import java.util.Map;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_QUEUED_LIST_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_API_STATS_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.UI_LOGIN_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.UI_API_QUEUED_LIST_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.UI_LOGIN_PATH;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsHttpMonitor
