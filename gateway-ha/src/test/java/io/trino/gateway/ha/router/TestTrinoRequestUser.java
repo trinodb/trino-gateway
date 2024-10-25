@@ -26,7 +26,7 @@ import java.util.Date;
 import java.util.Optional;
 
 import static com.auth0.jwt.algorithms.Algorithm.HMAC256;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
+import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static jakarta.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
