@@ -488,7 +488,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>v20.17.0</nodeVersion>
-                            <pnpmVersion>9.11.0</pnpmVersion>
+                            <pnpmVersion>9.14.2</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
