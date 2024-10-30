@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.airlift.http.client.HttpClient;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,9 +39,9 @@ public interface RoutingGroupSelector
      * Routing group selector that uses routing engine rules
      * to determine the right routing group.
      */
-    static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
+    static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new RuleReloadingRoutingGroupSelector(rulesConfigPath, requestAnalyzerConfig);
+        return new FileBasedRoutingGroupSelector(rulesConfigPath, rulesRefreshPeriod, requestAnalyzerConfig);
     }
 
     /**

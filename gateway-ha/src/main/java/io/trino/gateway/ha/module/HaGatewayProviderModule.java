@@ -184,10 +184,10 @@ public class HaGatewayProviderModule
         if (routingRulesConfig.isRulesEngineEnabled()) {
             try {
                 return switch (routingRulesConfig.getRulesType()) {
-                    case FILE -> {
-                        String rulesConfigPath = routingRulesConfig.getRulesConfigPath();
-                        yield RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, configuration.getRequestAnalyzerConfig());
-                    }
+                    case FILE -> RoutingGroupSelector.byRoutingRulesEngine(
+                            routingRulesConfig.getRulesConfigPath(),
+                            routingRulesConfig.getRulesRefreshPeriod(),
+                            configuration.getRequestAnalyzerConfig());
                     case EXTERNAL -> {
                         RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
                         yield RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());

@@ -24,6 +24,8 @@ To enable the routing rules engine, find the following lines in
 * Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
 * If you set `rulesType: FILE`, then set `rulesConfigPath` to the path to your
   rules config file.
+* The rules file will be re-read every minute by default. You may change this by setting
+  `rulesRefreshPeriod: Duration`, where duration is an airlift style Duration such as `30s`.
 * If you set `rulesType: EXTERNAL`, set `rulesExternalConfiguration` to the URL
   of an external service for routing rules processing.
 * `rulesType` is by default `FILE` unless specified.
@@ -106,11 +108,10 @@ return a result with the following criteria:
 
 ### Configure routing rules with a file
 
-To express and fire routing rules, we use the
-[easy-rules](https://github.com/j-easy/easy-rules) engine. These rules must be
-stored in a YAML file. Rules consist of a name, description, condition, and list
+Rules consist of a name, description, condition, and list
 of actions. If the condition of a particular rule evaluates to `true`, its
-actions are fired.
+actions are fired. Rules are stored as a 
+[multi-document](https://www.yaml.info/learn/document.html) YAML file. 
 
 ```yaml
 ---
@@ -127,20 +128,37 @@ actions:
   - 'result.put("routingGroup", "etl-special")'
 ```
 
-In the condition, you can access the methods of a
-[HttpServletRequest](https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html)
-object called `request`. Rules may also utilize
+Three objects are available by default. They are
+* `request`, the incoming request as an [HttpServletRequest](https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html)
+* `state`, a `HashMap<String, Object>` that allows passing arbitrary state from one rule evaluation to the next
+* `result`, a `HashMap<String, String>` that is used to return the result of rule evaluation to the engine
+
+In addition to the default objects, rules may optionally utilize
 [trinoRequestUser](#trinorequestuser) and
 [trinoQueryProperties](#trinoqueryproperties)
-objects, which provide information about the user and query respectively.
+, which provide information about the user and query respectively.
 You must include an action of the form `result.put(\"routingGroup\", \"foo\")`
 to trigger routing of a request that satisfies the condition to the specific
 routing group. Without this action, the default adhoc group is used and the
 whole routing rule is redundant.
 
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
-an expression language with Java-like syntax. In most cases, you can write
-conditions and actions in Java syntax and expect it to work. There are some
+an expression language with Java-like syntax. Classes from `java.util`, data-type 
+classes from `java.lang` such as `Integer` and `String`, as well as `java.lang.Math`
+and `java.lang.StrictMath` are available in rules. Rules may not use `java.lang.System`
+and other classes that allow access the Java runtime and operating system.
+In most cases, you can write
+conditions and actions in Java syntax and expect it to work. One exception is 
+parametrized types. Exclude type parameters, for example to add a `HashSet` to the
+`state` variable, use an action such as:
+```java
+actions:
+  - |
+    state.put("triggeredRules",new HashSet())
+```
+This is equivalent to `new HashSet<Object>()`. 
+
+There are some
 MVEL-specific operators. For example, instead of doing a null-check before
 accessing the `String.contains` method like this:
 
@@ -310,8 +328,8 @@ actions:
 ```
 
 This can difficult to maintain with more rules. To have better control over the
-execution of rules, we can use rule priorities and composite rules. Overall,
-priorities, composite rules, and other constructs that MVEL support allows
+execution of rules, we can use rule priorities. Overall,
+priorities and other constructs that MVEL support allows
 you to express your routing logic.
 
 #### Rule priority
@@ -342,99 +360,52 @@ that the first rule (priority 0) is fired before the second rule (priority 1).
 Thus `routingGroup` is set to `etl` and then to `etl-special`, so the
 `routingGroup` is always `etl-special` in the end.
 
-More specific rules must be set to a lesser priority so they are evaluated last
-to set a `routingGroup`. To further control the execution of rules, for example
-to have only one rule fire, you can use composite rules.
+More specific rules must be set to a higher priority so they are evaluated last
+to set a `routingGroup`.
 
-##### Composite rules
+##### Passing State
 
-First, please refer to the [easy-rule composite rules documentation](https://github.com/j-easy/easy-rules/wiki/defining-rules#composite-rules).
-
-The preceding section covers how to control the order of rule execution using
-priorities. In addition, you can configure evaluation so that only the first
-rule matched fires (the highest priority one) and the rest is ignored. You can
-use `ActivationRuleGroup` to achieve this:
+The `state` object may be used to pass information from one rule evaluation to
+the next. This allows an author to avoid duplicating logic in multiple rules.
+Priority should be used to ensure that `state` is updated before being used 
+in downstream rules. For example, the atomic rules may be re-implemented as
 
 ```yaml
 ---
-name: "airflow rule group"
-description: "routing rules for query from airflow"
-compositeRuleType: "ActivationRuleGroup"
-composingRules:
-  - name: "airflow special"
-    description: "if query from airflow with special label, route to etl-special group"
-    priority: 0
-    condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=special"'
-    actions:
-      - 'result.put("routingGroup", "etl-special")'
-  - name: "airflow"
-    description: "if query from airflow, route to etl group"
-    priority: 1
-    condition: 'request.getHeader("X-Trino-Source") == "airflow"'
-    actions:
-      - 'result.put("routingGroup", "etl")'
-```
+name: "initialize state"
+description: "Add a set to the state map to track rules that have evaluated to true"
+priority: 0
+condition: "true"
+actions:
+  - |
+    state.put("triggeredRules",new HashSet())
+  # MVEL does not support type parameters! HashSet<String>() would result in an error.
+---
+name: "airflow"
+description: "if query from airflow, route to etl group"
+priority: 1
+condition: |
+  request.getHeader("X-Trino-Source") == "airflow"
+actions:
+  - |
+    result.put("routingGroup", "etl")
+  - |
+    state.get("triggeredRules").add("airflow")
+---
+name: "airflow special"
+description: "if query from airflow with special label, route to etl-special group"
+priority: 2
+condition: |
+  state.get("triggeredRules").contains("airflow") && request.getHeader("X-Trino-Client-Tags") contains "label=special"
+actions:
+  - |
+    result.put("routingGroup", "etl-special")
 
-Note that the priorities have switched. The more specific rule has a higher
-priority, since it should fire first. A query coming from airflow with special
-label is matched to the "airflow special" rule first, since it's higher
-priority, and the second rule is ignored. A query coming from airflow with no
-labels does not match the first rule, and is then tested and matched to the
-second rule.
-
-You can also use `ConditionalRuleGroup` and `ActivationRuleGroup` to implement
-an if/else workflow. The following logic in pseudocode:
-
-```text
-if source == "airflow":
-  if clientTags["label"] == "foo":
-    return "etl-foo"
-  else if clientTags["label"] = "bar":
-    return "etl-bar"
-  else
-    return "etl"
-```
-
-This logic can be implemented with the following rules:
-
-```yaml
-name: "airflow rule group"
-description: "routing rules for query from airflow"
-compositeRuleType: "ConditionalRuleGroup"
-composingRules:
-  - name: "main condition"
-    description: "source is airflow"
-    priority: 0 # rule with the highest priority acts as main condition
-    condition: 'request.getHeader("X-Trino-Source") == "airflow"'
-    actions:
-      - ""
-  - name: "airflow subrules"
-    compositeRuleType: "ActivationRuleGroup" # use ActivationRuleGroup to simulate if/else
-    composingRules:
-      - name: "label foo"
-        description: "label client tag is foo"
-        priority: 0
-        condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
-        actions:
-          - 'result.put("routingGroup", "etl-foo")'
-      - name: "label bar"
-        description: "label client tag is bar"
-        priority: 0
-        condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=bar"'
-        actions:
-          - 'result.put("routingGroup", "etl-bar")'
-      - name: "airflow default"
-        description: "airflow queries default to etl"
-        condition: "true"
-        actions:
-          - 'result.put("routingGroup", "etl")'
 ```
 
 ##### If statements (MVEL Flow Control)
 
-In the preceding section you see how `ConditionalRuleGroup` and
-`ActivationRuleGroup` are used to implement an `if/else` workflow. You can
-use MVEL support for `if` statements and other flow control. The following logic
+You can use MVEL support for `if` statements and other flow control. The following logic
 in pseudocode:
 
 ```text
