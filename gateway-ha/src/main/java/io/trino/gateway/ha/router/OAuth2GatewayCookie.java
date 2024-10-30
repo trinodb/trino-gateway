@@ -14,10 +14,9 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
-import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
+import io.airlift.units.Duration;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 public class OAuth2GatewayCookie
         extends GatewayCookie
@@ -25,15 +24,8 @@ public class OAuth2GatewayCookie
     public static final String NAME = GatewayCookie.PREFIX + "OAUTH2";
     public static final String OAUTH2_PATH = "/oauth2";
 
-    public OAuth2GatewayCookie(String backend)
+    public OAuth2GatewayCookie(String backend, List<String> deletePaths, Duration ttl)
     {
-        super(
-                NAME,
-                null,
-                backend,
-                ImmutableList.copyOf(Streams.concat(Stream.of(OAUTH2_PATH), OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance().getDeletePaths().stream()).toList()),
-                OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance().getDeletePaths(),
-                OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance().getLifetime(),
-                0);
+        super(NAME, null, backend, new ImmutableList.Builder<String>().add(OAUTH2_PATH).addAll(deletePaths).build(), deletePaths, ttl, 0);
     }
 }

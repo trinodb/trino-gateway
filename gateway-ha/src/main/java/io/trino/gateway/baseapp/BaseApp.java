@@ -31,6 +31,7 @@ import io.trino.gateway.ha.resource.HaGatewayResource;
 import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
+import io.trino.gateway.ha.router.OAuth2GatewayCookieProvider;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import io.trino.gateway.proxyserver.ForProxy;
 import io.trino.gateway.proxyserver.ProxyRequestHandler;
@@ -121,6 +122,7 @@ public class BaseApp
         registerResources(binder);
         registerProxyResources(binder);
         jaxrsBinder(binder).bind(RoutingTargetHandler.class);
+        binder.bind(OAuth2GatewayCookieProvider.class);
         addManagedApps(configuration, binder);
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);

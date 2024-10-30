@@ -20,9 +20,6 @@ import java.util.List;
 
 public class OAuth2GatewayCookieConfiguration
 {
-    // Configuration initialization using dropwizard requires
-    // instance method setters. Values are global, and can be accessed using static getters
-    private List<String> routingPaths = ImmutableList.of("/oauth2");
     private List<String> deletePaths = ImmutableList.of("/logout", "/oauth2/logout");
     private Duration lifetime = Duration.valueOf("10m");
 
@@ -34,16 +31,6 @@ public class OAuth2GatewayCookieConfiguration
     public void setDeletePaths(List<String> deletePaths)
     {
         this.deletePaths = deletePaths;
-    }
-
-    public List<String> getRoutingPaths()
-    {
-        return routingPaths;
-    }
-
-    public void setRoutingPaths(List<String> routingPaths)
-    {
-        this.routingPaths = routingPaths;
     }
 
     public Duration getLifetime()

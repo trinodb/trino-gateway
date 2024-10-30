@@ -27,6 +27,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
+import io.trino.gateway.ha.router.OAuth2GatewayCookieProvider;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.TrinoRequestUser;
@@ -86,13 +87,15 @@ public class ProxyRequestHandler
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
+    private final OAuth2GatewayCookieProvider oAuth2GatewayCookieProvider;
 
     @Inject
     public ProxyRequestHandler(
             @ForProxy HttpClient httpClient,
             RoutingManager routingManager,
             QueryHistoryManager queryHistoryManager,
-            HaGatewayConfiguration haGatewayConfiguration)
+            HaGatewayConfiguration haGatewayConfiguration,
+            OAuth2GatewayCookieProvider oAuth2GatewayCookieProvider)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
@@ -103,6 +106,7 @@ public class ProxyRequestHandler
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
+        this.oAuth2GatewayCookieProvider = requireNonNull(oAuth2GatewayCookieProvider, "oAuth2GatewayCookieProvider is null");
     }
 
     @PreDestroy
@@ -193,7 +197,7 @@ public class ProxyRequestHandler
             if (remoteUri.getPath().startsWith(OAuth2GatewayCookie.OAUTH2_PATH)
                     && !(servletRequest.getCookies() != null
                     && Arrays.stream(servletRequest.getCookies()).anyMatch(c -> c.getName().equals(OAuth2GatewayCookie.NAME)))) {
-                GatewayCookie oauth2Cookie = new OAuth2GatewayCookie(getRemoteTarget(remoteUri));
+                GatewayCookie oauth2Cookie = oAuth2GatewayCookieProvider.getOAuth2GatewayCookie(getRemoteTarget(remoteUri));
                 return ImmutableList.of(oauth2Cookie.toNewCookie());
             }
             else if (servletRequest.getCookies() != null) {
