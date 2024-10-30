@@ -296,8 +296,8 @@ actions:
 ```
 
 This can difficult to maintain with more rules. To have better control over the
-execution of rules, we can use rule priorities and composite rules. Overall,
-priorities, composite rules, and other constructs that MVEL support allows
+execution of rules, we can use rule priorities. Overall,
+priorities and other constructs that MVEL support allows
 you to express your routing logic.
 
 #### Rule priority
@@ -328,99 +328,12 @@ that the first rule (priority 0) is fired before the second rule (priority 1).
 Thus `routingGroup` is set to `etl` and then to `etl-special`, so the
 `routingGroup` is always `etl-special` in the end.
 
-More specific rules must be set to a lesser priority so they are evaluated last
-to set a `routingGroup`. To further control the execution of rules, for example
-to have only one rule fire, you can use composite rules.
-
-##### Composite rules
-
-First, please refer to the [easy-rule composite rules documentation](https://github.com/j-easy/easy-rules/wiki/defining-rules#composite-rules).
-
-The preceding section covers how to control the order of rule execution using
-priorities. In addition, you can configure evaluation so that only the first
-rule matched fires (the highest priority one) and the rest is ignored. You can
-use `ActivationRuleGroup` to achieve this:
-
-```yaml
----
-name: "airflow rule group"
-description: "routing rules for query from airflow"
-compositeRuleType: "ActivationRuleGroup"
-composingRules:
-  - name: "airflow special"
-    description: "if query from airflow with special label, route to etl-special group"
-    priority: 0
-    condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=special"'
-    actions:
-      - 'result.put("routingGroup", "etl-special")'
-  - name: "airflow"
-    description: "if query from airflow, route to etl group"
-    priority: 1
-    condition: 'request.getHeader("X-Trino-Source") == "airflow"'
-    actions:
-      - 'result.put("routingGroup", "etl")'
-```
-
-Note that the priorities have switched. The more specific rule has a higher
-priority, since it should fire first. A query coming from airflow with special
-label is matched to the "airflow special" rule first, since it's higher
-priority, and the second rule is ignored. A query coming from airflow with no
-labels does not match the first rule, and is then tested and matched to the
-second rule.
-
-You can also use `ConditionalRuleGroup` and `ActivationRuleGroup` to implement
-an if/else workflow. The following logic in pseudocode:
-
-```text
-if source == "airflow":
-  if clientTags["label"] == "foo":
-    return "etl-foo"
-  else if clientTags["label"] = "bar":
-    return "etl-bar"
-  else
-    return "etl"
-```
-
-This logic can be implemented with the following rules:
-
-```yaml
-name: "airflow rule group"
-description: "routing rules for query from airflow"
-compositeRuleType: "ConditionalRuleGroup"
-composingRules:
-  - name: "main condition"
-    description: "source is airflow"
-    priority: 0 # rule with the highest priority acts as main condition
-    condition: 'request.getHeader("X-Trino-Source") == "airflow"'
-    actions:
-      - ""
-  - name: "airflow subrules"
-    compositeRuleType: "ActivationRuleGroup" # use ActivationRuleGroup to simulate if/else
-    composingRules:
-      - name: "label foo"
-        description: "label client tag is foo"
-        priority: 0
-        condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
-        actions:
-          - 'result.put("routingGroup", "etl-foo")'
-      - name: "label bar"
-        description: "label client tag is bar"
-        priority: 0
-        condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=bar"'
-        actions:
-          - 'result.put("routingGroup", "etl-bar")'
-      - name: "airflow default"
-        description: "airflow queries default to etl"
-        condition: "true"
-        actions:
-          - 'result.put("routingGroup", "etl")'
-```
+More specific rules must be set to a higher priority so they are evaluated last
+to set a `routingGroup`.
 
 ##### If statements (MVEL Flow Control)
 
-In the preceding section you see how `ConditionalRuleGroup` and
-`ActivationRuleGroup` are used to implement an `if/else` workflow. You can
-use MVEL support for `if` statements and other flow control. The following logic
+You can use MVEL support for `if` statements and other flow control. The following logic
 in pseudocode:
 
 ```text
