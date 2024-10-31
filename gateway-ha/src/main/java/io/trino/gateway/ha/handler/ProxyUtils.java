@@ -106,9 +106,7 @@ public final class ProxyUtils
                         || tokens[1].equals("partialCancel")) {
                     return Optional.of(tokens[2]);
                 }
-                else {
-                    return Optional.of(tokens[1]);
-                }
+                return Optional.of(tokens[1]);
             }
         }
         else if (path.startsWith(TRINO_UI_PATH)) {
