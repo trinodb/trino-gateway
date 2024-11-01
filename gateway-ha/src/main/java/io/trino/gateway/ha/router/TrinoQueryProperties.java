@@ -47,6 +47,7 @@ import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
+import io.trino.sql.tree.Query;
 import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
 import io.trino.sql.tree.RenameTable;
@@ -63,6 +64,7 @@ import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.Table;
 import io.trino.sql.tree.TableFunctionInvocation;
+import io.trino.sql.tree.WithQuery;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 
@@ -71,6 +73,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -208,8 +211,9 @@ public class TrinoQueryProperties
             ImmutableSet.Builder<String> catalogBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> schemaBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> catalogSchemaBuilder = ImmutableSet.builder();
+            Set<QualifiedName> temporaryTables = new HashSet<>();
 
-            visitNode(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
             tables = tableBuilder.build();
             catalogBuilder.addAll(tables.stream().map(q -> q.getParts().getFirst()).iterator());
             catalogs = catalogBuilder.build();
@@ -273,7 +277,8 @@ public class TrinoQueryProperties
     private void visitNode(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
-            ImmutableSet.Builder<String> catalogSchemaBuilder)
+            ImmutableSet.Builder<String> catalogSchemaBuilder,
+            Set<QualifiedName> temporaryTables)
             throws RequestParsingException
     {
         switch (node) {
@@ -289,6 +294,7 @@ public class TrinoQueryProperties
             case DropCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
             case DropSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case DropTable s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Query q -> q.getWith().ifPresent(with -> temporaryTables.addAll(with.getQueries().stream().map(WithQuery::getName).map(Identifier::getValue).map(QualifiedName::of).toList()));
             case RenameMaterializedView s -> {
                 tableBuilder.add(qualifyName(s.getSource()));
                 tableBuilder.add(qualifyName(s.getTarget()));
@@ -347,13 +353,18 @@ public class TrinoQueryProperties
             case SetSchemaAuthorization s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case SetTableAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
             case SetViewAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
-            case Table s -> tableBuilder.add(qualifyName(s.getName()));
+            case Table s -> {
+                // ignore temporary tables as they can have various table parts
+                if (!temporaryTables.contains(s.getName())) {
+                    tableBuilder.add(qualifyName(s.getName()));
+                }
+            }
             case TableFunctionInvocation s -> tableBuilder.add(qualifyName(s.getName()));
             default -> {}
         }
 
         for (Node child : node.getChildren()) {
-            visitNode(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
         }
     }
 
