@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.trino.gateway</groupId>
         <artifactId>trino-gateway-parent</artifactId>
-        <version>12</version>
+        <version>13-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
