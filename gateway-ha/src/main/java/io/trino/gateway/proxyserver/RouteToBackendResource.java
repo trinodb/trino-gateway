@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
@@ -84,5 +85,16 @@ public class RouteToBackendResource
     {
         String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
         proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+    }
+
+    @PUT
+    public void putHandler(
+            String body,
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse)
+    {
+        MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
+        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+        proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
     }
 }

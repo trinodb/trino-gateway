@@ -58,6 +58,7 @@ import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.http.client.Request.Builder.prepareDelete;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.preparePost;
+import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
 import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTORY;
@@ -136,6 +137,17 @@ public class ProxyRequestHandler
             URI remoteUri)
     {
         Request.Builder request = preparePost()
+                .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
+        performRequest(remoteUri, servletRequest, asyncResponse, request);
+    }
+
+    public void putRequest(
+            String statement,
+            HttpServletRequest servletRequest,
+            AsyncResponse asyncResponse,
+            URI remoteUri)
+    {
+        Request.Builder request = preparePut()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
         performRequest(remoteUri, servletRequest, asyncResponse, request);
     }
