@@ -14,7 +14,10 @@ export class ClientApi {
         headers: getHeaders(),
         method: "GET"
       });
-    if (res.status !== 200) {
+    if (res.status === 401 || res.status === 403) {
+      this.authErrorHandler()
+    }
+    else if (res.status !== 200) {
       Toast.error({
         content: Locale.Error.Network,
         duration: 5,
@@ -23,15 +26,8 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401) {
-      Toast.error({
-        content: Locale.Auth.Expiration,
-        duration: 5,
-        theme: "light"
-      });
-      const accessStore = useAccessStore.getState();
-      accessStore.updateToken("");
-      throw new Error(Locale.Auth.Expiration);
+    if (resJson.code === 401 || resJson.code === 403) {
+      this.authErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
         content: resJson.msg,
@@ -54,7 +50,10 @@ export class ClientApi {
         },
         method: "POST"
       });
-    if (res.status !== 200) {
+    if (res.status === 401 || res.status === 403) {
+      this.authErrorHandler()
+    }
+    else if (res.status !== 200) {
       Toast.error({
         content: Locale.Error.Network,
         duration: 5,
@@ -63,15 +62,8 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401) {
-      Toast.error({
-        content: Locale.Auth.Expiration,
-        duration: 5,
-        theme: "light"
-      });
-      const accessStore = useAccessStore.getState();
-      accessStore.updateToken("");
-      throw new Error(Locale.Auth.Expiration);
+    if (resJson.code === 401 || resJson.code === 403) {
+      this.authErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
         content: resJson.msg,
@@ -115,6 +107,17 @@ export class ClientApi {
   path(path: string): string {
     const proxyPath = import.meta.env.VITE_PROXY_PATH;
     return [proxyPath, path].join("");
+  }
+
+  authErrorHandler(): void {
+    Toast.error({
+      content: Locale.Auth.Expiration,
+      duration: 5,
+      theme: "light"
+    });
+    const accessStore = useAccessStore.getState();
+    accessStore.updateToken("");
+    throw new Error(Locale.Auth.Expiration);
   }
 }
 
