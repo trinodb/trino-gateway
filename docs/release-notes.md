@@ -7,8 +7,8 @@ Artifacts:
 * [JAR file gateway-ha-12-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/12/gateway-ha-12-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:12`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/12.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/12.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/12.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/12.zip)
 * Helm chart `12.0.0` in `helm/trino-gateway` of the tagged source code
 
 Changes:
@@ -45,8 +45,8 @@ Artifacts:
 * [JAR file gateway-ha-11-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/11/gateway-ha-11-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:11`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/11.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/11.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/11.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/11.zip)
 * Helm chart `11.0.0` in `helm/trino-gateway` of the tagged source code
 
 Changes:
@@ -92,8 +92,8 @@ Artifacts:
 * [JAR file gateway-ha-10-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:10`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/10.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/10.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/10.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/10.zip)
 * Helm chart `10.0.0` in `helm/trino-gateway` of the tagged source code
 
 Changes:
@@ -135,8 +135,8 @@ Artifacts:
 * [JAR file gateway-ha-9-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:9`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/9.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/9.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/9.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/9.zip)
 
 Changes:
 
@@ -149,8 +149,8 @@ Artifacts:
 * [JAR file gateway-ha-8-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:8`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/8.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/8.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/8.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/8.zip)
 
 Changes:
 
@@ -170,8 +170,8 @@ Artifacts:
 * [JAR file gateway-ha-7-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:7`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/7.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/7.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/7.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/7.zip)
 
 Changes:
 * Replace user interface with a new modern UI. ([#116](https://github.com/trinodb/trino-gateway/pull/116))
@@ -190,8 +190,8 @@ Artifacts:
 * [JAR file gateway-ha-6-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar)
 * Container image `trinodb/trino-gateway:6`
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/6.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/6.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/6.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/6.zip)
 
 Changes:
 
@@ -205,8 +205,8 @@ Artifacts:
 
 * [gateway-ha-5-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar)
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/5.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/5.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/5.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/5.zip)
 
 
 Changes:
@@ -224,8 +224,8 @@ Artifacts:
 
 * [gateway-ha-4-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar)
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/4.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/4.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/4.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/4.zip)
 
 Changes:
 
@@ -248,8 +248,8 @@ Artifacts:
 
 * [gateway-ha-3-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar)
 * Source code as
-  [tar.gz](https://github.com/trinodb/trino-gateway/releases/tag/3.tar.gz)
-  or [zip](https://github.com/trinodb/trino-gateway/releases/tag/3.zip)
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/3.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/3.zip)
 
 Changes:
 
