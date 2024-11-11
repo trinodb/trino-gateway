@@ -1,5 +1,5 @@
 import { Nav, Avatar, Layout, Dropdown, Button, Toast, Modal, Tag } from '@douyinfe/semi-ui';
-import { IconGithubLogo, IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard } from '@douyinfe/semi-icons';
+import { IconDoubleChevronRight, IconDoubleChevronLeft, IconMoon, IconSun, IconMark, IconIdCard } from '@douyinfe/semi-icons';
 import styles from './layout.module.scss';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
@@ -73,10 +73,6 @@ export const RootLayout = (props: {
                   ) : null}
                   aria-label="Switch Theme"
                   onClick={nextTheme} />
-
-                <Button icon={<IconGithubLogo className={styles.semiIconsBell} />}
-                  aria-label="GitHub"
-                  onClick={() => window.open('https://github.com/trinodb/trino-gateway', '_blank')} />
 
                 <Dropdown
                   position={'bottomRight'}
