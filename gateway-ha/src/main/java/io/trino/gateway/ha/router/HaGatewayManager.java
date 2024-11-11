@@ -13,7 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
@@ -26,31 +27,32 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class HaGatewayManager
         implements GatewayBackendManager
 {
     private final GatewayBackendDao dao;
+    private final Supplier<List<GatewayBackend>> gatewayBackendSupplier;
     private final AtomicReference<List<GatewayBackend>> cache = new AtomicReference<>();
 
     public HaGatewayManager(Jdbi jdbi)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
-        cache.set(ImmutableList.of());
-        fetchAllBackendsToCache();
+        gatewayBackendSupplier = Suppliers.memoizeWithExpiration(dao::findAll, 500, MILLISECONDS);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllBackends()
     {
-        List<GatewayBackend> proxyBackendList = cache.get();
+        List<GatewayBackend> proxyBackendList = fetchAllBackends();
         return upcast(proxyBackendList);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllActiveBackends()
     {
-        List<GatewayBackend> proxyBackendList = cache.get().stream()
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
                 .filter(GatewayBackend::active)
                 .collect(toImmutableList());
         return upcast(proxyBackendList);
@@ -65,7 +67,7 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getActiveBackends(String routingGroup)
     {
-        List<GatewayBackend> proxyBackendList = cache.get().stream()
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
                 .filter(GatewayBackend::active)
                 .filter(backend -> backend.routingGroup().equals(routingGroup))
                 .collect(toImmutableList());
@@ -75,7 +77,7 @@ public class HaGatewayManager
     @Override
     public Optional<ProxyBackendConfiguration> getBackendByName(String name)
     {
-        List<GatewayBackend> proxyBackendList = cache.get().stream()
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
                 .filter(backend -> backend.name().equals(name))
                 .collect(toImmutableList());
         return upcast(proxyBackendList).stream().findAny();
@@ -85,21 +87,18 @@ public class HaGatewayManager
     public void deactivateBackend(String backendName)
     {
         dao.deactivate(backendName);
-        fetchAllBackendsToCache();
     }
 
     @Override
     public void activateBackend(String backendName)
     {
         dao.activate(backendName);
-        fetchAllBackendsToCache();
     }
 
     @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
         dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
-        fetchAllBackendsToCache();
         return backend;
     }
 
@@ -113,14 +112,12 @@ public class HaGatewayManager
         else {
             dao.update(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
         }
-        fetchAllBackendsToCache();
         return backend;
     }
 
     public void deleteBackend(String name)
     {
         dao.deleteByName(name);
-        fetchAllBackendsToCache();
     }
 
     private static List<ProxyBackendConfiguration> upcast(List<GatewayBackend> gatewayBackendList)
@@ -138,8 +135,15 @@ public class HaGatewayManager
         return proxyBackendConfigurations;
     }
 
-    private void fetchAllBackendsToCache()
+    private List<GatewayBackend> fetchAllBackends()
     {
-        cache.set(dao.findAll());
+        try {
+            List<GatewayBackend> backends = gatewayBackendSupplier.get();
+            cache.set(backends);
+            return backends;
+        }
+        catch (Exception e) {
+            return cache.get();
+        }
     }
 }

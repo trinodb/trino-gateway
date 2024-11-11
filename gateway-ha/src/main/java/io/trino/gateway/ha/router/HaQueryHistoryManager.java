@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -36,6 +37,7 @@ import static java.util.Objects.requireNonNull;
 public class HaQueryHistoryManager
         implements QueryHistoryManager
 {
+    private final Logger logger = Logger.get(HaQueryHistoryManager.class);
     private final QueryHistoryDao dao;
 
     public HaQueryHistoryManager(Jdbi jdbi)
@@ -51,13 +53,18 @@ public class HaQueryHistoryManager
             return;
         }
 
-        dao.insertHistory(
-                queryDetail.getQueryId(),
-                queryDetail.getQueryText(),
-                queryDetail.getBackendUrl(),
-                queryDetail.getUser(),
-                queryDetail.getSource(),
-                queryDetail.getCaptureTime());
+        try {
+            dao.insertHistory(
+                    queryDetail.getQueryId(),
+                    queryDetail.getQueryText(),
+                    queryDetail.getBackendUrl(),
+                    queryDetail.getUser(),
+                    queryDetail.getSource(),
+                    queryDetail.getCaptureTime());
+        }
+        catch (Exception e) {
+            logger.error(e);
+        }
     }
 
     @Override
