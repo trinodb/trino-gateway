@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.MBeanExport;
@@ -83,7 +84,7 @@ public class BackendStateMBeanExporter
     public static class ClusterStatsJMX
     {
         private int numWorkerNodes;
-        private boolean healthy;
+        private TrinoStatus trinoStatus;
         private String proxyTo;
         private String externalUrl;
         private String routingGroup;
@@ -91,7 +92,7 @@ public class BackendStateMBeanExporter
         public void setFrom(ClusterStats clusterStats)
         {
             numWorkerNodes = clusterStats.numWorkerNodes();
-            healthy = clusterStats.healthy();
+            trinoStatus = clusterStats.trinoStatus();
             proxyTo = clusterStats.proxyTo();
             externalUrl = clusterStats.externalUrl();
             routingGroup = clusterStats.routingGroup();
@@ -106,7 +107,7 @@ public class BackendStateMBeanExporter
         @Managed
         public boolean isHealthy()
         {
-            return healthy;
+            return trinoStatus == TrinoStatus.HEALTHY;
         }
 
         @Managed
