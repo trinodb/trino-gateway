@@ -359,6 +359,22 @@ final class TestGatewayHaMultipleBackend
         assertThat(callbackResponse.code()).isEqualTo(500);
     }
 
+    @Test
+    void testClusterStatsJMX()
+            throws Exception
+    {
+        Thread.sleep(5000);     // Wait for first health check to run
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/metrics")
+                .get()
+                .build();
+        Response response = httpClient.newCall(request).execute();
+        String body = response.body().string();
+        System.out.println(body);
+        assertThat(body).contains("trino1_Healthy");
+        assertThat(body).contains("trino2_Healthy");
+    }
+
     @AfterAll
     void cleanup()
     {
