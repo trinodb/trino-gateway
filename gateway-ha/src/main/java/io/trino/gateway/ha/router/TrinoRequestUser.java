@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
 public class TrinoRequestUser
@@ -161,7 +162,7 @@ public class TrinoRequestUser
             }
         }
 
-        if (header.toLowerCase().contains("bearer")) {
+        if (header.toLowerCase(ENGLISH).contains("bearer")) {
             return extractUserFromBearerAuth(header, userField);
         }
         return Optional.empty();
@@ -177,10 +178,10 @@ public class TrinoRequestUser
 
         String token = header.substring(space + 1).trim();
 
-        if (header.split("\\.").length == 3) { //this is probably a JWS
+        if (token.split("\\.").length == 3) { //this is probably a JWS
             log.debug("Trying to extract from JWS");
             try {
-                DecodedJWT jwt = JWT.decode(header);
+                DecodedJWT jwt = JWT.decode(token);
                 if (jwt.getClaims().containsKey(userField)) {
                     return Optional.of(jwt.getClaim(userField).asString());
                 }

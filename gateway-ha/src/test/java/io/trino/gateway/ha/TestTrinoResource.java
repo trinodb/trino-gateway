@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-public class TestTrinoResource
+final class TestTrinoResource
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -52,7 +52,7 @@ public class TestTrinoResource
     HaResourceGroupsManager resourceGroupManager;
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         // Prepare config and database tables
@@ -125,7 +125,7 @@ public class TestTrinoResource
 
     @Test
     @Order(1)
-    public void testReadResourceGroupsAll()
+    void testReadResourceGroupsAll()
             throws Exception
     {
         Request request =
@@ -148,7 +148,7 @@ public class TestTrinoResource
 
     @Test
     @Order(2)
-    public void testReadResourceGroupsByGroupId()
+    void testReadResourceGroupsByGroupId()
             throws Exception
     {
         Request request =
@@ -168,7 +168,7 @@ public class TestTrinoResource
 
     @Test
     @Order(3)
-    public void testReadSelectorsAll()
+    void testReadSelectorsAll()
             throws Exception
     {
         Request request =
@@ -190,7 +190,7 @@ public class TestTrinoResource
 
     @Test
     @Order(4)
-    public void testReadSelectorsByGroupId()
+    void testReadSelectorsByGroupId()
             throws Exception
     {
         Request request =
@@ -210,11 +210,11 @@ public class TestTrinoResource
 
     @Test
     @Order(5)
-    public void testDeleteResourceGroupOk()
+    void testDeleteResourceGroupOk()
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/3")
@@ -226,11 +226,11 @@ public class TestTrinoResource
 
     @Test
     @Order(6)
-    public void testDeleteResourceGroupNoId()
+    void testDeleteResourceGroupNoId()
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/resourcegroup/delete/")
@@ -242,11 +242,11 @@ public class TestTrinoResource
 
     @Test
     @Order(7)
-    public void testDeleteGlobalPropertyOk()
+    void testDeleteGlobalPropertyOk()
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/globalproperty/delete/cpu_quota_period")
@@ -258,11 +258,11 @@ public class TestTrinoResource
 
     @Test
     @Order(8)
-    public void testDeleteGlobalPropertyNoName()
+    void testDeleteGlobalPropertyNoName()
             throws Exception
     {
         RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+                RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/trino/globalproperty/delete/")

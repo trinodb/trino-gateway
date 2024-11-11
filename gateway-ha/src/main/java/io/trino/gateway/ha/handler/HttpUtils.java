@@ -13,7 +13,7 @@
  */
 package io.trino.gateway.ha.handler;
 
-public class QueryIdCachingProxyHandler
+public class HttpUtils
 {
     public static final String V1_STATEMENT_PATH = "/v1/statement";
     public static final String V1_QUERY_PATH = "/v1/query";
@@ -24,8 +24,7 @@ public class QueryIdCachingProxyHandler
     public static final String UI_API_QUEUED_LIST_PATH = "/ui/api/query?state=QUEUED";
     public static final String TRINO_UI_PATH = "/ui";
     public static final String OAUTH_PATH = "/oauth2";
-    public static final String AUTHORIZATION = "Authorization";
     public static final String USER_HEADER = "X-Trino-User";
 
-    private QueryIdCachingProxyHandler() {}
+    private HttpUtils() {}
 }

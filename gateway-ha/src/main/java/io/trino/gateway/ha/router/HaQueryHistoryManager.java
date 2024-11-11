@@ -20,7 +20,6 @@ import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
-import io.trino.gateway.ha.util.PageUtil;
 import org.jdbi.v3.core.Jdbi;
 
 import java.time.Instant;
@@ -38,6 +37,9 @@ public class HaQueryHistoryManager
         implements QueryHistoryManager
 {
     private final Logger logger = Logger.get(HaQueryHistoryManager.class);
+
+    private static final int FIRST_PAGE_NO = 1;
+
     private final QueryHistoryDao dao;
 
     public HaQueryHistoryManager(Jdbi jdbi)
@@ -105,7 +107,7 @@ public class HaQueryHistoryManager
     @Override
     public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
     {
-        int start = PageUtil.getStart(query.page(), query.size());
+        int start = getStart(query.page(), query.size());
         String condition = "";
         if (!Strings.isNullOrEmpty(query.user())) {
             condition += " and user_name = '" + query.user() + "'";
@@ -139,5 +141,16 @@ public class HaQueryHistoryManager
             resList.add(lineChart);
         }
         return resList;
+    }
+
+    private static int getStart(int pageNo, int pageSize)
+    {
+        if (pageNo < FIRST_PAGE_NO) {
+            pageNo = FIRST_PAGE_NO;
+        }
+        if (pageSize < 1) {
+            pageSize = 0;
+        }
+        return (pageNo - FIRST_PAGE_NO) * pageSize;
     }
 }

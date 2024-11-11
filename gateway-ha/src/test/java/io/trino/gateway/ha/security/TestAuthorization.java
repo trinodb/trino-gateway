@@ -39,7 +39,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestAuthorization
+final class TestAuthorization
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -47,7 +47,7 @@ public class TestAuthorization
     int routerPort = 22000 + (int) (Math.random() * 1000);
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         HaGatewayTestUtils.TestConfig testConfig = HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "auth/auth-test-config.yml");
@@ -56,7 +56,7 @@ public class TestAuthorization
     }
 
     @Test
-    public void testUnauthorized()
+    void testUnauthorized()
             throws IOException
     {
         try (Response response = makeRequest(Optional.empty())) {
@@ -65,7 +65,7 @@ public class TestAuthorization
     }
 
     @Test
-    public void testBadCredentials()
+    void testBadCredentials()
             throws IOException
     {
         try (Response response = makeRequest(Optional.of("unknown:unknown"))) {
@@ -74,7 +74,7 @@ public class TestAuthorization
     }
 
     @Test
-    public void testGoodCredentials()
+    void testGoodCredentials()
             throws IOException
     {
         List<String> adminRoleList = getRoles("admin1:admin1_password");
@@ -101,7 +101,7 @@ public class TestAuthorization
     private Response makeRequest(Optional<String> credentials)
             throws IOException
     {
-        RequestBody emptyRequestBody = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "");
+        RequestBody emptyRequestBody = RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
         Request.Builder builder = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/userinfo")
                 .post(emptyRequestBody);

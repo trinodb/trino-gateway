@@ -2,10 +2,15 @@
 
 Trino Gateway is distributed as an executable JAR file. The [release
 notes](release-notes.md) contain links to download specific versions.
-Alternatively, you can look at the [development instructions](development.md) to
-build the JAR file or use the TrinoGatewayRunner for local testing.
+
+Every Trino Gateway release includes a [Docker container](docker.md) and a 
+[Helm chart](installation.md#helm) as alternative deployment methods.
+
+Follow the [development instructions](development.md) to
+build the JAR file and the Docker image instructions  or use the 
+`TrinoGatewayRunner` class for local testing.
 The [quickstart guide](quickstart.md) contains instructions for running the
-application locally. 
+application locally.
 
 Following are instructions for installing Trino Gateway for production
 environments.
@@ -16,7 +21,7 @@ Consider the following requirements for your Trino Gateway installation.
 
 ### Java
 
-Trino Gateway requires a Java 22 runtime. Older versions of Java can not be
+Trino Gateway requires a Java 23 runtime. Older versions of Java can not be
 used. Newer versions might work but are not tested.
 
 Verify the Java version on your system with `java -version`.
@@ -66,7 +71,7 @@ taken into account for all clusters behind the Trino Gateway.
 If all client and server communication is routed through Trino Gateway, 
 then process forwarded HTTP headers must be enabled:
 
-```commandline
+```properties
 http-server.process-forwarded=true
 ```
 
@@ -102,6 +107,25 @@ directory into the same directory, and update the configuration as needed.
 
 Each component of the Trino Gateway has a corresponding node in the
 configuration YAML file.
+
+### Secrets in configuration file
+
+Environment variables can be used as values in the configuration file.
+You can manually set an environment variable on the command line.
+
+```shell
+export DB_PASSWORD=my-super-secret-pwd
+```
+
+To use this variable in the configuration file, you reference it with the 
+syntax `${ENV:VARIABLE}`. For example:
+
+```yaml
+dataStore:
+  jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+  user: postgres
+  password: ${ENV:DB_PASSWORD}
+```
 
 ### Configure routing rules
 
@@ -177,7 +201,7 @@ java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
     -jar gateway-ha.jar gateway-config.yml
 ```
 
-### Helm
+### Helm <a name="helm"></a>
 
 Helm manages the deployment of Kubernetes applications by templating Kubernetes
 resources with a set of Helm charts. The Trino Gateway Helm chart consists 
@@ -229,10 +253,22 @@ helm install tg --values values-override.yaml helm/trino-gateway
 Secrets for `authenticationSecret` and `backendState` can be provisioned
 similarly. Alternatively,  you can directly define the `config.backEndState` 
 node in `values-override.yaml` and leave `backendStateSecret` undefined. 
-However, a [Secret](https://kubernetes.
-io/docs/concepts/configuration/secret/)
-is recommended to protect the  database credentials required for this 
+However, a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
+is recommended to protect the database credentials required for this 
 configuration.
+
+By default, the Trino Gateway process is started with the following command:
+
+```shell
+java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar /etc/gateway/config.yaml
+```
+
+You can customize details with the `command` node. It accepts a list, that must
+begin with an executable such as `java` or `bash` that is available on the PATH.
+The following list elements are provided as arguments to the executable. It is
+not typically necessary to modify this node. You can use it to change of JVM
+startup parameters to control memory settings and other aspects, or to use other
+configuration file names.
 
 #### Additional options
 

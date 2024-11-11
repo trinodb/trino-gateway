@@ -14,21 +14,23 @@
 package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.compress.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.sql.parser.ParsingException;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AddColumn;
 import io.trino.sql.tree.Analyze;
+import io.trino.sql.tree.Call;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateMaterializedView;
 import io.trino.sql.tree.CreateSchema;
@@ -40,10 +42,12 @@ import io.trino.sql.tree.DropSchema;
 import io.trino.sql.tree.DropTable;
 import io.trino.sql.tree.Execute;
 import io.trino.sql.tree.ExecuteImmediate;
+import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
+import io.trino.sql.tree.Query;
 import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
 import io.trino.sql.tree.RenameTable;
@@ -57,8 +61,10 @@ import io.trino.sql.tree.ShowCreate;
 import io.trino.sql.tree.ShowSchemas;
 import io.trino.sql.tree.ShowTables;
 import io.trino.sql.tree.Statement;
+import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.Table;
 import io.trino.sql.tree.TableFunctionInvocation;
+import io.trino.sql.tree.WithQuery;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 
@@ -66,14 +72,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.BaseEncoding.base64Url;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static java.lang.Math.toIntExact;
@@ -86,6 +93,7 @@ public class TrinoQueryProperties
 {
     private final Logger log = Logger.get(TrinoQueryProperties.class);
     private final boolean isClientsUseV2Format;
+    private final int maxBodySize;
     private String body = "";
     private String queryType = "";
     private String resourceGroupQueryType = "";
@@ -96,7 +104,8 @@ public class TrinoQueryProperties
     private Set<String> schemas = ImmutableSet.of();
     private Set<String> catalogSchemas = ImmutableSet.of();
     private boolean isNewQuerySubmission;
-    private boolean isQueryParsingSuccessful;
+    private Optional<String> errorMessage = Optional.empty();
+    private Optional<String> queryId = Optional.empty();
 
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
     public static final String TRINO_SCHEMA_HEADER_NAME = "X-Trino-Schema";
@@ -107,42 +116,46 @@ public class TrinoQueryProperties
             @JsonProperty("body") String body,
             @JsonProperty("queryType") String queryType,
             @JsonProperty("resourceGroupQueryType") String resourceGroupQueryType,
-            @JsonProperty("tables") String[] tables,
+            @JsonProperty("tables") List<String> tables,
             @JsonProperty("defaultCatalog") Optional<String> defaultCatalog,
             @JsonProperty("defaultSchema") Optional<String> defaultSchema,
             @JsonProperty("catalogs") Set<String> catalogs,
             @JsonProperty("schemas") Set<String> schemas,
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
-            @JsonProperty("isQueryParsingSuccessful") boolean isQueryParsingSuccessful)
+            @JsonProperty("errorMessage") Optional<String> errorMessage)
     {
         this.body = requireNonNullElse(body, "");
         this.queryType = requireNonNullElse(queryType, "");
         this.resourceGroupQueryType = resourceGroupQueryType;
-        this.tables = Arrays.stream(requireNonNullElse(tables, new String[] {})).map(this::parseIdentifierStringToQualifiedName).collect(Collectors.toSet());
+        List<String> defaultTables = ImmutableList.of();
+        this.tables = requireNonNullElse(tables, defaultTables).stream().map(this::parseIdentifierStringToQualifiedName).collect(Collectors.toSet());
         this.defaultCatalog = requireNonNullElse(defaultCatalog, Optional.empty());
         this.defaultSchema = requireNonNullElse(defaultSchema, Optional.empty());
         this.catalogs = requireNonNullElse(catalogs, ImmutableSet.of());
         this.schemas = requireNonNullElse(schemas, ImmutableSet.of());
         this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
         this.isNewQuerySubmission = isNewQuerySubmission;
-        this.isQueryParsingSuccessful = isQueryParsingSuccessful;
+        this.errorMessage = requireNonNullElse(errorMessage, Optional.empty());
         isClientsUseV2Format = false;
+        maxBodySize = -1;
     }
 
-    public TrinoQueryProperties(HttpServletRequest request, RequestAnalyzerConfig config)
+    public TrinoQueryProperties(HttpServletRequest request, boolean isClientsUseV2Format, int maxBodySize)
     {
-        isClientsUseV2Format = config.isClientsUseV2Format();
+        requireNonNull(request, "request is null");
+        this.isClientsUseV2Format = isClientsUseV2Format;
+        this.maxBodySize = maxBodySize;
 
         defaultCatalog = Optional.ofNullable(request.getHeader(TRINO_CATALOG_HEADER_NAME));
         defaultSchema = Optional.ofNullable(request.getHeader(TRINO_SCHEMA_HEADER_NAME));
         if (request.getMethod().equals(HttpMethod.POST)) {
             isNewQuerySubmission = true;
-            processRequestBody(request, config);
+            processRequestBody(request);
         }
     }
 
-    private void processRequestBody(HttpServletRequest request, RequestAnalyzerConfig config)
+    private void processRequestBody(HttpServletRequest request)
     {
         try (BufferedReader reader = request.getReader()) {
             if (reader == null) {
@@ -153,11 +166,11 @@ public class TrinoQueryProperties
 
             Map<String, String> preparedStatements = getPreparedStatements(request);
             SqlParser parser = new SqlParser();
-            reader.mark(config.getMaxBodySize());
-            char[] buffer = new char[config.getMaxBodySize()];
-            int nChars = reader.read(buffer, 0, config.getMaxBodySize());
+            reader.mark(maxBodySize);
+            char[] buffer = new char[maxBodySize];
+            int nChars = reader.read(buffer, 0, maxBodySize);
             reader.reset();
-            if (nChars == config.getMaxBodySize()) {
+            if (nChars == maxBodySize) {
                 log.warn("Query length greater or equal to requestAnalyzerConfig.maxBodySize detected");
                 return;
                 //The body is truncated - there is a chance that it could still be syntactically valid SQL, for example if truncated on
@@ -198,8 +211,9 @@ public class TrinoQueryProperties
             ImmutableSet.Builder<String> catalogBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> schemaBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> catalogSchemaBuilder = ImmutableSet.builder();
+            Set<QualifiedName> temporaryTables = new HashSet<>();
 
-            getNames(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
             tables = tableBuilder.build();
             catalogBuilder.addAll(tables.stream().map(q -> q.getParts().getFirst()).iterator());
             catalogs = catalogBuilder.build();
@@ -208,19 +222,18 @@ public class TrinoQueryProperties
             catalogSchemaBuilder.addAll(
                     tables.stream().map(qualifiedName -> format("%s.%s", qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
             catalogSchemas = catalogSchemaBuilder.build();
-            isQueryParsingSuccessful = true;
         }
         catch (IOException e) {
             log.warn("Error extracting request body for rules processing: %s", e.getMessage());
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
         catch (ParsingException e) {
             log.info("Could not parse request body as SQL: %s; Message: %s", body, e.getMessage());
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
         catch (RequestParsingException e) {
             log.warn(e, "Error parsing request for rules");
-            isQueryParsingSuccessful = false;
+            errorMessage = Optional.of(e.getMessage());
         }
     }
 
@@ -261,15 +274,17 @@ public class TrinoQueryProperties
         return new String(preparedStatement, UTF_8);
     }
 
-    private void getNames(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
+    private void visitNode(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
-            ImmutableSet.Builder<String> catalogSchemaBuilder)
+            ImmutableSet.Builder<String> catalogSchemaBuilder,
+            Set<QualifiedName> temporaryTables)
             throws RequestParsingException
     {
         switch (node) {
             case AddColumn s -> tableBuilder.add(qualifyName(s.getName()));
             case Analyze s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Call call -> queryId = extractQueryIdFromCall(call);
             case CreateCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
             case CreateMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
             case CreateSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
@@ -279,6 +294,7 @@ public class TrinoQueryProperties
             case DropCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
             case DropSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case DropTable s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Query q -> q.getWith().ifPresent(with -> temporaryTables.addAll(with.getQueries().stream().map(WithQuery::getName).map(Identifier::getValue).map(QualifiedName::of).toList()));
             case RenameMaterializedView s -> {
                 tableBuilder.add(qualifyName(s.getSource()));
                 tableBuilder.add(qualifyName(s.getTarget()));
@@ -291,7 +307,7 @@ public class TrinoQueryProperties
                         targetSchema = QualifiedName.of(defaultCatalog.orElseThrow(), s.getTarget().getValue());
                     }
                     else {
-                        isQueryParsingSuccessful = false;
+                        errorMessage = Optional.of("defaultCatalog is not present");
                         return;
                     }
                 }
@@ -337,14 +353,31 @@ public class TrinoQueryProperties
             case SetSchemaAuthorization s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case SetTableAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
             case SetViewAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
-            case Table s -> tableBuilder.add(qualifyName(s.getName()));
+            case Table s -> {
+                // ignore temporary tables as they can have various table parts
+                if (!temporaryTables.contains(s.getName())) {
+                    tableBuilder.add(qualifyName(s.getName()));
+                }
+            }
             case TableFunctionInvocation s -> tableBuilder.add(qualifyName(s.getName()));
             default -> {}
         }
 
         for (Node child : node.getChildren()) {
-            getNames(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            visitNode(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
         }
+    }
+
+    private Optional<String> extractQueryIdFromCall(Call call)
+            throws RequestParsingException
+    {
+        QualifiedName callName = qualifyName(call.getName());
+        if (callName.equals(QualifiedName.of("system", "runtime", "kill_query"))) {
+            Expression argument = call.getArguments().getFirst().getValue();
+            checkArgument(argument instanceof StringLiteral, "Unable to route kill_query procedures where the first argument is not a String Literal");
+            return Optional.of(((StringLiteral) argument).getValue());
+        }
+        return Optional.empty();
     }
 
     private void setCatalogAndSchemaNameFromSchemaQualifiedName(
@@ -379,22 +412,19 @@ public class TrinoQueryProperties
 
     private RequestParsingException unsetDefaultExceptionSupplier()
     {
-        isQueryParsingSuccessful = false;
         return new RequestParsingException("Name not fully qualified");
     }
 
-    private QualifiedName qualifyName(QualifiedName table)
+    private QualifiedName qualifyName(QualifiedName name)
             throws RequestParsingException
     {
-        List<String> tableParts = table.getParts();
-        return switch (tableParts.size()) {
-            case 1:
-                yield QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst());
-            case 2:
-                yield QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), tableParts.getFirst(), tableParts.get(1));
-            case 3:
-            default:
-                yield QualifiedName.of(tableParts.getFirst(), tableParts.get(1), tableParts.get(2));
+        List<String> nameParts = name.getParts();
+        return switch (nameParts.size()) {
+            case 1 ->
+                    QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst());
+            case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst(), nameParts.get(1));
+            case 3 -> QualifiedName.of(nameParts.getFirst(), nameParts.get(1), nameParts.get(2));
+            default -> throw new RequestParsingException("Unexpected qualified name: " + name.getParts());
         };
     }
 
@@ -516,7 +546,19 @@ public class TrinoQueryProperties
     @JsonProperty("isQueryParsingSuccessful")
     public boolean isQueryParsingSuccessful()
     {
-        return isQueryParsingSuccessful;
+        return errorMessage.isEmpty();
+    }
+
+    @JsonProperty
+    public Optional<String> getErrorMessage()
+    {
+        return errorMessage;
+    }
+
+    @JsonIgnore
+    public Optional<String> getQueryId()
+    {
+        return queryId;
     }
 
     public static class AlternateStatementRequestBodyFormat

@@ -54,7 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestOIDC
+final class TestOIDC
 {
     private static final int TTL_ACCESS_TOKEN_IN_SECONDS = 5;
     private static final int TTL_REFRESH_TOKEN_IN_SECONDS = 15;
@@ -64,7 +64,7 @@ public class TestOIDC
     private static final int ROUTER_PORT = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         Network network = Network.newNetwork();
@@ -148,7 +148,7 @@ public class TestOIDC
     }
 
     @Test
-    public void testNormalFlow()
+    void testNormalFlow()
             throws Exception
     {
         OkHttpClient httpClient = createOkHttpClient(Optional.empty());
@@ -172,7 +172,7 @@ public class TestOIDC
     }
 
     @Test
-    public void testInvalidFlow()
+    void testInvalidFlow()
             throws Exception
     {
         OkHttpClient httpClient = createOkHttpClient(Optional.empty());
@@ -233,7 +233,7 @@ public class TestOIDC
         clientBuilder.hostnameVerifier((hostname, session) -> true);
     }
 
-    public class BadCookieJar
+    public static class BadCookieJar
             implements CookieJar
     {
         private JavaNetCookieJar cookieJar;

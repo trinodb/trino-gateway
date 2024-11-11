@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.util.Locale.ENGLISH;
 
 public class LbFormAuthManager
 {
@@ -52,7 +53,7 @@ public class LbFormAuthManager
         this.presetUsers = presetUsers;
         this.pagePermissions = pagePermissions.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(), Map.Entry::getValue));
+                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(ENGLISH), Map.Entry::getValue));
 
         if (configuration != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
@@ -97,7 +98,6 @@ public class LbFormAuthManager
      *
      * @param idToken the access token provided back by the authorization server.
      * @return a map with the token claims
-     * @throws Exception is thrown if the access token is invalid
      */
     public Optional<Map<String, Claim>> getClaimsFromIdToken(String idToken)
     {

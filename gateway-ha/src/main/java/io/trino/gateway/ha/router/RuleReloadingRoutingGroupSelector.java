@@ -96,7 +96,10 @@ public class RuleReloadingRoutingGroupSelector
 
             facts.put("request", request);
             if (requestAnalyzerConfig.isAnalyzeRequest()) {
-                TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig);
+                TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                        request,
+                        requestAnalyzerConfig.isClientsUseV2Format(),
+                        requestAnalyzerConfig.getMaxBodySize());
                 TrinoRequestUser trinoRequestUser = trinoRequestUserProvider.getInstance(request);
                 facts.put("trinoQueryProperties", trinoQueryProperties);
                 facts.put("trinoRequestUser", trinoRequestUser);

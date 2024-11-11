@@ -11,22 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.util;
+package io.trino.gateway.ha.clustermonitor;
 
-public final class PageUtil
+/**
+ * PENDING is for ui/observability purpose and functionally it's unhealthy
+ * We should use PENDING when Trino clusters are still spinning up
+ * HEALTHY is when health checks report clusters as up
+ * UNHEALTHY is when health checks report clusters as down
+ */
+public enum TrinoStatus
 {
-    private static final int FIRST_PAGE_NO = 1;
-
-    private PageUtil() {}
-
-    public static int getStart(int pageNo, int pageSize)
-    {
-        if (pageNo < FIRST_PAGE_NO) {
-            pageNo = FIRST_PAGE_NO;
-        }
-        if (pageSize < 1) {
-            pageSize = 0;
-        }
-        return (pageNo - FIRST_PAGE_NO) * pageSize;
-    }
+    PENDING,
+    HEALTHY,
+    UNHEALTHY
 }

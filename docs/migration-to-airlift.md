@@ -176,7 +176,8 @@ extraWhitelistPaths:
 ### JVM options
 
 The following JVM options are no longer required:
-```
+
+```properties
 -Dlog.levels-file=XXX
 --add-opens=java.base/java.lang=ALL-UNNAMED
 --add-opens=java.base/java.net=ALL-UNNAMED

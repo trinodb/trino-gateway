@@ -55,6 +55,7 @@ import static com.nimbusds.openid.connect.sdk.claims.IDTokenClaimsSet.NONCE_CLAI
 import static jakarta.ws.rs.core.Response.Status.FOUND;
 import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ENGLISH;
 
 public class LbOAuthManager
 {
@@ -70,7 +71,7 @@ public class LbOAuthManager
         this.oauthConfig = configuration;
         this.pagePermissions = pagePermissions.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
-                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(), Map.Entry::getValue));
+                .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(ENGLISH), Map.Entry::getValue));
     }
 
     public String getUserIdField()
@@ -97,7 +98,8 @@ public class LbOAuthManager
         TokenRequest tokenRequest = new TokenRequest(
                 oauthConfig.getTokenEndpoint(),
                 new ClientSecretBasic(new ClientID(oauthConfig.getClientId()), new Secret(oauthConfig.getClientSecret())),
-                new AuthorizationCodeGrant(new AuthorizationCode(code), oauthConfig.getRedirectUrl()));
+                new AuthorizationCodeGrant(new AuthorizationCode(code), oauthConfig.getRedirectUrl()),
+                null);
 
         TokenResponse tokenResponse;
         try {
@@ -161,7 +163,6 @@ public class LbOAuthManager
      *
      * @param idToken the access token provided back by the authorization server.
      * @return a map with the token claims
-     * @throws Exception is thrown if the access token is invalid
      */
     public Optional<Map<String, Claim>> getClaimsFromIdToken(String idToken)
     {

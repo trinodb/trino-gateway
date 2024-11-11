@@ -42,7 +42,7 @@ i.e. backend with the least number of queries running or queued from a particula
 then use `QueryCountBasedRouter`, it can be configured by adding the module name 
 to config file's modules section like below
 
-```
+```yaml
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
   - io.trino.gateway.ha.module.ClusterStateListenerModule
@@ -50,7 +50,7 @@ modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider
 ```
 - The router works on the stats it receives from the clusters about the load i.e number queries queued and running on a cluster at regular intervals which can be configured like below. The default interval is 1 min
-```
+```yaml
 monitor:
   taskDelaySeconds: 10
 ```

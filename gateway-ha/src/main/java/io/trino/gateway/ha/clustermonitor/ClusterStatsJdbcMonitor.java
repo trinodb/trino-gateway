@@ -73,26 +73,28 @@ public class ClusterStatsJdbcMonitor
             return clusterStats.build(); // TODO Invalid configuration should fail
         }
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, properties)) {
-            PreparedStatement stmt = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
-                    () -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS);
-            stmt.setString(1, (String) properties.get("user"));
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, properties);
+                PreparedStatement statement = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
+                        () -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS)) {
+            statement.setString(1, (String) properties.get("user"));
             Map<String, Integer> partialState = new HashMap<>();
-            ResultSet rs = stmt.executeQuery();
+            ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 partialState.put(rs.getString("state"), rs.getInt("count"));
             }
             return clusterStats
-                    .healthy(true)
+                    // at this point we can set cluster to trinoStatus because otherwise
+                    // it wouldn't have gotten worker stats
+                    .trinoStatus(TrinoStatus.HEALTHY)
                     .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
                     .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
                     .build();
         }
         catch (TimeoutException e) {
-            log.error(e, "timed out fetching status for %s backend", url);
+            log.error(e, "Timed out fetching status for %s backend", url);
         }
         catch (Exception e) {
-            log.error(e, "could not fetch status for %s backend", url);
+            log.error(e, "Could not fetch status for %s backend", url);
         }
         return clusterStats.build();
     }

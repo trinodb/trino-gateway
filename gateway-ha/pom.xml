@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.trino.gateway</groupId>
         <artifactId>trino-gateway-parent</artifactId>
-        <version>12-SNAPSHOT</version>
+        <version>13-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
@@ -22,10 +22,9 @@
 
         <!-- dependency versions -->
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
-        <dep.mockito.version>5.13.0</dep.mockito.version>
+        <dep.mockito.version>5.14.2</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
-        <dep.mysqlconnector.version>8.3.0</dep.mysqlconnector.version>
-        <dep.trino.version>446</dep.trino.version>
+        <dep.trino.version>464</dep.trino.version>
     </properties>
 
     <dependencies>
@@ -64,7 +63,6 @@
         <dependency>
             <groupId>com.google.errorprone</groupId>
             <artifactId>error_prone_annotations</artifactId>
-            <version>${dep.errorprone.version}</version>
         </dependency>
 
         <dependency>
@@ -80,13 +78,13 @@
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
-            <version>9.40</version>
+            <version>9.41.2</version>
         </dependency>
 
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>11.19</version>
+            <version>11.20.1</version>
             <classifier>jdk11</classifier>
         </dependency>
 
@@ -280,7 +278,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>${dep.mysqlconnector.version}</version>
+            <version>8.3.0</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -489,8 +487,8 @@
                             <goal>install-node-and-pnpm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v18.9.1</nodeVersion>
-                            <pnpmVersion>8.6.12</pnpmVersion>
+                            <nodeVersion>v20.17.0</nodeVersion>
+                            <pnpmVersion>9.11.0</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>

@@ -18,6 +18,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import jakarta.ws.rs.HttpMethod;
 
@@ -45,7 +46,7 @@ public abstract class RoutingManager
     private final LoadingCache<String, String> queryIdBackendCache;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
-    private final ConcurrentHashMap<String, Boolean> backendToHealth;
+    private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
 
     public RoutingManager(GatewayBackendManager gatewayBackendManager)
     {
@@ -64,7 +65,7 @@ public abstract class RoutingManager
                                     }
                                 });
 
-        this.backendToHealth = new ConcurrentHashMap<String, Boolean>();
+        this.backendToStatus = new ConcurrentHashMap<>();
     }
 
     protected GatewayBackendManager getGatewayBackendManager()
@@ -123,16 +124,16 @@ public abstract class RoutingManager
         return backendAddress;
     }
 
-    public void updateBackEndHealth(String backendId, Boolean value)
+    public void updateBackEndHealth(String backendId, TrinoStatus value)
     {
         log.info("backend %s isHealthy %s", backendId, value);
-        backendToHealth.put(backendId, value);
+        backendToStatus.put(backendId, value);
     }
 
     public void updateBackEndStats(List<ClusterStats> stats)
     {
         for (ClusterStats clusterStats : stats) {
-            updateBackEndHealth(clusterStats.clusterId(), clusterStats.healthy());
+            updateBackEndHealth(clusterStats.clusterId(), clusterStats.trinoStatus());
         }
     }
 
@@ -183,14 +184,14 @@ public abstract class RoutingManager
     // We are returning the unhealthy (not healthy)
     private boolean isBackendNotHealthy(String backendId)
     {
-        if (backendToHealth.isEmpty()) {
+        if (backendToStatus.isEmpty()) {
             log.error("backends can not be empty");
             return true;
         }
-        Boolean isHealthy = backendToHealth.get(backendId);
-        if (isHealthy == null) {
+        TrinoStatus status = backendToStatus.get(backendId);
+        if (status == null) {
             return true;
         }
-        return !isHealthy;
+        return status != TrinoStatus.HEALTHY;
     }
 }

@@ -29,6 +29,7 @@ import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.TrinoRequestUser;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -58,11 +60,8 @@ import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
-import static io.trino.gateway.ha.handler.ProxyUtils.AUTHORIZATION;
 import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTORY;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
-import static io.trino.gateway.ha.handler.ProxyUtils.getQueryUser;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
@@ -86,6 +85,7 @@ public class ProxyRequestHandler
     private final boolean addXForwardedHeaders;
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
+    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
 
     @Inject
     public ProxyRequestHandler(
@@ -97,6 +97,7 @@ public class ProxyRequestHandler
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
+        trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(haGatewayConfiguration.getRequestAnalyzerConfig());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
@@ -173,7 +174,8 @@ public class ProxyRequestHandler
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
-            future = future.transform(response -> recordBackendForQueryId(request, response), executor);
+            Optional<String> username = trinoRequestUserProvider.getInstance(servletRequest).getUser();
+            future = future.transform(response -> recordBackendForQueryId(request, response, username), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
             }
@@ -235,7 +237,7 @@ public class ProxyRequestHandler
         return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler()));
     }
 
-    private static <T> T handleProxyException(Request request, ProxyException e)
+    private static Response handleProxyException(Request request, ProxyException e)
     {
         log.warn(e, "Proxy request failed: %s %s", request.getMethod(), request.getUri());
         throw badRequest(e.getMessage());
@@ -250,11 +252,11 @@ public class ProxyRequestHandler
                         .build());
     }
 
-    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response)
+    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username)
     {
         log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
 
-        QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request);
+        QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
         log.debug("Extracting proxy destination : [%s] for request : [%s]", queryDetail.getBackendUrl(), request.getUri());
 
@@ -276,12 +278,12 @@ public class ProxyRequestHandler
         return response;
     }
 
-    public static QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(Request request)
+    public static QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(Request request, Optional<String> username)
     {
         QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
         queryDetail.setBackendUrl(getRemoteTarget(request.getUri()));
         queryDetail.setCaptureTime(System.currentTimeMillis());
-        queryDetail.setUser(getQueryUser(request.getHeader(USER_HEADER), request.getHeader(AUTHORIZATION)));
+        username.ifPresent(queryDetail::setUser);
         queryDetail.setSource(request.getHeader(SOURCE_HEADER));
 
         String queryText = new String(((StaticBodyGenerator) request.getBodyGenerator()).getBody(), UTF_8);

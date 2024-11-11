@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestRoutingGroupSelector
+final class TestRoutingGroupSelector
 {
     public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
     public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
@@ -73,7 +73,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingGroupHeader()
+    void testByRoutingGroupHeader()
     {
         HttpServletRequest mockRequest = prepareMockRequest();
 
@@ -246,7 +246,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingRulesEngineFileChange()
+    void testByRoutingRulesEngineFileChange()
             throws Exception
     {
         File file = File.createTempFile("routing_rules", ".yml");
@@ -388,7 +388,7 @@ public class TestRoutingGroupSelector
 
     @ParameterizedTest
     @MethodSource("provideTableExtractionQueries")
-    public void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
+    void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new StringReader(query));
@@ -397,11 +397,46 @@ public class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
 
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
 
         assertThat(trinoQueryProperties.getTables()).isEqualTo(tables);
         assertThat(trinoQueryProperties.getSchemas()).isEqualTo(schemas);
         assertThat(trinoQueryProperties.getCatalogs()).isEqualTo(catalogs);
+    }
+
+    @Test
+    void testWithQueryNameExcluded()
+            throws IOException
+    {
+        String query = """
+                WITH dos AS (SELECT c1 from cat.schem.tbl1),
+                uno as (SELECT c1 FROM dos)
+                SELECT c1 FROM uno, dos
+                """;
+        HttpServletRequest mockRequestWithDefaults = prepareMockRequest();
+        when(mockRequestWithDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+
+        TrinoQueryProperties trinoQueryPropertiesWithDefaults = new TrinoQueryProperties(
+                mockRequestWithDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
+        assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
+
+        HttpServletRequest mockRequestNoDefaults = prepareMockRequest();
+        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+
+        TrinoQueryProperties trinoQueryPropertiesNoDefaults = new TrinoQueryProperties(
+                mockRequestNoDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();
+        assertThat(tablesNoDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
     }
 
     private HttpServletRequest prepareMockRequest()
@@ -412,14 +447,16 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testLongQuery()
+    void testLongQuery()
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new FileReader("src/test/resources/wide_select.sql", UTF_8));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
-
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
         assertThat(trinoQueryProperties.tablesContains("kat.schem.widetable")).isTrue();
     }
 }

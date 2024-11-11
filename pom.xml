@@ -6,12 +6,12 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>171</version>
+        <version>190</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
     <artifactId>trino-gateway-parent</artifactId>
-    <version>12-SNAPSHOT</version>
+    <version>13-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>trino-gateway-parent</name>
@@ -39,15 +39,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.targetJdk>22</project.build.targetJdk>
-        <air.java.version>22</air.java.version>
+        <project.build.targetJdk>23</project.build.targetJdk>
+        <air.java.version>23</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
-
-        <!-- Dependency versions, keep sorted -->
-        <dep.errorprone.version>2.29.2</dep.errorprone.version>
-        <dep.trino.version>454</dep.trino.version>
     </properties>
 
     <dependencyManagement>
@@ -55,7 +51,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>262</version>
+                <version>276</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -63,7 +59,7 @@
             <dependency>
                 <groupId>org.jdbi</groupId>
                 <artifactId>jdbi3-bom</artifactId>
-                <version>3.45.4</version>
+                <version>3.46.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -71,7 +67,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.20.1</version>
+                <version>1.20.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -85,7 +81,7 @@
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
-                <version>3.1.8</version>
+                <version>3.1.9</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -100,7 +96,19 @@
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:CatchAndPrintStackTrace:ERROR \
+                            -Xep:ClassCanBeStatic:ERROR \
+                            -Xep:DefaultCharset:ERROR \
+                            -Xep:EmptyCatch:ERROR \
+                            -Xep:EqualsGetClass:OFF \
+                            -Xep:InvalidThrows:ERROR \
+                            -Xep:JavaTimeDefaultTimeZone:ERROR \
+                            -Xep:MissingOverride:ERROR \
+                            -Xep:StringCaseLocaleUsage:ERROR \
+                            -Xep:TraditionalSwitchExpression:ERROR \
+                            -Xep:TypeParameterUnusedInFormals:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
+                            -Xep:UnusedMethod:ERROR \
                             -Xep:UnusedVariable:ERROR</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
