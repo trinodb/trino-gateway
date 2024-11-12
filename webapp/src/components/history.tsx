@@ -97,6 +97,7 @@ export function History() {
               </Form.Select>
               <Form.Input field='user' label='User' initValue={form.user} disabled={!access.hasRole(Role.ADMIN)} style={{ width: 150 }} showClear />
               <Form.Input field='queryId' label='QueryId' style={{ width: 260 }} showClear placeholder={Locale.History.QueryIdTip} />
+              <Form.Input field='source' label='Source' style={{ width:150 }} showClear />
               <Button htmlType='submit' style={{ width: 70 }}>{Locale.UI.Query}</Button>
             </>
           )}
