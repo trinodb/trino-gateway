@@ -31,7 +31,8 @@ public record QueryHistoryRequest(
         @JsonProperty("size") Integer size,
         @JsonProperty("user") String user,
         @JsonProperty("backendUrl") String backendUrl,
-        @JsonProperty("queryId") String queryId)
+        @JsonProperty("queryId") String queryId,
+        @JsonProperty("source") String source)
 {
     public QueryHistoryRequest
     {

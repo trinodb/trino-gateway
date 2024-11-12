@@ -110,6 +110,9 @@ public class HaQueryHistoryManager
         if (!Strings.isNullOrEmpty(query.queryId())) {
             condition += " and query_id = '" + query.queryId() + "'";
         }
+        if (!Strings.isNullOrEmpty(query.source())) {
+            condition += " and source = '" + query.source() + "'";
+        }
         List<QueryHistory> histories = dao.pageQueryHistory(condition, query.size(), start);
         List<QueryDetail> rows = upcast(histories);
         Long total = dao.count(condition);
