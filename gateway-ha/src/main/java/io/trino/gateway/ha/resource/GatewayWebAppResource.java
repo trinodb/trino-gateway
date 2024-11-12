@@ -118,7 +118,8 @@ public class GatewayWebAppResource
                     query.size(),
                     securityContext.getUserPrincipal().getName(),
                     query.backendUrl(),
-                    query.queryId()));
+                    query.queryId(),
+                    query.source()));
         }
         else {
             queryHistory = queryHistoryManager.findQueryHistory(query);

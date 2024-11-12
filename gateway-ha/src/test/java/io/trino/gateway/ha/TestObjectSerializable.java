@@ -122,10 +122,10 @@ final class TestObjectSerializable
     void testQueryHistoryRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id")))
-                .contains(ImmutableList.of("\"page\":1", "\"size\":10", "user", "backendUrl", "queryId"));
-        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(5, 6, "user1", "url1", "query_id")))
-                .contains(ImmutableList.of("\"page\":5", "\"size\":6", "user", "backendUrl", "queryId"));
+        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id", "source")))
+                .contains(ImmutableList.of("\"page\":1", "\"size\":10", "user", "backendUrl", "queryId", "source"));
+        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(5, 6, "user1", "url1", "query_id", "source")))
+                .contains(ImmutableList.of("\"page\":5", "\"size\":6", "user", "backendUrl", "queryId", "source"));
     }
 
     @Test
