@@ -18,7 +18,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
-import io.trino.gateway.ha.domain.RoutingRules;
+import io.trino.gateway.ha.domain.RoutingRule;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,16 +32,17 @@ public final class RoutingRulesManager
 {
     private RoutingRulesManager() {}
 
-    public static List<RoutingRules> getRoutingRules(RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
+    public static List<RoutingRule> getRoutingRules(RoutingRulesConfiguration configuration)
             throws IOException
     {
+        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
         String rulesConfigPath = configuration.getRulesConfigPath();
         try {
             String content = Files.readString(Paths.get(rulesConfigPath), UTF_8);
             YAMLParser parser = new YAMLFactory().createParser(content);
-            List<RoutingRules> routingRulesList = new ArrayList<>();
+            List<RoutingRule> routingRulesList = new ArrayList<>();
             while (parser.nextToken() != null) {
-                RoutingRules routingRules = yamlReader.readValue(parser, RoutingRules.class);
+                RoutingRule routingRules = yamlReader.readValue(parser, RoutingRule.class);
                 routingRulesList.add(routingRules);
             }
             return routingRulesList;
@@ -51,13 +52,13 @@ public final class RoutingRulesManager
         }
     }
 
-    public static List<RoutingRules> updateRoutingRules(RoutingRules routingRules, RoutingRulesConfiguration configuration, ObjectMapper yamlReader)
+    public static List<RoutingRule> updateRoutingRules(RoutingRule routingRules, RoutingRulesConfiguration configuration)
             throws IOException
     {
-        ImmutableList.Builder<RoutingRules> routingRulesBuilder = ImmutableList.builder();
+        ImmutableList.Builder<RoutingRule> routingRulesBuilder = ImmutableList.builder();
         String rulesConfigPath = configuration.getRulesConfigPath();
         try {
-            List<RoutingRules> routingRulesList = getRoutingRules(configuration, yamlReader);
+            List<RoutingRule> routingRulesList = getRoutingRules(configuration);
             for (int i = 0; i < routingRulesList.size(); i++) {
                 if (routingRulesList.get(i).name().equals(routingRules.name())) {
                     routingRulesList.set(i, routingRules);
@@ -66,7 +67,7 @@ public final class RoutingRulesManager
             }
             ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
             StringBuilder yamlContent = new StringBuilder();
-            for (RoutingRules rule : routingRulesList) {
+            for (RoutingRule rule : routingRulesList) {
                 yamlContent.append(yamlWriter.writeValueAsString(rule));
                 routingRulesBuilder.add(rule);
             }

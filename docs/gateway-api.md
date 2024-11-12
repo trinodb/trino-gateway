@@ -96,7 +96,7 @@ curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 This API can be used to programmatically update the Routing Rules.
 Rule will be updated based on the rule name.
 
-For this feature to work well you will need to provide a shared storage for the routing rules file.
+For this feature to work with multiple replicas of the Trino Gateway, you will need to provide a shared storage for the routing rules file. If multiple replicas are used with local storage, then rules will get out of sync when updated.
 
 ```shell
 curl -X POST http://localhost:8080/webapp/updateRoutingRules \

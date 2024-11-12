@@ -29,16 +29,16 @@ import static java.util.Objects.requireNonNull;
  * @param actions actions of the routing rule
  * @param condition condition of the routing rule
  */
-public record RoutingRules(
+public record RoutingRule(
         String name,
         @Nullable String description,
         @Nullable Integer priority,
         List<String> actions,
         String condition)
 {
-    public RoutingRules {
-        requireNonNull(name, "name must not be null");
-        requireNonNull(condition, "condition must not be null");
+    public RoutingRule {
+        requireNonNull(name, "name is null");
         actions = ImmutableList.copyOf(actions);
+        requireNonNull(condition, "condition is null");
     }
 }

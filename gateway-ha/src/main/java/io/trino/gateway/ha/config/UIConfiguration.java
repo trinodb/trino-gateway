@@ -31,12 +31,4 @@ public class UIConfiguration
     {
         this.disablePages = disablePages;
     }
-
-    @Override
-    public String toString()
-    {
-        return "UIConfiguration{" +
-                "disablePages=" + disablePages +
-                '}';
-    }
 }
