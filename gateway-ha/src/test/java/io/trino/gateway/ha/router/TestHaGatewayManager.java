@@ -24,19 +24,19 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestHaGatewayManager
+final class TestHaGatewayManager
 {
     private HaGatewayManager haGatewayManager;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
     }
 
     @Test
-    public void testGatewayManager()
+    void testGatewayManager()
     {
         ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
         backend.setActive(true);

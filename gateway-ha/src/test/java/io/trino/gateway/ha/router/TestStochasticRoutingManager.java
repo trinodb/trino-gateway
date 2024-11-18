@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,14 +25,14 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestStochasticRoutingManager
+final class TestStochasticRoutingManager
 {
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
@@ -40,7 +41,7 @@ public class TestStochasticRoutingManager
     }
 
     @Test
-    public void addMockBackends()
+    void testAddMockBackends()
     {
         String groupName = "test_group";
         int numBackends = 5;
@@ -54,8 +55,8 @@ public class TestStochasticRoutingManager
             proxyBackend.setProxyTo(backend + ".trino.example.com");
             proxyBackend.setExternalUrl("trino.example.com");
             backendManager.addBackend(proxyBackend);
-            //set backend as healthy start with
-            haRoutingManager.updateBackEndHealth(backend, true);
+            //set backend as healthy to start with
+            haRoutingManager.updateBackEndHealth(backend, TrinoStatus.HEALTHY);
         }
 
         //Keep only 1st backend as healthy, mark all the others as unhealthy
@@ -63,7 +64,7 @@ public class TestStochasticRoutingManager
 
         for (int i = 1; i < numBackends; i++) {
             backend = groupName + i;
-            haRoutingManager.updateBackEndHealth(backend, false);
+            haRoutingManager.updateBackEndHealth(backend, TrinoStatus.UNHEALTHY);
         }
 
         assertThat(haRoutingManager.provideBackendForRoutingGroup(groupName, ""))

@@ -17,9 +17,9 @@ package io.trino.gateway.ha.router;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class QueryCountBasedRouter
         extends StochasticRoutingManager
 {
-    private static final Logger log = LoggerFactory.getLogger(QueryCountBasedRouter.class);
+    private static final Logger log = Logger.get(QueryCountBasedRouter.class);
     @GuardedBy("this")
     private List<LocalStats> clusterStats;
 
@@ -46,7 +46,7 @@ public class QueryCountBasedRouter
     {
         private int runningQueryCount;
         private int queuedQueryCount;
-        private boolean healthy;
+        private TrinoStatus trinoStatus;
         private String proxyTo;
         private String routingGroup;
         private String clusterId;
@@ -57,7 +57,7 @@ public class QueryCountBasedRouter
             clusterId = stats.clusterId();
             runningQueryCount = stats.runningQueryCount();
             queuedQueryCount = stats.queuedQueryCount();
-            healthy = stats.healthy();
+            trinoStatus = stats.trinoStatus();
             proxyTo = stats.proxyTo();
             routingGroup = stats.routingGroup();
             if (stats.userQueuedCount() != null) {
@@ -93,14 +93,14 @@ public class QueryCountBasedRouter
             this.queuedQueryCount = queuedQueryCount;
         }
 
-        public boolean healthy()
+        public TrinoStatus trinoStatus()
         {
-            return this.healthy;
+            return this.trinoStatus;
         }
 
-        public void healthy(boolean healthy)
+        public void trinoStatus(TrinoStatus trinoStatus)
         {
-            this.healthy = healthy;
+            this.trinoStatus = trinoStatus;
         }
 
         public String proxyTo()
@@ -185,9 +185,9 @@ public class QueryCountBasedRouter
 
     private synchronized Optional<LocalStats> getClusterToRoute(String user, String routingGroup)
     {
-        log.debug("sorting cluster stats for {} {}", user, routingGroup);
+        log.debug("sorting cluster stats for %s %s", user, routingGroup);
         List<LocalStats> filteredList = clusterStats.stream()
-                    .filter(stats -> stats.healthy())
+                    .filter(stats -> stats.trinoStatus() == TrinoStatus.HEALTHY)
                     .filter(stats -> routingGroup.equals(stats.routingGroup()))
                     .collect(Collectors.toList());
 
@@ -224,7 +224,7 @@ public class QueryCountBasedRouter
     @Override
     public String provideAdhocBackend(String user)
     {
-        return getBackendForRoutingGroup("adhoc", user).orElseThrow();
+        return getBackendForRoutingGroup("adhoc", user).orElseThrow(() -> new RouterException("did not find any cluster for the adhoc routing group"));
     }
 
     @Override

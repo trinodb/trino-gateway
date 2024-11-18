@@ -16,6 +16,7 @@ package io.trino.gateway.ha.clustermonitor;
 import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.jetty.JettyHttpClient;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,12 +31,12 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(PER_CLASS)
-public class TestClusterStatsMonitor
+final class TestClusterStatsMonitor
 {
     private TrinoContainer trino;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         trino = new TrinoContainer("trinodb/trino");
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
@@ -43,27 +44,30 @@ public class TestClusterStatsMonitor
     }
 
     @AfterAll
-    public void setup()
+    void setup()
     {
         trino.close();
     }
 
     @Test
-    public void testHttpMonitor()
+    void testHttpMonitor()
     {
         testClusterStatsMonitor(ClusterStatsHttpMonitor::new);
     }
 
     @Test
-    public void testJdbcMonitor()
+    void testJdbcMonitor()
     {
-        testClusterStatsMonitor(ClusterStatsJdbcMonitor::new);
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
     }
 
     @Test
-    public void testInfoApiMonitor()
+    void testInfoApiMonitor()
     {
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig())));
+        MonitorConfiguration monitorConfigurationWithRetries = new MonitorConfiguration();
+        monitorConfigurationWithRetries.setRetries(10);
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), new MonitorConfiguration()));
+        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfigurationWithRetries));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
@@ -78,6 +82,6 @@ public class TestClusterStatsMonitor
 
         ClusterStats stats = monitor.monitor(proxyBackend);
         assertThat(stats.clusterId()).isEqualTo("test_cluster");
-        assertThat(stats.healthy()).isTrue();
+        assertThat(stats.trinoStatus()).isEqualTo(TrinoStatus.HEALTHY);
     }
 }

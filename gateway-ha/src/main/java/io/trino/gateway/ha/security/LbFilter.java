@@ -52,6 +52,7 @@ public class LbFilter
      * Filters requests by checking for the token cookie and authorization header,
      * and authenticates the user using the filter's authenticator.
      */
+    @Override
     public void filter(final ContainerRequestContext requestContext)
             throws WebApplicationException
     {

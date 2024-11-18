@@ -46,10 +46,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestRoutingGroupSelector
+final class TestRoutingGroupSelector
 {
     public static final String TRINO_SOURCE_HEADER = "X-Trino-Source";
     public static final String TRINO_CLIENT_TAGS_HEADER = "X-Trino-Client-Tags";
+
+    private static final String DEFAULT_CATALOG = "default_catalog";
+    private static final String DEFAULT_SCHEMA = "default_schema";
+
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
     @BeforeAll
@@ -69,7 +73,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingGroupHeader()
+    void testByRoutingGroupHeader()
     {
         HttpServletRequest mockRequest = prepareMockRequest();
 
@@ -242,7 +246,7 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testByRoutingRulesEngineFileChange()
+    void testByRoutingRulesEngineFileChange()
             throws Exception
     {
         File file = File.createTempFile("routing_rules", ".yml");
@@ -301,6 +305,7 @@ public class TestRoutingGroupSelector
                         ImmutableSet.of("schem", "mvschem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "mvschem", "mv"))),
                 Arguments.of("CREATE SCHEMA kat.schem", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
+                Arguments.of("CREATE SCHEMA schem", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("CREATE TABLE cat.schem.tbl(c1 varchar)",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
@@ -315,6 +320,7 @@ public class TestRoutingGroupSelector
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "schem2", "tbl2"))),
                 Arguments.of("DROP CATALOG kat", ImmutableSet.of("kat"), ImmutableSet.of(), ImmutableSet.of()),
                 Arguments.of("DROP SCHEMA kat.schem", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
+                Arguments.of("DROP SCHEMA schem", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("DROP TABLE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
@@ -344,6 +350,10 @@ public class TestRoutingGroupSelector
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of()),
+                Arguments.of("SHOW CREATE SCHEMA schem",
+                        ImmutableSet.of(DEFAULT_CATALOG),
+                        ImmutableSet.of("schem"),
+                        ImmutableSet.of()),
                 Arguments.of("SHOW CREATE TABLE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
@@ -353,8 +363,11 @@ public class TestRoutingGroupSelector
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"))),
                 Arguments.of("SHOW SCHEMAS FROM kat", ImmutableSet.of("kat"), ImmutableSet.of(), ImmutableSet.of()),
+                Arguments.of("SHOW SCHEMAS", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of(), ImmutableSet.of()),
                 Arguments.of("SHOW TABLES FROM kat.schem", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
+                Arguments.of("SHOW TABLES", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of(DEFAULT_SCHEMA), ImmutableSet.of()),
                 Arguments.of("ALTER SCHEMA kat.schem SET AUTHORIZATION will", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
+                Arguments.of("ALTER SCHEMA schem SET AUTHORIZATION will", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("ALTER TABLE cat.schem.tbl SET AUTHORIZATION will",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
@@ -366,22 +379,64 @@ public class TestRoutingGroupSelector
                 Arguments.of("SELECT * FROM TABLE(kat.system.funk(arg => 'expr'))",
                         ImmutableSet.of("kat"),
                         ImmutableSet.of("system"),
-                        ImmutableSet.of(QualifiedName.of("kat", "system", "funk"))));
+                        ImmutableSet.of(QualifiedName.of("kat", "system", "funk"))),
+                Arguments.of("EXECUTE IMMEDIATE 'SELECT * FROM cat.schem.tbl'",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("schem"),
+                        ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))));
     }
 
     @ParameterizedTest
     @MethodSource("provideTableExtractionQueries")
-    public void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
+    void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new StringReader(query));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
+        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
+        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
 
         assertThat(trinoQueryProperties.getTables()).isEqualTo(tables);
         assertThat(trinoQueryProperties.getSchemas()).isEqualTo(schemas);
         assertThat(trinoQueryProperties.getCatalogs()).isEqualTo(catalogs);
+    }
+
+    @Test
+    void testWithQueryNameExcluded()
+            throws IOException
+    {
+        String query = """
+                WITH dos AS (SELECT c1 from cat.schem.tbl1),
+                uno as (SELECT c1 FROM dos)
+                SELECT c1 FROM uno, dos
+                """;
+        HttpServletRequest mockRequestWithDefaults = prepareMockRequest();
+        when(mockRequestWithDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
+        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+
+        TrinoQueryProperties trinoQueryPropertiesWithDefaults = new TrinoQueryProperties(
+                mockRequestWithDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
+        assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
+
+        HttpServletRequest mockRequestNoDefaults = prepareMockRequest();
+        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+
+        TrinoQueryProperties trinoQueryPropertiesNoDefaults = new TrinoQueryProperties(
+                mockRequestNoDefaults,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
+        Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();
+        assertThat(tablesNoDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
     }
 
     private HttpServletRequest prepareMockRequest()
@@ -392,14 +447,16 @@ public class TestRoutingGroupSelector
     }
 
     @Test
-    public void testLongQuery()
+    void testLongQuery()
             throws IOException
     {
         BufferedReader bufferedReader = new BufferedReader(new FileReader("src/test/resources/wide_select.sql", UTF_8));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, requestAnalyzerConfig);
-
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
+                mockRequest,
+                requestAnalyzerConfig.isClientsUseV2Format(),
+                requestAnalyzerConfig.getMaxBodySize());
         assertThat(trinoQueryProperties.tablesContains("kat.schem.widetable")).isTrue();
     }
 }

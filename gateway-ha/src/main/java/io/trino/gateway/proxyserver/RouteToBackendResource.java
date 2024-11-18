@@ -20,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
@@ -27,7 +28,7 @@ import jakarta.ws.rs.core.Context;
 
 import java.net.URI;
 
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_STATEMENT_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter.ROUTE_TO_BACKEND;
 import static java.util.Objects.requireNonNull;
 
@@ -84,5 +85,16 @@ public class RouteToBackendResource
     {
         String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
         proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+    }
+
+    @PUT
+    public void putHandler(
+            String body,
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse)
+    {
+        MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
+        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+        proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
     }
 }

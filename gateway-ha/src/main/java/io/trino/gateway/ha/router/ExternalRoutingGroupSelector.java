@@ -49,7 +49,7 @@ public class ExternalRoutingGroupSelector
         implements RoutingGroupSelector
 {
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
-    private final Set<String> blacklistHeaders;
+    private final Set<String> excludeHeaders;
     private final URI uri;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
@@ -61,10 +61,9 @@ public class ExternalRoutingGroupSelector
     @VisibleForTesting
     ExternalRoutingGroupSelector(RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        Set<String> defaultBlacklistHeaders = ImmutableSet.of("Content-Length");
-        this.blacklistHeaders = ImmutableSet.<String>builder()
-                .addAll(defaultBlacklistHeaders)
-                .addAll(rulesExternalConfiguration.getBlackListHeaders())
+        this.excludeHeaders = ImmutableSet.<String>builder()
+                .add("Content-Length")
+                .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
@@ -102,10 +101,10 @@ public class ExternalRoutingGroupSelector
             if (response == null) {
                 throw new RuntimeException("Unexpected response: null");
             }
-            else if (response.getErrors() != null && !response.getErrors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.getErrors()));
+            else if (response.errors() != null && !response.errors().isEmpty()) {
+                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
             }
-            return response.getRoutingGroup();
+            return response.routingGroup();
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "
@@ -119,7 +118,7 @@ public class ExternalRoutingGroupSelector
         TrinoQueryProperties trinoQueryProperties = null;
         TrinoRequestUser trinoRequestUser = null;
         if (requestAnalyzerConfig.isAnalyzeRequest()) {
-            trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig);
+            trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig.isClientsUseV2Format(), requestAnalyzerConfig.getMaxBodySize());
             trinoRequestUser = trinoRequestUserProvider.getInstance(request);
         }
 
@@ -142,8 +141,7 @@ public class ExternalRoutingGroupSelector
         Multimap<String, String> headers = ArrayListMultimap.create();
         for (String name : list(servletRequest.getHeaderNames())) {
             for (String value : list(servletRequest.getHeaders(name))) {
-                // Add all headers to ListMultimap except those in blacklist
-                if (!blacklistHeaders.contains(name)) {
+                if (!excludeHeaders.contains(name)) {
                     headers.put(name, value);
                 }
             }

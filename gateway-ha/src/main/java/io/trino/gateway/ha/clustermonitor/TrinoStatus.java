@@ -11,8 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.router.schema;
+package io.trino.gateway.ha.clustermonitor;
 
-import java.util.List;
-
-public record RoutingGroupExternalResponse(String routingGroup, List<String> errors) {}
+/**
+ * PENDING is for ui/observability purpose and functionally it's unhealthy
+ * We should use PENDING when Trino clusters are still spinning up
+ * HEALTHY is when health checks report clusters as up
+ * UNHEALTHY is when health checks report clusters as down
+ */
+public enum TrinoStatus
+{
+    PENDING,
+    HEALTHY,
+    UNHEALTHY
+}

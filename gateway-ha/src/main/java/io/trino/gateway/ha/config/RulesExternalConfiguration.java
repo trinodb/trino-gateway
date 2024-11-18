@@ -18,7 +18,7 @@ import java.util.List;
 public class RulesExternalConfiguration
 {
     private String urlPath;
-    private List<String> blackListHeaders;
+    private List<String> excludeHeaders;
 
     public String getUrlPath()
     {
@@ -30,13 +30,13 @@ public class RulesExternalConfiguration
         this.urlPath = urlPath;
     }
 
-    public List<String> getBlackListHeaders()
+    public List<String> getExcludeHeaders()
     {
-        return this.blackListHeaders;
+        return this.excludeHeaders;
     }
 
-    public void setBlackListHeaders(List<String> blackListHeaders)
+    public void setExcludeHeaders(List<String> excludeHeaders)
     {
-        this.blackListHeaders = blackListHeaders;
+        this.excludeHeaders = excludeHeaders;
     }
 }

@@ -42,7 +42,7 @@ i.e. backend with the least number of queries running or queued from a particula
 then use `QueryCountBasedRouter`, it can be configured by adding the module name 
 to config file's modules section like below
 
-```
+```yaml
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
   - io.trino.gateway.ha.module.ClusterStateListenerModule
@@ -50,19 +50,21 @@ modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider
 ```
 - The router works on the stats it receives from the clusters about the load i.e number queries queued and running on a cluster at regular intervals which can be configured like below. The default interval is 1 min
-```
+```yaml
 monitor:
   taskDelaySeconds: 10
 ```
 
-## Monitoring
+## Monitoring <a name="monitoring"></a>
 
-Prometheus can be configured to hit the OpenMetrics endpoint using:
+Trino Gateway provides a metrics endpoint that uses the OpenMetrics format at 
+`/metrics`. Use it to monitor Trino Gateway instances with Prometheus and 
+other compatible systems with the following Prometheus configuration:
 
-```
+```yaml
 scrape_configs:
 - job_name: trino_gateway
   static_configs:
     - targets:
-        - localhost:8080
+        - gateway1.example.com:8080
 ```

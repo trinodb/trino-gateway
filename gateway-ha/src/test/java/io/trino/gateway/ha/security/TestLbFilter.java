@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TestLbFilter
+final class TestLbFilter
 {
     private static final String USER = "username";
     private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
@@ -45,7 +45,7 @@ public class TestLbFilter
     private ContainerRequestContext requestContext;
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         // Set authentication manager mock with 'sub' claim
@@ -70,7 +70,7 @@ public class TestLbFilter
     }
 
     @Test
-    public void testSuccessfulCookieAuthentication()
+    void testSuccessfulCookieAuthentication()
             throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
@@ -81,7 +81,7 @@ public class TestLbFilter
                 .when(requestContext.getCookies())
                 .thenReturn(
                         Map.of(SessionCookie.OAUTH_ID_TOKEN,
-                                new Cookie(SessionCookie.OAUTH_ID_TOKEN, ID_TOKEN)));
+                                new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
         Mockito
                 .when(requestContext.getHeaders())
                 .thenReturn(new MultivaluedHashMap());
@@ -112,7 +112,7 @@ public class TestLbFilter
     }
 
     @Test
-    public void testSuccessfulHeaderAuthentication()
+    void testSuccessfulHeaderAuthentication()
             throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
@@ -153,7 +153,7 @@ public class TestLbFilter
     }
 
     @Test
-    public void testMissingAuthenticationToken()
+    void testMissingAuthenticationToken()
             throws WebApplicationException
     {
         assertThatThrownBy(() -> {

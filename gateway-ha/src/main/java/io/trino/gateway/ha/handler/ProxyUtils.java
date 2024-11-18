@@ -13,22 +13,24 @@
  */
 package io.trino.gateway.ha.handler;
 
-import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.router.TrinoQueryProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.HttpMethod;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.TRINO_UI_PATH;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.USER_HEADER;
-import static io.trino.gateway.ha.handler.QueryIdCachingProxyHandler.V1_QUERY_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_UI_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ENGLISH;
 
 public final class ProxyUtils
 {
@@ -50,86 +52,50 @@ public final class ProxyUtils
      * capitalization.
      */
     private static final Pattern QUERY_ID_PARAM_PATTERN = Pattern.compile(".*(?:%2F|(?i)query_?id(?-i)=|^)(\\d+_\\d+_\\d+_\\w+).*");
-    private static final Pattern EXTRACT_BETWEEN_SINGLE_QUOTES = Pattern.compile("'([^\\s']+)'");
 
     private ProxyUtils() {}
 
-    public static String getQueryUser(String userHeader, String authorization)
-    {
-        if (!isNullOrEmpty(userHeader)) {
-            log.debug("User from header %s", USER_HEADER);
-            return userHeader;
-        }
-
-        log.debug("User from basic authentication");
-        String user = "";
-        if (authorization == null) {
-            log.debug("No basic auth header found.");
-            return user;
-        }
-
-        int space = authorization.indexOf(' ');
-        if ((space < 0) || !authorization.substring(0, space).equalsIgnoreCase("basic")) {
-            log.error("Basic auth format is invalid");
-            return user;
-        }
-
-        String headerInfo = authorization.substring(space + 1).trim();
-        if (isNullOrEmpty(headerInfo)) {
-            log.error("Encoded value of basic auth doesn't exist");
-            return user;
-        }
-
-        String info = new String(Base64.getDecoder().decode(headerInfo));
-        List<String> parts = Splitter.on(':').limit(2).splitToList(info);
-        if (parts.size() < 1) {
-            log.error("No user inside the basic auth text");
-            return user;
-        }
-        return parts.get(0);
-    }
-
-    public static String extractQueryIdIfPresent(HttpServletRequest request, List<String> statementPaths)
+    public static Optional<String> extractQueryIdIfPresent(
+            HttpServletRequest request,
+            List<String> statementPaths,
+            boolean requestAnalyserClientsUseV2Format,
+            int requestAnalyserMaxBodySize)
     {
         String path = request.getRequestURI();
         String queryParams = request.getQueryString();
+        if (!request.getMethod().equals(HttpMethod.POST)) {
+            return extractQueryIdIfPresent(path, queryParams, statementPaths);
+        }
+        String queryText;
         try {
-            String queryText = CharStreams.toString(new InputStreamReader(request.getInputStream()));
-            if (!isNullOrEmpty(queryText)
-                    && queryText.toLowerCase().contains("system.runtime.kill_query")) {
-                // extract and return the queryId
-                String[] parts = queryText.split(",");
-                for (String part : parts) {
-                    if (part.contains("query_id")) {
-                        Matcher matcher = EXTRACT_BETWEEN_SINGLE_QUOTES.matcher(part);
-                        if (matcher.find()) {
-                            String queryQuoted = matcher.group();
-                            if (!isNullOrEmpty(queryQuoted) && queryQuoted.length() > 0) {
-                                return queryQuoted.substring(1, queryQuoted.length() - 1);
-                            }
-                        }
-                    }
-                }
-            }
+            queryText = CharStreams.toString(new InputStreamReader(request.getInputStream(), UTF_8));
         }
-        catch (Exception e) {
-            log.error(e, "Error extracting query payload from request");
+        catch (IOException e) {
+            throw new RuntimeException("Error reading request body", e);
         }
-
-        return extractQueryIdIfPresent(path, queryParams, statementPaths);
+        if (!isNullOrEmpty(queryText) && queryText.toLowerCase(ENGLISH).contains("kill_query")) {
+            TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+            return trinoQueryProperties.getQueryId();
+        }
+        return Optional.empty();
     }
 
-    public static String extractQueryIdIfPresent(String path, String queryParams, List<String> statementPaths)
+    public static Optional<String> extractQueryIdIfPresent(String path, String queryParams, List<String> statementPaths)
     {
         if (path == null) {
-            return null;
+            return Optional.empty();
         }
-        String queryId = null;
         log.debug("Trying to extract query id from path [%s] or queryString [%s]", path, queryParams);
         // matchingStatementPath should match paths such as /v1/statement/executing/query_id/nonce/sequence_number,
         // and if custom paths are supplied using the statementPaths configuration, paths such as
         // /custom/statement/path/executing/query_id/nonce/sequence_number
         Optional<String> matchingStatementPath = statementPaths.stream().filter(path::startsWith).findAny();
+        if (!isNullOrEmpty(queryParams)) {
+            Matcher matcher = QUERY_ID_PARAM_PATTERN.matcher(queryParams);
+            if (matcher.matches()) {
+                return Optional.of(matcher.group(1));
+            }
+        }
         if (matchingStatementPath.isPresent() || path.startsWith(V1_QUERY_PATH)) {
             path = path.replace(matchingStatementPath.orElse(V1_QUERY_PATH), "");
             String[] tokens = path.split("/");
@@ -138,27 +104,18 @@ public final class ProxyUtils
                         || tokens[1].equals("scheduled")
                         || tokens[1].equals("executing")
                         || tokens[1].equals("partialCancel")) {
-                    queryId = tokens[2];
+                    return Optional.of(tokens[2]);
                 }
-                else {
-                    queryId = tokens[1];
-                }
+                return Optional.of(tokens[1]);
             }
         }
         else if (path.startsWith(TRINO_UI_PATH)) {
             Matcher matcher = QUERY_ID_PATH_PATTERN.matcher(path);
             if (matcher.matches()) {
-                queryId = matcher.group(1);
+                return Optional.of(matcher.group(1));
             }
         }
-        if (!isNullOrEmpty(queryParams)) {
-            Matcher matcher = QUERY_ID_PARAM_PATTERN.matcher(queryParams);
-            if (matcher.matches()) {
-                queryId = matcher.group(1);
-            }
-        }
-        log.debug("Query id in URL [%s]", queryId);
-        return queryId;
+        return Optional.empty();
     }
 
     public static String buildUriWithNewBackend(String backendHost, HttpServletRequest request)

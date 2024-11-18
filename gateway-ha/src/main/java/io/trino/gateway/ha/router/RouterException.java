@@ -11,22 +11,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.util;
+package io.trino.gateway.ha.router;
 
-public final class PageUtil
+public class RouterException
+        extends IllegalStateException
 {
-    private static final int FIRST_PAGE_NO = 1;
-
-    private PageUtil() {}
-
-    public static int getStart(int pageNo, int pageSize)
+    public RouterException(String message)
     {
-        if (pageNo < FIRST_PAGE_NO) {
-            pageNo = FIRST_PAGE_NO;
-        }
-        if (pageSize < 1) {
-            pageSize = 0;
-        }
-        return (pageNo - FIRST_PAGE_NO) * pageSize;
+        super(message);
     }
 }

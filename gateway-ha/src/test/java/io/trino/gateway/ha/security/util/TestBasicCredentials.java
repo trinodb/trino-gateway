@@ -22,10 +22,10 @@ import static io.trino.gateway.ha.security.util.BasicCredentials.extractBasicAut
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class TestBasicCredentials
+final class TestBasicCredentials
 {
     @Test
-    public void testValidCredentials()
+    void testValidCredentials()
             throws AuthenticationException
     {
         BasicCredentials basicCredentials = extractBasicAuthCredentials(encodeToBasicAuthCredentials("user:pass123"));
@@ -50,7 +50,7 @@ public class TestBasicCredentials
     }
 
     @Test
-    public void testInvalidCredentials()
+    void testInvalidCredentials()
             throws AuthenticationException
     {
         assertThatThrownBy(() -> extractBasicAuthCredentials("InvalidBasic " + encodeBase64("username:pass123")))

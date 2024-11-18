@@ -34,10 +34,12 @@ import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import org.weakref.jmx.guice.MBeanModule;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static io.trino.gateway.baseapp.BaseApp.addModules;
+import static io.trino.gateway.ha.util.ConfigurationUtils.replaceEnvironmentVariables;
 import static java.lang.String.format;
 
 public class HaGatewayLauncher
@@ -105,7 +107,8 @@ public class HaGatewayLauncher
         if (args.length != 1) {
             throw new IllegalArgumentException("Expected exactly one argument (path of configuration file)");
         }
-        HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(new File(args[0]), HaGatewayConfiguration.class);
+        String config = Files.readString(Path.of(args[0]));
+        HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(replaceEnvironmentVariables(config), HaGatewayConfiguration.class);
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
     }

@@ -23,7 +23,7 @@ import java.util.regex.PatternSyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestLbAuthorizer
+final class TestLbAuthorizer
 {
     private static final Logger log = Logger.get(TestLbAuthorizer.class);
 
@@ -38,7 +38,7 @@ public class TestLbAuthorizer
     private static AuthorizationConfiguration configuration;
 
     @BeforeAll
-    public static void setup()
+    static void setup()
     {
         configuration = new AuthorizationConfiguration();
         principal = new LbPrincipal(USER, Optional.of(PVFX_DATA_31));
@@ -82,7 +82,7 @@ public class TestLbAuthorizer
     }
 
     @Test
-    public void testBasic()
+    void testBasic()
     {
         configureRole(PVFX_DATA_31, ADMIN_ROLE);
         assertMatch(ADMIN_ROLE);
@@ -101,7 +101,7 @@ public class TestLbAuthorizer
     }
 
     @Test
-    public void testZeroOrMoreCharacters()
+    void testZeroOrMoreCharacters()
     {
         configureRole("PVFX(.*)", ADMIN_ROLE);
         assertMatch(ADMIN_ROLE);
@@ -135,7 +135,7 @@ public class TestLbAuthorizer
     }
 
     @Test
-    public void testBadPatterns()
+    void testBadPatterns()
             throws Exception
     {
         configureRole("^[a-zA--Z0-9_]+$", ADMIN_ROLE); // bad range

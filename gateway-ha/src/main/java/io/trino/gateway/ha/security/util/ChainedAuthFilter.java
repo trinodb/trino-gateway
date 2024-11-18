@@ -44,7 +44,8 @@ public class ChainedAuthFilter
                 filter.filter(containerRequestContext);
                 return;
             }
-            catch (Exception ignored) {
+            catch (Exception _) {
+                // Suppress exception and try next filter
             }
         }
         throw new ForbiddenException("Authentication error");

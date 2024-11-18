@@ -44,12 +44,12 @@ public class ClusterStatsMonitorModule
     {
         ClusterStatsConfiguration clusterStatsConfig = config.getClusterStatsConfiguration();
         if (config.getBackendState() == null) {
-            return new ClusterStatsInfoApiMonitor(httpClient);
+            return new ClusterStatsInfoApiMonitor(httpClient, config.getMonitor());
         }
         return switch (clusterStatsConfig.getMonitorType()) {
-            case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient);
+            case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient, config.getMonitor());
             case UI_API -> new ClusterStatsHttpMonitor(config.getBackendState());
-            case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState());
+            case JDBC -> new ClusterStatsJdbcMonitor(config.getBackendState(), config.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
     }

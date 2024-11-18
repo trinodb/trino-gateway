@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.baseapp;
 
-import com.google.common.collect.MoreCollectors;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
@@ -21,6 +20,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
+import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import io.trino.gateway.ha.resource.EntityEditorResource;
@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.collect.MoreCollectors.toOptional;
 import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static java.lang.String.format;
@@ -54,11 +55,11 @@ public class BaseApp
         implements Module
 {
     private static final Logger logger = Logger.get(BaseApp.class);
-    private final HaGatewayConfiguration haGatewayConfiguration;
+    private final HaGatewayConfiguration configuration;
 
-    public BaseApp(HaGatewayConfiguration haGatewayConfiguration)
+    public BaseApp(HaGatewayConfiguration configuration)
     {
-        this.haGatewayConfiguration = requireNonNull(haGatewayConfiguration);
+        this.configuration = requireNonNull(configuration, "configuration is null");
     }
 
     private static Module newModule(String clazz, HaGatewayConfiguration configuration)
@@ -89,7 +90,7 @@ public class BaseApp
     {
         Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
-                .collect(MoreCollectors.toOptional());
+                .collect(toOptional());
         if (routerProvider.isEmpty()) {
             logger.warn("Router provider doesn't exist in the config, using the StochasticRoutingManagerProvider");
             String clazz = StochasticRoutingManagerProvider.class.getCanonicalName();
@@ -116,11 +117,12 @@ public class BaseApp
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(HaGatewayConfiguration.class).toInstance(haGatewayConfiguration);
+        binder.bind(HaGatewayConfiguration.class).toInstance(configuration);
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);
-        addManagedApps(this.haGatewayConfiguration, binder);
+        jaxrsBinder(binder).bind(RoutingTargetHandler.class);
+        addManagedApps(configuration, binder);
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(ProxyHandlerStats.class).withGeneratedName();
@@ -136,7 +138,7 @@ public class BaseApp
         configuration.getManagedApps().forEach(
                 clazz -> {
                     try {
-                        Class c = Class.forName(clazz);
+                        Class<?> c = Class.forName(clazz);
                         binder.bind(c).in(Scopes.SINGLETON);
                     }
                     catch (Exception e) {

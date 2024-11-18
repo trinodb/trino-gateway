@@ -26,7 +26,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,19 +40,25 @@ import org.testcontainers.containers.TrinoContainer;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.MediaType.JSON_UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestGatewayHaMultipleBackend
+final class TestGatewayHaMultipleBackend
 {
     public static final String CUSTOM_RESPONSE = "123";
     public static final String CUSTOM_PATH = "/v1/custom/extra";
 
     public static final String CUSTOM_LOGOUT = "/custom/logout"; //defined in src/test/resources/test-config-template.yml
+
+    private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
@@ -67,7 +76,7 @@ public class TestGatewayHaMultipleBackend
     private final OkHttpClient httpClient = new OkHttpClient();
 
     @BeforeAll
-    public void setup()
+    void setup()
             throws Exception
     {
         adhocTrino = new TrinoContainer("trinodb/trino");
@@ -81,11 +90,26 @@ public class TestGatewayHaMultipleBackend
         int backend2Port = scheduledTrino.getMappedPort(8080);
 
         HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, "default custom response");
-        HaGatewayTestUtils.setPathSpecificResponses(customBackend, ImmutableMap.of(
-                oauthInitiatePath, oauthInitialResponse,
-                oauthCallbackPath, oauthCallbackResponse,
-                CUSTOM_PATH, CUSTOM_RESPONSE,
-                CUSTOM_LOGOUT, ""));
+        customBackend.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request)
+            {
+                Map<String, String> pathResponse = ImmutableMap.of(
+                        oauthInitiatePath, oauthInitialResponse,
+                        oauthCallbackPath, oauthCallbackResponse,
+                        CUSTOM_PATH, CUSTOM_RESPONSE,
+                        CUSTOM_LOGOUT, "");
+                if (pathResponse.containsKey(request.getPath())) {
+                    return new MockResponse().setResponseCode(200).setBody(pathResponse.get(request.getPath()));
+                }
+                if (request.getPath().equals("/v1/info")) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setBody("{\"starting\": false}");
+                }
+                return new MockResponse().setResponseCode(404);
+            }
+        });
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
@@ -106,11 +130,10 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCustomPath()
+    void testCustomPath()
             throws Exception
     {
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "abc");
+        RequestBody requestBody = RequestBody.create("abc", MEDIA_TYPE);
         Request request1 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + CUSTOM_PATH)
@@ -131,12 +154,11 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testQueryDeliveryToMultipleRoutingGroups()
+    void testQueryDeliveryToMultipleRoutingGroups()
             throws Exception
     {
         // Default request should be routed to adhoc backend
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
         Request request1 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
@@ -159,11 +181,47 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testDeleteQueryId()
+    void testTrinoClusterHostCookie()
+            throws Exception
+    {
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
+
+        // When X-Trino-Routing-Group is set in header, query should be routed to cluster under the routing group
+        Request requestWithoutCookie =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "scheduled")
+                        .build();
+        Response responseWithoutCookie = httpClient.newCall(requestWithoutCookie).execute();
+        assertThat(responseWithoutCookie.body().string()).contains("http://localhost:" + routerPort);
+        List<Cookie> cookies = Cookie.parseAll(responseWithoutCookie.request().url(), responseWithoutCookie.headers());
+        Cookie clusterHostCookie = cookies.stream().filter(c -> c.name().equals("trinoClusterHost")).collect(onlyElement());
+        assertThat(clusterHostCookie.value()).isEqualTo("localhost");
+
+        // test with sending the request which includes trinoClusterHost in the cookie
+        // when X-Trino-Routing-Group is set in header, query should be routed to cluster under the routing group
+        Request requestWithCookie =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/v1/statement")
+                        .addHeader("X-Trino-User", "test")
+                        .post(requestBody)
+                        .addHeader("X-Trino-Routing-Group", "scheduled")
+                        .addHeader("Cookie", "trinoClientHost=foo.example.com")
+                        .build();
+        Response responseWithCookie = httpClient.newCall(requestWithCookie).execute();
+        assertThat(responseWithCookie.body().string()).contains("http://localhost:" + routerPort);
+        List<Cookie> overridenCookies = Cookie.parseAll(responseWithCookie.request().url(), responseWithCookie.headers());
+        Cookie overridenClusterHostCookie = overridenCookies.stream().filter(c -> c.name().equals("trinoClusterHost")).collect(onlyElement());
+        assertThat(overridenClusterHostCookie.value()).isEqualTo("localhost");
+    }
+
+    @Test
+    void testDeleteQueryId()
             throws IOException
     {
-        RequestBody requestBody =
-                RequestBody.create(MediaType.parse("application/json; charset=utf-8"), "SELECT 1");
+        RequestBody requestBody = RequestBody.create("SELECT 1", MEDIA_TYPE);
         Request request =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/v1/statement")
@@ -184,7 +242,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testBackendConfiguration()
+    void testBackendConfiguration()
             throws Exception
     {
         Request request = new Request.Builder()
@@ -211,7 +269,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCookieBasedRouting()
+    void testCookieBasedRouting()
             throws IOException
     {
         // This simulates the Trino oauth handshake
@@ -221,9 +279,7 @@ public class TestGatewayHaMultipleBackend
                 .readTimeout(60, TimeUnit.SECONDS)
                 .build();
         String oauthInitiateBody = "anything";
-        RequestBody requestBody =
-                RequestBody.create(
-                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+        RequestBody requestBody = RequestBody.create(oauthInitiateBody, MEDIA_TYPE);
 
         Request initiateRequest =
                 new Request.Builder()
@@ -262,7 +318,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @Test
-    public void testCookieSigning()
+    void testCookieSigning()
             throws IOException
     {
         OkHttpClient httpClient = new OkHttpClient.Builder()
@@ -271,9 +327,7 @@ public class TestGatewayHaMultipleBackend
                 .readTimeout(60, TimeUnit.SECONDS)
                 .build();
         String oauthInitiateBody = "anything";
-        RequestBody requestBody =
-                RequestBody.create(
-                        MediaType.parse("application/json; charset=utf-8"), oauthInitiateBody);
+        RequestBody requestBody = RequestBody.create(oauthInitiateBody, MEDIA_TYPE);
 
         Request initiateRequest =
                 new Request.Builder()
@@ -306,7 +360,7 @@ public class TestGatewayHaMultipleBackend
     }
 
     @AfterAll
-    public void cleanup()
+    void cleanup()
     {
         adhocTrino.stop();
         scheduledTrino.stop();

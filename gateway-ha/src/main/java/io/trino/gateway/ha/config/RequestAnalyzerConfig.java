@@ -17,7 +17,7 @@ import jakarta.validation.constraints.Max;
 
 public class RequestAnalyzerConfig
 {
-    private Integer maxBodySize = 1_000_000;
+    private int maxBodySize = 1_000_000;
 
     private boolean isClientsUseV2Format;
     private String tokenUserField = "email";
@@ -26,13 +26,13 @@ public class RequestAnalyzerConfig
 
     public RequestAnalyzerConfig() {}
 
-    public Integer getMaxBodySize()
+    public int getMaxBodySize()
     {
         return maxBodySize;
     }
 
     @Max(Integer.MAX_VALUE)
-    public void setMaxBodySize(Integer maxBodySize)
+    public void setMaxBodySize(int maxBodySize)
     {
         this.maxBodySize = maxBodySize;
     }

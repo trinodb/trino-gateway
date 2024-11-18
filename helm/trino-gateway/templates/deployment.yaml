@@ -43,12 +43,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-              - "java"
-              - "-XX:MinRAMPercentage=80.0"
-              - "-XX:MaxRAMPercentage=80.0"
-              - "-jar"
-              - "/usr/lib/trino/gateway-ha-jar-with-dependencies.jar"
-              - "/etc/gateway/config.yaml"
+            {{- toYaml .Values.command | nindent 12}}
           ports:
             - name: request
               containerPort: {{ index .Values "config" "serverConfig" "http-server.http.port" }}

@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public class TestLbAuthenticator
+final class TestLbAuthenticator
 {
     private static final Logger log = Logger.get(TestLbAuthenticator.class);
 
@@ -52,7 +52,7 @@ public class TestLbAuthenticator
     private static final String ID_TOKEN = "TOKEN";
 
     @Test
-    public void testAuthenticatorGetsPrincipal()
+    void testAuthenticatorGetsPrincipal()
             throws Exception
     {
         Claim claim = Mockito.mock(Claim.class);
@@ -78,12 +78,11 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-        assertThat(lbAuth.authenticate(ID_TOKEN).isPresent()).isTrue();
-        assertThat(lbAuth.authenticate(ID_TOKEN).orElseThrow()).isEqualTo(principal);
+        assertThat(lbAuth.authenticate(ID_TOKEN)).hasValue(principal);
     }
 
     @Test
-    public void testAuthorizationListFromOAuthField()
+    void testAuthorizationListFromOAuthField()
             throws AuthenticationException
     {
         String privilegesField = "role_list";
@@ -105,13 +104,11 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal.isPresent()).isTrue();
-        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
-        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api_user");
+        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api_user")));
     }
 
     @Test
-    public void testAuthorizationFieldFromOAuthField()
+    void testAuthorizationFieldFromOAuthField()
             throws AuthenticationException
     {
         String privilegesField = "role_list";
@@ -134,13 +131,11 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal.isPresent()).isTrue();
-        assertThat(principal.orElseThrow().getName()).isEqualTo(USER);
-        assertThat(principal.orElseThrow().getMemberOf()).hasValue("admin_api");
+        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api")));
     }
 
     @Test
-    public void testAuthorizationFieldNotExist()
+    void testAuthorizationFieldNotExist()
     {
         String privilegesField = "role_list";
         Claim subClaim = Mockito.mock(Claim.class);
@@ -163,7 +158,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testAuthenticatorMissingClaim()
+    void testAuthenticatorMissingClaim()
             throws Exception
     {
         Claim claim = Mockito.mock(Claim.class);
@@ -178,11 +173,11 @@ public class TestLbAuthenticator
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
-        assertThat(lbAuth.authenticate(ID_TOKEN).isPresent()).isFalse();
+        assertThat(lbAuth.authenticate(ID_TOKEN)).isEmpty();
     }
 
     @Test
-    public void testPresetUsers()
+    void testPresetUsers()
             throws Exception
     {
         Map<String, UserConfiguration> presetUsers = ImmutableMap.of(
@@ -200,7 +195,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testNoLdapNoPresetUsers()
+    void testNoLdapNoPresetUsers()
             throws Exception
     {
         LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
@@ -209,7 +204,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testWrongLdapConfig()
+    void testWrongLdapConfig()
             throws Exception
     {
         LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
@@ -218,7 +213,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testNullInPagePermission()
+    void testNullInPagePermission()
     {
         Map<String, UserConfiguration> presetUsers = ImmutableMap.of("user1", new UserConfiguration("admin, user, api", "pass1"));
         Map<String, String> pagePermission = new HashMap<>();
@@ -230,7 +225,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testLogout()
+    void testLogout()
             throws Exception
     {
         Response response = logOut();
@@ -240,7 +235,7 @@ public class TestLbAuthenticator
     }
 
     @Test
-    public void testLoginForm()
+    void testLoginForm()
             throws Exception
     {
         SelfSignKeyPairConfiguration keyPair = new SelfSignKeyPairConfiguration(

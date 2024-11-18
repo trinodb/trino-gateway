@@ -38,7 +38,7 @@ public class TestResourceGroupsManager
     public ResourceGroupsManager resourceGroupManager;
 
     @BeforeAll
-    public void setUp()
+    void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
@@ -46,7 +46,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(1)
-    public void testCreateResourceGroup()
+    void testCreateResourceGroup()
     {
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
 
@@ -71,7 +71,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(2)
-    public void testReadResourceGroup()
+    void testReadResourceGroup()
     {
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(2);
@@ -86,7 +86,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(3)
-    public void testUpdateResourceGroup()
+    void testUpdateResourceGroup()
     {
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
         resourceGroup.setResourceGroupId(1L);
@@ -149,7 +149,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(4)
-    public void testDeleteResourceGroup()
+    void testDeleteResourceGroup()
     {
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(4);
@@ -170,7 +170,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(5)
-    public void testCreateSelector()
+    void testCreateSelector()
     {
         SelectorsDetail selector = new SelectorsDetail();
         selector.setResourceGroupId(1L);
@@ -188,7 +188,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(6)
-    public void testReadSelector()
+    void testReadSelector()
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
 
@@ -204,7 +204,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(7)
-    public void testUpdateSelector()
+    void testUpdateSelector()
     {
         SelectorsDetail selector = new SelectorsDetail();
 
@@ -257,7 +257,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(8)
-    public void testDeleteSelector()
+    void testDeleteSelector()
     {
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(3);
@@ -270,7 +270,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(9)
-    public void testCreateGlobalProperties()
+    void testCreateGlobalProperties()
     {
         GlobalPropertiesDetail globalPropertiesDetail = new GlobalPropertiesDetail();
         globalPropertiesDetail.setName("cpu_quota_period");
@@ -296,7 +296,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(10)
-    public void testReadGlobalProperties()
+    void testReadGlobalProperties()
     {
         List<GlobalPropertiesDetail> globalProperties = resourceGroupManager.readAllGlobalProperties(
                 null);
@@ -308,7 +308,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(11)
-    public void testUpdateGlobalProperties()
+    void testUpdateGlobalProperties()
     {
         GlobalPropertiesDetail globalPropertiesDetail = new GlobalPropertiesDetail();
         globalPropertiesDetail.setName("cpu_quota_period");
@@ -336,7 +336,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(12)
-    public void testCreateExactMatchSourceSelectors()
+    void testCreateExactMatchSourceSelectors()
     {
         ExactSelectorsDetail exactSelectorDetail = new ExactSelectorsDetail();
 
@@ -354,7 +354,7 @@ public class TestResourceGroupsManager
 
     @Test
     @Order(13)
-    public void testReadExactMatchSourceSelectors()
+    void testReadExactMatchSourceSelectors()
     {
         List<ExactSelectorsDetail> exactSelectorsDetails =
                 resourceGroupManager.readExactMatchSourceSelector();

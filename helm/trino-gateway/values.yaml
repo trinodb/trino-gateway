@@ -52,6 +52,15 @@ config:
     managedApps:
         - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
 
+# Startup command for Trino Gateway process. Add additional Java options and other modifications as desired.
+command:
+  - "java"
+  - "-XX:MinRAMPercentage=80.0"
+  - "-XX:MaxRAMPercentage=80.0"
+  - "-jar"
+  - "/usr/lib/trino/gateway-ha-jar-with-dependencies.jar"
+  - "/etc/gateway/config.yaml"
+
 service:
   type: ClusterIP
   port: 8080

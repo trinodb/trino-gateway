@@ -2,6 +2,7 @@ serverConfig:
   node.environment: test
   http-server.http.port: REQUEST_ROUTER_PORT
 
+includeClusterHostInResponse: true
 dataStore:
   jdbcUrl: jdbc:h2:DB_FILE_PATH
   user: sa
@@ -10,6 +11,17 @@ dataStore:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelaySeconds: 1
 
 extraWhitelistPaths:
   - '/v1/custom.*'
