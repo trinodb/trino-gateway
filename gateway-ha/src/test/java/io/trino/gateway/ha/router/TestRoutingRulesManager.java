@@ -33,8 +33,9 @@ class TestRoutingRulesManager
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_atomic.yml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
 
-        List<RoutingRule> result = RoutingRulesManager.getRoutingRules(routingRulesConfiguration);
+        List<RoutingRule> result = routingRulesManager.getRoutingRules(routingRulesConfiguration);
 
         assertThat(result.size()).isEqualTo(2);
         assertThat(result.getFirst().name()).isEqualTo("airflow");
@@ -49,11 +50,12 @@ class TestRoutingRulesManager
     void testRoutingRulesNoSuchFileException()
     {
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_test.yaml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
 
         assertThatException()
-                .isThrownBy(() -> RoutingRulesManager.getRoutingRules(routingRulesConfiguration))
+                .isThrownBy(() -> routingRulesManager.getRoutingRules(routingRulesConfiguration))
                 .withRootCauseInstanceOf(NoSuchFileException.class);
     }
 
@@ -62,16 +64,17 @@ class TestRoutingRulesManager
             throws IOException
     {
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_update.yml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
         RoutingRule routingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
-        List<RoutingRule> updatedRoutingRules = RoutingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
+        List<RoutingRule> updatedRoutingRules = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
         assertThat(updatedRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
         assertThat(updatedRoutingRules.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
         RoutingRule originalRoutingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
-        List<RoutingRule> updateRoutingRules = RoutingRulesManager.updateRoutingRules(originalRoutingRules, routingRulesConfiguration);
+        List<RoutingRule> updateRoutingRules = routingRulesManager.updateRoutingRules(originalRoutingRules, routingRulesConfiguration);
 
         assertThat(updateRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"etl\")");
         assertThat(updateRoutingRules.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"airflow\"");
@@ -81,12 +84,13 @@ class TestRoutingRulesManager
     void testUpdateRoutingRulesNoSuchFileException()
     {
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_updated.yaml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
         RoutingRule routingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
         assertThatException()
-                .isThrownBy(() -> RoutingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration))
+                .isThrownBy(() -> routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration))
                 .withRootCauseInstanceOf(NoSuchFileException.class);
     }
 }

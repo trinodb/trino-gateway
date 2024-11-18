@@ -28,11 +28,9 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public final class RoutingRulesManager
+public class RoutingRulesManager
 {
-    private RoutingRulesManager() {}
-
-    public static List<RoutingRule> getRoutingRules(RoutingRulesConfiguration configuration)
+    public List<RoutingRule> getRoutingRules(RoutingRulesConfiguration configuration)
             throws IOException
     {
         ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
@@ -52,7 +50,7 @@ public final class RoutingRulesManager
         }
     }
 
-    public static List<RoutingRule> updateRoutingRules(RoutingRule routingRules, RoutingRulesConfiguration configuration)
+    public List<RoutingRule> updateRoutingRules(RoutingRule routingRules, RoutingRulesConfiguration configuration)
             throws IOException
     {
         ImmutableList.Builder<RoutingRule> routingRulesBuilder = ImmutableList.builder();

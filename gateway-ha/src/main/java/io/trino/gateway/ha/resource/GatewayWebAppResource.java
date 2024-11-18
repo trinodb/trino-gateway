@@ -76,6 +76,7 @@ public class GatewayWebAppResource
     private final ResourceGroupsManager resourceGroupsManager;
     private final RoutingRulesConfiguration routingRulesConfiguration;
     private final UIConfiguration uiConfiguration;
+    private final RoutingRulesManager routingRulesManager;
 
     @Inject
     public GatewayWebAppResource(
@@ -83,7 +84,8 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
-            HaGatewayConfiguration configuration)
+            HaGatewayConfiguration configuration,
+            RoutingRulesManager routingRulesManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
@@ -91,6 +93,7 @@ public class GatewayWebAppResource
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingRulesConfiguration = configuration.getRoutingRules();
         this.uiConfiguration = configuration.getUiConfiguration();
+        this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
     }
 
     @POST
@@ -443,7 +446,7 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
-        List<RoutingRule> routingRulesList = RoutingRulesManager.getRoutingRules(routingRulesConfiguration);
+        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules(routingRulesConfiguration);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
@@ -455,7 +458,7 @@ public class GatewayWebAppResource
     public synchronized Response updateRoutingRules(RoutingRule routingRules)
             throws IOException
     {
-        List<RoutingRule> routingRulesList = RoutingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
+        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
