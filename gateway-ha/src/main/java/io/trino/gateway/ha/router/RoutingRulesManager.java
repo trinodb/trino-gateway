@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.domain.RoutingRule;
@@ -33,6 +34,7 @@ public class RoutingRulesManager
 {
     private final RoutingRulesConfiguration routingRulesConfiguration;
 
+    @Inject
     public RoutingRulesManager(HaGatewayConfiguration configuration)
     {
         this.routingRulesConfiguration = configuration.getRoutingRules();
