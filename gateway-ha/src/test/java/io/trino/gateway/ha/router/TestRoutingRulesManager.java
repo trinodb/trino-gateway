@@ -13,68 +13,70 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.domain.RoutingRule;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class TestRoutingRulesManager
+final class TestRoutingRulesManager
 {
     @Test
     void testGetRoutingRules()
             throws IOException
     {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_atomic.yml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
-        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
+        configuration.setRoutingRules(routingRulesConfiguration);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager(configuration);
 
-        List<RoutingRule> result = routingRulesManager.getRoutingRules(routingRulesConfiguration);
+        List<RoutingRule> result = routingRulesManager.getRoutingRules();
 
-        assertThat(result.size()).isEqualTo(2);
-        assertThat(result.getFirst().name()).isEqualTo("airflow");
-        assertThat(result.getFirst().description()).isEqualTo("if query from airflow, route to etl group");
-        assertThat(result.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"airflow\" && (request.getHeader(\"X-Trino-Client-Tags\") == null || request.getHeader(\"X-Trino-Client-Tags\").isEmpty())");
-        assertThat(result.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"etl\")");
-        assertThat(result.getFirst().actions().size()).isEqualTo(1);
-        assertThat(result.get(1).name()).isEqualTo("airflow special");
+        assertThat(result).hasSize(2);
+        assertThat(result.getFirst()).isEqualTo(new RoutingRule("airflow", "if query from airflow, route to etl group", null, Collections.singletonList("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\" && (request.getHeader(\"X-Trino-Client-Tags\") == null || request.getHeader(\"X-Trino-Client-Tags\").isEmpty())"));
     }
 
     @Test
     void testRoutingRulesNoSuchFileException()
     {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
-        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_test.yaml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
+        configuration.setRoutingRules(routingRulesConfiguration);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager(configuration);
 
-        assertThatException()
-                .isThrownBy(() -> routingRulesManager.getRoutingRules(routingRulesConfiguration))
-                .withRootCauseInstanceOf(NoSuchFileException.class);
+        assertThatThrownBy(routingRulesManager::getRoutingRules).hasRootCauseInstanceOf(NoSuchFileException.class);
     }
 
     @Test
     void testUpdateRoutingRulesFile()
             throws IOException
     {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
-        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_update.yml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
+        configuration.setRoutingRules(routingRulesConfiguration);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager(configuration);
+
         RoutingRule routingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
-        List<RoutingRule> updatedRoutingRules = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
+        List<RoutingRule> updatedRoutingRules = routingRulesManager.updateRoutingRule(routingRules);
         assertThat(updatedRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
         assertThat(updatedRoutingRules.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
         RoutingRule originalRoutingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
-        List<RoutingRule> updateRoutingRules = routingRulesManager.updateRoutingRules(originalRoutingRules, routingRulesConfiguration);
+        List<RoutingRule> updateRoutingRules = routingRulesManager.updateRoutingRule(originalRoutingRules);
 
         assertThat(updateRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"etl\")");
         assertThat(updateRoutingRules.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"airflow\"");
@@ -83,14 +85,14 @@ class TestRoutingRulesManager
     @Test
     void testUpdateRoutingRulesNoSuchFileException()
     {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
         RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
-        RoutingRulesManager routingRulesManager = new RoutingRulesManager();
         String rulesConfigPath = "src/test/resources/rules/routing_rules_updated.yaml";
         routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
+        configuration.setRoutingRules(routingRulesConfiguration);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager(configuration);
         RoutingRule routingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
-        assertThatException()
-                .isThrownBy(() -> routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration))
-                .withRootCauseInstanceOf(NoSuchFileException.class);
+        assertThatThrownBy(() -> routingRulesManager.updateRoutingRule(routingRules)).hasRootCauseInstanceOf(NoSuchFileException.class);
     }
 }

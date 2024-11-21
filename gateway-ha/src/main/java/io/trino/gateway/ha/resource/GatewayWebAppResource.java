@@ -18,7 +18,6 @@ import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
@@ -74,7 +73,6 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
-    private final RoutingRulesConfiguration routingRulesConfiguration;
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
 
@@ -91,7 +89,6 @@ public class GatewayWebAppResource
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
-        this.routingRulesConfiguration = configuration.getRoutingRules();
         this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
     }
@@ -447,7 +444,7 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
-        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules(routingRulesConfiguration);
+        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
@@ -456,10 +453,10 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/updateRoutingRules")
-    public synchronized Response updateRoutingRules(RoutingRule routingRules)
+    public synchronized Response updateRoutingRules(RoutingRule routingRule)
             throws IOException
     {
-        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRules(routingRules, routingRulesConfiguration);
+        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
