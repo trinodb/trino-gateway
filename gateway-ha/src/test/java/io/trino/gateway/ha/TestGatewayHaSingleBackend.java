@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-final class TestGatewayHaSingleBackend
+class TestGatewayHaSingleBackend
 {
-    private TrinoContainer trino;
+    TrinoContainer trino;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
