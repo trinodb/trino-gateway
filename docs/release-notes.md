@@ -1,5 +1,25 @@
 # Release notes
 
+## Trino Gateway 13 (?? Dec 2024) { id="13" }
+
+Artifacts:
+
+* [JAR file gateway-ha-13-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/13/gateway-ha-13-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:13`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.zip)
+* Helm chart `1.13.0` in `helm/trino-gateway` of the tagged source code
+
+Changes:
+
+* Allow proxying of HTTP PUT requests to Trino clusters.
+  ([#543](https://github.com/trinodb/trino-gateway/pull/543))
+* Add a filter for `source` to the **History** page in the UI.
+  ([#551](https://github.com/trinodb/trino-gateway/pull/551))
+* Log out inactive users from the UI automatically.
+  ([#544](https://github.com/trinodb/trino-gateway/pull/544))
+
 ## Trino Gateway 12 (7 Nov 2024) { id="12" }
 
 Artifacts:
