@@ -40,6 +40,17 @@ java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.
 Follow the separate instructions for building the container and running Trino
 Gateway with docker compose from the `README.md` file in the `docker` folder.
 
+## Contact, help, and issues
+
+You can contact the Trino Gateway users and contributors on
+[Trino slack](https://trino.io/slack) in the `#trino-gateway` and
+`#trino-gateway-dev` channels. Use these channels for questions and discussion
+about Trino Gateway installation, usage, and development.
+
+If you encounter specific issues or want to propose new features,
+[file an issue](https://github.com/trinodb/trino-gateway/issues) and follow the
+contribution process for next steps.
+
 ## Contributing
 
 Want to help build Trino Gateway? Check out our [contributing
