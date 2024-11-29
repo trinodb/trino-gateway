@@ -1,8 +1,0 @@
-apiVersion: v2
-name: trino-gateway
-description: A Helm chart for Trino Gateway
-type: application
-# Trino Gateway Helm chart version. Should be appVersion with .0.0 appended.
-version: "12.0.0"
-# Trino Gateway version
-appVersion: "12"
