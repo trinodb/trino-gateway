@@ -11,24 +11,61 @@ image:
     #pullPolicy: IfNotPresent
     #tag: "8-SNAPSHOT"
 
+initContainer:
+    repository: "trinodb/trino-gateway-init"
+    pullPolicy: IfNotPresent
+    tag: "13-SNAPSHOT"
+    command:
+      - "python"
+      - "/tmp/interpolate_env_vars.py"
+      - "/etc/gateway/raw-config.yaml"
+      - "/etc/gateway/config.yaml"
+
 imagePullSecrets: []
 
-# Provide configuration for the Trino Gateway dataStore in dataStoreSecret. This node can
-# be left undefined if dataStore is defined under the config node. For production deployments
-# sensitive values should be stored in a Secret
+# Provide a list of secrets and configmaps to mount into the init container as environment variables.
+# These environment variables may be interpolated into the configuration file by using
+# ${ENV:VAR_NAME} in place of a raw value. Example:
+#  kubectl create secret generic test-secret --from-literal=USER='me' --from-literal=PASSWORD='39528$vdg7Jb'
+#
+#envFrom:
+#  - secretRef:
+#      name: test-secret
+#
+#  dataStore:
+#    jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+#    user: ${ENV:USER}
+#    password: ${ENV:PASSWORD}
+#    driver: org.postgresql.Driver
+envFrom: []
+
+# Provide configuration for the Trino Gateway dataStore, backendState and authentication as
+# secrets. These secrets should contain the entire yaml snippet, starting with the root node.
+# For example, if you have a file containing the following snippet in a file named my-data-store.yaml,
+# you should
+# kubectl create secret generic data-store-secret --from-file my-data-store.yaml
+# and set:
+#dataStoreSecret:
+#    name: "data-store-secret"
+#    key: "my-data-store.yaml"
+#
+# File contents:
+#dataStore:
+#  jdbcUrl: jdbc:postgresql://localhost:5432/gateway
+#  user: postgres
+#  password: mysecretpassword
+#  driver: org.postgresql.Driver
+#
+# Secrets are appended to the configuration defined in the config.yaml node. If multiple secrets are
+# used, make sure each ends in a newline!
 dataStoreSecret:
     name: ""
     key: ""
 
-# Provide configuration for the Trino Gateway backendState in backendStateSecret. This should
-# be used with health check configurations that require backend credentials. This node can
-# be left undefined if dataStore is defined under the config node.
 backendStateSecret:
     name: ""
     key: ""
 
-# Provide configuration for the Trino Gateway authentication configuration in authenticationSecret.
-# This node can be left undefined if dataStore is defined under the config node.
 authenticationSecret:
     name: ""
     key: ""

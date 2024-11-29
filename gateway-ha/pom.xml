@@ -445,6 +445,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <environmentVariables>
+                        <DB_USER>sa</DB_USER>
+                        <DB_PASSWORD>sa</DB_PASSWORD>
+                    </environmentVariables>
                     <!-- This is needed because we call main() in test setups. Otherwise Guice singleton won't work. -->
                     <reuseForks>false</reuseForks>
                 </configuration>

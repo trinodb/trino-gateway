@@ -1,0 +1,36 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: REQUEST_ROUTER_PORT
+
+includeClusterHostInResponse: true
+dataStore:
+  jdbcUrl: jdbc:h2:DB_FILE_PATH
+  user: ${ENV:DB_USER}
+  password: ${ENV:DB_PASSWORD}
+  driver: org.h2.Driver
+
+modules:
+  - io.trino.gateway.ha.module.HaGatewayProviderModule
+  - io.trino.gateway.ha.module.ClusterStateListenerModule
+  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
+
+managedApps:
+  - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelaySeconds: 1
+
+extraWhitelistPaths:
+  - '/v1/custom.*'
+  - '/custom/logout.*'
+
+gatewayCookieConfiguration:
+  enabled: true
+  cookieSigningSecret: "kjlhbfrewbyuo452cds3dc1234ancdsjh"
+
+oauth2GatewayCookieConfiguration:
+  deletePaths:
+    - "/custom/logout"

@@ -14,12 +14,6 @@ spec:
   template:
     metadata:
       annotations:
-        # Include the version of trino-gateway-configuration as an input to the
-        # deployment checksum. This causes pods to restart on helm update
-        # whether the chart `config` is updated or if one of the configuration
-        # secrets is updated. Helm template must be run with the
-        # --dry-run=server option to prevent a nil pointer.
-        checksum/config: {{ (coalesce (lookup "v1" "Secret" .Release.Namespace "trino-gateway-configuration").metadata (dict "resourceVersion" "0")).resourceVersion | sha256sum}}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -36,6 +30,49 @@ spec:
       serviceAccountName: {{ include "trino-gateway.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: consolidate-config
+          image: "{{ .Values.initContainer.repository }}:{{ .Values.initContainer.tag }}"
+          volumeMounts:
+            - name: trino-gateway-configuration-secret
+              mountPath: "/etc/secret/config.yaml"
+              subPath: "config.yaml"
+              readOnly: true
+            - name: trino-gateway-configuration
+              mountPath: "/etc/gateway/"
+              readOnly: false
+            {{- with  .Values.dataStoreSecret.key }}
+            - name: trino-datastore-secret
+              mountPath: "/etc/secret/{{.}}"
+              subPath: "{{.}}"
+              readOnly: true
+            {{- end}}
+            {{- with  .Values.backendStateSecret.key }}
+            - name: trino-backend-state-secret
+              mountPath: "/etc/secret/{{.}}"
+              subPath: "{{.}}"
+              readOnly: true
+            {{- end}}
+            {{- with  .Values.authenticationSecret.key }}
+            - name: trino-authentication-secret
+              mountPath: "/etc/secret/{{.}}"
+              subPath: "{{.}}"
+              readOnly: true
+            {{- end}}
+          command:
+            - "bash"
+            - "-c"
+            - "cat /etc/secret/* > /etc/gateway/raw-config.yaml"
+        - name: interpolate-env
+          image: "{{ .Values.initContainer.repository }}:{{ .Values.initContainer.tag }}"
+          envFrom:
+            {{- toYaml .Values.envFrom | nindent 12}}
+          command:
+            {{- toYaml .Values.initContainer.command | nindent 12}}
+          volumeMounts:
+            - name: trino-gateway-configuration
+              mountPath: "/etc/gateway/"
+              readOnly: false
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -68,17 +105,37 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: trino-gateway-configuration
-              mountPath: "/etc/gateway/config.yaml"
-              subPath: "config.yaml"
+              mountPath: "/etc/gateway/"
               readOnly: true
           {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: trino-gateway-configuration
+        - name: trino-gateway-configuration-secret
           secret:
               secretName: trino-gateway-configuration
               optional: false
+        - name: trino-gateway-configuration
+          emptyDir:
+              sizeLimit: 10Mi
+        {{- with  .Values.dataStoreSecret.name }}
+        - name: trino-datastore-secret
+          secret:
+              secretName: {{ . }}
+              optional: false
+        {{- end}}
+        {{- with  .Values.backendStateSecret.name }}
+        - name: trino-backend-state-secret
+          secret:
+              secretName: {{ . }}
+              optional: false
+        {{- end}}
+        {{- with  .Values.authenticationSecret.name }}
+        - name: trino-authentication-secret
+          secret:
+              secretName: {{ . }}
+              optional: false
+        {{- end}}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
