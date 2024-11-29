@@ -204,8 +204,16 @@ java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
 ### Helm <a name="helm"></a>
 
 Helm manages the deployment of Kubernetes applications by templating Kubernetes
-resources with a set of Helm charts. The Trino Gateway Helm chart consists 
-of the following components:
+resources with a set of Helm charts. The Trino Gateway Helm chart is 
+available in the [Trino Helm chart project](https://github.com/trinodb/charts).
+
+Configure the charts repository as a Helm chart repository with the 
+following command:
+
+```shell
+helm repo add trino https://trinodb.github.io/charts/
+```
+The Trino Gateway chart consists of the following components:
 
 * A `config` node for general configuration
 * `dataStoreSecret`, `backendStateSecret` and `authenticationSecret` for 
@@ -304,6 +312,9 @@ Kubernetes updates the mounted file when the ConfigMap is updated.
 Standard Helm options such as `replicaCount`, `image`, `imagePullSecrets`, 
 `service`, `ingress` and `resources` are supported. These are defined in 
 `helm/values.yaml`. 
+
+More detail about the chart are available in the [values 
+reference documentation](https://github.com/trinodb/charts/blob/main/charts/gateway/README.md)
 
 ### Health Checks
 
