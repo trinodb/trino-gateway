@@ -1,6 +1,6 @@
 # Release notes
 
-## Trino Gateway 13 (?? Dec 2024) { id="13" }
+## Trino Gateway 13 (3 Dec 2024) { id="13" }
 
 Artifacts:
 
