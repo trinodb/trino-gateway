@@ -34,7 +34,4 @@ gateway for multiple [Trino](https://trino.io) clusters.
     * [Slide deck](./assets/misc/tgw-trino-summit-2023.pdf)
 * [Slide deck about Trino Gateway status](./assets/misc/trino-gateway-status-at-tcc-202406.pdf)
   for Trino Contributor Congregation in June 2024
-* [Lyft blog post](https://eng.lyft.com/trino-infrastructure-at-lyft-b10adb9db01)
-* [Pinterest blog post](https://medium.com/pinterest-engineering/trino-at-pinterest-a8bda7515e52)
-* [Zomato blog post](https://www.zomato.com/blog/powering-data-analytics-with-trino)
-* [Shopify blog post](https://shopify.engineering/faster-trino-query-execution-infrastructure)
+
