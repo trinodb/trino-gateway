@@ -79,6 +79,7 @@ markdown_extensions:
 nav:
   - Home:
       - Overview: index.md
+      - Resources: resources.md
       - Users: users.md
       - Release notes: release-notes.md
   - Get started:
