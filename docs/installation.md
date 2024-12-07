@@ -318,9 +318,10 @@ reference documentation](https://github.com/trinodb/charts/blob/main/charts/gate
 
 ### Health Checks
 
-Trino Gateway checks the health of each backend and **deactivates it if 
-unhealthy**. A backend that fails a health check must be manually reset to 
-active. Automatic recovery is not supported.
+Trino Gateway checks the health of each backend and maintains an in-memory state for each backend.
+A backend that fails the health check will be set to UNHEALTHY and trino gateway will not route to
+such backends. This is independent of the active/inactive status. 
+Please see [TrinoStatus](./routing-rules.md#trinostatus) for more details on what each Trino status means.
 
 The type of health check is configured by setting
 

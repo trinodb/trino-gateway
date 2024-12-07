@@ -150,7 +150,7 @@ Trino clusters.  The three possible states of these cluster are updated with
 every healthcheck:
 
 - `PENDING`: A Trino cluster shows this state when it is still starting up. It
-  is treated as unhealthy by `RoutingManager`, and therefore requests are
+  is treated as unhealthy by `RoutingManager`, and therefore requests will
   not be routed to these clusters.
 - `HEALTHY`: A Trino cluster shows this state when healthchecks report
   the cluster as healthy and ready. `RoutingManager` only routes requests to
