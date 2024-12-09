@@ -194,6 +194,7 @@ Artifacts:
   or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/7.zip)
 
 Changes:
+
 * Replace user interface with a new modern UI. ([#116](https://github.com/trinodb/trino-gateway/pull/116))
 * Improve logging configurability. Users must update to the 
   [new logging configuration](./installation.md#logging). ([#260](https://github.com/trinodb/trino-gateway/pull/260))
