@@ -39,7 +39,7 @@ public interface RoutingGroupSelector
      */
     static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new RuleReloadingRoutingGroupSelector(rulesConfigPath, requestAnalyzerConfig);
+        return new MVELFileRoutingGroupSelector(rulesConfigPath, requestAnalyzerConfig);
     }
 
     /**
