@@ -360,6 +360,20 @@ monitor:
 
 Other timeout parameters are not applicable to the JDBC connection.
 
+#### JMX
+
+This uses `v1/jmx/mbean` endpoint to gather cluster information.
+It is required for the query count based routing strategy.
+Configure a username and password by adding `backendState` to your configuration. 
+The username and password must be valid across all backends with `read` 
+rights on `system_information`.
+
+```yaml
+backendState:
+  username: "user"
+  password: "password"
+```
+
 #### UI_API
 
 This pulls cluster information from the `ui/api/stats` REST endpoint. This is

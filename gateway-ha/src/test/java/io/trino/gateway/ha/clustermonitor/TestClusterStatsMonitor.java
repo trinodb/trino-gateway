@@ -39,7 +39,8 @@ final class TestClusterStatsMonitor
     void setUp()
     {
         trino = new TrinoContainer("trinodb/trino");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+        trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
+        trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
         trino.start();
     }
 
@@ -59,6 +60,12 @@ final class TestClusterStatsMonitor
     void testJdbcMonitor()
     {
         testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
+    }
+
+    @Test
+    void testJmxMonitor()
+    {
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJmxMonitor(new JettyHttpClient(new HttpClientConfig()), backendStateConfiguration));
     }
 
     @Test
