@@ -1,14 +1,16 @@
-import { IconHeart, IconIntro, IconPopover, IconScrollList, IconToast } from "@douyinfe/semi-icons-lab";
-import { NavItemProps, NavItemPropsWithItems, SubNavProps } from "@douyinfe/semi-ui/lib/es/navigation";
+import {IconIntro, IconPopover, IconScrollList, IconTree} from "@douyinfe/semi-icons-lab";
+import {NavItemProps, NavItemPropsWithItems, SubNavProps} from "@douyinfe/semi-ui/lib/es/navigation";
 import styles from './components/layout.module.scss';
-import { RouteProps } from "react-router-dom";
+import {RouteProps} from "react-router-dom";
 import Locale from "./locales";
-import { Dashboard } from './components/dashboard';
-import { Cluster } from './components/cluster';
-import { History } from './components/history';
-import { Selector } from "./components/selector";
-import { ResourceGroup } from "./components/resource-group";
-import { AccessControlStore, Role } from "./store";
+import {Dashboard} from './components/dashboard';
+import {Cluster} from './components/cluster';
+import {History} from './components/history';
+import {Selector} from "./components/selector";
+import {ResourceGroup} from "./components/resource-group";
+import {AccessControlStore, Role} from "./store";
+import {IconHistory, IconList} from "@douyinfe/semi-icons";
+import {RoutingRules} from "./components/routing-rules.tsx";
 
 export interface SubItemItem extends NavItemPropsWithItems {
   routeProps: RouteProps,
@@ -46,7 +48,7 @@ export const routers: RouterItems = [
   {
     itemKey: 'cluster',
     text: Locale.Menu.Sider.Cluster,
-    icon: <IconToast className={styles.icon} />,
+    icon: <IconTree className={styles.icon} />,
     roles: [],
     routeProps: {
       path: '/cluster',
@@ -76,13 +78,23 @@ export const routers: RouterItems = [
   {
     itemKey: 'history',
     text: Locale.Menu.Sider.History,
-    icon: <IconHeart className={styles.icon} />,
+    icon: <IconHistory className={styles.icon} />,
     roles: [],
     routeProps: {
       path: '/history',
       element: < History />
     },
-  }
+  },
+  {
+    itemKey: 'routing-rules',
+    text: Locale.Menu.Sider.RoutingRules,
+    icon: <IconList className={styles.icon}/>,
+    roles: [],
+    routeProps: {
+      path: '/routing-rules',
+      element: < RoutingRules />
+    },
+   }
 ]
 
 export const routersMapper: Record<string | number, RouterItem | SubRouterItem> = routers.reduce((mapper, item) => {
