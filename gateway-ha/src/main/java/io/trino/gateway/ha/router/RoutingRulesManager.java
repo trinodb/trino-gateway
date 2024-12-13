@@ -23,8 +23,11 @@ import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.domain.RoutingRule;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +63,7 @@ public class RoutingRulesManager
         }
     }
 
-    public List<RoutingRule> updateRoutingRule(RoutingRule routingRule)
+    public synchronized List<RoutingRule> updateRoutingRule(RoutingRule routingRule)
             throws IOException
     {
         ImmutableList.Builder<RoutingRule> updatedRoutingRulesBuilder = ImmutableList.builder();
@@ -86,7 +89,11 @@ public class RoutingRulesManager
                 yamlContent.append(yamlWriter.writeValueAsString(rule));
                 updatedRoutingRulesBuilder.add(rule);
             }
-            Files.writeString(Paths.get(rulesConfigPath), yamlContent.toString(), UTF_8);
+            try (FileChannel fileChannel = FileChannel.open(Paths.get(rulesConfigPath), StandardOpenOption.WRITE, StandardOpenOption.READ);
+                    FileLock lock = fileChannel.lock()) {
+                Files.writeString(Paths.get(rulesConfigPath), yamlContent.toString(), UTF_8);
+                lock.release();
+            }
         }
         catch (IOException e) {
             throw new IOException("Failed to parse or update routing rules configuration form path : " + rulesConfigPath, e);

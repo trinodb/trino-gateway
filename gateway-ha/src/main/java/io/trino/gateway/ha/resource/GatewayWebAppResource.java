@@ -453,7 +453,7 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/updateRoutingRules")
-    public synchronized Response updateRoutingRules(RoutingRule routingRule)
+    public Response updateRoutingRules(RoutingRule routingRule)
             throws IOException
     {
         List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);

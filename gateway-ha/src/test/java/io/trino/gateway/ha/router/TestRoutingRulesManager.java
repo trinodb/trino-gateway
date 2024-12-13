@@ -20,8 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +43,13 @@ final class TestRoutingRulesManager
         List<RoutingRule> result = routingRulesManager.getRoutingRules();
 
         assertThat(result).hasSize(2);
-        assertThat(result.getFirst()).isEqualTo(new RoutingRule("airflow", "if query from airflow, route to etl group", null, Collections.singletonList("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\" && (request.getHeader(\"X-Trino-Client-Tags\") == null || request.getHeader(\"X-Trino-Client-Tags\").isEmpty())"));
+        assertThat(result.getFirst()).isEqualTo(
+                new RoutingRule(
+                        "airflow",
+                        "if query from airflow, route to etl group",
+                        null,
+                        List.of("result.put(\"routingGroup\", \"etl\")"),
+                        "request.getHeader(\"X-Trino-Source\") == \"airflow\" && (request.getHeader(\"X-Trino-Client-Tags\") == null || request.getHeader(\"X-Trino-Client-Tags\").isEmpty())"));
     }
 
     @Test
@@ -94,5 +101,49 @@ final class TestRoutingRulesManager
         RoutingRule routingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
 
         assertThatThrownBy(() -> routingRulesManager.updateRoutingRule(routingRules)).hasRootCauseInstanceOf(NoSuchFileException.class);
+    }
+
+    @Test
+    void testConcurrentUpdateRoutingRule()
+            throws IOException
+    {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        String rulesConfigPath = "src/test/resources/rules/routing_rules_concurrent.yml";
+        routingRulesConfiguration.setRulesConfigPath(rulesConfigPath);
+        configuration.setRoutingRules(routingRulesConfiguration);
+        RoutingRulesManager routingRulesManager = new RoutingRulesManager(configuration);
+
+        RoutingRule routingRule1 = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
+        RoutingRule routingRule2 = new RoutingRule("airflow", "if query from airflow, route to adhoc group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"datagrip\"");
+
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        executorService.submit(() ->
+        {
+            try {
+                routingRulesManager.updateRoutingRule(routingRule1);
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        executorService.submit(() ->
+        {
+            try {
+                routingRulesManager.updateRoutingRule(routingRule2);
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        executorService.shutdown();
+        List<RoutingRule> updatedRoutingRules = routingRulesManager.getRoutingRules();
+        assertThat(updatedRoutingRules).hasSize(1);
+        assertThat(updatedRoutingRules.getFirst().condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"datagrip\"");
+        assertThat(updatedRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
+        assertThat(updatedRoutingRules.getFirst().description()).isEqualTo("if query from airflow, route to adhoc group");
     }
 }
