@@ -6,6 +6,15 @@ Trino Gateway is available on the [users page](users.md).
 
 Newest entries are on top of the list.
 
+## Opening up the Trino Gateway
+
+A project update presented by Manfred Moser, Will Morrison, Vishal Jadhav, and
+Jaehoo Yoo at Trino Summit in December 2024.
+
+:fontawesome-brands-youtube:{ .youtube } 
+[Video recording](https://youtu.be/MiQEngRJk8g) |
+[Slide deck](assets/misc/trino-gateway-at-trino-summit-2024.pdf)
+
 ## Trino Gateway - because one Trino cluster is not enough
 
 An overview for wider audience presented by Will Morrison and Manfred Moser at 
