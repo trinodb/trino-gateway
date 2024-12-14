@@ -5,3 +5,4 @@ target/**
 /**/var/
 gateway-ha/**/static/**
 .cache
+trino-gateway-version.txt
