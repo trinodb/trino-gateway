@@ -61,7 +61,7 @@ final class TestTrinoResource
 
         // Setup resource group manager
         String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4);
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
