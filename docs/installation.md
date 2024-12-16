@@ -38,15 +38,36 @@ distribution is installed.
 
 ### Backend database
 
-Trino Gateway requires a MySQL or PostgreSQL database.
+Trino Gateway requires a MySQL or PostgreSQL database. Database initialization
+is performed automatically when the Trino Gateway process starts. Migrations
+are performed using `Flyway`.
 
-Use the following scripts in the `gateway-ha/src/main/resources/` folder to
-initialize the database:
-
-* `gateway-ha-persistence-mysql.sql` for MySQL
-* `gateway-ha-persistence-postgres.sql` for PostgreSQL
+The migration files can viewed in the `gateway-ha/src/main/resources/` folder.
+Each database type supported has its own sub-folder.
 
 The files are also included in the JAR file.
+
+If you do not want migrations to be performed automatically on startup, then
+you can set `runMigrationsEnabled` to `false` in the data store configuration.
+For example:
+
+```yaml
+dataStore:
+  jdbcUrl: jdbc:postgresql://postgres:5432/trino_gateway_db
+  user: USER
+  password: PASSWORD
+  driver: org.postgresql.Driver
+  queryHistoryHoursRetention: 24
+  runMigrationsEnabled: false
+```
+
+`Flyway` uses a transactional lock in databases that support it such as 
+[PostgreSQL](https://documentation.red-gate.com/fd/postgresql-database-235241807.html#).
+In the scenario where multiple Trino Gateway instances are running and sharing
+the same backend database, the first Trino Gateway instance to start will get
+the lock and run the database migrations with `Flyway`. Other Trino Gateway
+instances might fail during startup while migrations are running but once migrations
+are completed they will start as expected.
 
 ### Trino clusters
 

@@ -34,7 +34,3 @@ services:
       timeout: 1s
       retries: 60
       start_period: 10s
-    volumes:
-      - target: /docker-entrypoint-initdb.d/1-gateway-ha-persistence-postgres.sql
-        source: ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql
-        type: bind

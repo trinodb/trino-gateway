@@ -21,6 +21,7 @@
         <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
+        <dep.flyway.version>11.0.1</dep.flyway.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.14.2</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
@@ -238,6 +239,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${dep.flyway.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
         </dependency>
@@ -287,6 +294,20 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
             <version>${dep.trino.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <version>${dep.flyway.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+            <version>${dep.flyway.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -368,6 +389,12 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <version>${dep.mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>jdbc</artifactId>
             <scope>test</scope>
         </dependency>
 
