@@ -18,5 +18,6 @@ public enum ClusterStatsMonitorType
     NOOP,
     INFO_API,
     UI_API,
-    JDBC
+    JDBC,
+    JMX
 }
