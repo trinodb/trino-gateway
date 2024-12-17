@@ -400,6 +400,24 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>../${frontend.project.name}/dist</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>../${frontend.project.name}/node</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>../${frontend.project.name}/node_modules</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>none</doclint>
