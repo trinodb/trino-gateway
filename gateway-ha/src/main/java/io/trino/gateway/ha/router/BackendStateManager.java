@@ -34,6 +34,11 @@ public class BackendStateManager
         return clusterStats.getOrDefault(name, ClusterStats.builder(name).build());
     }
 
+    public Map<String, ClusterStats> getAllBackendStates()
+    {
+        return clusterStats;
+    }
+
     public void updateStates(String clusterId, ClusterStats stats)
     {
         clusterStats.put(clusterId, stats);
