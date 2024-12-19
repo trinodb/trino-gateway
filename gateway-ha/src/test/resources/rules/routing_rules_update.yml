@@ -1,0 +1,7 @@
+---
+name: "airflow"
+description: "if query from airflow, route to etl group"
+priority: 0
+actions:
+- "result.put(\"routingGroup\", \"etl\")"
+condition: "request.getHeader(\"X-Trino-Source\") == \"airflow\""
