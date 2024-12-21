@@ -25,6 +25,7 @@ import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -87,6 +88,7 @@ public class ProxyRequestHandler
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
+    private final ProxyResponseConfiguration proxyResponseConfiguration;
 
     @Inject
     public ProxyRequestHandler(
@@ -104,6 +106,7 @@ public class ProxyRequestHandler
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
+        proxyResponseConfiguration = haGatewayConfiguration.getProxyResponseConfiguration();
     }
 
     @PreDestroy
@@ -245,7 +248,7 @@ public class ProxyRequestHandler
 
     private FluentFuture<ProxyResponse> executeHttp(Request request)
     {
-        return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler()));
+        return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler(proxyResponseConfiguration)));
     }
 
     private static Response handleProxyException(Request request, ProxyException e)
