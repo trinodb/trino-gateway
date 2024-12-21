@@ -42,6 +42,7 @@ public class HaGatewayConfiguration
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
+    private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
 
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
@@ -253,6 +254,16 @@ public class HaGatewayConfiguration
     public void setIncludeClusterHostInResponse(boolean includeClusterHostInResponse)
     {
         this.includeClusterHostInResponse = includeClusterHostInResponse;
+    }
+
+    public ProxyResponseConfiguration getProxyResponseConfiguration()
+    {
+        return this.proxyResponseConfiguration;
+    }
+
+    public void setProxyResponseConfiguration(ProxyResponseConfiguration proxyResponseConfiguration)
+    {
+        this.proxyResponseConfiguration = proxyResponseConfiguration;
     }
 
     private void validateStatementPath(String statementPath, List<String> statementPaths)
