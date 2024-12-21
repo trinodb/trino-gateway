@@ -212,6 +212,16 @@ serverConfig:
   http-server.process-forwarded: true
 ```
 
+## Configure larger proxy response size
+
+Trino Gateway reads the response from Trino in bytes (up to 32MB by default).
+It can be configured by setting:
+
+```yaml
+proxyResponseConfiguration:
+  responseSize: 50MB
+```
+
 ## Running Trino Gateway
 
 Start Trino Gateway with the following java command in the directory of the
