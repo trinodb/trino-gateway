@@ -13,8 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.google.common.collect.ImmutableList;
-import io.airlift.log.Logger;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
@@ -23,59 +23,63 @@ import org.jdbi.v3.core.Jdbi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class HaGatewayManager
         implements GatewayBackendManager
 {
-    private static final Logger log = Logger.get(HaGatewayManager.class);
-
     private final GatewayBackendDao dao;
+    private final Supplier<List<GatewayBackend>> gatewayBackendSupplier;
+    private final AtomicReference<List<GatewayBackend>> cache = new AtomicReference<>();
 
     public HaGatewayManager(Jdbi jdbi)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
+        gatewayBackendSupplier = Suppliers.memoizeWithExpiration(dao::findAll, 500, MILLISECONDS);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllBackends()
     {
-        List<GatewayBackend> proxyBackendList = dao.findAll();
+        List<GatewayBackend> proxyBackendList = fetchAllBackends();
         return upcast(proxyBackendList);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllActiveBackends()
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackend();
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
+                .filter(GatewayBackend::active)
+                .collect(toImmutableList());
         return upcast(proxyBackendList);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getActiveAdhocBackends()
     {
-        try {
-            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend();
-            return upcast(proxyBackendList);
-        }
-        catch (Exception e) {
-            log.info("Error fetching all backends: %s", e.getLocalizedMessage());
-        }
-        return ImmutableList.of();
+        return getActiveBackends("adhoc");
     }
 
     @Override
     public List<ProxyBackendConfiguration> getActiveBackends(String routingGroup)
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackendByRoutingGroup(routingGroup);
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
+                .filter(GatewayBackend::active)
+                .filter(backend -> backend.routingGroup().equals(routingGroup))
+                .collect(toImmutableList());
         return upcast(proxyBackendList);
     }
 
     @Override
     public Optional<ProxyBackendConfiguration> getBackendByName(String name)
     {
-        List<GatewayBackend> proxyBackendList = dao.findByName(name);
+        List<GatewayBackend> proxyBackendList = fetchAllBackends().stream()
+                .filter(backend -> backend.name().equals(name))
+                .collect(toImmutableList());
         return upcast(proxyBackendList).stream().findAny();
     }
 
@@ -129,5 +133,17 @@ public class HaGatewayManager
             proxyBackendConfigurations.add(backendConfig);
         }
         return proxyBackendConfigurations;
+    }
+
+    private List<GatewayBackend> fetchAllBackends()
+    {
+        try {
+            List<GatewayBackend> backends = gatewayBackendSupplier.get();
+            cache.set(backends);
+            return backends;
+        }
+        catch (Exception e) {
+            return cache.get();
+        }
     }
 }
