@@ -25,6 +25,7 @@ import io.airlift.http.client.Request;
 import io.airlift.http.client.jetty.JettyHttpClient;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
@@ -33,8 +34,10 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -50,6 +53,7 @@ public class ExternalRoutingGroupSelector
 {
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
     private final Set<String> excludeHeaders;
+    private final Map<String, String> requestConfig;
     private final URI uri;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
@@ -65,6 +69,7 @@ public class ExternalRoutingGroupSelector
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
+        this.requestConfig = rulesExternalConfiguration.getRequestConfig();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
@@ -87,12 +92,14 @@ public class ExternalRoutingGroupSelector
         try {
             RoutingGroupExternalBody requestBody = createRequestBody(servletRequest);
             requestBodyGenerator = jsonBodyGenerator(ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC, requestBody);
-            request = preparePost()
+            Request.Builder requestBuilder = preparePost()
                     .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .addHeaders(getValidHeaders(servletRequest))
                     .setUri(uri)
-                    .setBodyGenerator(requestBodyGenerator)
-                    .build();
+                    .setBodyGenerator(requestBodyGenerator);
+            applyRequestConfig(requestBuilder);
+
+            request = requestBuilder.build();
 
             // Execute the request and get the response
             RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER);
@@ -147,5 +154,22 @@ public class ExternalRoutingGroupSelector
             }
         }
         return headers;
+    }
+
+    private void applyRequestConfig(Request.Builder requestBuilder)
+    {
+        Map<String, Consumer<String>> configActions = Map.of(
+                "idleTimeout", value -> requestBuilder.setIdleTimeout(Duration.valueOf(value)),
+                "requestTimeout", value -> requestBuilder.setRequestTimeout(Duration.valueOf(value)));
+
+        requestConfig.forEach((key, value) -> {
+            Consumer<String> action = configActions.get(key);
+            if (action != null) {
+                action.accept(value);
+            }
+            else {
+                log.warn("Unknown request config key: %s", key);
+            }
+        });
     }
 }

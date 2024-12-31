@@ -13,12 +13,15 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RulesExternalConfiguration
 {
     private String urlPath;
     private List<String> excludeHeaders;
+    private Map<String, String> requestConfig = new HashMap<>();
 
     public String getUrlPath()
     {
@@ -38,5 +41,15 @@ public class RulesExternalConfiguration
     public void setExcludeHeaders(List<String> excludeHeaders)
     {
         this.excludeHeaders = excludeHeaders;
+    }
+
+    public Map<String, String> getRequestConfig()
+    {
+        return requestConfig;
+    }
+
+    public void setRequestConfig(Map<String, String> requestConfig)
+    {
+        this.requestConfig = requestConfig;
     }
 }

@@ -38,6 +38,9 @@ routingRules:
         excludeHeaders:
             - 'Authorization'
             - 'Accept-Encoding'
+        requestConfig:
+            idleTimeout: 1m
+            requestTimeout: 5m
 ```
 
 * Redirect URLs are not supported.
@@ -49,6 +52,21 @@ routingRules:
 If there is error parsing the routing rules configuration file, an error is
 logged, and requests are routed using the routing group header
 `X-Trino-Routing-Group` as default.
+
+### Configuring Request Parameters with `requestConfig`
+
+The `requestConfig` parameter allows you to customize various aspects of the 
+HTTP requests sent by the Trino Gateway. 
+By specifying key-value pairs, you can control settings such as timeouts.
+
+#### Available Configuration Options
+
+| Key                               | Description                                                           | Example Value |
+|-----------------------------------|-----------------------------------------------------------------------|---------------|
+| `idleTimeout`                     | Sets the idle timeout duration for the request.                       | `1m`          |
+| `requestTimeout`                  | Sets the total timeout duration for the request.                      | `5m`          |
+
+*Note*: Durations should be specified same as format mentioned in [Trino](https://trino.io/docs/current/admin/properties.html#duration).
 
 ### Use an external service for routing rules
 

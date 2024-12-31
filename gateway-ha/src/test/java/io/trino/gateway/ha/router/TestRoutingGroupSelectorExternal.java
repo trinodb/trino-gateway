@@ -19,6 +19,7 @@ import io.airlift.http.client.JsonBodyGenerator;
 import io.airlift.http.client.JsonResponseHandler;
 import io.airlift.http.client.Request;
 import io.airlift.json.JsonCodec;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
@@ -194,6 +196,29 @@ final class TestRoutingGroupSelectorExternal
         @SuppressWarnings("unchecked")
         Multimap<String, String> validHeaders = (Multimap<String, String>) getValidHeaders.invoke(routingGroupSelector, mockRequest);
         assertThat(validHeaders.size()).isEqualTo(1);
+    }
+
+    @Test
+    void testRequestConfig()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setRequestConfig(Map.of("requestTimeout", "1m", "idleTimeout", "30s"));
+        RoutingGroupSelector routingGroupSelector =
+                RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, requestAnalyzerConfig);
+
+        Request.Builder requestBuilder = mock(Request.Builder.class);
+
+        ArgumentCaptor<Duration> timeoutCaptor = ArgumentCaptor.forClass(Duration.class);
+        when(requestBuilder.setRequestTimeout(timeoutCaptor.capture())).thenReturn(requestBuilder);
+        when(requestBuilder.setIdleTimeout(timeoutCaptor.capture())).thenReturn(requestBuilder);
+
+        Method applyRequestConfig = ExternalRoutingGroupSelector.class.getDeclaredMethod("applyRequestConfig", Request.Builder.class);
+        applyRequestConfig.setAccessible(true);
+        applyRequestConfig.invoke(routingGroupSelector, requestBuilder);
+
+        List<Duration> capturedDurations = timeoutCaptor.getAllValues();
+        assertThat(capturedDurations).containsExactlyInAnyOrder(Duration.valueOf("1m"), Duration.valueOf("30s"));
     }
 
     private HttpServletRequest prepareMockRequest()
