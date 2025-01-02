@@ -32,6 +32,7 @@ import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.persistence.FlywayMigration;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.nio.file.Files;
@@ -109,6 +110,7 @@ public class HaGatewayLauncher
         }
         String config = Files.readString(Path.of(args[0]));
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(replaceEnvironmentVariables(config), HaGatewayConfiguration.class);
+        FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
     }
