@@ -15,6 +15,7 @@ package io.trino.gateway.ha.clustermonitor;
 
 import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.jetty.JettyHttpClient;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -58,6 +59,8 @@ final class TestClusterStatsMonitor
     @Test
     void testJdbcMonitor()
     {
+        MonitorConfiguration monitorConfigurationWithTimeout = new MonitorConfiguration();
+        monitorConfigurationWithTimeout.setQueryTimeout(Duration.valueOf("30s"));
         testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
     }
 
