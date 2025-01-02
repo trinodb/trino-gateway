@@ -82,5 +82,16 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
                 .containsExactly("adhoc");
+
+        ProxyBackendConfiguration etl = new ProxyBackendConfiguration();
+        etl.setActive(false);
+        etl.setRoutingGroup("etl");
+        etl.setName("new-etl1");
+        etl.setProxyTo("https://adhoc1.trino.gateway.io:443/");
+        etl.setExternalUrl("https://adhoc1.trino.gateway.io:443/");
+        haGatewayManager.addBackend(etl);
+
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo).orElseThrow()).isEqualTo("https://adhoc1.trino.gateway.io:443");
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getExternalUrl).orElseThrow()).isEqualTo("https://adhoc1.trino.gateway.io:443");
     }
 }

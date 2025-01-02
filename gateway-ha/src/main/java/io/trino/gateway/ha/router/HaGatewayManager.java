@@ -94,19 +94,23 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
-        dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+        String backendProxyTo = backend.getProxyTo().replaceAll("/$", "");
+        String backendExternalUrl = backend.getExternalUrl().replaceAll("/$", "");
+        dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         return backend;
     }
 
     @Override
     public ProxyBackendConfiguration updateBackend(ProxyBackendConfiguration backend)
     {
+        String backendProxyTo = backend.getProxyTo().replaceAll("/$", "");
+        String backendExternalUrl = backend.getExternalUrl().replaceAll("/$", "");
         GatewayBackend model = dao.findFirstByName(backend.getName());
         if (model == null) {
-            dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+            dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         }
         else {
-            dao.update(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+            dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
         }
         return backend;
     }
