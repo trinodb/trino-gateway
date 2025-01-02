@@ -15,6 +15,7 @@ package io.trino.gateway.ha.clustermonitor;
 
 import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.jetty.JettyHttpClient;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -26,6 +27,7 @@ import org.testcontainers.containers.TrinoContainer;
 
 import java.util.function.Function;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
@@ -58,7 +60,9 @@ final class TestClusterStatsMonitor
     @Test
     void testJdbcMonitor()
     {
-        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, new MonitorConfiguration()));
+        MonitorConfiguration monitorConfigurationWithTimeout = new MonitorConfiguration();
+        monitorConfigurationWithTimeout.setQueryTimeout(new Duration(30, SECONDS));
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, monitorConfigurationWithTimeout));
     }
 
     @Test
