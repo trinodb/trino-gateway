@@ -21,7 +21,6 @@
         <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
-        <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.14.2</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
         <dep.trino.version>464</dep.trino.version>
@@ -253,21 +252,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.jeasy</groupId>
-            <artifactId>easy-rules-core</artifactId>
-            <version>${dep.jeasy.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jeasy</groupId>
-            <artifactId>easy-rules-mvel</artifactId>
-            <version>${dep.jeasy.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jeasy</groupId>
-            <artifactId>easy-rules-support</artifactId>
-            <version>${dep.jeasy.version}</version>
+            <groupId>org.mvel</groupId>
+            <artifactId>mvel2</artifactId>
+            <version>2.5.2.Final</version>
         </dependency>
 
         <dependency>
@@ -287,13 +274,6 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
             <version>${dep.trino.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mvel</groupId>
-            <artifactId>mvel2</artifactId>
-            <version>2.5.2.Final</version>
             <scope>runtime</scope>
         </dependency>
 
