@@ -15,6 +15,7 @@ package io.trino.gateway.ha.clustermonitor;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -38,6 +39,7 @@ public class ClusterStatsJdbcMonitor
     private static final Logger log = Logger.get(ClusterStatsJdbcMonitor.class);
 
     private final Properties properties; // TODO Avoid using a mutable field
+    private final Duration queryTimeout;
 
     private static final String STATE_QUERY = "SELECT state, COUNT(*) as count "
             + "FROM runtime.queries "
@@ -50,6 +52,10 @@ public class ClusterStatsJdbcMonitor
         properties.setProperty("user", backendStateConfiguration.getUsername());
         properties.setProperty("password", backendStateConfiguration.getPassword());
         properties.setProperty("SSL", String.valueOf(backendStateConfiguration.getSsl()));
+        if (!monitorConfiguration.isExplicitPrepare()) { //do not set property if true (default) to avoid issues with older Trinos
+            properties.setProperty("explicitPrepare", "false");
+        }
+        queryTimeout = monitorConfiguration.getQueryTimeout();
         log.info("state check configured");
     }
 
@@ -77,6 +83,7 @@ public class ClusterStatsJdbcMonitor
                 PreparedStatement statement = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
                         () -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS)) {
             statement.setString(1, (String) properties.get("user"));
+            statement.setQueryTimeout((int) queryTimeout.toMillis() / 1000);
             Map<String, Integer> partialState = new HashMap<>();
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {

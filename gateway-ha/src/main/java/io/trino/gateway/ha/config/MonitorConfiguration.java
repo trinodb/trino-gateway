@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 
 public class MonitorConfiguration
@@ -20,6 +21,10 @@ public class MonitorConfiguration
     private int taskDelaySeconds = ActiveClusterMonitor.MONITOR_TASK_DELAY_SECONDS;
 
     private int retries;
+
+    private Duration queryTimeout = Duration.valueOf("10s");
+
+    private boolean explicitPrepare;
 
     public MonitorConfiguration() {}
 
@@ -41,5 +46,25 @@ public class MonitorConfiguration
     public void setRetries(int retries)
     {
         this.retries = retries;
+    }
+
+    public Duration getQueryTimeout()
+    {
+        return queryTimeout;
+    }
+
+    public void setQueryTimeout(Duration queryTimeout)
+    {
+        this.queryTimeout = queryTimeout;
+    }
+
+    public boolean isExplicitPrepare()
+    {
+        return explicitPrepare;
+    }
+
+    public void setExplicitPrepare(boolean explicitPrepare)
+    {
+        this.explicitPrepare = explicitPrepare;
     }
 }
