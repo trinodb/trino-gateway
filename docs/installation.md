@@ -387,6 +387,38 @@ monitor:
 
 All timeout parameters are optional.
 
+#### METRICS
+
+This pulls statistics from Trino's [OpenMetrics](https://openmetrics.io/) endpoint.
+It retrieves the number of running and queued queries for use with
+the `QueryCountBasedRouter` (either `METRICS` or `JDBC` must be enabled if
+`QueryCountBasedRouter` is used).
+
+This monitor allows customizing health definitions by comparing metrics to fixed
+values. This is configured through two maps: `metricMinimumValues` and 
+`metricMaximumValues`. The keys of these maps are the metric names, and the values
+are the minimum or maximum values (inclusive) that are considered healthy. By default,
+the only metric populated is:
+
+```yaml
+monitorConfiguration:
+    metricMinimumValues:
+        trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
+```
+
+This requires the cluster to have at least one active worker node in order to be considered
+healthy. The map is overwritten if configured explicitly. For example, to increase the minimum
+worker count to 10 and disqualify clusters that have been experiencing frequent major Garbage
+Collections, set
+
+```yaml
+monitorConfiguration:
+    metricMinimumValues:
+        trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
+    metricMaximumValues:
+        io_airlift_stats_name_GcMonitor_MajorGc_FiveMinutes_count: 2
+```
+
 #### JDBC
 
 This uses a JDBC connection to query `system.runtime` tables for cluster 

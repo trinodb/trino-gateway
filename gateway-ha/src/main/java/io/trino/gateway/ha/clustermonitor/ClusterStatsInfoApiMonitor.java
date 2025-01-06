@@ -27,9 +27,7 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
-import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
-import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
-import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.shouldRetry;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsInfoApiMonitor
@@ -87,17 +85,5 @@ public class ClusterStatsInfoApiMonitor
             log.error(e, "Exception checking %s for health", request.getUri());
         }
         return TrinoStatus.UNHEALTHY;
-    }
-
-    public static boolean shouldRetry(int statusCode)
-    {
-        switch (statusCode) {
-            case HTTP_BAD_GATEWAY:
-            case HTTP_UNAVAILABLE:
-            case HTTP_GATEWAY_TIMEOUT:
-                return true;
-            default:
-                return false;
-        }
     }
 }
