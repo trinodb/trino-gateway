@@ -13,8 +13,11 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
+
+import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -27,6 +30,13 @@ public class MonitorConfiguration
     private Duration queryTimeout = new Duration(10, SECONDS);
 
     private boolean explicitPrepare;
+
+    private String metricsEndpoint = "/metrics";
+
+    // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor
+    private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 1f);
+
+    private Map<String, Float> metricMaximumValues = ImmutableMap.of();
 
     public MonitorConfiguration() {}
 
@@ -68,5 +78,35 @@ public class MonitorConfiguration
     public void setExplicitPrepare(boolean explicitPrepare)
     {
         this.explicitPrepare = explicitPrepare;
+    }
+
+    public String getMetricsEndpoint()
+    {
+        return metricsEndpoint;
+    }
+
+    public void setMetricsEndpoint(String metricsEndpoint)
+    {
+        this.metricsEndpoint = metricsEndpoint;
+    }
+
+    public Map<String, Float> getMetricMinimumValues()
+    {
+        return metricMinimumValues;
+    }
+
+    public void setMetricMinimumValues(Map<String, Float> metricMinimumValues)
+    {
+        this.metricMinimumValues = ImmutableMap.copyOf(metricMinimumValues);
+    }
+
+    public Map<String, Float> getMetricMaximumValues()
+    {
+        return ImmutableMap.copyOf(metricMaximumValues);
+    }
+
+    public void setMetricMaximumValues(Map<String, Float> metricMaximumValues)
+    {
+        this.metricMaximumValues = metricMaximumValues;
     }
 }
