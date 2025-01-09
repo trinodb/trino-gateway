@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -357,6 +358,24 @@ final class TestGatewayHaMultipleBackend
                         .build();
         Response callbackResponse = httpClient.newCall(callbackRequest).execute();
         assertThat(callbackResponse.code()).isEqualTo(500);
+    }
+
+    @Test
+    void testHealthCheckEndpoints()
+            throws IOException
+    {
+        Request livenessCheck = new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/trino-gateway/livez")
+                        .build();
+        Response livenessResponse = httpClient.newCall(livenessCheck).execute();
+        assertThat(livenessResponse.code()).isEqualTo(200);
+
+        sleepUninterruptibly(1, TimeUnit.SECONDS);  // wait for server initialization
+        Request readinessCheck = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/trino-gateway/readyz")
+                .build();
+        Response readinessResponse = httpClient.newCall(readinessCheck).execute();
+        assertThat(readinessResponse.code()).isEqualTo(200);
     }
 
     @AfterAll

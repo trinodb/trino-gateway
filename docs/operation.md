@@ -36,6 +36,7 @@ documentation](https://trino.io/docs/current/admin/graceful-shutdown.html) for
 more details.
 
 ## Query routing options
+
 - The default router selects the backend randomly to route the queries. 
 - If you want to route the queries to the least loaded backend for a user
 i.e. backend with the least number of queries running or queued from a particular user,
@@ -65,3 +66,11 @@ scrape_configs:
     - targets:
         - gateway1.example.com:8080
 ```
+
+## API health endpoints
+
+Trino Gateway provides two API endpoints to indicate the current status of the server.
+`/trino-gateway/livez` returns status code 200, indicating the server is alive.
+`/trino-gateway/readyz` returns status code 200, indicating the server has
+completed initialization and is ready to serve requests. Otherwise, status code
+503 will be returned.
