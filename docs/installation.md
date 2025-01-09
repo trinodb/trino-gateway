@@ -198,7 +198,7 @@ JAR and YAML files:
 
 ```shell
 java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
-    -jar gateway-ha.jar gateway-config.yml
+    -jar gateway-ha.jar gateway-ha-config.yml
 ```
 
 ### Helm <a name="helm"></a>

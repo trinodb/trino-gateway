@@ -139,12 +139,12 @@ The first arg `server` has been removed.
 
 Old config:
 ```bash
-java -jar gateway-ha.jar server gateway-config.yml
+java -jar gateway-ha.jar server gateway-ha-config.yml
 ```
 
 New config:
 ```bash
-java -jar gateway-ha.jar gateway-config.yml
+java -jar gateway-ha.jar gateway-ha-config.yml
 ```
 
 ### Format of `extraWhitelistPaths`
