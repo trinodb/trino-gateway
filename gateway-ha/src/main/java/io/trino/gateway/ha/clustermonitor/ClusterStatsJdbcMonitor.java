@@ -29,8 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ClusterStatsJdbcMonitor
         implements ClusterStatsMonitor
@@ -75,7 +76,7 @@ public class ClusterStatsJdbcMonitor
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties);
                 PreparedStatement statement = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
-                        () -> conn.prepareStatement(STATE_QUERY), 10, TimeUnit.SECONDS)) {
+                        () -> conn.prepareStatement(STATE_QUERY), 10, SECONDS)) {
             statement.setString(1, (String) properties.get("user"));
             Map<String, Integer> partialState = new HashMap<>();
             ResultSet rs = statement.executeQuery();
