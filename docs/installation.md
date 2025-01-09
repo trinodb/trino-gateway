@@ -365,17 +365,26 @@ method of backend clusters. Configure a username and password by adding
 `backendState` to your configuration. The username and password must be valid 
 across all backends.
 
+Trino Gateway uses `explicitPrepare=false` by default. This property was introduced
+in Trino 431, and uses a single query for prepared statements, instead of a 
+`PREPARE/EXECUTE` pair. If you are using the JDBC health check option with older 
+versions of Trino, set
+```yaml
+monitorConfiguration:
+   explicitPrepare: false
+```
+
 ```yaml
 backendState:
   username: "user"
   password: "password"
 ```
 
-The request timeout can be set through
+The query timeout can be set through
 
 ```yaml
 monitor:
-  requestTimeoutSeconds: 10
+    queryTimeout: 10
 ```
 
 Other timeout parameters are not applicable to the JDBC connection.
