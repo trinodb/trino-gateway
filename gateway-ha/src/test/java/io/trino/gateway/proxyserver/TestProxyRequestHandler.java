@@ -14,7 +14,6 @@
 package io.trino.gateway.proxyserver;
 
 import io.trino.gateway.ha.HaGatewayLauncher;
-import io.trino.gateway.ha.HaGatewayTestUtils;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.io.File;
+
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
@@ -43,7 +44,7 @@ final class TestProxyRequestHandler
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final MockWebServer mockTrinoServer = new MockWebServer();
-    private PostgreSQLContainer postgresql;
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
 
     private final int routerPort = 21001 + (int) (Math.random() * 1000);
     private final int customBackendPort = 21000 + (int) (Math.random() * 1000);
@@ -80,12 +81,11 @@ final class TestProxyRequestHandler
             }
         });
 
-        postgresql = new PostgreSQLContainer("postgres:16");
         postgresql.start();
 
-        HaGatewayTestUtils.TestConfig testConfig = buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
+        File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
 
-        String[] args = {testConfig.configFilePath()};
+        String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
 
         setUpBackend("custom", "http://localhost:" + customBackendPort, "externalUrl", true, "adhoc", routerPort);

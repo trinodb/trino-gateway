@@ -34,11 +34,42 @@ public interface QueryHistoryDao
 
     @SqlQuery("""
             SELECT * FROM query_history
+            ORDER BY created DESC
+            FETCH FIRST 2000 ROWS ONLY
+            """)
+    List<QueryHistory> findRecentQueriesWithFetch();
+
+    default List<QueryHistory> findRecentQueries(boolean isLimitUnsupported)
+    {
+        if (isLimitUnsupported) {
+            return findRecentQueriesWithFetch();
+        }
+        return findRecentQueries();
+    }
+
+    @SqlQuery("""
+            SELECT * FROM query_history
             WHERE user_name = :userName
             ORDER BY created DESC
             LIMIT 2000
             """)
     List<QueryHistory> findRecentQueriesByUserName(String userName);
+
+    @SqlQuery("""
+            SELECT * FROM query_history
+            WHERE user_name = :userName
+            ORDER BY created DESC
+            FETCH FIRST 2000 ROWS ONLY
+            """)
+    List<QueryHistory> findRecentQueriesByUserNameWithFetch(String userName);
+
+    default List<QueryHistory> findRecentQueriesByUserName(String userName, boolean isLimitUnsupported)
+    {
+        if (isLimitUnsupported) {
+            return findRecentQueriesByUserNameWithFetch(userName);
+        }
+        return findRecentQueriesByUserName(userName);
+    }
 
     @SqlQuery("""
             SELECT backend_url FROM query_history
@@ -67,7 +98,7 @@ public interface QueryHistoryDao
                    COUNT(1) AS query_count
             FROM query_history
             WHERE created > :created
-            GROUP BY minute, backend_url
+            GROUP BY FLOOR(created / 1000 / 60), backend_url
             """)
     @UseRowMapper(MapMapper.class)
     List<Map<String, Object>> findDistribution(long created);

@@ -31,6 +31,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import java.io.File;
 import java.util.Arrays;
 
 import static io.airlift.http.client.HttpStatus.NOT_FOUND;
@@ -47,7 +48,7 @@ final class TestTrinoResource
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private PostgreSQLContainer postgresql;
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
     JdbcConnectionManager connectionManager;
@@ -57,11 +58,10 @@ final class TestTrinoResource
     void setup()
             throws Exception
     {
-        postgresql = new PostgreSQLContainer("postgres:16");
         postgresql.start();
         // Prepare config and database tables
-        HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
+        File testConfigFile =
+                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
 
         // Setup resource group manager
         DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);
@@ -69,12 +69,10 @@ final class TestTrinoResource
         connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 
-        // need to start gateway so migrations will be run to create tables
-        // before inserting test data
-        String[] args = {testConfig.configFilePath()};
+        // Start Trino Gateway so migrations are run to create tables before inserting test data
+        String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
 
-        // Generate test data
         prepareData();
     }
 

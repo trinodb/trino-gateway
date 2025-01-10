@@ -16,6 +16,7 @@ package io.trino.gateway.ha;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -33,5 +34,11 @@ public final class TestingJdbcConnectionManager
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         return new JdbcConnectionManager(jdbi, db);
+    }
+
+    public static JdbcConnectionManager createTestingJdbcConnectionManager(JdbcDatabaseContainer<?> container, DataStoreConfiguration config)
+    {
+        Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
+        return new JdbcConnectionManager(jdbi, config);
     }
 }

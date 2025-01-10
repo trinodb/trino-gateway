@@ -39,7 +39,7 @@ public abstract class BaseTestDatabaseMigrations
     protected abstract void createGatewaySchema();
 
     private final JdbcDatabaseContainer<?> container;
-    private final String schema;
+    protected final String schema;
     protected final Jdbi jdbi;
 
     public BaseTestDatabaseMigrations(JdbcDatabaseContainer<?> container, String schema)
@@ -109,7 +109,7 @@ public abstract class BaseTestDatabaseMigrations
         verifyResultSetCount("SELECT environment FROM exact_match_source_selectors", 0);
     }
 
-    private void verifyResultSetCount(String sql, int expectedCount)
+    protected void verifyResultSetCount(String sql, int expectedCount)
     {
         List<String> results = jdbi.withHandle(handle ->
                 handle.createQuery(sql).mapTo(String.class).list());

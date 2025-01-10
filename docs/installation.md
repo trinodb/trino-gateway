@@ -38,9 +38,9 @@ distribution is installed.
 
 ### Backend database
 
-Trino Gateway requires a MySQL or PostgreSQL database. Database initialization
-is performed automatically when the Trino Gateway process starts. Migrations
-are performed using `Flyway`.
+Trino Gateway requires a MySQL, PostgreSQL, or Oracle database. Database
+initialization is performed automatically when the Trino Gateway process
+starts. Migrations are performed using `Flyway`.
 
 The migration files can viewed in the `gateway-ha/src/main/resources/` folder.
 Each database type supported has its own sub-folder.

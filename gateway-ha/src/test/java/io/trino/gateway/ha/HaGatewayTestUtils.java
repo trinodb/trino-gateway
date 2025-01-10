@@ -76,16 +76,16 @@ public class HaGatewayTestUtils
         }
     }
 
-    public static TestConfig buildGatewayConfig(int routerPort, String configFile, PostgreSQLContainer postgresqlContainer)
+    public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
             throws Exception
     {
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
         String configStr =
                 getResourceFileContent(configFile)
                         .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
-                        .replace("POSTGRESQL_JDBC_URL", postgresqlContainer.getJdbcUrl())
-                        .replace("POSTGRESQL_USER", postgresqlContainer.getUsername())
-                        .replace("POSTGRESQL_PASSWORD", postgresqlContainer.getPassword())
+                        .replace("POSTGRESQL_JDBC_URL", postgreSqlContainer.getJdbcUrl())
+                        .replace("POSTGRESQL_USER", postgreSqlContainer.getUsername())
+                        .replace("POSTGRESQL_PASSWORD", postgreSqlContainer.getPassword())
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
                         .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
@@ -99,7 +99,7 @@ public class HaGatewayTestUtils
         }
 
         log.info("Test Gateway Config \n[%s]", configStr);
-        return new TestConfig(target.getAbsolutePath());
+        return target;
     }
 
     public static String getResourceFileContent(String fileName)
@@ -168,13 +168,5 @@ public class HaGatewayTestUtils
             sleepUninterruptibly(1, TimeUnit.SECONDS);
         }
         throw new IllegalStateException("Trino cluster is not healthy");
-    }
-
-    public record TestConfig(String configFilePath)
-    {
-        public TestConfig
-        {
-            requireNonNull(configFilePath, "configFilePath is null");
-        }
     }
 }

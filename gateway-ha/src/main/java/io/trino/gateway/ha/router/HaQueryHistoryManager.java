@@ -38,10 +38,12 @@ public class HaQueryHistoryManager
     private static final int FIRST_PAGE_NO = 1;
 
     private final QueryHistoryDao dao;
+    private final boolean isOracleBackend;
 
-    public HaQueryHistoryManager(Jdbi jdbi)
+    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
+        this.isOracleBackend = isOracleBackend;
     }
 
     @Override
@@ -66,10 +68,10 @@ public class HaQueryHistoryManager
     {
         List<QueryHistory> histories;
         if (user.isPresent()) {
-            histories = dao.findRecentQueriesByUserName(user.orElseThrow());
+            histories = dao.findRecentQueriesByUserName(user.orElseThrow(), isOracleBackend);
         }
         else {
-            histories = dao.findRecentQueries();
+            histories = dao.findRecentQueries(isOracleBackend);
         }
         return upcast(histories);
     }
