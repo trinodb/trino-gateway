@@ -41,6 +41,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import java.io.File;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.security.SecureRandom;
@@ -143,9 +144,9 @@ final class TestOIDC
         PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:16");
         gatewayBackendDatabase.start();
 
-        HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfig(ROUTER_PORT, "auth/oauth-test-config.yml", gatewayBackendDatabase);
-        String[] args = {testConfig.configFilePath()};
+        File testConfigFile =
+                HaGatewayTestUtils.buildGatewayConfig(gatewayBackendDatabase, ROUTER_PORT, "auth/oauth-test-config.yml");
+        String[] args = {testConfigFile.getAbsolutePath()};
         System.out.println(ROUTER_PORT);
         HaGatewayLauncher.main(args);
     }

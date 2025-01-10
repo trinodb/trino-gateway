@@ -277,11 +277,26 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11-production</artifactId>
+            <version>23.6.0.24.10</version>
+            <type>pom</type>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Required for ClusterStatsJdbcMonitor -->
         <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-jdbc</artifactId>
             <version>${dep.trino.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-oracle</artifactId>
+            <version>${dep.flyway.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -382,6 +397,12 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>oracle-xe</artifactId>
             <scope>test</scope>
         </dependency>
 

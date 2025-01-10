@@ -34,7 +34,10 @@ public class FlywayMigration
         if (configDbUrl.startsWith("jdbc:mysql")) {
             return "mysql";
         }
-        throw new IllegalArgumentException(format("Invalid JDBC URL: %s. Only PostgreSQL and MySQL are supported.", configDbUrl));
+        if (configDbUrl.startsWith("jdbc:oracle")) {
+            return "oracle";
+        }
+        throw new IllegalArgumentException(format("Invalid JDBC URL: %s. Only PostgreSQL, MySQL, and Oracle are supported.", configDbUrl));
     }
 
     public static void migrate(DataStoreConfiguration config)

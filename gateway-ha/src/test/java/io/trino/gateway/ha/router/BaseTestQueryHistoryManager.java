@@ -13,12 +13,16 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
+import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +31,32 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-final class TestQueryHistoryManager
+abstract class BaseTestQueryHistoryManager
 {
+    protected final JdbcDatabaseContainer<?> container = startContainer();
     private QueryHistoryManager queryHistoryManager;
+
+    protected abstract JdbcDatabaseContainer<?> startContainer();
 
     @BeforeAll
     void setUp()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        queryHistoryManager = new HaQueryHistoryManager(connectionManager.getJdbi());
+        DataStoreConfiguration config = new DataStoreConfiguration(
+                container.getJdbcUrl(),
+                container.getUsername(),
+                container.getPassword(),
+                container.getDriverClassName(),
+                4,
+                true);
+        FlywayMigration.migrate(config);
+        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"));
+    }
+
+    @AfterAll
+    public final void close()
+    {
+        container.close();
     }
 
     @Test
