@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ final class TestNoXForwarded
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
+    private PostgreSQLContainer postgresql;
     int routerPort = 21001 + (int) (Math.random() * 1000);
     int backendPort;
 
@@ -48,9 +50,11 @@ final class TestNoXForwarded
 
         backendPort = trino.getMappedPort(8080);
 
-        // seed database
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
+
         HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-without-x-forwarded-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-without-x-forwarded-template.yml", postgresql);
         // Start Gateway
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);

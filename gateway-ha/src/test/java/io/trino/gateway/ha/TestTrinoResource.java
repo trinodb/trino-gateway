@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.Arrays;
 
@@ -46,6 +47,7 @@ final class TestTrinoResource
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private PostgreSQLContainer postgresql;
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
     JdbcConnectionManager connectionManager;
@@ -55,23 +57,25 @@ final class TestTrinoResource
     void setup()
             throws Exception
     {
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
         // Prepare config and database tables
         HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
 
         // Setup resource group manager
-        String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);
+        Jdbi jdbi = Jdbi.create(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword());
         connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 
-        // Generate test data
-        prepareData();
-
-        // Start Gateway
+        // need to start gateway so migrations will be run to create tables
+        // before inserting test data
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
+
+        // Generate test data
+        prepareData();
     }
 
     public void prepareData()

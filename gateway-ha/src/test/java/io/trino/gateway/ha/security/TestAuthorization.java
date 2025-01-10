@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +44,7 @@ final class TestAuthorization
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private PostgreSQLContainer postgresql;
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
 
@@ -50,7 +52,9 @@ final class TestAuthorization
     void setup()
             throws Exception
     {
-        HaGatewayTestUtils.TestConfig testConfig = HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "auth/auth-test-config.yml");
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
+        HaGatewayTestUtils.TestConfig testConfig = HaGatewayTestUtils.buildGatewayConfig(routerPort, "auth/auth-test-config.yml", postgresql);
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
     }
