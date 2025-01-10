@@ -38,6 +38,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
@@ -63,7 +64,7 @@ final class TestGatewayHaMultipleBackend
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
-    private PostgreSQLContainer postgresql;
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
 
     public static String oauthInitiatePath = OAuth2GatewayCookie.OAUTH2_PATH;
     public static String oauthCallbackPath = oauthInitiatePath + "/callback";
@@ -87,7 +88,6 @@ final class TestGatewayHaMultipleBackend
         scheduledTrino = new TrinoContainer("trinodb/trino");
         scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         scheduledTrino.start();
-        postgresql = new PostgreSQLContainer("postgres:16");
         postgresql.start();
 
         int backend1Port = adhocTrino.getMappedPort(8080);
@@ -115,11 +115,11 @@ final class TestGatewayHaMultipleBackend
             }
         });
 
-        HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
+        File testConfigFile =
+                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
 
         // Start Gateway
-        String[] args = {testConfig.configFilePath()};
+        String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(

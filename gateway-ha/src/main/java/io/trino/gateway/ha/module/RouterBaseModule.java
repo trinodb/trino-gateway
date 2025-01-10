@@ -39,7 +39,7 @@ public class RouterBaseModule
         connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi);
-        queryHistoryManager = new HaQueryHistoryManager(jdbi);
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
     }
 
     @Provides

@@ -16,7 +16,6 @@ under the project root folder, and run it at the temporary directory.
 It  copies the following, necessary files to current directory:
 
 - gateway-ha.jar
-- gateway-ha-persistence-postgres.sql
 - quickstart-config.yaml
 
 ```shell
@@ -41,26 +40,18 @@ else
     cp ../docs/quickstart-config.yaml ./quickstart-config.yaml
 fi
 
-# Check and get the postgres.sql
-if [[ -f "gateway-ha-persistence-postgres.sql" ]]; then
-    echo "Found gateway-ha-persistence-postgres.sql file in current directory."
-else
-    cp ../gateway-ha/src/main/resources/gateway-ha-persistence-postgres.sql ./gateway-ha-persistence-postgres.sql
-fi
-
 #Check if DB is running
 if docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
     echo "PostgreSQL database container 'localhost-postgres' is already running. Only starting Trino Gateway."
 else
     echo "PostgreSQL database container 'localhost-postgres' is not running. Proceeding to initialize and run database server."
     export PGPASSWORD=mysecretpassword
-    docker run -v "$(pwd)"/gateway-ha-persistence-postgres.sql:/tmp/gateway-ha-persistence-postgres.sql --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
+    docker run --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
     #Make sure the DB has time to initialize
     sleep 5
 
     #Initialize the DB
     docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
-    docker exec local-postgres psql -U postgres -h localhost -d gateway -f /tmp/gateway-ha-persistence-postgres.sql
 fi
 
 
