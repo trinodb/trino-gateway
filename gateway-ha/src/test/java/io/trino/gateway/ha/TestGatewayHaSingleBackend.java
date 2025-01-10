@@ -28,6 +28,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 
 import java.util.List;
@@ -39,6 +40,7 @@ import static org.testcontainers.utility.MountableFile.forClasspathResource;
 final class TestGatewayHaSingleBackend
 {
     private TrinoContainer trino;
+    private PostgreSQLContainer postgresql;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
@@ -51,9 +53,11 @@ final class TestGatewayHaSingleBackend
 
         int backendPort = trino.getMappedPort(8080);
 
-        // seed database
+        // start postgres database
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
         HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
         // Start Gateway
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);

@@ -28,10 +28,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfigAndSeedDb;
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
 import static io.trino.gateway.ha.HaGatewayTestUtils.prepareMockBackend;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,6 +43,7 @@ final class TestProxyRequestHandler
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final MockWebServer mockTrinoServer = new MockWebServer();
+    private PostgreSQLContainer postgresql;
 
     private final int routerPort = 21001 + (int) (Math.random() * 1000);
     private final int customBackendPort = 21000 + (int) (Math.random() * 1000);
@@ -78,7 +80,10 @@ final class TestProxyRequestHandler
             }
         });
 
-        HaGatewayTestUtils.TestConfig testConfig = buildGatewayConfigAndSeedDb(routerPort, "test-config-template.yml");
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
+
+        HaGatewayTestUtils.TestConfig testConfig = buildGatewayConfig(routerPort, "test-config-template.yml", postgresql);
 
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);

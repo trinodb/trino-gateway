@@ -3,11 +3,10 @@ serverConfig:
   http-server.http.port: REQUEST_ROUTER_PORT
 
 dataStore:
-  jdbcUrl: jdbc:h2:DB_FILE_PATH
-  user: sa
-  password: sa
-  driver: org.h2.Driver
-  runMigrationsEnabled: false
+  jdbcUrl: POSTGRESQL_JDBC_URL
+  user: POSTGRESQL_USER
+  password: POSTGRESQL_PASSWORD
+  driver: org.postgresql.Driver
 
 clusterStatsConfiguration:
   monitorType: INFO_API

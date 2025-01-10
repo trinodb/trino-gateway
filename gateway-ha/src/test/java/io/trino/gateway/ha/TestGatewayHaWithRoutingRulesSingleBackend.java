@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,7 @@ final class TestGatewayHaWithRoutingRulesSingleBackend
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
+    private PostgreSQLContainer postgresql;
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
@@ -43,12 +45,14 @@ final class TestGatewayHaWithRoutingRulesSingleBackend
         trino = new TrinoContainer("trinodb/trino");
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
+        postgresql = new PostgreSQLContainer("postgres:16");
+        postgresql.start();
 
         int backendPort = trino.getMappedPort(8080);
 
         // seed database
         HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfigAndSeedDb(routerPort, "test-config-with-routing-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(routerPort, "test-config-with-routing-template.yml", postgresql);
         // Start Gateway
         String[] args = {testConfig.configFilePath()};
         HaGatewayLauncher.main(args);
