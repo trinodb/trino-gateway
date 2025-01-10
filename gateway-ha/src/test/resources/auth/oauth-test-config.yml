@@ -11,6 +11,7 @@ dataStore:
   user: sa
   password: sa
   driver: org.h2.Driver
+  runMigrationsEnabled: false
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
