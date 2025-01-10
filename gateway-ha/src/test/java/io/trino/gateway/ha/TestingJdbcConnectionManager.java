@@ -29,7 +29,7 @@ public final class TestingJdbcConnectionManager
         File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
         tempH2DbDir.deleteOnExit();
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
-        HaGatewayTestUtils.seedRequiredData(new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));
+        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         return new JdbcConnectionManager(jdbi, db);

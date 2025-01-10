@@ -140,8 +140,11 @@ final class TestOIDC
                         "--callbacks", callbackUrl);
         clientCreatingContainer.start();
 
+        PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:16");
+        gatewayBackendDatabase.start();
+
         HaGatewayTestUtils.TestConfig testConfig =
-                HaGatewayTestUtils.buildGatewayConfigAndSeedDb(ROUTER_PORT, "auth/oauth-test-config.yml");
+                HaGatewayTestUtils.buildGatewayConfig(ROUTER_PORT, "auth/oauth-test-config.yml", gatewayBackendDatabase);
         String[] args = {testConfig.configFilePath()};
         System.out.println(ROUTER_PORT);
         HaGatewayLauncher.main(args);

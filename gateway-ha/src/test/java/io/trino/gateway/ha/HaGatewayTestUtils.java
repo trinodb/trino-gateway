@@ -27,6 +27,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,7 +36,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -52,19 +52,8 @@ public class HaGatewayTestUtils
 {
     private static final Logger log = Logger.get(HaGatewayTestUtils.class);
     private static final OkHttpClient httpClient = new OkHttpClient();
-    private static final Random RANDOM = new Random();
 
     private HaGatewayTestUtils() {}
-
-    public static void seedRequiredData(TestConfig testConfig)
-    {
-        String jdbcUrl = "jdbc:h2:" + testConfig.h2DbFilePath();
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        try (Handle handle = jdbi.open()) {
-            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
-                    .execute();
-        }
-    }
 
     public static void prepareMockBackend(
             MockWebServer backend, int customBackendPort, String expectedResponse)
@@ -77,17 +66,26 @@ public class HaGatewayTestUtils
                 .setResponseCode(200));
     }
 
-    public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
+    public static void seedRequiredData(String h2DbFilePath)
+    {
+        String jdbcUrl = "jdbc:h2:" + h2DbFilePath;
+        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        try (Handle handle = jdbi.open()) {
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
+                    .execute();
+        }
+    }
+
+    public static TestConfig buildGatewayConfig(int routerPort, String configFile, PostgreSQLContainer postgresqlContainer)
             throws Exception
     {
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + RANDOM.nextInt() + System.currentTimeMillis()).toFile();
-        tempH2DbDir.deleteOnExit();
-
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
         String configStr =
                 getResourceFileContent(configFile)
                         .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
-                        .replace("DB_FILE_PATH", tempH2DbDir.getAbsolutePath())
+                        .replace("POSTGRESQL_JDBC_URL", postgresqlContainer.getJdbcUrl())
+                        .replace("POSTGRESQL_USER", postgresqlContainer.getUsername())
+                        .replace("POSTGRESQL_PASSWORD", postgresqlContainer.getPassword())
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
                         .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
@@ -101,9 +99,7 @@ public class HaGatewayTestUtils
         }
 
         log.info("Test Gateway Config \n[%s]", configStr);
-        TestConfig testConfig = new TestConfig(target.getAbsolutePath(), tempH2DbDir.getAbsolutePath());
-        seedRequiredData(testConfig);
-        return testConfig;
+        return new TestConfig(target.getAbsolutePath());
     }
 
     public static String getResourceFileContent(String fileName)
@@ -174,12 +170,11 @@ public class HaGatewayTestUtils
         throw new IllegalStateException("Trino cluster is not healthy");
     }
 
-    public record TestConfig(String configFilePath, String h2DbFilePath)
+    public record TestConfig(String configFilePath)
     {
         public TestConfig
         {
             requireNonNull(configFilePath, "configFilePath is null");
-            requireNonNull(h2DbFilePath, "h2DbFilePath is null");
         }
     }
 }
