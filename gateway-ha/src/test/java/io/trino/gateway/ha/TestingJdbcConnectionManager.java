@@ -18,6 +18,7 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public final class TestingJdbcConnectionManager
 {
@@ -25,8 +26,7 @@ public final class TestingJdbcConnectionManager
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager()
     {
-        File baseDir = new File(System.getProperty("java.io.tmpdir"));
-        File tempH2DbDir = new File(baseDir, "h2db-" + System.currentTimeMillis());
+        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
         tempH2DbDir.deleteOnExit();
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
         HaGatewayTestUtils.seedRequiredData(new HaGatewayTestUtils.TestConfig("", tempH2DbDir.getAbsolutePath()));

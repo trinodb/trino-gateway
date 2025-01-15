@@ -17,7 +17,9 @@ import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
-import java.io.FileReader;
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -49,7 +51,7 @@ public class LbKeyProvider
 
         try {
             String publicKeyRsa = keypairConfig.publicKeyRsa();
-            try (FileReader keyReader = new FileReader(publicKeyRsa, UTF_8);
+            try (BufferedReader keyReader = Files.newBufferedReader(Path.of(publicKeyRsa), UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
                 byte[] content = pemObject.getContent();
@@ -58,7 +60,7 @@ public class LbKeyProvider
             }
 
             String privateKeyRsa = keypairConfig.privateKeyRsa();
-            try (FileReader keyReader = new FileReader(privateKeyRsa, UTF_8);
+            try (BufferedReader keyReader = Files.newBufferedReader(Path.of(privateKeyRsa), UTF_8);
                     PemReader pemReader = new PemReader(keyReader)) {
                 PemObject pemObject = pemReader.readPemObject();
                 byte[] content = pemObject.getContent();
