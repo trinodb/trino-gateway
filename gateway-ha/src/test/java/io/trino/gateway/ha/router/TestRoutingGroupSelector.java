@@ -27,12 +27,13 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -251,16 +252,16 @@ final class TestRoutingGroupSelector
     {
         File file = File.createTempFile("routing_rules", ".yml");
 
-        FileWriter fw = new FileWriter(file, UTF_8);
-        fw.write(
-                "---\n"
-                        + "name: \"airflow1\"\n"
-                        + "description: \"original rule\"\n"
-                        + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                        + "actions:\n"
-                        + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
-        fw.close();
-        long lastModifed = file.lastModified();
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
+            writer.write(
+                    "---\n"
+                            + "name: \"airflow1\"\n"
+                            + "description: \"original rule\"\n"
+                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
+                            + "actions:\n"
+                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
+        }
+        long lastModified = file.lastModified();
 
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(file.getPath(), requestAnalyzerConfig);
@@ -271,16 +272,16 @@ final class TestRoutingGroupSelector
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
                 .isEqualTo("etl");
 
-        fw = new FileWriter(file, UTF_8);
-        fw.write(
-                "---\n"
-                        + "name: \"airflow2\"\n"
-                        + "description: \"updated rule\"\n"
-                        + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                        + "actions:\n"
-                        + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
-        fw.close();
-        assertThat(file.setLastModified(lastModifed + 1000)).isTrue();
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
+            writer.write(
+                    "---\n"
+                            + "name: \"airflow2\"\n"
+                            + "description: \"updated rule\"\n"
+                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
+                            + "actions:\n"
+                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
+        }
+        assertThat(file.setLastModified(lastModified + 1000)).isTrue();
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
@@ -450,7 +451,7 @@ final class TestRoutingGroupSelector
     void testLongQuery()
             throws IOException
     {
-        BufferedReader bufferedReader = new BufferedReader(new FileReader("src/test/resources/wide_select.sql", UTF_8));
+        BufferedReader bufferedReader = Files.newBufferedReader(Path.of("src/test/resources/wide_select.sql"), UTF_8);
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
         TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(

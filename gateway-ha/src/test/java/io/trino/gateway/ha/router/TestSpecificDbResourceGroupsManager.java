@@ -23,6 +23,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
@@ -40,8 +41,7 @@ final class TestSpecificDbResourceGroupsManager
     void setUp()
     {
         specificDb = "h2db-" + System.currentTimeMillis();
-        File baseDir = new File(System.getProperty("java.io.tmpdir"));
-        File tempH2DbDir = new File(baseDir, specificDb);
+        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), specificDb).toFile();
         tempH2DbDir.deleteOnExit();
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
         HaGatewayTestUtils.seedRequiredData(

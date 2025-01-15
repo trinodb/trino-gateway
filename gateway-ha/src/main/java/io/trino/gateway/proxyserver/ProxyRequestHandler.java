@@ -179,7 +179,6 @@ public class ProxyRequestHandler
         cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
 
         Request request = requestBuilder
-                .setPreserveAuthorizationOnRedirect(true)
                 .setFollowRedirects(false)
                 .build();
 

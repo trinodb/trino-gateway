@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>190</version>
+        <version>211</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -51,7 +51,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>276</version>
+                <version>296</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -81,7 +81,7 @@
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
-                <version>3.1.9</version>
+                <version>3.1.10</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -95,6 +95,7 @@
                     <failOnWarning>false</failOnWarning>
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
+                        <arg>--should-stop=ifError=FLOW</arg>
                         <arg>-Xplugin:ErrorProne \
                             -Xep:CatchAndPrintStackTrace:ERROR \
                             -Xep:ClassCanBeStatic:ERROR \
