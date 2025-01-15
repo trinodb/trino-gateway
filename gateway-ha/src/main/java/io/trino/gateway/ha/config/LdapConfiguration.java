@@ -17,8 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.airlift.log.Logger;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class LdapConfiguration
 {
@@ -80,7 +80,7 @@ public class LdapConfiguration
     {
         LdapConfiguration configuration = null;
         try {
-            configuration = OBJECT_MAPPER.readValue(new File(path), LdapConfiguration.class);
+            configuration = OBJECT_MAPPER.readValue(Path.of(path).toFile(), LdapConfiguration.class);
         }
         catch (IOException e) {
             log.error(e, "Error loading configuration file");

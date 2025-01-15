@@ -28,12 +28,13 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
@@ -66,12 +67,12 @@ public class HaGatewayTestUtils
     }
 
     public static void prepareMockBackend(
-            MockWebServer backend, int customBackendPort, String expectedResonse)
+            MockWebServer backend, int customBackendPort, String expectedResponse)
             throws IOException
     {
         backend.start(customBackendPort);
         backend.enqueue(new MockResponse()
-                .setBody(expectedResonse)
+                .setBody(expectedResponse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
     }
@@ -79,8 +80,7 @@ public class HaGatewayTestUtils
     public static TestConfig buildGatewayConfigAndSeedDb(int routerPort, String configFile)
             throws Exception
     {
-        File baseDir = new File(System.getProperty("java.io.tmpdir"));
-        File tempH2DbDir = new File(baseDir, "h2db-" + RANDOM.nextInt() + System.currentTimeMillis());
+        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + RANDOM.nextInt() + System.currentTimeMillis()).toFile();
         tempH2DbDir.deleteOnExit();
 
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
@@ -91,14 +91,15 @@ public class HaGatewayTestUtils
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
                         .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
-                        .replace("LOCALHOST_JKS", Paths.get(resource.toURI()).toFile().getAbsolutePath())
-                        .replace("RESOURCES_DIR", Paths.get("src", "test", "resources").toFile().getAbsolutePath());
+                        .replace("LOCALHOST_JKS", Path.of(resource.toURI()).toString())
+                        .replace("RESOURCES_DIR", Path.of("src", "test", "resources").toAbsolutePath().toString());
 
         File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
 
-        FileWriter fw = new FileWriter(target, UTF_8);
-        fw.append(configStr);
-        fw.flush();
+        try (BufferedWriter writer = Files.newBufferedWriter(target.toPath(), UTF_8)) {
+            writer.append(configStr);
+        }
+
         log.info("Test Gateway Config \n[%s]", configStr);
         TestConfig testConfig = new TestConfig(target.getAbsolutePath(), tempH2DbDir.getAbsolutePath());
         seedRequiredData(testConfig);

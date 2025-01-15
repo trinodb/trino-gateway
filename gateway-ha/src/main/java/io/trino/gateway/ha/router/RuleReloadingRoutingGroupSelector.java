@@ -23,7 +23,6 @@ import org.jeasy.rules.core.DefaultRulesEngine;
 import org.jeasy.rules.mvel.MVELRuleFactory;
 import org.jeasy.rules.support.reader.YamlRuleDefinitionReader;
 
-import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -40,7 +39,7 @@ public class RuleReloadingRoutingGroupSelector
     private static final Logger log = Logger.get(RuleReloadingRoutingGroupSelector.class);
     private final RulesEngine rulesEngine = new DefaultRulesEngine();
     private final MVELRuleFactory ruleFactory = new MVELRuleFactory(new YamlRuleDefinitionReader());
-    private final String rulesConfigPath;
+    private final Path rulesConfigPath;
     private volatile Rules rules = new Rules();
     private volatile long lastUpdatedTime;
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock(true);
@@ -49,13 +48,13 @@ public class RuleReloadingRoutingGroupSelector
 
     RuleReloadingRoutingGroupSelector(String rulesConfigPath, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        this.rulesConfigPath = rulesConfigPath;
+        this.rulesConfigPath = Path.of(rulesConfigPath);
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
         try {
             rules = ruleFactory.createRules(
-                    new FileReader(rulesConfigPath, UTF_8));
-            BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
+                    Files.newBufferedReader(this.rulesConfigPath, UTF_8));
+            BasicFileAttributes attr = Files.readAttributes(this.rulesConfigPath,
                     BasicFileAttributes.class);
             lastUpdatedTime = attr.lastModifiedTime().toMillis();
         }
@@ -70,7 +69,7 @@ public class RuleReloadingRoutingGroupSelector
     public String findRoutingGroup(HttpServletRequest request)
     {
         try {
-            BasicFileAttributes attr = Files.readAttributes(Path.of(rulesConfigPath),
+            BasicFileAttributes attr = Files.readAttributes(rulesConfigPath,
                     BasicFileAttributes.class);
             log.debug("File modified time: %s. lastUpdatedTime: %s", attr.lastModifiedTime(), lastUpdatedTime);
             if (attr.lastModifiedTime().toMillis() > lastUpdatedTime) {
@@ -82,7 +81,7 @@ public class RuleReloadingRoutingGroupSelector
                         // thread finds the condition true and acquires the lock before this one
                         log.info("Updating rules to file modified at %s", attr.lastModifiedTime());
                         rules = ruleFactory.createRules(
-                                new FileReader(rulesConfigPath, UTF_8));
+                                Files.newBufferedReader(rulesConfigPath, UTF_8));
                         lastUpdatedTime = attr.lastModifiedTime().toMillis();
                     }
                 }
