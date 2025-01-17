@@ -25,6 +25,8 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.util.List;
 
+import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
@@ -34,14 +36,19 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 @Isolated
 public abstract class BaseTestDatabaseMigrations
 {
-    protected final JdbcDatabaseContainer<?> container = startContainer();
-    protected final Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
-
-    protected abstract JdbcDatabaseContainer<?> startContainer();
-
-    protected abstract String getDriver();
-
     protected abstract void createGatewaySchema();
+
+    private final JdbcDatabaseContainer<?> container;
+    private final String schema;
+    protected final Jdbi jdbi;
+
+    public BaseTestDatabaseMigrations(JdbcDatabaseContainer<?> container, String schema)
+    {
+        this.container = requireNonNull(container, "container is null");
+        this.container.start();
+        this.schema = requireNonNull(schema, "schema is null");
+        jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
+    }
 
     @AfterAll
     public final void close()
@@ -52,13 +59,7 @@ public abstract class BaseTestDatabaseMigrations
     @Test
     public void testMigrationWithEmptyDatabase()
     {
-        DataStoreConfiguration config = new DataStoreConfiguration(
-                container.getJdbcUrl(),
-                container.getUsername(),
-                container.getPassword(),
-                getDriver(),
-                4,
-                true);
+        DataStoreConfiguration config = dataStoreConfiguration();
         FlywayMigration.migrate(config);
         verifyGatewaySchema(0);
 
@@ -68,13 +69,7 @@ public abstract class BaseTestDatabaseMigrations
     @Test
     public void testMigrationWithNonemptyDatabase()
     {
-        DataStoreConfiguration config = new DataStoreConfiguration(
-                container.getJdbcUrl(),
-                container.getUsername(),
-                container.getPassword(),
-                getDriver(),
-                4,
-                true);
+        DataStoreConfiguration config = dataStoreConfiguration();
         String t1Create = "CREATE TABLE t1 (id INT)";
         String t2Create = "CREATE TABLE t2 (id INT)";
         Handle jdbiHandle = jdbi.open();
@@ -98,13 +93,7 @@ public abstract class BaseTestDatabaseMigrations
         // add a row to one of the existing tables before migration
         jdbi.withHandle(handle ->
                 handle.execute("INSERT INTO resource_groups_global_properties VALUES ('a_name', 'a_value')"));
-        DataStoreConfiguration config = new DataStoreConfiguration(
-                container.getJdbcUrl(),
-                container.getUsername(),
-                container.getPassword(),
-                getDriver(),
-                4,
-                true);
+        DataStoreConfiguration config = dataStoreConfiguration();
         FlywayMigration.migrate(config);
         verifyGatewaySchema(1);
         dropAllTables();
@@ -137,7 +126,7 @@ public abstract class BaseTestDatabaseMigrations
         String exactMatchTable = "DROP TABLE IF EXISTS exact_match_source_selectors";
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
-        String sql = String.format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", getTestSchema());
+        String sql = format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", schema);
         verifyResultSetCount(sql, 7);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
@@ -150,8 +139,14 @@ public abstract class BaseTestDatabaseMigrations
         jdbiHandle.close();
     }
 
-    protected String getTestSchema()
+    private DataStoreConfiguration dataStoreConfiguration()
     {
-        return "public";
+        return new DataStoreConfiguration(
+                container.getJdbcUrl(),
+                container.getUsername(),
+                container.getPassword(),
+                container.getDriverClassName(),
+                4,
+                true);
     }
 }
