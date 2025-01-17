@@ -14,30 +14,14 @@
 package io.trino.gateway.ha.persistence;
 
 import org.jdbi.v3.core.Handle;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 
-public class TestDatabaseMigrationsMySql
+final class TestDatabaseMigrationsMySql
         extends BaseTestDatabaseMigrations
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    public TestDatabaseMigrationsMySql()
     {
-        JdbcDatabaseContainer<?> container = new MySQLContainer<>("mysql:8.0.36");
-        container.start();
-        return container;
-    }
-
-    @Override
-    protected final String getDriver()
-    {
-        return "com.mysql.cj.jdbc.Driver";
-    }
-
-    @Override
-    protected final String getTestSchema()
-    {
-        return "test";
+        super(new MySQLContainer<>("mysql:8.0.36"), "test");
     }
 
     @Override

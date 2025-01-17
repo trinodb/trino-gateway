@@ -14,24 +14,14 @@
 package io.trino.gateway.ha.persistence;
 
 import org.jdbi.v3.core.Handle;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class TestDatabaseMigrationsPostgresql
+final class TestDatabaseMigrationsPostgreSql
         extends BaseTestDatabaseMigrations
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    public TestDatabaseMigrationsPostgreSql()
     {
-        JdbcDatabaseContainer<?> container = new PostgreSQLContainer<>("postgres:11");
-        container.start();
-        return container;
-    }
-
-    @Override
-    protected final String getDriver()
-    {
-        return "org.postgresql.Driver";
+        super(new PostgreSQLContainer<>("postgres:11"), "public");
     }
 
     @Override
