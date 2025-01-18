@@ -117,10 +117,28 @@ export function Dashboard() {
   );
 }
 
+function updateLegendColor() {
+    const [color, setColor] = useState(getCSSVar('--semi-color-text-0'));
+
+    useEffect(() => {
+        const handleThemeChange = () => {
+            setColor(getCSSVar('--semi-color-text-0'));
+        };
+
+        const observer = new MutationObserver(handleThemeChange);
+        observer.observe(document.body, { attributes: true, attributeFilter: ["theme-mode"] });
+        return () => observer.disconnect();
+
+    }, []);
+
+    return color;
+}
+
 function LineChart(props: {
   data: Record<string, LineChartData[]>
 }) {
   const chartRef = useRef(null);
+  const legendColor = updateLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
@@ -150,7 +168,7 @@ function LineChart(props: {
     const option = {
       legend: {
         textStyle: {
-          color: getCSSVar('--semi-color-text-0')
+          color: legendColor
         }
       },
       xAxis: {
@@ -180,7 +198,7 @@ function LineChart(props: {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     chartInstance.setOption(option);
-  }, [props.data]);
+  }, [props.data, legendColor]);
 
   return (
     <div style={{ textAlign: "center" }}>
@@ -193,6 +211,7 @@ function DistributionChart(props: {
   data: DistributionChartData[]
 }) {
   const chartRef = useRef(null);
+  const legendColor = updateLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
@@ -202,7 +221,7 @@ function DistributionChart(props: {
       },
       legend: {
         textStyle: {
-          color: getCSSVar('--semi-color-text-0')
+          color: legendColor
         }
       },
       series: [
@@ -239,7 +258,7 @@ function DistributionChart(props: {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     chartInstance.setOption(option);
-  }, [props.data]);
+  }, [props.data, legendColor]);
 
   return (
     <div style={{ textAlign: "center" }}>
