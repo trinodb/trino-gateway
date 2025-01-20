@@ -87,12 +87,6 @@ public class ActiveClusterMonitor
             catch (Exception e) {
                 log.error(e, "Error performing backend monitor tasks");
             }
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(taskDelaySeconds));
-            }
-            catch (Exception e) {
-                log.error(e, "Error with monitor task");
-            }
         }, 0, taskDelaySeconds, TimeUnit.SECONDS);
     }
 
