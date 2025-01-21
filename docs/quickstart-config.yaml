@@ -13,8 +13,5 @@ dataStore:
 clusterStatsConfiguration:
   monitorType: INFO_API
 
-modules:
-  - io.trino.gateway.ha.module.HaGatewayProviderModule
-
 managedApps:
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
