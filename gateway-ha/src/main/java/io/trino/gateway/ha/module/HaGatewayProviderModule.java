@@ -15,11 +15,19 @@ package io.trino.gateway.ha.module;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
+import io.trino.gateway.ha.clustermonitor.ForMonitor;
+import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
@@ -67,6 +75,7 @@ public class HaGatewayProviderModule
         jaxrsBinder(binder()).bindInstance(resourceSecurityDynamicFeature);
     }
 
+    @Inject
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
@@ -199,5 +208,21 @@ public class HaGatewayProviderModule
             }
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
+    }
+
+    @Provides
+    @Singleton
+    public ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient)
+    {
+        ClusterStatsConfiguration clusterStatsConfig = configuration.getClusterStatsConfiguration();
+        if (configuration.getBackendState() == null) {
+            return new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
+        }
+        return switch (clusterStatsConfig.getMonitorType()) {
+            case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
+            case UI_API -> new ClusterStatsHttpMonitor(configuration.getBackendState());
+            case JDBC -> new ClusterStatsJdbcMonitor(configuration.getBackendState(), configuration.getMonitor());
+            case NOOP -> new NoopClusterStatsMonitor();
+        };
     }
 }
