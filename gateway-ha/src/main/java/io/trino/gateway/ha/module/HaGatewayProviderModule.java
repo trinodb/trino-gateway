@@ -23,13 +23,17 @@ import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
+import io.trino.gateway.ha.clustermonitor.HealthCheckObserver;
 import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
+import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
@@ -37,6 +41,7 @@ import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
+import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.BasicAuthFilter;
@@ -54,6 +59,7 @@ import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
@@ -224,5 +230,23 @@ public class HaGatewayProviderModule
             case JDBC -> new ClusterStatsJdbcMonitor(configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
+    }
+
+    @Provides
+    @Singleton
+    public List<TrinoClusterStatsObserver> getClusterStatsObservers(
+            RoutingManager mgr,
+            BackendStateManager backendStateManager)
+    {
+        return ImmutableList.<TrinoClusterStatsObserver>builder()
+                .add(new HealthCheckObserver(mgr))
+                .add(new ClusterStatsObserver(backendStateManager))
+                .build();
+    }
+
+    @Provides
+    public MonitorConfiguration getMonitorConfiguration()
+    {
+        return configuration.getMonitor();
     }
 }
