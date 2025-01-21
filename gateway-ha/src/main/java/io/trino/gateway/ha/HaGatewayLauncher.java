@@ -32,6 +32,7 @@ import io.airlift.tracing.TracingModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import org.weakref.jmx.guice.MBeanModule;
 
@@ -65,6 +66,7 @@ public class HaGatewayLauncher
                 new JsonModule(),
                 new JaxrsModule(),
                 new TracingModule("trino-gateway", version),
+                new HaGatewayProviderModule(configuration),
                 new BaseApp(configuration));
         modules.addAll(additionalModules);
 

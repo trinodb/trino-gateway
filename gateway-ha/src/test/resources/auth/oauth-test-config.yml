@@ -13,9 +13,6 @@ dataStore:
   driver: org.h2.Driver
   runMigrationsEnabled: false
 
-modules:
-  - io.trino.gateway.ha.module.HaGatewayProviderModule
-
 extraWhitelistPaths:
   - '/v1/custom.*'
 
