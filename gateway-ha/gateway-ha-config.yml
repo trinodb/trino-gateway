@@ -20,8 +20,5 @@ clusterStatsConfiguration:
 monitor:
   taskDelaySeconds: 10
 
-modules:
-  - io.trino.gateway.ha.module.HaGatewayProviderModule
-
 managedApps:
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor

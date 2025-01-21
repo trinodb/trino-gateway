@@ -86,7 +86,7 @@ public class BaseApp
         return null;
     }
 
-    private static void validateModules(List<Module> modules, HaGatewayConfiguration configuration)
+    private static void addDefaultRouterProviderModules(List<Module> modules, HaGatewayConfiguration configuration)
     {
         Optional<Module> routerProvider = modules.stream()
                 .filter(module -> module instanceof RouterBaseModule)
@@ -102,14 +102,14 @@ public class BaseApp
     {
         List<Module> modules = new ArrayList<>();
         if (configuration.getModules() == null) {
-            logger.warn("No modules to load.");
-            return modules;
+            logger.info("No modules to load.");
         }
-        for (String clazz : configuration.getModules()) {
-            modules.add(newModule(clazz, configuration));
+        else {
+            for (String clazz : configuration.getModules()) {
+                modules.add(newModule(clazz, configuration));
+            }
         }
-
-        validateModules(modules, configuration);
+        addDefaultRouterProviderModules(modules, configuration);
 
         return modules;
     }
