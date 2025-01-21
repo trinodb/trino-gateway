@@ -19,7 +19,6 @@ clusterStatsConfiguration:
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
   - io.trino.gateway.ha.module.ClusterStateListenerModule
-  - io.trino.gateway.ha.module.ClusterStatsMonitorModule
 
 managedApps:
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
