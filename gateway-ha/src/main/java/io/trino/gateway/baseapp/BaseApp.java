@@ -17,6 +17,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
@@ -118,6 +119,7 @@ public class BaseApp
     public void configure(Binder binder)
     {
         binder.bind(HaGatewayConfiguration.class).toInstance(configuration);
+        binder.bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);
@@ -131,7 +133,7 @@ public class BaseApp
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
     {
         if (configuration.getManagedApps() == null) {
-            logger.error("No managed apps found");
+            logger.info("No managed apps found");
             return;
         }
         configuration.getManagedApps().forEach(
