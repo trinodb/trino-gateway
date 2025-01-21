@@ -22,7 +22,6 @@ monitor:
 
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
-  - io.trino.gateway.ha.module.ClusterStateListenerModule
 
 managedApps:
   - io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor
