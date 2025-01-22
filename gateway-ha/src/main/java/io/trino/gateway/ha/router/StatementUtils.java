@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
 import io.trino.sql.tree.AddColumn;
 import io.trino.sql.tree.Analyze;
 import io.trino.sql.tree.Call;
@@ -89,7 +90,6 @@ import io.trino.sql.tree.Update;
 import io.trino.sql.tree.Use;
 
 import java.util.Map;
-import java.util.Optional;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.trino.gateway.ha.router.QueryType.ALTER_TABLE_EXECUTE;
@@ -108,6 +108,8 @@ import static java.util.function.Function.identity;
 //modified version of io.trino.util.StatementUtils
 public final class StatementUtils
 {
+    private static final Logger log = Logger.get(StatementUtils.class);
+
     private StatementUtils() {}
 
     private static final Map<Class<? extends Statement>, StatementTypeInfo<? extends Statement>> STATEMENT_QUERY_TYPES = ImmutableList.<StatementTypeInfo<?>>builder()
@@ -191,13 +193,17 @@ public final class StatementUtils
             .build().stream()
             .collect(toImmutableMap(StatementTypeInfo::getStatementType, identity()));
 
-    public static Optional<QueryType> getQueryType(Statement statement)
+    public static String getResourceGroupQueryType(Statement statement)
     {
         if (statement instanceof ExplainAnalyze) {
-            return getQueryType(((ExplainAnalyze) statement).getStatement());
+            return getResourceGroupQueryType(((ExplainAnalyze) statement).getStatement());
         }
-        return Optional.ofNullable(STATEMENT_QUERY_TYPES.get(statement.getClass()))
-                .map(StatementTypeInfo::getQueryType);
+        StatementTypeInfo<? extends Statement> statementTypeInfo = STATEMENT_QUERY_TYPES.get(statement.getClass());
+        if (statementTypeInfo != null) {
+            return statementTypeInfo.getQueryType().toString();
+        }
+        log.warn("Unsupported statement type: %s", statement.getClass());
+        return "UNKNOWN";
     }
 
     private static <T extends Statement> StatementTypeInfo<T> basicStatement(Class<T> statementType, QueryType queryType)
