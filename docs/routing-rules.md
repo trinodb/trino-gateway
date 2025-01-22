@@ -23,7 +23,7 @@ To enable the routing rules engine, find the following lines in
 
 * Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
 * If you set `rulesType: FILE`, then set `rulesConfigPath` to the path to your
-  rules config file. 
+  rules config file.
 * If you set `rulesType: EXTERNAL`, set `rulesExternalConfiguration` to the URL
   of an external service for routing rules processing.
 * `rulesType` is by default `FILE` unless specified.
@@ -55,10 +55,10 @@ logged, and requests are routed using the routing group header
 You can use an external service for processing your routing by setting the
 `rulesType` to `EXTERNAL` and configuring the `rulesExternalConfiguration`.
 
-Trino Gateway then sends all headers, other than those specified in 
+Trino Gateway then sends all headers, other than those specified in
 `excludeHeaders`, as a map in the body of a POST request to the external
 service. If `requestAnalyzerConfig.analyzeRequest` is set to `true`,
-`TrinoRequestUser` and `TrinoQueryProperties` are also included. 
+`TrinoRequestUser` and `TrinoQueryProperties` are also included.
 
 Additionally, the following HTTP information is included:
 
@@ -77,7 +77,7 @@ return a result with the following criteria:
 * Response status code of OK (200)
 * Message in JSON format
 * Only one group can be returned
-* If errors is not null, then query would route to default routing group adhoc 
+* If errors is not null, then query would route to default routing group adhoc
 
 ```json
 {
@@ -120,8 +120,8 @@ object called `request`. Rules may also utilize
 [trinoQueryProperties](#trinoqueryproperties)
 objects, which provide information about the user and query respectively.
 You must include an action of the form `result.put(\"routingGroup\", \"foo\")`
-to trigger routing of a request  that satisfies the condition to the specific 
-routing group. Without this action, the default adhoc group is used and the 
+to trigger routing of a request that satisfies the condition to the specific
+routing group. Without this action, the default adhoc group is used and the
 whole routing rule is redundant.
 
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
@@ -146,7 +146,7 @@ group.
 ### TrinoStatus
 
 The `TrinoStatus` class attempts to track the current state of the configured
-Trino clusters.  The three possible states of these cluster are updated with
+Trino clusters. The three possible states of these cluster are updated with
 every healthcheck:
 
 - `PENDING`: A Trino cluster shows this state when it is still starting up. It
@@ -169,7 +169,7 @@ request, in the following order:
 3. `Authorization: Bearer` header. Requires configuring an OAuth2 User Info URL.
 4. `Trino-UI-Token` or `__Secure-Trino-ID-Token` cookie.
 
-Kerberos and Certificate authentication are not currently supported. If the 
+Kerberos and Certificate authentication are not currently supported. If the
 request contains the `Authorization: Bearer` header, an attempt is made to treat
 the token as a JWT and deserialize it. If this is successful, the value of the
 claim named in `requestAnalyzerConfig.tokenUserField` is used as the username.
@@ -201,7 +201,7 @@ syntactic analysis is performed.
 
 If a query references a view, then that view is not expanded, and tables
 referenced by the view are not recognized. Views and materialized views are
-treated as tables and  added to the list of tables in all contexts, including
+treated as tables and added to the list of tables in all contexts, including
 statements such as `CREATE VIEW`.
 
 A routing rule can call the following methods on the `trinoQueryProperties`
@@ -210,7 +210,7 @@ object:
 * `String errorMessage()`: the error message, only if there was any error while
   creating the `trinoQueryProperties` object.
 * `boolean isNewQuerySubmission()`: boolean flag to indicate if the
-  request is  a POST to the `v1/statement` query endpoint.
+  request is a POST to the `v1/statement` query endpoint.
 * `String getQueryType()`: the class name of the `Statement`, e.g. `ShowCreate`.
   Note that these are not mapped to the `ResourceGroup` query types. For a full
   list of potential query types, see the classes in
@@ -220,7 +220,7 @@ object:
   the Trino documentation](https://trino.io/docs/current/admin/resource-groups.html#selector-rules)
 * `String getDefaultCatalog()`: the default catalog, if set. It may or may not
   be referenced in the actual SQL
-* `String getDefaultSchema()`: the default schema,  if set. It may or may not
+* `String getDefaultSchema()`: the default schema, if set. It may or may not
   be referenced in the actual SQL
 * `Set<String> getCatalogs()`: the set of catalogs used in the query. Includes
   the default catalog if used by a non-fully qualified table reference
@@ -248,7 +248,7 @@ Set to `True` to make `trinoQueryProperties` and `trinoRequestUser` available.
 `maxBodySize`:
 
 By default, the max body size is 1,000,000 characters. This can be modified by
-configuring `maxBodySize`. If the request body is greater or equal to this 
+configuring `maxBodySize`. If the request body is greater or equal to this
 limit, Trino Gateway does not process the query. A buffer of length
 `maxBodySize` is allocated per query. Reduce this value if you observe
 excessive garbage collection at runtime. `maxBodySize` cannot be set to values
@@ -265,8 +265,8 @@ configuration.
 `tokenUserField`:
 
 When extracting the user from a JWT token, this field is used as the username.
-By default, the `email` claim is used. 
- 
+By default, the `email` claim is used.
+
 `oauthTokenInfoUrl`:
 
 If configured, Trino Gateway attempts to retrieve the user info by exchanging
@@ -275,7 +275,7 @@ minutes to avoid triggering rate limits.
 
 ### Execution of rules
 
-All rules whose conditions are satisfied fire. For example, in the "airflow" 
+All rules whose conditions are satisfied fire. For example, in the "airflow"
 and "airflow special" example rules from the following rule priority section, a
 query with source `airflow` and label `special` satisfies both rules. The
 `routingGroup` is set to `etl` and then to `etl-special` because of the order in
