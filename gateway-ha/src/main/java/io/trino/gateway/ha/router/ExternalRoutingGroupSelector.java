@@ -82,12 +82,10 @@ public class ExternalRoutingGroupSelector
     @Override
     public String findRoutingGroup(HttpServletRequest servletRequest)
     {
-        Request request;
-        JsonBodyGenerator<RoutingGroupExternalBody> requestBodyGenerator;
         try {
             RoutingGroupExternalBody requestBody = createRequestBody(servletRequest);
-            requestBodyGenerator = jsonBodyGenerator(ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC, requestBody);
-            request = preparePost()
+            JsonBodyGenerator<RoutingGroupExternalBody> requestBodyGenerator = jsonBodyGenerator(ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC, requestBody);
+            Request request = preparePost()
                     .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
                     .addHeaders(getValidHeaders(servletRequest))
                     .setUri(uri)
