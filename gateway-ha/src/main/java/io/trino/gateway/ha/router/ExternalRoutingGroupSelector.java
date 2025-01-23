@@ -18,11 +18,9 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import io.airlift.http.client.HttpClient;
-import io.airlift.http.client.HttpClientConfig;
 import io.airlift.http.client.JsonBodyGenerator;
 import io.airlift.http.client.JsonResponseHandler;
 import io.airlift.http.client.Request;
-import io.airlift.http.client.jetty.JettyHttpClient;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
@@ -59,8 +57,9 @@ public class ExternalRoutingGroupSelector
             createJsonResponseHandler(jsonCodec(RoutingGroupExternalResponse.class));
 
     @VisibleForTesting
-    ExternalRoutingGroupSelector(RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
+    ExternalRoutingGroupSelector(HttpClient httpClient, RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
     {
+        this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.excludeHeaders = ImmutableSet.<String>builder()
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
@@ -76,7 +75,6 @@ public class ExternalRoutingGroupSelector
             throw new RuntimeException("Invalid URL provided, using "
                     + "routing group header as default.", e);
         }
-        httpClient = new JettyHttpClient(new HttpClientConfig());
     }
 
     @Override
