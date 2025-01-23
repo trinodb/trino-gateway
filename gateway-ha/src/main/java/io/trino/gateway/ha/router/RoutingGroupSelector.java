@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,9 +47,12 @@ public interface RoutingGroupSelector
      * Routing group selector that uses RESTful API
      * to determine the right routing group.
      */
-    static RoutingGroupSelector byRoutingExternal(RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
+    static RoutingGroupSelector byRoutingExternal(
+            HttpClient httpClient,
+            RulesExternalConfiguration rulesExternalConfiguration,
+            RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new ExternalRoutingGroupSelector(rulesExternalConfiguration, requestAnalyzerConfig);
+        return new ExternalRoutingGroupSelector(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
     }
 
     /**

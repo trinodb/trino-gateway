@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
@@ -26,6 +27,7 @@ import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
@@ -176,7 +178,7 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public RoutingGroupSelector getRoutingGroupSelector()
+    public RoutingGroupSelector getRoutingGroupSelector(@ForRouter HttpClient httpClient)
     {
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
@@ -188,7 +190,7 @@ public class HaGatewayProviderModule
                     }
                     case EXTERNAL -> {
                         RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
-                        yield RoutingGroupSelector.byRoutingExternal(rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
+                        yield RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
                     }
                 };
             }

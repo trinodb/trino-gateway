@@ -50,6 +50,20 @@ If there is error parsing the routing rules configuration file, an error is
 logged, and requests are routed using the routing group header
 `X-Trino-Routing-Group` as default.
 
+### Configuring API requests with HTTP client config
+
+You can configure the HTTP client by adding the following configuration to
+the `serverConfig:` section with the `router` prefix.
+
+```yaml
+serverConfig:
+    router.http-client.request-timeout: 1s
+```
+
+Please refer to the [Trino HTTP client properties](
+https://trino.io/docs/current/admin/properties-http-client.html)
+documentation for more.
+
 ### Use an external service for routing rules
 
 You can use an external service for processing your routing by setting the

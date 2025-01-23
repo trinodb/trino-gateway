@@ -31,6 +31,7 @@ import io.trino.gateway.ha.resource.HaGatewayResource;
 import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
+import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import io.trino.gateway.proxyserver.ForProxy;
 import io.trino.gateway.proxyserver.ProxyRequestHandler;
@@ -170,5 +171,6 @@ public class BaseApp
         jaxrsBinder(binder).bind(ProxyRequestHandler.class);
         httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
         httpClientBinder(binder).bindHttpClient("monitor", ForMonitor.class);
+        httpClientBinder(binder).bindHttpClient("router", ForRouter.class);
     }
 }
