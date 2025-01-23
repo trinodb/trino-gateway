@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.baseapp;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
@@ -107,12 +108,26 @@ public class BaseApp
         }
         else {
             for (String clazz : configuration.getModules()) {
+                warnLoadingDefaultModules(clazz);
                 modules.add(newModule(clazz, configuration));
             }
         }
         addDefaultRouterProviderModules(modules, configuration);
 
         return modules;
+    }
+
+    private static void warnLoadingDefaultModules(String clazz)
+    {
+        // Remove this check when user finished the migration
+        List<String> defaultModules = ImmutableList.of(
+                "io.trino.gateway.ha.module.HaGatewayProviderModule",
+                "io.trino.gateway.ha.module.ClusterStateListenerModule",
+                "io.trino.gateway.ha.module.ClusterStatsMonitorModule");
+        if (defaultModules.contains(clazz)) {
+            logger.error("Default module [%s] is already being loaded. Please remove it from the config file", clazz);
+            System.exit(1);
+        }
     }
 
     @Override
@@ -138,6 +153,11 @@ public class BaseApp
         }
         configuration.getManagedApps().forEach(
                 clazz -> {
+                    // Remove this check when user finished the migration
+                    if (clazz.equals("io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor")) {
+                        logger.error("Default class ActiveClusterMonitor is already being loaded. Please remove it from the config file");
+                        System.exit(1);
+                    }
                     try {
                         Class<?> c = Class.forName(clazz);
                         binder.bind(c).in(Scopes.SINGLETON);
