@@ -3,7 +3,7 @@ name: "user"
 description: "if user is will, route to will-group"
 condition: "trinoRequestUser.userExistsAndEquals(\"will\")"
 actions:
-  - "result.put(\"routingGroup\", \"will-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"will-group\")"
 ---
 name: "query"
 description: "test extraction of tables and schemas in conjunction with default catalog and schema"
@@ -14,7 +14,7 @@ condition: |
   && trinoQueryProperties.getSchemas().contains("schemy")
   && trinoQueryProperties.getCatalogs().contains("catx")
 actions:
-  - "result.put(\"routingGroup\", \"tbl-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"tbl-group\")"
 ---
 name: "catalog-schema"
 description: "test that catalogSchemas with default catalog and schema"
@@ -23,21 +23,21 @@ condition: |
   && trinoQueryProperties.getCatalogSchemas.contains("caty.default")
   && !trinoQueryProperties.getCatalogSchemas.contains("catx.default")
 actions:
-  - "result.put(\"routingGroup\", \"catalog-schema-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"catalog-schema-group\")"
 ---
 name: "query-type"
 description: "test table type"
 condition: |
   trinoQueryProperties.getQueryType().toLowerCase.equals("insert")
 actions:
-  - "result.put(\"routingGroup\", \"type-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"type-group\")"
 ---
 name: "prepared-statement-header"
 description: "test execute with multiple prepared statements"
 condition: |
   trinoQueryProperties.getQueryType().toLowerCase.equals("query") && trinoQueryProperties.tablesContains("cat.schem.foo")
 actions:
-  - "result.put(\"routingGroup\", \"statement-header-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"statement-header-group\")"
 ---
 name: "defaults-group"
 description: "test default schema and catalog"
@@ -46,14 +46,14 @@ condition: |
   && trinoQueryProperties.getDefaultSchema().equals(java.util.Optional.of("other_schema"))
 
 actions:
-  - "result.put(\"routingGroup\", \"defaults-group\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"defaults-group\")"
 ---
 name: "system-group"
 description: "capture queries to system catalog"
 condition: |
   trinoQueryProperties.getCatalogs().contains("system")
 actions:
-  - "result.put(\"routingGroup\", \"system\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"system\")"
 
 ---
 name: "nomatch"
@@ -61,4 +61,4 @@ priority: -1
 description: "default group to catch if no other rules fired"
 condition: "true"
 actions:
-  - "result.put(\"routingGroup\", \"no-match\")"
+  - "result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"no-match\")"
