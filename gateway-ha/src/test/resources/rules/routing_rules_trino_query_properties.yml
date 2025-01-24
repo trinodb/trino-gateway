@@ -32,6 +32,13 @@ condition: |
 actions:
   - "result.put(\"routingGroup\", \"type-group\")"
 ---
+name: "resource-group-query-type"
+description: "test table type"
+condition: |
+  trinoQueryProperties.getResourceGroupQueryType().equals("DATA_DEFINITION")
+actions:
+  - "result.put(\"routingGroup\", \"resource-group-type-group\")"
+---
 name: "prepared-statement-header"
 description: "test execute with multiple prepared statements"
 condition: |
