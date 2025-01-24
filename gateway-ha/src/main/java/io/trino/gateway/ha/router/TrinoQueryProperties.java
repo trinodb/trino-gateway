@@ -206,7 +206,7 @@ public class TrinoQueryProperties
             }
 
             queryType = statement.getClass().getSimpleName();
-            resourceGroupQueryType = StatementUtils.getQueryType(statement).toString();
+            resourceGroupQueryType = StatementUtils.getResourceGroupQueryType(statement);
             ImmutableSet.Builder<QualifiedName> tableBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> catalogBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> schemaBuilder = ImmutableSet.builder();
