@@ -370,12 +370,18 @@ final class TestGatewayHaMultipleBackend
         Response livenessResponse = httpClient.newCall(livenessCheck).execute();
         assertThat(livenessResponse.code()).isEqualTo(200);
 
-        sleepUninterruptibly(1, TimeUnit.SECONDS);  // wait for server initialization
         Request readinessCheck = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/trino-gateway/readyz")
                 .build();
-        Response readinessResponse = httpClient.newCall(readinessCheck).execute();
-        assertThat(readinessResponse.code()).isEqualTo(200);
+        for (int i = 0; i < 100; i++) {
+            try (Response readinessResponse = httpClient.newCall(readinessCheck).execute()) {
+                if (readinessResponse.code() == 200) {
+                    return;
+                }
+            }
+            sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+        }
+        throw new IllegalStateException("Trino Gateway health check failed");
     }
 
     @AfterAll
