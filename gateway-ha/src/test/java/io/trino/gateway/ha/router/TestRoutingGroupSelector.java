@@ -202,7 +202,10 @@ final class TestRoutingGroupSelector
             throws IOException
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine("src/test/resources/rules/routing_rules_trino_query_properties.yml", requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingRulesEngine(
+                        "src/test/resources/rules/routing_rules_trino_query_properties.yml",
+                        oneHourRefreshPeriod,
+                        requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader("CREATE TABLE cat.schem.foo (c1 int)")));
 
