@@ -21,6 +21,7 @@ public class BackendResponse
 {
     private Integer queued;
     private Integer running;
+    private String status;
 
     @JsonProperty
     public Integer getQueued()
@@ -42,5 +43,16 @@ public class BackendResponse
     public void setRunning(Integer running)
     {
         this.running = running;
+    }
+
+    @JsonProperty
+    public String getStatus()
+    {
+        return status;
+    }
+
+    public void setStatus(String status)
+    {
+        this.status = status;
     }
 }
