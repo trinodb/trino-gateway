@@ -191,8 +191,9 @@ final class TestObjectSerializable
         backendResponse.setActive(false);
         backendResponse.setRoutingGroup("batch-1");
         backendResponse.setExternalUrl("example.com");
+        backendResponse.setStatus("HEALTHY");
         assertThat(objectMapper.writeValueAsString(backendResponse))
-                .contains(ImmutableList.of("queued", "running", "active", "routingGroup", "externalUrl", "name", "proxyTo"));
+                .contains(ImmutableList.of("queued", "running", "active", "routingGroup", "externalUrl", "name", "proxyTo", "status"));
     }
 
     @Test

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import styles from './cluster.module.scss';
 import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
-import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Typography } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Tag, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { Role, useAccessStore } from "../store";
 import { BackendData } from "../types/cluster";
+import { TagColor } from "@douyinfe/semi-ui/lib/es/tag";
 
 export function Cluster() {
   const { Text } = Typography;
@@ -63,6 +64,24 @@ export function Cluster() {
     );
   }
 
+  const statusRender = (text: string) => {
+      let statusColor: TagColor;
+      switch (text) {
+          case 'HEALTHY':
+              statusColor = 'green';
+              break;
+          case 'UNHEALTHY':
+              statusColor = 'red';
+              break;
+          case 'PENDING':
+              statusColor = 'yellow';
+              break;
+          default:
+              statusColor = 'white';
+        }
+        return <Tag color={statusColor}>{text}</Tag>;
+    };
+
   return (
     <>
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
@@ -85,6 +104,7 @@ export function Cluster() {
           <Column title="Queued" dataIndex="queued" key="queued" />
           <Column title="Running" dataIndex="running" key="running" />
           <Column title="Active" dataIndex="active" key="active" render={switchRender} />
+          <Column title="Status" dataIndex="status" key="status" render={statusRender}/>
           {access.hasRole(Role.ADMIN) && (
             <Column title={<>
               <ButtonGroup size={'default'}>
