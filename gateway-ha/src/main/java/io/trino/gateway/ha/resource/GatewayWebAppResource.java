@@ -16,6 +16,7 @@ package io.trino.gateway.ha.resource;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.TableData;
@@ -97,6 +98,12 @@ public class GatewayWebAppResource
             backendResponse.setName(b.getName());
             backendResponse.setProxyTo(b.getProxyTo());
             backendResponse.setActive(b.isActive());
+            if (Objects.isNull(backendState.trinoStatus())) {
+                backendResponse.setStatus(TrinoStatus.PENDING.toString());
+            }
+            else {
+                backendResponse.setStatus(backendState.trinoStatus().toString());
+            }
             backendResponse.setRoutingGroup(b.getRoutingGroup());
             backendResponse.setExternalUrl(b.getExternalUrl());
             return backendResponse;

@@ -6,4 +6,5 @@ export interface BackendData {
   externalUrl: string;
   queued: number;
   running: number;
+  status: string;
 }
