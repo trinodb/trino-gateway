@@ -1,0 +1,31 @@
+---
+name: "initialize state"
+description: "Add a set to the state map to track rules that have evaluated to true"
+priority: 0
+condition: "true"
+actions:
+  - |
+    state.put("triggeredRules",new HashSet())
+  # MVEL does not support type parameters! Using one will result in a syntax error.
+  # Effectively this results in all objects of classes that support
+  # parametrization being declared as ParametrizedClass<Object>
+---
+name: "airflow"
+description: "if query from airflow, route to etl group"
+priority: 1
+condition: |
+  request.getHeader("X-Trino-Source") == "airflow"
+actions:
+  - |
+    result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl")
+  - |
+    state.get("triggeredRules").add("airflow")
+---
+name: "airflow special"
+description: "if query from airflow with special label, route to etl-special group"
+priority: 2
+condition: |
+  state.get("triggeredRules").contains("airflow") && request.getHeader("X-Trino-Client-Tags") contains "label=special"
+actions:
+  - |
+    result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl-special")

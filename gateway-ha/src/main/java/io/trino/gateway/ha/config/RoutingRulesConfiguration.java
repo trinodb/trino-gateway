@@ -13,12 +13,18 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 public class RoutingRulesConfiguration
 {
     private boolean rulesEngineEnabled;
     private RulesType rulesType = RulesType.FILE;
     private String rulesConfigPath;
     private RulesExternalConfiguration rulesExternalConfiguration;
+
+    private Duration rulesRefreshPeriod = new Duration(1, MINUTES);
 
     public RoutingRulesConfiguration() {}
 
@@ -60,5 +66,15 @@ public class RoutingRulesConfiguration
     public void setRulesExternalConfiguration(RulesExternalConfiguration rulesExternalConfiguration)
     {
         this.rulesExternalConfiguration = rulesExternalConfiguration;
+    }
+
+    public Duration getRulesRefreshPeriod()
+    {
+        return rulesRefreshPeriod;
+    }
+
+    public void setRulesRefreshPeriod(Duration rulesRefreshPeriod)
+    {
+        this.rulesRefreshPeriod = rulesRefreshPeriod;
     }
 }
