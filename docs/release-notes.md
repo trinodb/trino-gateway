@@ -9,7 +9,7 @@ Artifacts:
 * Source code as
   [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.tar.gz)
   or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.zip)
-* Helm chart `1.13.0` in [the charts repository](https://github.com/trinodb/charts)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.13.0`
 
 Changes:
 
@@ -29,7 +29,7 @@ Artifacts:
 * Source code as
   [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/12.tar.gz)
   or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/12.zip)
-* Helm chart `0.12.0` in [the charts repository](https://github.com/trinodb/charts)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `0.12.0`
 
 Changes:
 
