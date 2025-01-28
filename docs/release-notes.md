@@ -9,7 +9,7 @@ Artifacts:
 * Source code as
   [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.tar.gz)
   or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/13.zip)
-* Helm chart `1.13.0` in `helm/trino-gateway` of the tagged source code
+* Helm chart `1.13.0` in [the charts repository](https://github.com/trinodb/charts)
 
 Changes:
 
