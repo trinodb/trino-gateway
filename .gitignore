@@ -6,3 +6,4 @@ target/**
 gateway-ha/**/static/**
 .cache
 trino-gateway-version.txt
+.DS_Store
