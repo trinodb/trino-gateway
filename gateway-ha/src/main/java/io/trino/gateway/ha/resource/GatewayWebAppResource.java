@@ -99,7 +99,7 @@ public class GatewayWebAppResource
             backendResponse.setProxyTo(b.getProxyTo());
             backendResponse.setActive(b.isActive());
             if (Objects.isNull(backendState.trinoStatus())) {
-                backendResponse.setStatus(TrinoStatus.PENDING.toString());
+                backendResponse.setStatus(TrinoStatus.UNKNOWN.toString());
             }
             else {
                 backendResponse.setStatus(backendState.trinoStatus().toString());
