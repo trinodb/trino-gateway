@@ -1,7 +1,6 @@
 serverConfig:
     node.environment: test
     http-server.http.port: 8080
-    log.levels-file: gateway-ha/etc/log.properties
 
 dataStore:
   #This stores the URLs of backend Trino servers and query history
