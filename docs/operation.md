@@ -72,5 +72,6 @@ scrape_configs:
 Trino Gateway provides two API endpoints to indicate the current status of the server:
 * `/trino-gateway/livez` returns status code 200, indicating the server is alive.
 * `/trino-gateway/readyz` returns status code 200, indicating the server has
-completed initialization and is ready to serve requests. Otherwise, status code
-503 is returned.
+completed initialization and is ready to serve requests. This means the initial
+connection to database and the first round of health check on Trino clusters
+were completed. Otherwise, status code 503 is returned.
