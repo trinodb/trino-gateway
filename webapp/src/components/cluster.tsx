@@ -76,8 +76,13 @@ export function Cluster() {
           case 'PENDING':
               statusColor = 'yellow';
               break;
-          default:
+          case 'UNKNOWN':
               statusColor = 'white';
+              break;
+          default:
+              //This should never happen, but just in case defaulting to UNKNOWN state setup as a safety net
+              statusColor = 'white';
+              break;
         }
         return <Tag color={statusColor}>{text}</Tag>;
     };
