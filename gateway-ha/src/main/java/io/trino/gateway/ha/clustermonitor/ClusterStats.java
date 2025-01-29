@@ -41,7 +41,7 @@ public record ClusterStats(
         private int runningQueryCount;
         private int queuedQueryCount;
         private int numWorkerNodes;
-        private TrinoStatus trinoStatus;
+        private TrinoStatus trinoStatus = TrinoStatus.UNKNOWN;
         private String proxyTo;
         private String externalUrl;
         private String routingGroup;
