@@ -18,7 +18,7 @@ package io.trino.gateway.ha.clustermonitor;
  * We should use PENDING when Trino clusters are still spinning up
  * HEALTHY is when health checks report clusters as up
  * UNHEALTHY is when health checks report clusters as down
- * UNKNOWN is when the health checks are not able to determine the status
+ * UNKNOWN is the initial default state and also used when the health checks are not able to determine the status
  */
 public enum TrinoStatus
 {
