@@ -67,10 +67,10 @@ scrape_configs:
         - gateway1.example.com:8080
 ```
 
-## API health endpoints
+## Trino Gateway health endpoints
 
-Trino Gateway provides two API endpoints to indicate the current status of the server.
-`/trino-gateway/livez` returns status code 200, indicating the server is alive.
-`/trino-gateway/readyz` returns status code 200, indicating the server has
+Trino Gateway provides two API endpoints to indicate the current status of the server:
+* `/trino-gateway/livez` returns status code 200, indicating the server is alive.
+* `/trino-gateway/readyz` returns status code 200, indicating the server has
 completed initialization and is ready to serve requests. Otherwise, status code
-503 will be returned.
+503 is returned.

@@ -347,7 +347,7 @@ Standard Helm options such as `replicaCount`, `image`, `imagePullSecrets`,
 More detail about the chart are available in the [values 
 reference documentation](https://github.com/trinodb/charts/blob/main/charts/gateway/README.md)
 
-### Health Checks on Trino Clusters
+### Health checks on Trino clusters
 
 The Trino Gateway periodically performs health checks and maintains
 an in-memory TrinoStatus for each backend. If a backend fails a health check,
