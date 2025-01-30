@@ -22,41 +22,44 @@ It  copies the following, necessary files to current directory:
 #!/usr/bin/env sh
 
 VERSION=13
+BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha"
+POSTGRES_SQL="gateway-ha-persistence-postgres.sql"
+JAR_FILE="gateway-ha-$VERSION-jar-with-dependencies.jar"
+GATEWAY_JAR="gateway-ha.jar"
+CONFIG_YAML="quickstart-config.yaml"
 
-# Copy necessary files to current directory
+# Copy necessary files
+copy_files() {
+    if [[ ! -f "$GATEWAY_JAR" ]]; then
+        echo "Fetching $GATEWAY_JAR version $VERSION"
+        curl -O "$BASE_URL/$VERSION/$JAR_FILE"
+        mv "$JAR_FILE" "$GATEWAY_JAR"
+    fi
 
-# Check and get the Gateway Jar
-if [[ -f "gateway-ha.jar" ]]; then
-    echo "Found gateway-har.jar file in current directory."
-else
-    echo "Failed to find gateway-ha.jar in current directory. Fetching version $VERSION from Maven Central repository."
-    curl https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/${VERSION}/gateway-ha-${VERSION}-jar-with-dependencies.jar -o ./gateway-ha.jar
-fi
+    [[ ! -f "$CONFIG_YAML" ]] && cp ../docs/$CONFIG_YAML .
+    [[ ! -f "$POSTGRES_SQL" ]] && cp ../gateway-ha/src/main/resources/$POSTGRES_SQL .
+}
 
-# Check and get the Config.yaml
-if [[ -f "quickstart-config.yaml" ]]; then
-    echo "Found quickstart-config.yaml file in current directory."
-else
-    cp ../docs/quickstart-config.yaml ./quickstart-config.yaml
-fi
+# Start PostgreSQL database if not running
+start_postgres_db() {
+    if ! docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
+        echo "Starting PostgreSQL database container"
+        PGPASSWORD=mysecretpassword
+        docker run -v "$PWD/$POSTGRES_SQL:/tmp/$POSTGRES_SQL" \
+            --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres
+        sleep 5
+        docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
+        docker exec local-postgres psql -U postgres -h localhost -d gateway -f /tmp/$POSTGRES_SQL
+    fi
+}
 
-#Check if DB is running
-if docker ps --format '{{.Names}}' | grep -q '^local-postgres$'; then
-    echo "PostgreSQL database container 'localhost-postgres' is already running. Only starting Trino Gateway."
-else
-    echo "PostgreSQL database container 'localhost-postgres' is not running. Proceeding to initialize and run database server."
-    export PGPASSWORD=mysecretpassword
-    docker run --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres:latest
-    #Make sure the DB has time to initialize
-    sleep 5
+# Main execution flow
+copy_files
+start_postgres_db
 
-    #Initialize the DB
-    docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
-fi
-
-
-#Start Trino Gateway server.
-java -Xmx1g -jar ./gateway-ha.jar ./quickstart-config.yaml
+# Start Trino Gateway server
+echo "Starting Trino Gateway server..."
+java -Xmx1g -jar ./$GATEWAY_JAR ./$CONFIG_YAML
 ```
 
 You can clean up by running
@@ -75,21 +78,31 @@ to the Trino Gateway server started by the preceding script.
 ```shell
 #!/usr/bin/env sh
 
-#Start a pair of trino servers on different ports
-docker run --name trino1 -d -p 8081:8080 -e JAVA_TOOL_OPTIONS="-Dhttp-server.process-forwarded=true" trinodb/trino
-docker run --name trino2 -d -p 8082:8080 -e JAVA_TOOL_OPTIONS="-Dhttp-server.process-forwarded=true" trinodb/trino
+TRINO_IMAGE="trinodb/trino"
+JAVA_OPTS="-Dhttp-server.process-forwarded=true"
 
-#Add the trino servers as Gateway backends
-curl -H "Content-Type: application/json" -X POST localhost:8080/gateway/backend/modify/add -d '{"name": "trino1",
-                                                                                                "proxyTo": "http://localhost:8081",
-                                                                                                "active": true,
-                                                                                                "routingGroup": "adhoc"
-                                                                                              }'
-curl -H "Content-Type: application/json" -X POST localhost:8080/gateway/backend/modify/add -d '{"name": "trino2",
-                                                                                                "proxyTo": "http://localhost:8082",
-                                                                                                "active": true,
-                                                                                                "routingGroup": "adhoc"
-                                                                                              }'
+# Start Trino servers
+for i in 1 2; do
+    docker run --name trino$i -d -p 808$i:8080 \
+        -e JAVA_TOOL_OPTIONS="$JAVA_OPTS" $TRINO_IMAGE
+done
+
+# Add Trino servers as Gateway backends
+add_backend() {
+    curl -H "Content-Type: application/json" -X POST \
+        localhost:8080/gateway/backend/modify/add \
+        -d "{
+              \"name\": \"$1\",
+              \"proxyTo\": \"http://localhost:808$2\",
+              \"active\": true,
+              \"routingGroup\": \"adhoc\"
+            }"
+}
+
+# Adding Trino servers as backends
+for i in 1 2; do
+    add_backend "trino$i" "$i"
+done
 ```
 
 You can clean up by running
