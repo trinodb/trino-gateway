@@ -34,6 +34,7 @@ import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
 import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.router.ForRouter;
+import io.trino.gateway.ha.router.RoutingRulesManager;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import io.trino.gateway.proxyserver.ForProxy;
 import io.trino.gateway.proxyserver.ProxyRequestHandler;
@@ -143,6 +144,7 @@ public class BaseApp
         jaxrsBinder(binder).bind(AuthorizedExceptionMapper.class);
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(ProxyHandlerStats.class).withGeneratedName();
+        binder.bind(RoutingRulesManager.class);
     }
 
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
