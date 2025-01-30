@@ -26,6 +26,7 @@ import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.module.StochasticRoutingManagerProvider;
 import io.trino.gateway.ha.resource.EntityEditorResource;
+import io.trino.gateway.ha.resource.GatewayHealthCheckResource;
 import io.trino.gateway.ha.resource.GatewayResource;
 import io.trino.gateway.ha.resource.GatewayViewResource;
 import io.trino.gateway.ha.resource.GatewayWebAppResource;
@@ -179,6 +180,7 @@ public class BaseApp
         jaxrsBinder(binder).bind(PublicResource.class);
         jaxrsBinder(binder).bind(TrinoResource.class);
         jaxrsBinder(binder).bind(WebUIStaticResource.class);
+        jaxrsBinder(binder).bind(GatewayHealthCheckResource.class);
     }
 
     private static void registerAuthFilters(Binder binder)

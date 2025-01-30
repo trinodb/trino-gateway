@@ -37,6 +37,7 @@ public class ActiveClusterMonitor
     public static final int DEFAULT_THREAD_POOL_SIZE = 20;
     private static final Logger log = Logger.get(ActiveClusterMonitor.class);
 
+    private volatile boolean isInitialized;
     private final List<TrinoClusterStatsObserver> clusterStatsObservers;
     private final GatewayBackendManager gatewayBackendManager;
 
@@ -83,6 +84,7 @@ public class ActiveClusterMonitor
                         observer.observe(stats);
                     }
                 }
+                isInitialized = true;
             }
             catch (Exception e) {
                 log.error(e, "Error performing backend monitor tasks");
@@ -95,5 +97,10 @@ public class ActiveClusterMonitor
     {
         executorService.shutdownNow();
         scheduledExecutor.shutdownNow();
+    }
+
+    public boolean isInitialized()
+    {
+        return isInitialized;
     }
 }

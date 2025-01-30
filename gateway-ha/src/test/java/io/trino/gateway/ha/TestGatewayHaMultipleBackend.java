@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -360,6 +361,30 @@ final class TestGatewayHaMultipleBackend
                         .build();
         Response callbackResponse = httpClient.newCall(callbackRequest).execute();
         assertThat(callbackResponse.code()).isEqualTo(500);
+    }
+
+    @Test
+    void testHealthCheckEndpoints()
+            throws IOException
+    {
+        Request livenessCheck = new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/trino-gateway/livez")
+                        .build();
+        Response livenessResponse = httpClient.newCall(livenessCheck).execute();
+        assertThat(livenessResponse.code()).isEqualTo(200);
+
+        Request readinessCheck = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/trino-gateway/readyz")
+                .build();
+        for (int i = 0; i < 100; i++) {
+            try (Response readinessResponse = httpClient.newCall(readinessCheck).execute()) {
+                if (readinessResponse.code() == 200) {
+                    return;
+                }
+            }
+            sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+        }
+        throw new IllegalStateException("Trino Gateway health check failed");
     }
 
     @AfterAll
