@@ -83,4 +83,30 @@ final class TestHaGatewayManager
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
                 .containsExactly("adhoc");
     }
+
+    @Test
+    void testRemoveTrailingSlashInUrl()
+    {
+        ProxyBackendConfiguration etl = new ProxyBackendConfiguration();
+        etl.setActive(false);
+        etl.setRoutingGroup("etl");
+        etl.setName("new-etl1");
+        etl.setProxyTo("https://etl1.trino.gateway.io:443/");
+        etl.setExternalUrl("https://etl1.trino.gateway.io:443/");
+        haGatewayManager.addBackend(etl);
+
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo).orElseThrow()).isEqualTo("https://etl1.trino.gateway.io:443");
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getExternalUrl).orElseThrow()).isEqualTo("https://etl1.trino.gateway.io:443");
+
+        ProxyBackendConfiguration etl2 = new ProxyBackendConfiguration();
+        etl2.setActive(false);
+        etl2.setRoutingGroup("etl2");
+        etl2.setName("new-etl1");
+        etl2.setProxyTo("https://etl2.trino.gateway.io:443/");
+        etl2.setExternalUrl("https://etl2.trino.gateway.io:443/");
+        haGatewayManager.updateBackend(etl2);
+
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo).orElseThrow()).isEqualTo("https://etl2.trino.gateway.io:443");
+        assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getExternalUrl).orElseThrow()).isEqualTo("https://etl2.trino.gateway.io:443");
+    }
 }
