@@ -22,6 +22,7 @@ import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsJmxMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
@@ -228,6 +229,7 @@ public class HaGatewayProviderModule
             case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
             case UI_API -> new ClusterStatsHttpMonitor(configuration.getBackendState());
             case JDBC -> new ClusterStatsJdbcMonitor(configuration.getBackendState(), configuration.getMonitor());
+            case JMX -> new ClusterStatsJmxMonitor(httpClient, configuration.getBackendState());
             case NOOP -> new NoopClusterStatsMonitor();
         };
     }
