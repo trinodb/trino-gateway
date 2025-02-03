@@ -14,7 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.OracleContainer;
+
+import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 
 public class TestQueryHistoryManagerOracle
         extends BaseTestQueryHistoryManager
@@ -22,7 +23,7 @@ public class TestQueryHistoryManagerOracle
     @Override
     protected final JdbcDatabaseContainer<?> startContainer()
     {
-        JdbcDatabaseContainer<?> container = new OracleContainer("gvenzl/oracle-xe:18.4.0-slim");
+        JdbcDatabaseContainer<?> container = getOracleContainer();
         container.start();
         return container;
     }
