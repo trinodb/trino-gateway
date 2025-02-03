@@ -420,6 +420,56 @@ monitor:
 
 Other timeout parameters are not applicable to the JDBC connection.
 
+#### JMX
+
+The monitor type `JMX` can be used as an alternative to collect cluster information, 
+which is required for the `QueryCountBasedRouterProvider`. This uses the `v1/jmx/mbean` 
+endpoint on Trino clusters.
+
+To enable this:
+
+[JMX monitoring](https://trino.io/docs/current/admin/jmx.html) must be activated on all Trino clusters with:
+
+```properties
+jmx.rmiregistry.port=<port>
+jmx.rmiserver.port=<port>
+```
+
+Allow JMX endpoint access by adding rules to your [file-based access control](https://trino.io/docs/current/security/file-system-access-control.html)
+configuration. Example for `user`:
+
+```json
+{  
+  "catalogs": [
+    {
+      "user": "user",
+      "catalog": "system",
+      "allow": "read-only"
+    }
+  ],
+  "system_information": [
+    {
+      "user": "user",
+      "allow": ["read"]
+    }
+  ]
+}
+```
+
+Ensure that a username and password are configured by adding the `backendState`
+section to your configuration. The credentials must be consistent across all
+backend clusters and have `read` rights on the `system_information`.
+
+```yaml
+backendState:
+  username: "user"
+  password: "password"
+```
+
+The JMX monitor will use these credentials to authenticate against the
+JMX endpoint of each Trino cluster and collect metrics like running queries,
+queued queries, and worker nodes information.
+
 #### UI_API
 
 This pulls cluster information from the `ui/api/stats` REST endpoint. This is
