@@ -26,6 +26,7 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
+import io.trino.gateway.ha.handler.RoutingDestinationInfo;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -118,49 +119,50 @@ public class ProxyRequestHandler
     public void deleteRequest(
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestinationInfo routingDestinationInfo)
     {
         Request.Builder request = prepareDelete();
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestinationInfo, servletRequest, asyncResponse, request);
     }
 
     public void getRequest(
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestinationInfo routingDestinationInfo)
     {
         Request.Builder request = prepareGet();
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestinationInfo, servletRequest, asyncResponse, request);
     }
 
     public void postRequest(
             String statement,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestinationInfo routingDestinationInfo)
     {
         Request.Builder request = preparePost()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestinationInfo, servletRequest, asyncResponse, request);
     }
 
     public void putRequest(
             String statement,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestinationInfo routingDestinationInfo)
     {
         Request.Builder request = preparePut()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestinationInfo, servletRequest, asyncResponse, request);
     }
 
     private void performRequest(
-            URI remoteUri,
+            RoutingDestinationInfo routingDestinationInfo,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
             Request.Builder requestBuilder)
     {
+        URI remoteUri = URI.create(routingDestinationInfo.clusterUri());
         requestBuilder.setUri(remoteUri);
 
         for (String name : list(servletRequest.getHeaderNames())) {
@@ -180,6 +182,8 @@ public class ProxyRequestHandler
 
         ImmutableList.Builder<NewCookie> cookieBuilder = ImmutableList.builder();
         cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
+
+        requestBuilder.addHeader("X-Routing-Group", routingDestinationInfo.group());
 
         Request request = requestBuilder
                 .setFollowRedirects(false)
@@ -288,6 +292,7 @@ public class ProxyRequestHandler
         else {
             log.error("Non OK HTTP Status code with response [%s] , Status code [%s]", response.body(), response.statusCode());
         }
+        queryDetail.setRoutingGroup(request.getHeader("X-Routing-Group"));
         queryHistoryManager.submitQueryDetail(queryDetail);
         return response;
     }

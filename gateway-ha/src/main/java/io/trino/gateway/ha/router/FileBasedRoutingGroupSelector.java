@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,7 +61,7 @@ public class FileBasedRoutingGroupSelector
     }
 
     @Override
-    public String findRoutingGroup(HttpServletRequest request)
+    public Optional<String> findRoutingGroup(HttpServletRequest request)
     {
         Map<String, String> result = new HashMap<>();
         Map<String, Object> state = new HashMap<>();
@@ -84,7 +85,7 @@ public class FileBasedRoutingGroupSelector
                 rule.evaluateAction(result, data, state);
             }
         });
-        return result.get(RESULTS_ROUTING_GROUP_KEY);
+        return Optional.ofNullable(result.get(RESULTS_ROUTING_GROUP_KEY));
     }
 
     public List<RoutingRule> readRulesFromPath(Path rulesPath)
