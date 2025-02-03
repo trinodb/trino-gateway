@@ -81,6 +81,12 @@ export function History() {
     );
   }
 
+  const routingGroupRender = (_: string, record: HistoryDetail) => {
+    return (
+        <Text>{record.routingGroup}</Text>
+    )
+  }
+
   return (
     <>
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
@@ -115,6 +121,7 @@ export function History() {
           onPageChange: list,
         }}>
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
+          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup" render={routingGroupRender} />
           <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />

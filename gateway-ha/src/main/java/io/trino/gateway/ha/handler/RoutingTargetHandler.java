@@ -66,13 +66,16 @@ public class RoutingTargetHandler
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
-    public String getRoutingDestination(HttpServletRequest request)
+    public RoutingDestinationInfo getRoutingDestination(HttpServletRequest request)
     {
         Optional<String> previousBackend = getPreviousBackend(request);
-        String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
+        // This falls back on adhoc routing group if no routing group can be determined
+        String routingGroup = routingGroupSelector.findRoutingGroup(request).orElse("adhoc");
+        String user = request.getHeader(USER_HEADER);
+        String clusterHost = previousBackend.orElseGet(() -> routingManager.provideBackendForRoutingGroup(routingGroup, user));
         logRewrite(clusterHost, request);
 
-        return buildUriWithNewBackend(clusterHost, request);
+        return new RoutingDestinationInfo(routingGroup, buildUriWithNewBackend(clusterHost, request));
     }
 
     public boolean isPathWhiteListed(String path)
@@ -85,17 +88,6 @@ public class RoutingTargetHandler
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
                 || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
-    }
-
-    private String getBackendFromRoutingGroup(HttpServletRequest request)
-    {
-        String routingGroup = routingGroupSelector.findRoutingGroup(request);
-        String user = request.getHeader(USER_HEADER);
-        if (!isNullOrEmpty(routingGroup)) {
-            // This falls back on adhoc backend if there is no cluster found for the routing group.
-            return routingManager.provideBackendForRoutingGroup(routingGroup, user);
-        }
-        return routingManager.provideAdhocBackend(user);
     }
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)
