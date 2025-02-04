@@ -15,10 +15,10 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.collect.ImmutableList;
 import org.jdbi.v3.core.Handle;
-import org.testcontainers.containers.OracleContainer;
 
 import java.util.List;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 import static java.lang.String.format;
 
 final class TestDatabaseMigrationsOracle
@@ -26,7 +26,7 @@ final class TestDatabaseMigrationsOracle
 {
     public TestDatabaseMigrationsOracle()
     {
-        super(new OracleContainer("gvenzl/oracle-xe:18.4.0-slim"), "TEST");
+        super(getOracleContainer(), "TEST");
     }
 
     @Override
