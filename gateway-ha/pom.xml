@@ -109,8 +109,8 @@
 
         <dependency>
             <groupId>io.airlift</groupId>
-            <artifactId>aircompressor</artifactId>
-            <version>0.27</version>
+            <artifactId>aircompressor-v3</artifactId>
+            <version>3.2</version>
         </dependency>
 
         <dependency>
@@ -494,6 +494,16 @@
                 <configuration>
                     <!-- This is needed because we call main() in test setups. Otherwise Guice singleton won't work. -->
                     <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.basepom.maven</groupId>
+                <artifactId>duplicate-finder-maven-plugin</artifactId>
+                <configuration>
+                    <ignoredResourcePatterns combine.children="append">
+                        <ignoredResourcePattern>aircompressor.*</ignoredResourcePattern>
+                    </ignoredResourcePatterns>
                 </configuration>
             </plugin>
 
