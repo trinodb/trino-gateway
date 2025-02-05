@@ -70,6 +70,7 @@ scrape_configs:
 ## Trino Gateway health endpoints
 
 Trino Gateway provides two API endpoints to indicate the current status of the server:
+
 * `/trino-gateway/livez` always returns status code 200, indicating the server is
 alive. However, it might not respond if the gateway is too busy, stuck, or
 taking a long time for garbage collection.
