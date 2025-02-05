@@ -13,8 +13,13 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.net.MediaType;
+import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpClientConfig;
+import io.airlift.http.client.HttpStatus;
 import io.airlift.http.client.jetty.JettyHttpClient;
+import io.airlift.http.client.testing.TestingHttpClient;
+import io.airlift.http.client.testing.TestingResponse;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
@@ -41,7 +46,8 @@ final class TestClusterStatsMonitor
     void setUp()
     {
         trino = new TrinoContainer("trinodb/trino");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+        trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
+        trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
         trino.start();
     }
 
@@ -63,6 +69,63 @@ final class TestClusterStatsMonitor
         MonitorConfiguration monitorConfigurationWithTimeout = new MonitorConfiguration();
         monitorConfigurationWithTimeout.setQueryTimeout(new Duration(30, SECONDS));
         testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJdbcMonitor(backendStateConfiguration, monitorConfigurationWithTimeout));
+    }
+
+    @Test
+    void testJmxMonitor()
+    {
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsJmxMonitor(new JettyHttpClient(new HttpClientConfig()), backendStateConfiguration));
+    }
+
+    @Test
+    void testJmxMonitorWithBadRequest()
+    {
+        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+                .mockResponse(HttpStatus.BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8, "Bad Request"));
+
+        testClusterStatsMonitorWithClient(client);
+    }
+
+    @Test
+    void testJmxMonitorWithServerError()
+    {
+        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+                .mockResponse(HttpStatus.INTERNAL_SERVER_ERROR, MediaType.PLAIN_TEXT_UTF_8, "Internal Server Error"));
+
+        testClusterStatsMonitorWithClient(client);
+    }
+
+    @Test
+    void testJmxMonitorWithInvalidJson()
+    {
+        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+                .mockResponse(HttpStatus.OK, MediaType.JSON_UTF_8, "{invalid:json}"));
+
+        testClusterStatsMonitorWithClient(client);
+    }
+
+    @Test
+    void testJmxMonitorWithNetworkError()
+    {
+        HttpClient client = new TestingHttpClient(ignored -> {
+            throw new RuntimeException("Network error");
+        });
+
+        testClusterStatsMonitorWithClient(client);
+    }
+
+    private static void testClusterStatsMonitorWithClient(HttpClient client)
+    {
+        BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
+        backendStateConfiguration.setUsername("test_user");
+        ClusterStatsMonitor monitor = new ClusterStatsJmxMonitor(client, backendStateConfiguration);
+
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setProxyTo("http://localhost:8080");
+        proxyBackend.setName("test_cluster");
+
+        ClusterStats stats = monitor.monitor(proxyBackend);
+        assertThat(stats.trinoStatus()).isEqualTo(TrinoStatus.UNHEALTHY);
     }
 
     @Test
