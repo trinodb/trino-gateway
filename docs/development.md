@@ -30,6 +30,10 @@ compilation and testing are specified in `.mvn/jvm.config`.
 Edit the configuration file `gateway-ha-config.yml` in the `gateway-ha` folder
 and update the mysql db information.
 
+Note that tests using Oracle are disabled by default on non-x86_64 CPU architectures.
+To enable them, set the environment variable `TG_RUN_ORACLE_TESTS=true`. These tests
+will always be run in GitHub CI.
+
 ```shell
 cd gateway-ha/target/
 java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
