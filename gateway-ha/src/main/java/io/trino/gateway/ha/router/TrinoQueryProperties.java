@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import io.airlift.compress.zstd.ZstdDecompressor;
+import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.trino.sql.parser.ParsingException;
@@ -106,6 +106,7 @@ public class TrinoQueryProperties
     private boolean isNewQuerySubmission;
     private Optional<String> errorMessage = Optional.empty();
     private Optional<String> queryId = Optional.empty();
+    private final ZstdDecompressor decompressor = ZstdDecompressor.create();
 
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
     public static final String TRINO_SCHEMA_HEADER_NAME = "X-Trino-Schema";
@@ -269,8 +270,8 @@ public class TrinoQueryProperties
         String encoded = headerValue.substring(prefix.length());
         byte[] compressed = base64Url().decode(encoded);
 
-        byte[] preparedStatement = new byte[toIntExact(ZstdDecompressor.getDecompressedSize(compressed, 0, compressed.length))];
-        new ZstdDecompressor().decompress(compressed, 0, compressed.length, preparedStatement, 0, preparedStatement.length);
+        byte[] preparedStatement = new byte[toIntExact(decompressor.getDecompressedSize(compressed, 0, compressed.length))];
+        decompressor.decompress(compressed, 0, compressed.length, preparedStatement, 0, preparedStatement.length);
         return new String(preparedStatement, UTF_8);
     }
 
