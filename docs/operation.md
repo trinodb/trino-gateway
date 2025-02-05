@@ -72,7 +72,7 @@ scrape_configs:
 Trino Gateway provides two API endpoints to indicate the current status of the server:
 
 * `/trino-gateway/livez` always returns status code 200, indicating the server is
-alive. However, it might not respond if the gateway is too busy, stuck, or
+alive. However, it might not respond if the Trino Gateway is too busy, stuck, or
 taking a long time for garbage collection.
 * `/trino-gateway/readyz` returns status code 200, indicating the server has
 completed initialization and is ready to serve requests. This means the initial
