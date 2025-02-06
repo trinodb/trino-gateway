@@ -42,9 +42,9 @@ public class ClusterStatsJmxMonitor
     private static final JsonResponseHandler<JsonNode> JMX_JSON_RESPONSE_HANDLER = createJsonResponseHandler(jsonCodec(JsonNode.class));
     private static final String JMX_PATH = "/v1/jmx/mbean";
 
+    private final HttpClient client;
     private final String username;
     private final String password;
-    private final HttpClient client;
 
     public ClusterStatsJmxMonitor(HttpClient client, BackendStateConfiguration backendStateConfiguration)
     {
@@ -88,7 +88,7 @@ public class ClusterStatsJmxMonitor
             int runningQueryCount = stats.getOrDefault("RunningQueries", 0);
             clusterStats.runningQueryCount(runningQueryCount);
 
-            log.debug(String.format("Processed QueryManager: QueuedQueries = %d, RunningQueries = %d", queuedQueryCount, runningQueryCount));
+            log.debug("Processed QueryManager: QueuedQueries = %d, RunningQueries = %d", queuedQueryCount, runningQueryCount);
         }
         catch (Exception e) {
             log.error(e, "Error parsing QueryManager stats");
@@ -144,7 +144,7 @@ public class ClusterStatsJmxMonitor
 
         try {
             JsonNode response = client.execute(preparedRequest, JMX_JSON_RESPONSE_HANDLER);
-            return Optional.ofNullable(response).map(JmxResponse::fromJson);
+            return Optional.of(response).map(JmxResponse::fromJson);
         }
         catch (UnexpectedResponseException e) {
             log.error(e, "Failed to fetch JMX data for %s, response code: %d", mbeanName, e.getStatusCode());
