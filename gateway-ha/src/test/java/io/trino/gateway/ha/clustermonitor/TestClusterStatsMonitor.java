@@ -80,7 +80,7 @@ final class TestClusterStatsMonitor
     @Test
     void testJmxMonitorWithBadRequest()
     {
-        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+        HttpClient client = new TestingHttpClient(_ -> TestingResponse
                 .mockResponse(HttpStatus.BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8, "Bad Request"));
 
         testClusterStatsMonitorWithClient(client);
@@ -89,7 +89,7 @@ final class TestClusterStatsMonitor
     @Test
     void testJmxMonitorWithServerError()
     {
-        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+        HttpClient client = new TestingHttpClient(_ -> TestingResponse
                 .mockResponse(HttpStatus.INTERNAL_SERVER_ERROR, MediaType.PLAIN_TEXT_UTF_8, "Internal Server Error"));
 
         testClusterStatsMonitorWithClient(client);
@@ -98,7 +98,7 @@ final class TestClusterStatsMonitor
     @Test
     void testJmxMonitorWithInvalidJson()
     {
-        HttpClient client = new TestingHttpClient(ignored -> TestingResponse
+        HttpClient client = new TestingHttpClient(_ -> TestingResponse
                 .mockResponse(HttpStatus.OK, MediaType.JSON_UTF_8, "{invalid:json}"));
 
         testClusterStatsMonitorWithClient(client);
@@ -107,7 +107,7 @@ final class TestClusterStatsMonitor
     @Test
     void testJmxMonitorWithNetworkError()
     {
-        HttpClient client = new TestingHttpClient(ignored -> {
+        HttpClient client = new TestingHttpClient(_ -> {
             throw new RuntimeException("Network error");
         });
 
@@ -133,8 +133,8 @@ final class TestClusterStatsMonitor
     {
         MonitorConfiguration monitorConfigurationWithRetries = new MonitorConfiguration();
         monitorConfigurationWithRetries.setRetries(10);
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), new MonitorConfiguration()));
-        testClusterStatsMonitor(ignored -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfigurationWithRetries));
+        testClusterStatsMonitor(_ -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), new MonitorConfiguration()));
+        testClusterStatsMonitor(_ -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfigurationWithRetries));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
