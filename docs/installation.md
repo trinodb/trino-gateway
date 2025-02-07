@@ -123,7 +123,7 @@ Find more information in [the related Trino documentation](https://trino.io/docs
 After downloading or building the JAR, rename it to `gateway-ha.jar`,
 and place it in a directory with read and write access such as `/opt/trinogateway`.
 
-Copy the example config file `gateway-ha-config.yml` from the `gateway-ha/`
+Copy the example config file `config.yaml` from the `gateway-ha/`
 directory into the same directory, and update the configuration as needed.
 
 Each component of the Trino Gateway has a corresponding node in the
@@ -229,7 +229,7 @@ JAR and YAML files:
 
 ```shell
 java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
-    -jar gateway-ha.jar gateway-ha-config.yml
+    -jar gateway-ha.jar config.yaml
 ```
 
 ### Helm <a name="helm"></a>
@@ -299,7 +299,7 @@ configuration.
 By default, the Trino Gateway process is started with the following command:
 
 ```shell
-java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar /etc/gateway/config.yaml
+java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar config.yaml
 ```
 
 You can customize details with the `command` node. It accepts a list, that must

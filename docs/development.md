@@ -27,7 +27,7 @@ verified and may run into unexpected issues.
 Run `./mvnw clean install` to build `trino-gateway`. VM options required for
 compilation and testing are specified in `.mvn/jvm.config`.
 
-Edit the configuration file `gateway-ha-config.yml` in the `gateway-ha` folder
+Edit the configuration file `config.yaml` in the `gateway-ha` folder
 and update the mysql db information.
 
 Note that tests using Oracle are disabled by default on non-x86_64 CPU architectures.
@@ -36,7 +36,7 @@ will always be run in GitHub CI.
 
 ```shell
 cd gateway-ha/target/
-java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../gateway-ha-config.yml
+java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../config.yaml
 ```
 
 #### In Docker
