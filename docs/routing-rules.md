@@ -19,7 +19,7 @@ as a URL. It can implement any dynamic rule changes or other behavior.
 ### Enabling the routing rules engine
 
 To enable the routing rules engine, find the following lines in
-`gateway-ha-config.yml`:
+`config.yaml`:
 
 * Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
 * If you set `rulesType: FILE`, then set `rulesConfigPath` to the path to your

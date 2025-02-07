@@ -58,7 +58,7 @@ public final class TrinoGatewayRunner
         mysql.withCopyFileToContainer(forClasspathResource("add_backends_mysql.sql"), "/docker-entrypoint-initdb.d/2-add_backends_mysql.sql");
         mysql.setPortBindings(List.of("3306:3306"));
         mysql.start();
-        HaGatewayLauncher.main(new String[] {"gateway-ha/gateway-ha-config.yml"});
+        HaGatewayLauncher.main(new String[] {"gateway-ha/config.yaml"});
 
         log.info("======== SERVER STARTED ========");
     }
