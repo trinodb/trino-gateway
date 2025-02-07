@@ -21,6 +21,7 @@ import java.util.List;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.util.Objects.requireNonNull;
 
@@ -42,6 +43,13 @@ public record BasicCredentials(String username, String password)
         String header = nullToEmpty(request.getHeaders().getFirst(AUTHORIZATION));
 
         return extractBasicAuthCredentials(header);
+    }
+
+    public String getBasicAuthHeader()
+    {
+        return format("Basic %s",
+                Base64.getEncoder().encodeToString(
+                        format("%s:%s", username, password).getBytes(ISO_8859_1)));
     }
 
     public static BasicCredentials extractBasicAuthCredentials(String header)
