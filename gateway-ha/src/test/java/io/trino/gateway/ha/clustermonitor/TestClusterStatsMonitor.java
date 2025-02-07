@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpClientConfig;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.TrinoContainer;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -137,6 +139,15 @@ final class TestClusterStatsMonitor
         testClusterStatsMonitor(_ -> new ClusterStatsInfoApiMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfigurationWithRetries));
     }
 
+    @Test
+    void testMetricsMonitor()
+    {
+        testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsMetricsMonitor(
+                new JettyHttpClient(new HttpClientConfig()),
+                backendStateConfiguration,
+                new MonitorConfiguration()));
+    }
+
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
     {
         BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
@@ -150,5 +161,41 @@ final class TestClusterStatsMonitor
         ClusterStats stats = monitor.monitor(proxyBackend);
         assertThat(stats.clusterId()).isEqualTo("test_cluster");
         assertThat(stats.trinoStatus()).isEqualTo(TrinoStatus.HEALTHY);
+    }
+
+    @Test
+    void testMetricsRanges()
+    {
+        // Active node count should always be 1.0 for this test
+        Map<String, Float> metricMinimumsFail = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 100f);
+        testMetricsWithRange(metricMinimumsFail, ImmutableMap.of(), TrinoStatus.UNHEALTHY);
+
+        Map<String, Float> metricMaximumsFail = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 0.5f);
+        testMetricsWithRange(ImmutableMap.of(), metricMaximumsFail, TrinoStatus.UNHEALTHY);
+
+        Map<String, Float> metricMinimumsPass = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 0.5f);
+        testMetricsWithRange(metricMinimumsPass, ImmutableMap.of(), TrinoStatus.HEALTHY);
+
+        Map<String, Float> metricMaximumsPass = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 100f);
+        testMetricsWithRange(ImmutableMap.of(), metricMaximumsPass, TrinoStatus.HEALTHY);
+    }
+
+    private void testMetricsWithRange(Map<String, Float> metricMinimums, Map<String, Float> metricMaximums, TrinoStatus expected)
+    {
+        BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
+        backendStateConfiguration.setUsername("test_user");
+
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setProxyTo("http://localhost:" + trino.getMappedPort(8080));
+        proxyBackend.setName("test_cluster");
+
+        MonitorConfiguration monitorConfiguration = new MonitorConfiguration();
+        monitorConfiguration.setMetricMinimumValues(metricMinimums);
+        monitorConfiguration.setMetricMaximumValues(metricMaximums);
+
+        ClusterStatsMonitor monitor = new ClusterStatsMetricsMonitor(new JettyHttpClient(new HttpClientConfig()), backendStateConfiguration, monitorConfiguration);
+        ClusterStats stats = monitor.monitor(proxyBackend);
+        assertThat(stats.clusterId()).isEqualTo("test_cluster");
+        assertThat(stats.trinoStatus()).isEqualTo(expected);
     }
 }

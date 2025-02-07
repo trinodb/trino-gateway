@@ -11,14 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.config;
+package io.trino.gateway.ha.clustermonitor;
 
-public enum ClusterStatsMonitorType
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+
+public final class MonitorUtils
 {
-    NOOP,
-    INFO_API,
-    UI_API,
-    JDBC,
-    JMX,
-    METRICS
+    private MonitorUtils() {}
+
+    public static boolean shouldRetry(int statusCode)
+    {
+        return switch (statusCode) {
+            case HTTP_BAD_GATEWAY, HTTP_UNAVAILABLE, HTTP_GATEWAY_TIMEOUT -> true;
+            default -> false;
+        };
+    }
 }

@@ -23,6 +23,7 @@ import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJmxMonitor;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsMetricsMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
@@ -230,6 +231,7 @@ public class HaGatewayProviderModule
             case UI_API -> new ClusterStatsHttpMonitor(configuration.getBackendState());
             case JDBC -> new ClusterStatsJdbcMonitor(configuration.getBackendState(), configuration.getMonitor());
             case JMX -> new ClusterStatsJmxMonitor(httpClient, configuration.getBackendState());
+            case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
     }
