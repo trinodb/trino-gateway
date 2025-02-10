@@ -1,0 +1,7 @@
+---
+name: "airflow"
+description: "if query from airflow, route to adhoc group"
+priority: 0
+actions:
+- "result.put(\"routingGroup\", \"adhoc\")"
+condition: "request.getHeader(\"X-Trino-Source\") == \"datagrip\""

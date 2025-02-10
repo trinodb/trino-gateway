@@ -1,0 +1,38 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: REQUEST_ROUTER_PORT
+
+dataStore:
+  jdbcUrl: POSTGRESQL_JDBC_URL
+  user: POSTGRESQL_USER
+  password: POSTGRESQL_PASSWORD
+  driver: org.postgresql.Driver
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelaySeconds: 1
+
+extraWhitelistPaths:
+  - '/v1/custom.*'
+  - '/custom/logout.*'
+
+gatewayCookieConfiguration:
+  enabled: true
+  cookieSigningSecret: "kjlhbfrewbyuo452cds3dc1234ancdsjh"
+
+oauth2GatewayCookieConfiguration:
+  deletePaths:
+    - "/custom/logout"
+
+requestAnalyzerConfig:
+  analyzeRequest: true
+
+uiConfiguration:
+  disablePages:
+    - 'routing-rules'
+
+routingRules:
+  rulesEngineEnabled: true
+  rulesConfigPath: "RESOURCES_DIR/rules/routing_rules_update.yml"
