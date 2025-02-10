@@ -2,7 +2,7 @@
 
 The following organizations are known to use Trino Gateway and specific sections
 provide more details and references. Additional public material is referenced in
-the [resources section](index.md#other-resources).
+the [resources section](resources.md).
 
 Some organizations may have stopped usage or requested not to be listed, while 
 many others are also using Trino Gateway without the Trino Gateway team's
