@@ -6,8 +6,8 @@ site_description: >-
 
 copyright: |
   Trino Gateway is open source software licensed under the
-  <a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE"Apache License 2.0</a>
-  and supported by the <a href="https://trino.io/foundation">Trino Software Foundation</a>.
+  <a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE">Apache License 2.0</a>
+  and supported by the <a href="https://trino.io/foundation.html">Trino Software Foundation</a>.
 
 repo_name: trinodb/trino-gateway
 repo_url: https://github.com/trinodb/trino-gateway
