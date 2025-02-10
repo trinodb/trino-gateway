@@ -16,8 +16,11 @@ package io.trino.gateway.ha.resource;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
+import io.trino.gateway.ha.domain.RoutingRule;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.GlobalPropertyRequest;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
@@ -34,8 +37,10 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
+import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -44,6 +49,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -67,18 +73,25 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
+    // TODO Avoid putting mutable objects in fields
+    private final UIConfiguration uiConfiguration;
+    private final RoutingRulesManager routingRulesManager;
 
     @Inject
     public GatewayWebAppResource(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
-            ResourceGroupsManager resourceGroupsManager)
+            ResourceGroupsManager resourceGroupsManager,
+            RoutingRulesManager routingRulesManager,
+            HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
+        this.uiConfiguration = configuration.getUiConfiguration();
+        this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
     }
 
     @POST
@@ -424,5 +437,37 @@ public class GatewayWebAppResource
     {
         List<ResourceGroupsManager.ExactSelectorsDetail> selectorsDetailList = resourceGroupsManager.readExactMatchSourceSelector();
         return Response.ok(Result.ok(selectorsDetailList)).build();
+    }
+
+    @GET
+    @RolesAllowed("ADMIN")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getRoutingRules")
+    public Response getRoutingRules()
+            throws IOException
+    {
+        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
+        return Response.ok(Result.ok(routingRulesList)).build();
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/updateRoutingRules")
+    public Response updateRoutingRules(RoutingRule routingRule)
+            throws IOException
+    {
+        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
+        return Response.ok(Result.ok(routingRulesList)).build();
+    }
+
+    @GET
+    @RolesAllowed("ADMIN")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getUIConfiguration")
+    public Response getUIConfiguration()
+    {
+        return Response.ok(Result.ok(uiConfiguration)).build();
     }
 }
