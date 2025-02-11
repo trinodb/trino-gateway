@@ -151,11 +151,11 @@ details found in the `docker-compose.yml` file.
 
 ## Configuration
 
-The image uses the configuration file `gateway-ha/gateway-ha-config-docker.yml`
-from the project checkout, and mounts it at `/opt/trino/gateway-ha-config.yml`.
+The image uses the configuration file `docker/config.yaml` from the project
+checkout, and mounts it at `/opt/trino-gateway/config.yaml`.
 
 ## Health check
 
 By default the container health check uses the file `docker/bin/health-check`
-mounted at `/usr/lib/trino/bin/health-check`. The scripts expects a 2XX response
-from the server at `/api/public/backends`.
+mounted at `/usr/lib/trino-gateway/bin/health-check`. The scripts expects a 2XX
+response from the server at `/api/public/backends`.
