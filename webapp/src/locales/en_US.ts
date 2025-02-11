@@ -1,25 +1,25 @@
 const en_US = {
   Error: {
-    Network: "The network has wandered off, please try again later!",
+    Network: "The network has wandered off, try again later",
   },
   Dashboard: {
     QPH: "QPH",
-    QPHTip: "The number of queries in the past hour.",
-    QPS: "Avg. QPS",
-    QPSTip: "Average number of queries per second in the past hour.",
-    QPM: "Avg. QPM",
-    QPMTip: "Average number of queries per minute in the past hour.",
+    QPHTip: "The number of queries in the past hour",
+    QPS: "Average QPS",
+    QPSTip: "Average number of queries per second in the past hour",
+    QPM: "Average QPM",
+    QPMTip: "Average number of queries per minute in the past hour",
     Backends: "Backends",
-    BackendsOffline: "Backends Offline",
-    BackendsOnline: "Backends Online",
-    StartTime: "Started At",
+    BackendsOffline: "Backends offline",
+    BackendsOnline: "Backends online",
+    StartTime: "Started at",
     Summary: "Summary",
-    QueryDistribution: "Query Distribution in last hour.",
-    QueryCount: "Query Count",
+    QueryDistribution: "Query distribution in last hour",
+    QueryCount: "Query count",
   },
   History: {
-    RoutedToTip: "Default All",
-    QueryIdTip: "Default All",
+    RoutedToTip: "Default all",
+    QueryIdTip: "Default all",
   },
   Menu: {
     Header: {
@@ -30,9 +30,9 @@ const en_US = {
       Dashboard: "Dashboard",
       Cluster: "Cluster",
       History: "History",
-      ResourceGroup: "Resource Group",
+      ResourceGroup: "Resource group",
       Selector: "Selector",
-      RoutingRules: "Routing Rules"
+      RoutingRules: "Routing rules"
     }
   },
   Auth: {
@@ -47,15 +47,15 @@ const en_US = {
     PasswordTip: "Input password",
     UsernameTip: "Input username",
     Login: "Sign in",
-    OAuth2: "Sign in with External Authentication",
+    OAuth2: "Sign in with external authentication",
     NoneAuthTip: "Password not allowed",
-    LoginSuccess: "Login Success",
+    LoginSuccess: "Login success",
     Expiration: "Login has expired, please log in again",
-    LogoutSuccess: "Logout Success",
+    LogoutSuccess: "Logout success",
   },
   Copy: {
     Success: "Copied to clipboard",
-    Failed: "Copy failed, please grant permission to access clipboard",
+    Failed: "Copy failed, grant permission to access the clipboard",
   },
   UI: {
     Confirm: "Confirm",
@@ -65,7 +65,7 @@ const en_US = {
     Edit: "Edit",
     Delete: "Delete",
     DeleteTitle: "Are you sure you want to delete?",
-    DeleteContent: "Once deleted, it cannot be recovered!",
+    DeleteContent: "Once deleted, it cannot be recovered",
     Query: "Query",
   },
 };
