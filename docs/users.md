@@ -32,6 +32,19 @@ and users of the project.
 Trino Gateway contributor [Prakhar Sapre](https://github.com/prakhar10) is
 involved in the Trino Gateway usage at Expedia.
 
+## [Inter&Co](https://inter.co/)
+
+Trino Gateway user [Yuri Niitsuma](https://github.com/ignitz) was instrumental
+in implementing Trino Gateway at Inter&Co. At Inter&Co, Trino Gateway is
+leveraged to route different user profiles and applications to distinct Trino
+clusters optimized for specific workloads. This separates
+low-latency and analytical queries, ensuring optimal performance for varying
+query requirements. Furthermore, Trino Gateway is used to perform seamless
+updates without any downtime, enhancing the reliability of the platform.
+It also facilitates the creation and management of a canary cluster, enabling
+the evaluation of different Trino configurations and upgrades in a controlled
+environment.
+
 ## [LY](https://www.lycorp.co.jp/en/)
 
 Trino Gateway maintainer [Star Poon](https:œ//github.com/oneonestar) is an 
