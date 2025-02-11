@@ -7,7 +7,7 @@ Gateway server running in the host operating system.
 ## Start Trino Gateway server
 
 The following script starts a Trino Gateway server using the 
-[Quickstart configuration](quickstart-config.yaml) at http://localhost:8080.
+[Quickstart configuration](config.yaml) at http://localhost:8080.
 It also starts a dockerized PostgreSQL database at localhost:5432.
 
 To start the server, copy the script below to a temporary directory 
@@ -15,8 +15,9 @@ under the project root folder, and run it at the temporary directory.
 
 It  copies the following, necessary files to current directory:
 
-- gateway-ha.jar
-- quickstart-config.yaml
+- `gateway-ha.jar` from Maven Central using the version specified in the script
+- `config.yaml` from the `docs` folder of the current project folder
+- `gateway-ha-persistence-postgres.sql` from the current project folder
 
 ```shell
 #!/usr/bin/env sh
@@ -26,7 +27,7 @@ BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha"
 POSTGRES_SQL="gateway-ha-persistence-postgres.sql"
 JAR_FILE="gateway-ha-$VERSION-jar-with-dependencies.jar"
 GATEWAY_JAR="gateway-ha.jar"
-CONFIG_YAML="quickstart-config.yaml"
+CONFIG_YAML="config.yaml"
 
 # Copy necessary files
 copy_files() {
