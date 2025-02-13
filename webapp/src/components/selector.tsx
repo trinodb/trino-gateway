@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styles from './selector.module.scss';
 import Locale from "../locales";
-import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table, Toast } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { selectorDeleteApi, selectorSaveApi, selectorUpdateApi, selectorsApi } from "../api/webapp/selector";
@@ -44,7 +44,8 @@ export function Selector() {
               data: record
             }).then(() => {
               list();
-            }).catch(() => { });
+              Toast.success(Locale.Selector.Delete);
+            }).catch(() => { Toast.error(Locale.Selector.ErrorDelete) });
           }}
         >
           <Button>{Locale.UI.Delete}</Button>
@@ -110,8 +111,9 @@ export function Selector() {
                 data: values
               }).then(() => {
                 list();
+                Toast.success(Locale.Selector.Create);
                 setVisibleForm(false);
-              }).catch(() => { });
+              }).catch(() => { Toast.error(Locale.Selector.ErrorCreate) });
             } else {
               selectorUpdateApi({
                 useSchema: useSchema,
@@ -119,8 +121,9 @@ export function Selector() {
                 oldData: form
               }).then(() => {
                 list();
+                Toast.success(Locale.Selector.Update);
                 setVisibleForm(false);
-              }).catch(() => { });
+              }).catch(() => { Toast.error(Locale.Selector.ErrorUpdate) });
             }
           }}
           getFormApi={setFormApi}
