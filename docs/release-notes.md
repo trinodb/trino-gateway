@@ -1,6 +1,8 @@
 # Release notes
 
-## Trino Gateway 14 (14 Feb 2025) { id="14" }
+## 2025
+
+### Trino Gateway 14 (14 Feb 2025) { id="14" }
 
 Artifacts:
 
@@ -47,7 +49,7 @@ Changes:
 * Fix visibility of chart legend text when changing the theme of the user
   interface. ([#585](https://github.com/trinodb/trino-gateway/issues/585))
 
-## Trino Gateway 13 (3 Dec 2024) { id="13" }
+### Trino Gateway 13 (3 Dec 2024) { id="13" }
 
 Artifacts:
 
@@ -67,7 +69,9 @@ Changes:
 * Log out inactive users from the UI automatically.
   ([#544](https://github.com/trinodb/trino-gateway/pull/544))
 
-## Trino Gateway 12 (7 Nov 2024) { id="12" }
+## 2024
+
+### Trino Gateway 12 (7 Nov 2024) { id="12" }
 
 Artifacts:
 
@@ -105,7 +109,7 @@ Changes:
 More details and a list of all merged pull requests are [available in the
 milestone 12 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A12+is%3Aclosed).
 
-## Trino Gateway 11 (12 Sep 2024) { id="11" }
+### Trino Gateway 11 (12 Sep 2024) { id="11" }
 
 Artifacts:
 
@@ -152,7 +156,7 @@ Changes:
 More details and a list of all merged pull requests are [available in the 
 milestone 11 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A11+is%3Aclosed).
 
-## Trino Gateway 10 (24 Jul 2024) { id="10" }
+### Trino Gateway 10 (24 Jul 2024) { id="10" }
 
 Artifacts:
 
@@ -195,7 +199,7 @@ Changes:
 * Fix creation of new resource groups.
   ([#379](https://github.com/trinodb/trino-gateway/pull/379))
 
-## Trino Gateway 9 (8 May 2024) { id="9" }
+### Trino Gateway 9 (8 May 2024) { id="9" }
 
 Artifacts:
 
@@ -209,7 +213,7 @@ Changes:
 
 * Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
 
-## Trino Gateway 8 (6 May 2024) { id="8" }
+### Trino Gateway 8 (6 May 2024) { id="8" }
 
 Artifacts:
 
@@ -230,7 +234,7 @@ Changes:
 * Fix the `userInfo` resource to pass role information used by the API, so that
   the webapp authentication matches the API authentication. ([#310](https://github.com/trinodb/trino-gateway/pull/310))
 
-## Trino Gateway 7 (21 Mar 2024) { id="7" }
+### Trino Gateway 7 (21 Mar 2024) { id="7" }
 
 Artifacts:
 
@@ -251,7 +255,7 @@ Changes:
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A7+is%3Aclosed)
 
-## Trino Gateway 6 (16 Feb 2024) { id="6" }
+### Trino Gateway 6 (16 Feb 2024) { id="6" }
 
 Artifacts:
 
@@ -267,7 +271,7 @@ Changes:
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A6+is%3Aclosed)
 
-## Trino Gateway 5 (24 Jan 2024) { id="5" }
+### Trino Gateway 5 (24 Jan 2024) { id="5" }
 
 Artifacts:
 
@@ -286,7 +290,7 @@ Changes:
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/168)
 
-## Trino Gateway 4 (30 Nov 2023) { id="4" }
+### Trino Gateway 4 (30 Nov 2023) { id="4" }
 
 Artifacts:
 
@@ -310,7 +314,9 @@ Changes:
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/73)
 
-## Trino Gateway 3 (26 Sep 2023) { id="3" }
+## 2023
+
+### Trino Gateway 3 (26 Sep 2023) { id="3" }
 
 Artifacts:
 
