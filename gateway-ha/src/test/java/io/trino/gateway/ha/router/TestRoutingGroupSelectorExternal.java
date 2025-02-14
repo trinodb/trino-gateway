@@ -152,7 +152,7 @@ final class TestRoutingGroupSelectorExternal
 
         // Verify the response
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("default-group-api-failure");
+                .contains("default-group-api-failure");
     }
 
     @Test

@@ -60,7 +60,8 @@ public class HaQueryHistoryManager
                 queryDetail.getBackendUrl(),
                 queryDetail.getUser(),
                 queryDetail.getSource(),
-                queryDetail.getCaptureTime());
+                queryDetail.getCaptureTime(),
+                queryDetail.getRoutingGroup());
     }
 
     @Override
@@ -87,6 +88,7 @@ public class HaQueryHistoryManager
             queryDetail.setBackendUrl(dao.backendUrl());
             queryDetail.setUser(dao.userName());
             queryDetail.setSource(dao.source());
+            queryDetail.setRoutingGroup(dao.routingGroup());
             queryDetails.add(queryDetail);
         }
         return queryDetails;

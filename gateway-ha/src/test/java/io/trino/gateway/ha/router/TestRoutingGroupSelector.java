@@ -85,11 +85,11 @@ final class TestRoutingGroupSelector
         // If the header is present the routing group is the value of that header.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("batch_backend");
         assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest))
-                .isEqualTo("batch_backend");
+                .contains("batch_backend");
 
         // If the header is not present just return null.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn(null);
-        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest)).isNull();
+        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest)).isEmpty();
     }
 
     @ParameterizedTest
@@ -103,7 +103,7 @@ final class TestRoutingGroupSelector
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl");
+                .contains("etl");
     }
 
     @Test
@@ -120,7 +120,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader("Authorization")).thenReturn("Basic " + encodedUsernamePassword);
 
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("will-group");
+                .contains("will-group");
     }
 
     @Test
@@ -140,7 +140,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat_default");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem_\\\"default");
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("tbl-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("tbl-group");
     }
 
     @Test
@@ -160,7 +160,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("catx");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("default");
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("catalog-schema-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("catalog-schema-group");
     }
 
     @Test
@@ -176,7 +176,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("other_catalog");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("other_schema");
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("defaults-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("defaults-group");
     }
 
     @Test
@@ -194,7 +194,7 @@ final class TestRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("type-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("type-group");
     }
 
     @Test
@@ -209,7 +209,7 @@ final class TestRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader("CREATE TABLE cat.schem.foo (c1 int)")));
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("resource-group-type-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("resource-group-type-group");
     }
 
     @Test
@@ -228,7 +228,7 @@ final class TestRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("type-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("type-group");
     }
 
     @Test
@@ -252,7 +252,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem");
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("statement-header-group");
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).contains("statement-header-group");
     }
 
     @ParameterizedTest
@@ -268,7 +268,7 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl-special");
+                .contains("etl-special");
     }
 
     @ParameterizedTest
@@ -283,7 +283,7 @@ final class TestRoutingGroupSelector
         // should return no match
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isNull();
+        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEmpty();
     }
 
     @Test
@@ -310,7 +310,7 @@ final class TestRoutingGroupSelector
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl");
+                .contains("etl");
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
@@ -325,7 +325,7 @@ final class TestRoutingGroupSelector
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl2");
+                .contains("etl2");
         file.deleteOnExit();
     }
 
