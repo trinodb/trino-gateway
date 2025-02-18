@@ -394,6 +394,24 @@ It retrieves the number of running and queued queries for use with
 the `QueryCountBasedRouter` (either `METRICS` or `JDBC` must be enabled if
 `QueryCountBasedRouter` is used).
 
+By default, it uses the `trino_execution_name_QueryManager_RunningQueries` and
+`trino_execution_name_QueryManager_QueuedQueries` to track the number of running
+and queued queries respectively, however these metrics can be configured as follows:
+
+```yaml
+monitor:
+    runningQueriesMetricName: io_starburst_galaxy_name_GalaxyMetrics_RunningQueries
+    queuedQueriesMetricName: io_starburst_galaxy_name_GalaxyMetrics_QueuedQueries
+```
+
+Similarly, by default the monitor pulls the metrics using the `/metrics` endpoint, but it
+can be updated to use another one:
+
+```yaml
+monitor:
+    metricsEndpoint: /v1/metrics
+```
+
 This monitor allows customizing health definitions by comparing metrics to fixed
 values. This is configured through two maps: `metricMinimumValues` and 
 `metricMaximumValues`. The keys of these maps are the metric names, and the values
@@ -401,7 +419,7 @@ are the minimum or maximum values (inclusive) that are considered healthy. By de
 the only metric populated is:
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
 ```
@@ -412,7 +430,7 @@ worker count to 10 and disqualify clusters that have been experiencing frequent 
 Collections, set
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
     metricMaximumValues:
@@ -428,19 +446,21 @@ method of backend clusters. Configure a username and password by adding
 `backendState` to your configuration. The username and password must be valid 
 across all backends.
 
-Trino Gateway uses `explicitPrepare=false` by default. This property was introduced
-in Trino 431, and uses a single query for prepared statements, instead of a 
-`PREPARE/EXECUTE` pair. If you are using the JDBC health check option with older 
-versions of Trino, set
-```yaml
-monitorConfiguration:
-   explicitPrepare: false
-```
-
 ```yaml
 backendState:
   username: "user"
   password: "password"
+```
+
+Trino Gateway allows to define the `explicitPrepare` property for the JDBC monitor.
+This property was introduced in Trino 431, and uses a single query for prepared
+statements when set to `false`, instead of a `PREPARE/EXECUTE` pair.
+If you are using Trino 431 or later, you can improve latency for prepared statements
+by setting:
+
+```yaml
+monitor:
+   explicitPrepare: false
 ```
 
 The query timeout can be set through
