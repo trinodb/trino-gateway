@@ -2,6 +2,36 @@
 
 ## 2025
 
+### Trino Gateway 15 (12 Mar 2025) { id="15" }
+
+Artifacts:
+
+* [JAR file gateway-ha-15-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/15/gateway-ha-15-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:15`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/15.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/15.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.15.0`
+
+Changes:
+
+* Add pop up messages for operations in the user interface.
+  ([#617](https://github.com/trinodb/trino-gateway/pull/617))
+* Add support for configuring custom OpenMetrics from the Trino clusters for the
+  metrics monitor health check.
+  ([#621](https://github.com/trinodb/trino-gateway/pull/621))
+* [:warning: Breaking change:](#breaking) Change paths and file names in the
+  Docker image. Configuration file name is `/opt/trino-gateway/config.yaml` and 
+  folder names use `trino-gateway` consistently.  
+  ([#623](https://github.com/trinodb/trino-gateway/pull/623)) and 
+  ([#628](https://github.com/trinodb/trino-gateway/pull/628))
+* Prevent proxy failures resulting from backend URL configuration containing a 
+  trailing slash.
+  ([#564](https://github.com/trinodb/trino-gateway/issues/564))
+* Fix query errors when adhoc routing group has no healthy backends.
+  ([#630](https://github.com/trinodb/trino-gateway/pull/630)) and
+  ([#641](https://github.com/trinodb/trino-gateway/issues/641))
+
 ### Trino Gateway 14 (14 Feb 2025) { id="14" }
 
 Artifacts:
