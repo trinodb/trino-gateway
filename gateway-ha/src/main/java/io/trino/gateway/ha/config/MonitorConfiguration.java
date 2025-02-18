@@ -93,14 +93,20 @@ public class MonitorConfiguration
         this.metricsEndpoint = metricsEndpoint;
     }
 
-    public String getRunningQueriesMetricName() {return runningQueriesMetricName; }
+    public String getRunningQueriesMetricName()
+    {
+        return runningQueriesMetricName;
+    }
 
     public void setRunningQueriesMetricName(String runningQueriesMetricName)
     {
         this.runningQueriesMetricName = runningQueriesMetricName;
     }
 
-    public String getQueuedQueriesMetricName() {return queuedQueriesMetricName; }
+    public String getQueuedQueriesMetricName()
+    {
+        return queuedQueriesMetricName;
+    }
 
     public void setQueuedQueriesMetricName(String queuedQueriesMetricName)
     {
