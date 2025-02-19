@@ -1,4 +1,3 @@
-version: "3.4"
 services:
   trino-gateway:
     image: ${TRINO_GATEWAY_IMAGE:-trinodb/trino-gateway:latest}
