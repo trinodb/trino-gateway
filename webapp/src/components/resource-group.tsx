@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styles from './resource-group.module.scss';
 import Locale from "../locales";
-import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Table, Toast } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { resourceGroupDeleteApi, resourceGroupSaveApi, resourceGroupUpdateApi, resourceGroupsApi } from "../api/webapp/resource-group";
@@ -46,7 +46,8 @@ export function ResourceGroup() {
               }
             }).then(() => {
               list();
-            }).catch(() => { });
+              Toast.success(Locale.ResourceGroup.Delete);
+            }).catch(() => { Toast.error(Locale.ResourceGroup.ErrorDelete) });
           }}
         >
           <Button>{Locale.UI.Delete}</Button>
@@ -118,16 +119,18 @@ export function ResourceGroup() {
                 data: values
               }).then(() => {
                 list();
+                Toast.success(Locale.ResourceGroup.Create);
                 setVisibleForm(false);
-              }).catch(() => { });
+              }).catch(() => { Toast.error(Locale.ResourceGroup.ErrorCreate) });
             } else {
               resourceGroupUpdateApi({
                 useSchema: useSchema,
                 data: values
               }).then(() => {
                 list();
+                Toast.success(Locale.ResourceGroup.Update);
                 setVisibleForm(false);
-              }).catch(() => { });
+              }).catch(() => { Toast.error(Locale.ResourceGroup.ErrorUpdate) });
             }
           }}
           getFormApi={setFormApi}

@@ -1,9 +1,10 @@
-import {useEffect, useState} from "react";
-import {routingRulesApi, updateRoutingRulesApi} from "../api/webapp/routing-rules.ts";
-import {RoutingRulesData} from "../types/routing-rules";
-import {Button, Card, Form, Toast} from "@douyinfe/semi-ui";
-import {FormApi} from "@douyinfe/semi-ui/lib/es/form";
-import {Role, useAccessStore} from "../store";
+import { useEffect, useState } from "react";
+import { routingRulesApi, updateRoutingRulesApi } from "../api/webapp/routing-rules.ts";
+import { RoutingRulesData } from "../types/routing-rules";
+import { Button, Card, Form, Toast } from "@douyinfe/semi-ui";
+import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
+import { Role, useAccessStore } from "../store";
+import Locale from "../locales";
 
 export function RoutingRules() {
     const [rules, setRules] = useState<RoutingRulesData[]>([]);
@@ -22,7 +23,7 @@ export function RoutingRules() {
                     setEditingStates(new Array(data.length).fill(false));
                     setFormApis(new Array(data.length).fill(null));
                 }).catch(() => {
-            Toast.error("Failed to fetch routing rules");
+            Toast.error(Locale.RoutingRules.ErrorFetch);
         });
     };
 
@@ -63,9 +64,9 @@ export function RoutingRules() {
                     return newRules;
                 });
 
-                Toast.success("Routing rule updated successfully");
+                Toast.success(Locale.RoutingRules.Update);
             } catch (error) {
-                Toast.error("Failed to update routing rule");
+                Toast.error(Locale.RoutingRules.ErrorUpdate);
             }
         }
     };

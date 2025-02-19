@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import styles from './cluster.module.scss';
 import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
-import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Tag, Typography } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Tag, Toast, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { Role, useAccessStore } from "../store";
@@ -55,7 +55,8 @@ export function Cluster() {
             backendDeleteApi({ name: record.name })
               .then(() => {
                 list();
-              }).catch(() => { });
+                Toast.success(Locale.Cluster.Delete);
+              }).catch(() => { Toast.error(Locale.Cluster.ErrorDelete) });
           }}
         >
           <Button>{Locale.UI.Delete}</Button>
@@ -142,14 +143,16 @@ export function Cluster() {
               backendSaveApi(values)
                 .then(() => {
                   list();
+                  Toast.success(Locale.Cluster.Create);
                   setVisibleForm(false);
-                }).catch(() => { });
+                }).catch(() => { Toast.error(Locale.Cluster.ErrorCreate) });
             } else {
               backendUpdateApi(values)
                 .then(() => {
                   list();
+                  Toast.success(Locale.Cluster.Update);
                   setVisibleForm(false);
-                }).catch(() => { });
+                }).catch(() => { Toast.error(Locale.Cluster.ErrorUpdate) });
             }
           }}
           getFormApi={setFormApi}

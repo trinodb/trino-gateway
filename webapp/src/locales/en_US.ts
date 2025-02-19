@@ -68,6 +68,35 @@ const en_US = {
     DeleteContent: "Once deleted, it cannot be recovered",
     Query: "Query",
   },
+  Cluster: {
+      Create: "Cluster created successfully",
+      Update: "Cluster updated successfully",
+      Delete: "Cluster deleted successfully",
+      ErrorCreate: "Failed to create cluster",
+      ErrorUpdate: "Failed to update cluster",
+      ErrorDelete: "Failed to delete cluster",
+  },
+  ResourceGroup: {
+      Create: "Resource group created successfully",
+      Update: "Resource group updated successfully",
+      Delete: "Resource group deleted successfully",
+      ErrorCreate: "Failed to create resource group",
+      ErrorUpdate: "Failed to update resource group",
+      ErrorDelete: "Failed to delete resource group",
+  },
+  Selector: {
+      Create: "Selector created successfully",
+      Update: "Selector updated successfully",
+      Delete: "Selector deleted successfully",
+      ErrorCreate: "Failed to create selector",
+      ErrorUpdate: "Failed to update selector",
+      ErrorDelete: "Failed to delete selector",
+  },
+  RoutingRules: {
+      Update: "Routing rule updated successfully",
+      ErrorUpdate: "Failed to update routing rule",
+      ErrorFetch: "Failed to fetch routing rules"
+  },
 };
 
 type DeepPartial<T> = T extends object
