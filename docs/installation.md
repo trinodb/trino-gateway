@@ -419,7 +419,7 @@ are the minimum or maximum values (inclusive) that are considered healthy. By de
 the only metric populated is:
 
 ```yaml
-monitor:
+monitorConfiguration:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
 ```
@@ -430,7 +430,7 @@ worker count to 10 and disqualify clusters that have been experiencing frequent 
 Collections, set
 
 ```yaml
-monitor:
+monitorConfiguration:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
     metricMaximumValues:
