@@ -401,7 +401,7 @@ are the minimum or maximum values (inclusive) that are considered healthy. By de
 the only metric populated is:
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
 ```
@@ -412,7 +412,7 @@ worker count to 10 and disqualify clusters that have been experiencing frequent 
 Collections, set
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
     metricMaximumValues:
@@ -433,7 +433,7 @@ in Trino 431, and uses a single query for prepared statements, instead of a
 `PREPARE/EXECUTE` pair. If you are using the JDBC health check option with older 
 versions of Trino, set
 ```yaml
-monitorConfiguration:
+monitor:
    explicitPrepare: false
 ```
 
