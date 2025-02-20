@@ -13,7 +13,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - target: /opt/trino-gateway/config.yaml
+      - target: /etc/trino-gateway/config.yaml
         source: ./config.yaml
         type: bind
 
