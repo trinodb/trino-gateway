@@ -65,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
+import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
+import static io.trino.gateway.ha.config.ClusterStatsMonitorType.NOOP;
 import static java.util.Objects.requireNonNull;
 
 public class HaGatewayProviderModule
@@ -223,8 +225,12 @@ public class HaGatewayProviderModule
     public ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient)
     {
         ClusterStatsConfiguration clusterStatsConfig = configuration.getClusterStatsConfiguration();
-        if (configuration.getBackendState() == null) {
+        if (clusterStatsConfig == null) {
             return new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
+        }
+        if (!(clusterStatsConfig.getMonitorType() == INFO_API || clusterStatsConfig.getMonitorType() == NOOP)
+                && configuration.getBackendState() == null) {
+            throw new IllegalArgumentException("BackendStateConfiguration is required for monitor type: " + clusterStatsConfig.getMonitorType());
         }
         return switch (clusterStatsConfig.getMonitorType()) {
             case INFO_API -> new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
