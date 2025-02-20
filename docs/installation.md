@@ -434,7 +434,7 @@ in Trino 431, and uses a single query for prepared statements, instead of a
 versions of Trino, set
 ```yaml
 monitor:
-   explicitPrepare: false
+   explicitPrepare: true
 ```
 
 ```yaml
