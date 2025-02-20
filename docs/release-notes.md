@@ -1,6 +1,55 @@
 # Release notes
 
-## Trino Gateway 13 (3 Dec 2024) { id="13" }
+## 2025
+
+### Trino Gateway 14 (14 Feb 2025) { id="14" }
+
+Artifacts:
+
+* [JAR file gateway-ha-14-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/14/gateway-ha-14-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:14`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/14.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/14.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.14.0`
+
+Changes:
+
+* Add display of the cluster health status on the cluster page.
+  ([#601](https://github.com/trinodb/trino-gateway/pull/601))
+* Add user interface page to show and edit routing rules.
+  ([#433](https://github.com/trinodb/trino-gateway/pull/433))
+* Add support for [automatic database schema validation and 
+  upgrade](installation.md#backend-database) during Trino Gateway startup.
+  ([#575](https://github.com/trinodb/trino-gateway/pull/575))
+* Enable use of Oracle as backend database for Trino Gateway.
+  ([#588](https://github.com/trinodb/trino-gateway/pull/588))
+* Add support to configure HTTP client options for the external routing group
+  selector. ([#580](https://github.com/trinodb/trino-gateway/pull/580))
+* Add a cluster monitor using JMX data from Trino.
+  ([#472](https://github.com/trinodb/trino-gateway/pull/472))
+* Add a cluster monitor using the Trino OpenMetrics endpoint with customizable
+  health definition. ([#584](https://github.com/trinodb/trino-gateway/pull/584))
+* Add API health endpoints at `/trino-gateway/livez` and `/trino-gateway/readyz`
+  for monitoring liveness and readiness.
+  ([#595](https://github.com/trinodb/trino-gateway/pull/595))
+* [:warning: Breaking change:](#breaking) Change configuration file name from 
+  `gateway-ha-config.yml` to `config.yaml`.
+  ([#598](https://github.com/trinodb/trino-gateway/issues/598))
+* [:warning: Breaking change:](#breaking) Load fundamental modules by default, 
+  and remove  the related configurations `HaGatewayProviderModule`, 
+  `ActiveClusterMonitor`, `ClusterStateListenerModule`, and 
+  `ClusterStatsMonitorModule` from the configuration file. 
+  ([#597](https://github.com/trinodb/trino-gateway/pull/597))
+* [:warning: Breaking change:](#breaking) Remove support for composite rules and
+  the use of easy-rules syntax.
+  ([#540](https://github.com/trinodb/trino-gateway/pull/540))
+* Improve performance of Trino cluster stats collection and add a timeout
+  configuration. ([#583](https://github.com/trinodb/trino-gateway/pull/583))
+* Fix visibility of chart legend text when changing the theme of the user
+  interface. ([#585](https://github.com/trinodb/trino-gateway/issues/585))
+
+### Trino Gateway 13 (3 Dec 2024) { id="13" }
 
 Artifacts:
 
@@ -20,7 +69,9 @@ Changes:
 * Log out inactive users from the UI automatically.
   ([#544](https://github.com/trinodb/trino-gateway/pull/544))
 
-## Trino Gateway 12 (7 Nov 2024) { id="12" }
+## 2024
+
+### Trino Gateway 12 (7 Nov 2024) { id="12" }
 
 Artifacts:
 
@@ -58,7 +109,7 @@ Changes:
 More details and a list of all merged pull requests are [available in the
 milestone 12 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A12+is%3Aclosed).
 
-## Trino Gateway 11 (12 Sep 2024) { id="11" }
+### Trino Gateway 11 (12 Sep 2024) { id="11" }
 
 Artifacts:
 
@@ -105,7 +156,7 @@ Changes:
 More details and a list of all merged pull requests are [available in the 
 milestone 11 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A11+is%3Aclosed).
 
-## Trino Gateway 10 (24 Jul 2024) { id="10" }
+### Trino Gateway 10 (24 Jul 2024) { id="10" }
 
 Artifacts:
 
@@ -148,7 +199,7 @@ Changes:
 * Fix creation of new resource groups.
   ([#379](https://github.com/trinodb/trino-gateway/pull/379))
 
-## Trino Gateway 9 (8 May 2024) { id="9" }
+### Trino Gateway 9 (8 May 2024) { id="9" }
 
 Artifacts:
 
@@ -162,7 +213,7 @@ Changes:
 
 * Ensure inclusion of UI in JAR and container artifacts. ([#337](https://github.com/trinodb/trino-gateway/pull/337))
 
-## Trino Gateway 8 (6 May 2024) { id="8" }
+### Trino Gateway 8 (6 May 2024) { id="8" }
 
 Artifacts:
 
@@ -183,7 +234,7 @@ Changes:
 * Fix the `userInfo` resource to pass role information used by the API, so that
   the webapp authentication matches the API authentication. ([#310](https://github.com/trinodb/trino-gateway/pull/310))
 
-## Trino Gateway 7 (21 Mar 2024) { id="7" }
+### Trino Gateway 7 (21 Mar 2024) { id="7" }
 
 Artifacts:
 
@@ -204,7 +255,7 @@ Changes:
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A7+is%3Aclosed)
 
-## Trino Gateway 6 (16 Feb 2024) { id="6" }
+### Trino Gateway 6 (16 Feb 2024) { id="6" }
 
 Artifacts:
 
@@ -220,7 +271,7 @@ Changes:
 
 [Details about all pull requests and issues](https://github.com/trinodb/trino-gateway/issues?q=milestone%3A6+is%3Aclosed)
 
-## Trino Gateway 5 (24 Jan 2024) { id="5" }
+### Trino Gateway 5 (24 Jan 2024) { id="5" }
 
 Artifacts:
 
@@ -239,7 +290,7 @@ Changes:
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/168)
 
-## Trino Gateway 4 (30 Nov 2023) { id="4" }
+### Trino Gateway 4 (30 Nov 2023) { id="4" }
 
 Artifacts:
 
@@ -263,7 +314,9 @@ Changes:
 
 [Details about all merged pull requests](https://github.com/trinodb/trino-gateway/pull/73)
 
-## Trino Gateway 3 (26 Sep 2023) { id="3" }
+## 2023
+
+### Trino Gateway 3 (26 Sep 2023) { id="3" }
 
 Artifacts:
 
