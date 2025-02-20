@@ -21,6 +21,11 @@ public class NoopClusterStatsMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        return ClusterStats.builder(backend.getName()).build();
+        return ClusterStats.builder(backend.getName())
+                .trinoStatus(TrinoStatus.HEALTHY)
+                .proxyTo(backend.getProxyTo())
+                .externalUrl(backend.getExternalUrl())
+                .routingGroup(backend.getRoutingGroup())
+                .build();
     }
 }

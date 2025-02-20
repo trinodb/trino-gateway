@@ -80,6 +80,19 @@ final class TestClusterStatsMonitor
     }
 
     @Test
+    void testNoopMonitor()
+    {
+        ClusterStatsMonitor monitor = new NoopClusterStatsMonitor();
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setProxyTo("http://localhost:61234");  // assume no service running on this port
+        proxyBackend.setName("test_cluster");
+
+        ClusterStats stats = monitor.monitor(proxyBackend);
+        assertThat(stats.clusterId()).isEqualTo("test_cluster");
+        assertThat(stats.trinoStatus()).isEqualTo(TrinoStatus.HEALTHY);
+    }
+
+    @Test
     void testJmxMonitorWithBadRequest()
     {
         HttpClient client = new TestingHttpClient(_ -> TestingResponse
