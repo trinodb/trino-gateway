@@ -47,9 +47,9 @@ environment.
 
 ## [LY](https://www.lycorp.co.jp/en/)
 
-Trino Gateway maintainer [Star Poon](https:œ//github.com/oneonestar) is an 
-active maintainer and contributor of major features and improvements, and leads
-the Trino Gateway usage at LY.
+Trino Gateway maintainer [Star Poon](https://github.com/oneonestar) is an active
+maintainer and contributor of major features and improvements, and leads the
+Trino Gateway usage at LY.
 
 ## [Lyft](https://www.lyft.com/)
 
