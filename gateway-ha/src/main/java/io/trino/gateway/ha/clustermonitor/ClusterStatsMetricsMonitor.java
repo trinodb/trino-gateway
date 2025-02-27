@@ -46,8 +46,6 @@ import static java.util.Objects.requireNonNull;
 public class ClusterStatsMetricsMonitor
         implements ClusterStatsMonitor
 {
-    public static final String RUNNING_QUERIES_METRIC = "trino_execution_name_QueryManager_RunningQueries";
-    public static final String QUEUED_QUERIES_METRIC = "trino_execution_name_QueryManager_QueuedQueries";
     private static final Logger log = Logger.get(ClusterStatsMetricsMonitor.class);
 
     private final HttpClient httpClient;
@@ -55,6 +53,8 @@ public class ClusterStatsMetricsMonitor
     private final MetricsResponseHandler metricsResponseHandler;
     private final Header identityHeader;
     private final String metricsEndpoint;
+    private final String runningQueriesMetricName;
+    private final String queuedQueriesMetricName;
     private final ImmutableSet<String> metricNames;
     private final Map<String, Float> metricMinimumValues;
     private final Map<String, Float> metricMaximumValues;
@@ -71,10 +71,12 @@ public class ClusterStatsMetricsMonitor
             identityHeader = new Header("X-Trino-User", backendStateConfiguration.getUsername());
         }
         metricsEndpoint = monitorConfiguration.getMetricsEndpoint();
+        runningQueriesMetricName = monitorConfiguration.getRunningQueriesMetricName();
+        queuedQueriesMetricName = monitorConfiguration.getQueuedQueriesMetricName();
         metricMinimumValues = ImmutableMap.copyOf(monitorConfiguration.getMetricMinimumValues());
         metricMaximumValues = ImmutableMap.copyOf(monitorConfiguration.getMetricMaximumValues());
         metricNames = ImmutableSet.<String>builder()
-                .add(RUNNING_QUERIES_METRIC, QUEUED_QUERIES_METRIC)
+                .add(runningQueriesMetricName, queuedQueriesMetricName)
                 .addAll(metricMinimumValues.keySet())
                 .addAll(metricMaximumValues.keySet())
                 .build();
@@ -117,8 +119,8 @@ public class ClusterStatsMetricsMonitor
         }
         return ClusterStats.builder(backend.getName())
                 .trinoStatus(TrinoStatus.HEALTHY)
-                .runningQueryCount((int) Float.parseFloat(metrics.get(RUNNING_QUERIES_METRIC)))
-                .queuedQueryCount((int) Float.parseFloat(metrics.get(QUEUED_QUERIES_METRIC)))
+                .runningQueryCount((int) Float.parseFloat(metrics.get(runningQueriesMetricName)))
+                .queuedQueryCount((int) Float.parseFloat(metrics.get(queuedQueriesMetricName)))
                 .proxyTo(backend.getProxyTo())
                 .externalUrl(backend.getExternalUrl())
                 .routingGroup(backend.getRoutingGroup())

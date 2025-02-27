@@ -394,6 +394,24 @@ It retrieves the number of running and queued queries for use with
 the `QueryCountBasedRouter` (either `METRICS` or `JDBC` must be enabled if
 `QueryCountBasedRouter` is used).
 
+By default, it uses the `trino_execution_name_QueryManager_RunningQueries` and
+`trino_execution_name_QueryManager_QueuedQueries` to track the number of running
+and queued queries respectively, however these metrics can be configured as follows:
+
+```yaml
+monitor:
+    runningQueriesMetricName: io_starburst_galaxy_name_GalaxyMetrics_RunningQueries
+    queuedQueriesMetricName: io_starburst_galaxy_name_GalaxyMetrics_QueuedQueries
+```
+
+Similarly, by default the monitor pulls the metrics using the `/metrics` endpoint, but it
+can be updated to use another one:
+
+```yaml
+monitor:
+    metricsEndpoint: /v1/metrics
+```
+
 This monitor allows customizing health definitions by comparing metrics to fixed
 values. This is configured through two maps: `metricMinimumValues` and 
 `metricMaximumValues`. The keys of these maps are the metric names, and the values
