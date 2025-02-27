@@ -223,7 +223,7 @@ public class HaGatewayProviderModule
     public ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient)
     {
         ClusterStatsConfiguration clusterStatsConfig = configuration.getClusterStatsConfiguration();
-        if (configuration.getBackendState() == null) {
+        if (clusterStatsConfig == null) {
             return new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
         }
         return switch (clusterStatsConfig.getMonitorType()) {
