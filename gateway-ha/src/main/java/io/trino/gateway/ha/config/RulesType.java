@@ -37,4 +37,9 @@ public enum RulesType
      * The service URL can implement dynamic rule changes.
      */
     EXTERNAL,
+
+    /**
+     *  Routing rules stored in the database.
+     */
+    DB
 }

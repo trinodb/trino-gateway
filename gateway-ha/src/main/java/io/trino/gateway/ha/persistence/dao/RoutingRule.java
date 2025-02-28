@@ -11,14 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.domain;
+package io.trino.gateway.ha.persistence.dao;
 
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElse;
 
 /**
  * RoutingRules
@@ -28,19 +28,22 @@ import static java.util.Objects.requireNonNullElse;
  * @param priority priority of the routing rule. Higher number represents higher priority. If two rules have same priority then order of execution is not guaranteed.
  * @param actions actions of the routing rule
  * @param condition condition of the routing rule
+ * @param routingRuleEngine the engine used for rule evaluation
  */
+
 public record RoutingRule(
-        String name,
-        String description,
-        Integer priority,
-        List<String> actions,
-        String condition)
+        @JsonProperty("name") @ColumnName("name") String name,
+        @JsonProperty("description") @ColumnName("description") String description,
+        @JsonProperty("priority") @ColumnName("priority") Integer priority,
+        // "conditionExpression" is used as a column name because "condition" is a reserved word in MySQL
+        @JsonProperty("condition") @ColumnName("conditionExpression") String condition,
+        @JsonProperty("actions") @ColumnName("actions") List<String> actions,
+        @JsonProperty("routingRuleEngine") @ColumnName("routingRuleEngine") RoutingRuleEngine routingRuleEngine)
 {
-    public RoutingRule {
-        requireNonNull(name, "name is null");
-        description = requireNonNullElse(description, "");
-        priority = requireNonNullElse(priority, 0);
-        actions = ImmutableList.copyOf(actions);
-        requireNonNull(condition, "condition is null");
+    public RoutingRule
+    {
+        requireNonNull(name);
+        requireNonNull(condition);
+        requireNonNull(actions);
     }
 }

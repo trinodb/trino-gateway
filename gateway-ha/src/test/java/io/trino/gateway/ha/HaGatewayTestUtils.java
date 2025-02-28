@@ -27,6 +27,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.OracleContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -78,16 +79,17 @@ public class HaGatewayTestUtils
         }
     }
 
-    public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
+    public static File buildGatewayConfig(JdbcDatabaseContainer<?> databaseContainer, int routerPort, String configFile, String driver)
             throws Exception
     {
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
         String configStr =
                 getResourceFileContent(configFile)
                         .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
-                        .replace("POSTGRESQL_JDBC_URL", postgreSqlContainer.getJdbcUrl())
-                        .replace("POSTGRESQL_USER", postgreSqlContainer.getUsername())
-                        .replace("POSTGRESQL_PASSWORD", postgreSqlContainer.getPassword())
+                        .replace("POSTGRESQL_JDBC_URL", databaseContainer.getJdbcUrl())
+                        .replace("POSTGRESQL_USER", databaseContainer.getUsername())
+                        .replace("POSTGRESQL_PASSWORD", databaseContainer.getPassword())
+                        .replace("DRIVER_CLASS", driver)
                         .replace(
                                 "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
                         .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
@@ -102,6 +104,12 @@ public class HaGatewayTestUtils
 
         log.info("Test Gateway Config \n[%s]", configStr);
         return target;
+    }
+
+    public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
+            throws Exception
+    {
+        return buildGatewayConfig(postgreSqlContainer, routerPort, configFile, "org.postgresql.Driver");
     }
 
     public static String getResourceFileContent(String fileName)
