@@ -78,7 +78,7 @@ public class ExternalRoutingGroupSelector
     }
 
     @Override
-    public String findRoutingGroup(HttpServletRequest servletRequest)
+    public Optional<String> findRoutingGroup(HttpServletRequest servletRequest)
     {
         try {
             RoutingGroupExternalBody requestBody = createRequestBody(servletRequest);
@@ -100,13 +100,13 @@ public class ExternalRoutingGroupSelector
             else if (response.errors() != null && !response.errors().isEmpty()) {
                 throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
             }
-            return response.routingGroup();
+            return Optional.ofNullable(response.routingGroup());
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "
                     + "from external routing rules processing at " + uri);
         }
-        return servletRequest.getHeader(ROUTING_GROUP_HEADER);
+        return Optional.ofNullable(servletRequest.getHeader(ROUTING_GROUP_HEADER));
     }
 
     private RoutingGroupExternalBody createRequestBody(HttpServletRequest request)

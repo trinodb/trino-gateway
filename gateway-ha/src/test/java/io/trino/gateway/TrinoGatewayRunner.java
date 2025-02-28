@@ -36,9 +36,11 @@ public final class TrinoGatewayRunner
 
         TrinoContainer trino1 = new TrinoContainer("trinodb/trino:466");
         trino1.setPortBindings(List.of("8081:8080"));
+        trino1.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino1.start();
         TrinoContainer trino2 = new TrinoContainer("trinodb/trino:466");
         trino2.setPortBindings(List.of("8082:8080"));
+        trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();
 
         PostgreSQLContainer<?> postgres = new PostgreSQLContainer("postgres:16");
