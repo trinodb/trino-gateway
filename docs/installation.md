@@ -299,7 +299,7 @@ configuration.
 By default, the Trino Gateway process is started with the following command:
 
 ```shell
-java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar config.yaml
+java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino-gateway/gateway-ha-jar-with-dependencies.jar /etc/trino-gateway/config.yaml
 ```
 
 You can customize details with the `command` node. It accepts a list, that must
