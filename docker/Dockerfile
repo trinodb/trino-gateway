@@ -27,7 +27,7 @@ RUN \
     curl -#LfS "${JDK_DOWNLOAD_LINK}" | tar -zx --strip 1 -C "${JAVA_HOME}"
 
 FROM ${TRINO_GATEWAY_BASE_IMAGE}
-WORKDIR /opt/trino
+WORKDIR /usr/lib/trino-gateway
 
 ARG JDK_VERSION
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_VERSION}"
@@ -40,14 +40,14 @@ RUN \
     microdnf install -y tar less shadow-utils && \
     groupadd trino --gid 1000 && \
     useradd trino --uid 1000 --gid 1000 --create-home && \
-    mkdir -p /usr/lib/trino && \
-    chown -R "trino:trino" /usr/lib/trino /opt/trino
+    mkdir -p /usr/lib/trino-gateway /etc/trino-gateway && \
+    chown -R "trino:trino" /usr/lib/trino-gateway /etc/trino-gateway
 
-COPY --chown=trino:trino gateway-ha /usr/lib/trino
+COPY --chown=trino:trino gateway-ha /usr/lib/trino-gateway
 
 EXPOSE 8080
 USER trino:trino
-CMD java -jar /usr/lib/trino/gateway-ha-jar-with-dependencies.jar "/opt/trino/gateway-ha-config.yml"
+CMD java -jar /usr/lib/trino-gateway/gateway-ha-jar-with-dependencies.jar "/etc/trino-gateway/config.yaml"
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
-  CMD /usr/lib/trino/bin/health-check
+  CMD /usr/lib/trino-gateway/bin/health-check
