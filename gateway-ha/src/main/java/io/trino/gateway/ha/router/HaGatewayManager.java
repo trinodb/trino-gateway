@@ -32,10 +32,12 @@ public class HaGatewayManager
     private static final Logger log = Logger.get(HaGatewayManager.class);
 
     private final GatewayBackendDao dao;
+    private final boolean isOracleBackend;
 
-    public HaGatewayManager(Jdbi jdbi)
+    public HaGatewayManager(Jdbi jdbi, boolean isOracleBackend)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
+        this.isOracleBackend = isOracleBackend;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getAllActiveBackends()
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackend();
+        List<GatewayBackend> proxyBackendList = dao.findActiveBackend(!isOracleBackend);
         return upcast(proxyBackendList);
     }
 
@@ -56,7 +58,7 @@ public class HaGatewayManager
     public List<ProxyBackendConfiguration> getActiveAdhocBackends()
     {
         try {
-            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend();
+            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend(!isOracleBackend);
             return upcast(proxyBackendList);
         }
         catch (Exception e) {
@@ -68,7 +70,7 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getActiveBackends(String routingGroup)
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackendByRoutingGroup(routingGroup);
+        List<GatewayBackend> proxyBackendList = dao.findActiveBackendByRoutingGroup(routingGroup, !isOracleBackend);
         return upcast(proxyBackendList);
     }
 
@@ -94,19 +96,19 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
-        dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+        dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive(), !isOracleBackend);
         return backend;
     }
 
     @Override
     public ProxyBackendConfiguration updateBackend(ProxyBackendConfiguration backend)
     {
-        GatewayBackend model = dao.findFirstByName(backend.getName());
+        GatewayBackend model = dao.findFirstByName(backend.getName(), isOracleBackend);
         if (model == null) {
-            dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+            dao.create(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive(), !isOracleBackend);
         }
         else {
-            dao.update(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive());
+            dao.update(backend.getName(), backend.getRoutingGroup(), backend.getProxyTo(), backend.getExternalUrl(), backend.isActive(), !isOracleBackend);
         }
         return backend;
     }
