@@ -32,7 +32,7 @@ final class TestHaGatewayManager
     void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
+        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), false);
     }
 
     @Test
