@@ -20,7 +20,6 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
-import io.trino.gateway.ha.domain.RoutingRule;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.GlobalPropertyRequest;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
@@ -32,17 +31,21 @@ import io.trino.gateway.ha.domain.request.ResourceGroupsRequest;
 import io.trino.gateway.ha.domain.request.SelectorsRequest;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
+import io.trino.gateway.ha.persistence.dao.RoutingRule;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.ForwardingRoutingRulesManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.IRoutingRulesManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
-import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -75,7 +78,7 @@ public class GatewayWebAppResource
     private final ResourceGroupsManager resourceGroupsManager;
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
-    private final RoutingRulesManager routingRulesManager;
+    private final IRoutingRulesManager routingRulesManager;
 
     @Inject
     public GatewayWebAppResource(
@@ -83,7 +86,7 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
-            RoutingRulesManager routingRulesManager,
+            ForwardingRoutingRulesManager routingRulesManager,
             HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
@@ -450,6 +453,17 @@ public class GatewayWebAppResource
         return Response.ok(Result.ok(routingRulesList)).build();
     }
 
+    @DELETE
+    @RolesAllowed("ADMIN")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/deleteRoutingRule/{name}")
+    public Response deleteRoutingRules(@PathParam("name") String name)
+            throws IOException
+    {
+        routingRulesManager.deleteRoutingRule(name);
+        return Response.ok(routingRulesManager.getRoutingRules()).build();
+    }
+
     @POST
     @RolesAllowed("ADMIN")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -460,6 +474,16 @@ public class GatewayWebAppResource
     {
         List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
         return Response.ok(Result.ok(routingRulesList)).build();
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/createRoutingRule")
+    public Response createRoutingRule(RoutingRule routingRule)
+    {
+        routingRulesManager.createRoutingRule(routingRule);
+        return Response.ok(routingRulesManager.getRoutingRules()).build();
     }
 
     @GET

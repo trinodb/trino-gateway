@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
@@ -41,6 +42,7 @@ public abstract class BaseTestDatabaseMigrations
     private final JdbcDatabaseContainer<?> container;
     protected final String schema;
     protected final Jdbi jdbi;
+    Logger log = Logger.get(BaseTestDatabaseMigrations.class);
 
     public BaseTestDatabaseMigrations(JdbcDatabaseContainer<?> container, String schema)
     {
@@ -107,6 +109,7 @@ public abstract class BaseTestDatabaseMigrations
         verifyResultSetCount("SELECT name FROM resource_groups", 0);
         verifyResultSetCount("SELECT user_regex FROM selectors", 0);
         verifyResultSetCount("SELECT environment FROM exact_match_source_selectors", 0);
+        verifyResultSetCount("SELECT name FROM routing_rules", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
@@ -125,9 +128,10 @@ public abstract class BaseTestDatabaseMigrations
         String selectorsTable = "DROP TABLE IF EXISTS selectors";
         String exactMatchTable = "DROP TABLE IF EXISTS exact_match_source_selectors";
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
+        String routingRulesTable = "DROP TABLE IF EXISTS routing_rules";
         Handle jdbiHandle = jdbi.open();
         String sql = format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", schema);
-        verifyResultSetCount(sql, 7);
+        verifyResultSetCount(sql, 8);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
         jdbiHandle.execute(propertiesTable);
@@ -135,6 +139,7 @@ public abstract class BaseTestDatabaseMigrations
         jdbiHandle.execute(resourceGroupsTable);
         jdbiHandle.execute(exactMatchTable);
         jdbiHandle.execute(flywayHistoryTable);
+        jdbiHandle.execute(routingRulesTable);
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
     }

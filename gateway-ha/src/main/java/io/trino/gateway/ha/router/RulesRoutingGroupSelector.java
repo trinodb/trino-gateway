@@ -13,9 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
@@ -23,40 +20,35 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import jakarta.servlet.http.HttpServletRequest;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.sort;
 
-public class FileBasedRoutingGroupSelector
+public class RulesRoutingGroupSelector
         implements RoutingGroupSelector
 {
-    private static final Logger log = Logger.get(FileBasedRoutingGroupSelector.class);
+    private static final Logger log = Logger.get(RulesRoutingGroupSelector.class);
     public static final String RESULTS_ROUTING_GROUP_KEY = "routingGroup";
 
-    private static final ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-
     private final Supplier<List<RoutingRule>> rules;
+    private final IRoutingRulesManager routingRulesManager;
+
     private final boolean analyzeRequest;
     private final boolean clientsUseV2Format;
     private final int maxBodySize;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
 
-    public FileBasedRoutingGroupSelector(String rulesPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
+    public RulesRoutingGroupSelector(IRoutingRulesManager routingRulesManager, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         analyzeRequest = requestAnalyzerConfig.isAnalyzeRequest();
         clientsUseV2Format = requestAnalyzerConfig.isClientsUseV2Format();
         maxBodySize = requestAnalyzerConfig.getMaxBodySize();
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
-
-        rules = memoizeWithExpiration(() -> readRulesFromPath(Path.of(rulesPath)), rulesRefreshPeriod.toJavaTime());
+        this.routingRulesManager = routingRulesManager;
+        rules = memoizeWithExpiration(() -> this.routingRulesManager.getRoutingRules().stream().map(RoutingRule::fromPersistedRoutingRule).sorted().toList(),
+                rulesRefreshPeriod.toJavaTime());
     }
 
     @Override
@@ -85,23 +77,5 @@ public class FileBasedRoutingGroupSelector
             }
         });
         return result.get(RESULTS_ROUTING_GROUP_KEY);
-    }
-
-    public List<RoutingRule> readRulesFromPath(Path rulesPath)
-    {
-        try {
-            String content = Files.readString(rulesPath, UTF_8);
-            YAMLParser parser = new YAMLFactory().createParser(content);
-            List<RoutingRule> routingRulesList = new ArrayList<>();
-            while (parser.nextToken() != null) {
-                MVELRoutingRule routingRules = yamlReader.readValue(parser, MVELRoutingRule.class);
-                routingRulesList.add(routingRules);
-            }
-            sort(routingRulesList);
-            return routingRulesList;
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Failed to read or parse routing rules configuration from path: " + rulesPath, e);
-        }
     }
 }

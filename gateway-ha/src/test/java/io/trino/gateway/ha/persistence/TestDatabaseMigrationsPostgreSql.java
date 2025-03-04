@@ -83,6 +83,17 @@ final class TestDatabaseMigrationsPostgreSql
                 "    PRIMARY KEY (environment, source, query_type),\n" +
                 "    UNIQUE (source, environment, query_type, resource_group_id)\n" +
                 ");";
+
+        String routingRulesTable = """
+                CREATE TABLE routing_rules (
+                name VARCHAR PRIMARY KEY,
+                description VARCHAR,
+                priority INT,
+                condition VARCHAR,
+                actions VARCHAR[],
+                routingRuleEngine VARCHAR)
+                """;
+
         Handle jdbiHandle = jdbi.open();
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
@@ -90,6 +101,7 @@ final class TestDatabaseMigrationsPostgreSql
         jdbiHandle.execute(resourceGroupsTable);
         jdbiHandle.execute(selectorsTable);
         jdbiHandle.execute(exactMatchSourceSelectorsTable);
+        jdbiHandle.execute(routingRulesTable);
         jdbiHandle.close();
     }
 }

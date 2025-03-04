@@ -23,4 +23,13 @@ public interface RoutingRule
     void evaluateAction(Map<String, String> result, Map<String, Object> data, Map<String, Object> state);
 
     Integer getPriority();
+
+    static RoutingRule fromPersistedRoutingRule(io.trino.gateway.ha.persistence.dao.RoutingRule rule)
+    {
+        return switch (rule.routingRuleEngine()) {
+            case MVEL -> new MVELRoutingRule(rule.name(), rule.description(), rule.priority(), rule.condition(), rule.actions());
+            // type will not be defined in legacy file based rules, but they are all MVEL
+            case null -> new MVELRoutingRule(rule.name(), rule.description(), rule.priority(), rule.condition(), rule.actions());
+        };
+    }
 }

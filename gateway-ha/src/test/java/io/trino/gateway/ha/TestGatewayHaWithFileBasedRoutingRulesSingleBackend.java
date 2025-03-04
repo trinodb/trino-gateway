@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-final class TestGatewayHaWithRoutingRulesSingleBackend
+final class TestGatewayHaWithFileBasedRoutingRulesSingleBackend
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;

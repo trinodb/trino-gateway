@@ -17,7 +17,7 @@ condition: |
   request.getHeader("X-Trino-Source") == "airflow"
 actions:
   - |
-    result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl")
+    result.put(RulesRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl")
   - |
     state.get("triggeredRules").add("airflow")
 ---
@@ -28,4 +28,4 @@ condition: |
   state.get("triggeredRules").contains("airflow") && request.getHeader("X-Trino-Client-Tags") contains "label=special"
 actions:
   - |
-    result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl-special")
+    result.put(RulesRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, "etl-special")

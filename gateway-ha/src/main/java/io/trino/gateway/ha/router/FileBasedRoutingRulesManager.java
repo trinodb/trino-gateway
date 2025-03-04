@@ -17,9 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.domain.RoutingRule;
+import io.trino.gateway.ha.persistence.dao.RoutingRule;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -29,20 +28,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
-public class RoutingRulesManager
+public class FileBasedRoutingRulesManager
+        implements IRoutingRulesManager
 {
     private final String rulesConfigPath;
 
-    @Inject
-    public RoutingRulesManager(HaGatewayConfiguration configuration)
+    public FileBasedRoutingRulesManager(HaGatewayConfiguration configuration)
     {
         this.rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
     }
 
+    @Override
     public List<RoutingRule> getRoutingRules()
     {
         YAMLFactory yamlFactory = new YAMLFactory();
@@ -62,6 +63,7 @@ public class RoutingRulesManager
         }
     }
 
+    @Override
     public synchronized List<RoutingRule> updateRoutingRule(RoutingRule routingRule)
     {
         ImmutableList.Builder<RoutingRule> updatedRoutingRulesBuilder = ImmutableList.builder();
@@ -88,5 +90,40 @@ public class RoutingRulesManager
             throw new UncheckedIOException("Failed to parse or update routing rules configuration form path : " + rulesConfigPath, e);
         }
         return updatedRoutingRulesBuilder.build();
+    }
+
+    @Override
+    public void deleteRoutingRule(String name)
+    {
+        List<RoutingRule> currentRoutingRulesList = getRoutingRules();
+        List<RoutingRule> updatedRulesList = currentRoutingRulesList.stream().filter(routingRule -> !routingRule.name().equals(name)).collect(toImmutableList());
+        Path path = Path.of(rulesConfigPath);
+        writeRulesFile(path, updatedRulesList);
+    }
+
+    @Override
+    public void createRoutingRule(RoutingRule routingRule)
+    {
+        List<RoutingRule> currentRoutingRulesList = getRoutingRules();
+        List<RoutingRule> updatedRulesList = ImmutableList.<RoutingRule>builder().addAll(currentRoutingRulesList).add(routingRule).build();
+        Path path = Path.of(rulesConfigPath);
+        writeRulesFile(path, updatedRulesList);
+    }
+
+    private void writeRulesFile(Path path, List<RoutingRule> routingRules)
+    {
+        try (FileChannel fileChannel = FileChannel.open(path, WRITE, READ);
+                FileLock lock = fileChannel.lock()) {
+            ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
+            StringBuilder yamlContent = new StringBuilder();
+            for (RoutingRule rule : routingRules) {
+                yamlContent.append(yamlWriter.writeValueAsString(rule));
+            }
+            Files.writeString(path, yamlContent.toString(), UTF_8);
+            lock.release();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException("Failed to parse or update routing rules configuration form path : " + rulesConfigPath, e);
+        }
     }
 }

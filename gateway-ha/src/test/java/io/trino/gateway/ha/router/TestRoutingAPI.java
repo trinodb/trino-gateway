@@ -19,7 +19,8 @@ import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.UIConfiguration;
-import io.trino.gateway.ha.domain.RoutingRule;
+import io.trino.gateway.ha.persistence.dao.RoutingRule;
+import io.trino.gateway.ha.persistence.dao.RoutingRuleEngine;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -32,6 +33,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,7 +103,12 @@ final class TestRoutingAPI
             throws Exception
     {
         //Update routing rules with a new rule
-        RoutingRule updatedRoutingRules = new RoutingRule("airflow", "if query from airflow, route to adhoc group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
+        RoutingRule updatedRoutingRules = new RoutingRule(
+                "airflow",
+                "if query from airflow, route to adhoc group",
+                0, "request.getHeader(\"X-Trino-Source\") == \"JDBC\"",
+                List.of("result.put(\"routingGroup\", \"adhoc\")"),
+                RoutingRuleEngine.MVEL);
         RequestBody requestBody = RequestBody.create(OBJECT_MAPPER.writeValueAsString(updatedRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request = new Request.Builder()
                         .url("http://localhost:" + routerPort + "/webapp/updateRoutingRules")
@@ -113,19 +120,7 @@ final class TestRoutingAPI
         assertThat(response.code()).isEqualTo(200);
 
         //Fetch the routing rules to see if the update was successful
-        Request request2 =
-                new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
-                        .get()
-                        .build();
-        Response response2 = httpClient.newCall(request2).execute();
-
-        String responseBody = response2.body().string();
-        JsonNode rootNode = OBJECT_MAPPER.readTree(responseBody);
-        JsonNode dataNode = rootNode.path("data");
-
-        JsonCodec<RoutingRule[]> responseCodec = JsonCodec.jsonCodec(RoutingRule[].class);
-        RoutingRule[] routingRules = responseCodec.fromJson(dataNode.toString());
+        RoutingRule[] routingRules = getRoutingRules();
 
         assertThat(response.code()).isEqualTo(200);
         assertThat(routingRules[0].name()).isEqualTo("airflow");
@@ -135,7 +130,12 @@ final class TestRoutingAPI
         assertThat(routingRules[0].actions()).first().isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
 
         //Revert back to old routing rules to avoid any test failures
-        RoutingRule revertRoutingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
+        RoutingRule revertRoutingRules = new RoutingRule(
+                "airflow",
+                "if query from airflow, route to etl group",
+                0, "request.getHeader(\"X-Trino-Source\") == \"airflow\"",
+                List.of("result.put(\"routingGroup\", \"etl\")"),
+                null);
         RequestBody requestBody3 = RequestBody.create(OBJECT_MAPPER.writeValueAsString(revertRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request3 = new Request.Builder()
                 .url("http://localhost:" + routerPort + "/webapp/updateRoutingRules")
@@ -143,6 +143,60 @@ final class TestRoutingAPI
                 .post(requestBody3)
                 .build();
         httpClient.newCall(request3).execute();
+    }
+
+    private RoutingRule[] getRoutingRules()
+            throws IOException
+    {
+        Request request2 =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
+                        .get()
+                        .build();
+        return decodeRoutingRulesResponse(httpClient.newCall(request2).execute());
+    }
+
+    private RoutingRule[] decodeRoutingRulesResponse(Response response)
+            throws IOException
+    {
+        String responseBody = response.body().string();
+        JsonNode rootNode = OBJECT_MAPPER.readTree(responseBody);
+        JsonNode dataNode = rootNode.path("data");
+
+        JsonCodec<RoutingRule[]> responseCodec = JsonCodec.jsonCodec(RoutingRule[].class);
+        return responseCodec.fromJson(dataNode.toString());
+    }
+
+    @Test
+    void testRoutingRuleAPICreateDelete()
+            throws Exception
+    {
+        //Update routing rules with a new rule
+        RoutingRule newRoutingRule = new RoutingRule(
+                "new-rule",
+                "newly created rule",
+                0,
+                "false",
+                List.of("result.put(\"routingGroup\", \"adhoc\")"),
+                RoutingRuleEngine.MVEL);
+        RequestBody createRequestBody = RequestBody.create(OBJECT_MAPPER.writeValueAsString(newRoutingRule), MediaType.parse("application/json; charset=utf-8"));
+        Request createRequest = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/webapp/createRoutingRule")
+                .addHeader("Content-Type", "application/json")
+                .post(createRequestBody)
+                .build();
+        httpClient.newCall(createRequest).execute();
+
+        RoutingRule[] rules = getRoutingRules();
+        assertThat(rules).contains(newRoutingRule);
+
+        Request deleteRequest = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/webapp/deleteRoutingRule/new-rule")
+                .delete()
+                .build();
+        httpClient.newCall(deleteRequest).execute();
+        rules = getRoutingRules();
+        assertThat(rules).doesNotContain(newRoutingRule);
     }
 
     @Test

@@ -2,6 +2,7 @@
 name: "airflow"
 description: "if query from airflow, route to adhoc group"
 priority: 0
+condition: "request.getHeader(\"X-Trino-Source\") == \"datagrip\""
 actions:
 - "result.put(\"routingGroup\", \"adhoc\")"
-condition: "request.getHeader(\"X-Trino-Source\") == \"datagrip\""
+routingRuleEngine: null

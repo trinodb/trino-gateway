@@ -15,7 +15,9 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableSet;
 import io.airlift.units.Duration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.sql.tree.QualifiedName;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
@@ -67,6 +69,18 @@ final class TestRoutingGroupSelector
         requestAnalyzerConfig.setAnalyzeRequest(true);
     }
 
+    private HaGatewayConfiguration getHaGatewayConfiguration(String rulesPath, Duration refreshPeriod)
+    {
+        HaGatewayConfiguration haGatewayConfiguration = new HaGatewayConfiguration();
+        RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        routingRulesConfiguration.setRulesConfigPath(rulesPath);
+        routingRulesConfiguration.setRulesRefreshPeriod(refreshPeriod);
+        haGatewayConfiguration.setRoutingRules(routingRulesConfiguration);
+        haGatewayConfiguration.setRequestAnalyzerConfig(requestAnalyzerConfig);
+
+        return haGatewayConfiguration;
+    }
+
     static Stream<String> provideRoutingRuleConfigFiles()
     {
         String rulesDir = "src/test/resources/rules/";
@@ -97,7 +111,7 @@ final class TestRoutingGroupSelector
     void testByRoutingRulesEngine(String rulesConfigPath)
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(rulesConfigPath, oneHourRefreshPeriod));
 
         HttpServletRequest mockRequest = prepareMockRequest();
 
@@ -110,10 +124,9 @@ final class TestRoutingGroupSelector
     void testGetUserFromBasicAuth()
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
 
         String encodedUsernamePassword = Base64.getEncoder().encodeToString("will:supersecret".getBytes(UTF_8));
         HttpServletRequest mockRequest = prepareMockRequest();
@@ -128,10 +141,9 @@ final class TestRoutingGroupSelector
             throws IOException
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         String query = "SELECT x.*, y.*, z.* FROM catx.schemx.tblx x, schemy.tbly y, tblz z";
         Reader reader = new StringReader(query);
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -148,10 +160,9 @@ final class TestRoutingGroupSelector
             throws IOException
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         String query = "SELECT x.*, y.* FROM catx.nondefault.tblx x, caty.default.tbly y";
         Reader reader = new StringReader(query);
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -167,10 +178,9 @@ final class TestRoutingGroupSelector
     void testTrinoQueryPropertiesSessionDefaults()
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         HttpServletRequest mockRequest = prepareMockRequest();
 
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("other_catalog");
@@ -184,10 +194,9 @@ final class TestRoutingGroupSelector
             throws IOException
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         String query = "INSERT INTO foo SELECT 1";
         Reader reader = new StringReader(query);
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -202,10 +211,9 @@ final class TestRoutingGroupSelector
             throws IOException
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader("CREATE TABLE cat.schem.foo (c1 int)")));
 
@@ -218,10 +226,9 @@ final class TestRoutingGroupSelector
     {
         requestAnalyzerConfig.setClientsUseV2Format(true);
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         String body = "{\"preparedStatements\" : {\"statement1\":\"INSERT INTO foo SELECT 1\"}, \"query\": \"EXECUTE statement1\"}";
         Reader reader = new StringReader(body);
         BufferedReader bufferedReader = new BufferedReader(reader);
@@ -239,10 +246,9 @@ final class TestRoutingGroupSelector
 
         String body = "EXECUTE statement4";
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
-                        oneHourRefreshPeriod,
-                        requestAnalyzerConfig);
+                        oneHourRefreshPeriod));
         Reader reader = new StringReader(body);
         BufferedReader bufferedReader = new BufferedReader(reader);
         HttpServletRequest mockRequest = prepareMockRequest();
@@ -260,7 +266,7 @@ final class TestRoutingGroupSelector
     void testByRoutingRulesEngineSpecialLabel(String rulesConfigPath)
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(rulesConfigPath, oneHourRefreshPeriod));
 
         HttpServletRequest mockRequest = prepareMockRequest();
 
@@ -276,7 +282,7 @@ final class TestRoutingGroupSelector
     void testByRoutingRulesEngineNoMatch(String rulesConfigPath)
     {
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(rulesConfigPath, oneHourRefreshPeriod));
 
         HttpServletRequest mockRequest = prepareMockRequest();
         // even though special label is present, query is not from airflow.
@@ -304,7 +310,7 @@ final class TestRoutingGroupSelector
 
         Duration refreshPeriod = new Duration(1, MILLISECONDS);
         RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(file.getPath(), refreshPeriod, requestAnalyzerConfig);
+                RoutingGroupSelector.byRoutingRulesEngine(getHaGatewayConfiguration(file.getPath(), refreshPeriod));
 
         HttpServletRequest mockRequest = prepareMockRequest();
 
