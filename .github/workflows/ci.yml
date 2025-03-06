@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [23]
+        java-version: [23, 24-ea]
     timeout-minutes: 20
     steps:
       - name: Checkout source
