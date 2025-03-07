@@ -85,7 +85,7 @@ for i in 1 2; do
         docker run --name trino$i -d -p $PORT:8080 \
             -e JAVA_TOOL_OPTIONS="$JAVA_OPTS" $TRINO_IMAGE
     else
-        echo "Port $PORT is already in use. Skipping trino$i."
+        echo "Warning: Port $PORT is already in use. Skipping trino$i."
     fi
 done
 
