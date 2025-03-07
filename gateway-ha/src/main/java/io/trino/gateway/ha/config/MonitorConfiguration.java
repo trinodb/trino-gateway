@@ -33,6 +33,10 @@ public class MonitorConfiguration
 
     private String metricsEndpoint = "/metrics";
 
+    private String runningQueriesMetricName = "trino_execution_name_QueryManager_RunningQueries";
+
+    private String queuedQueriesMetricName = "trino_execution_name_QueryManager_QueuedQueries";
+
     // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor
     private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 1f);
 
@@ -88,6 +92,26 @@ public class MonitorConfiguration
     public void setMetricsEndpoint(String metricsEndpoint)
     {
         this.metricsEndpoint = metricsEndpoint;
+    }
+
+    public String getRunningQueriesMetricName()
+    {
+        return runningQueriesMetricName;
+    }
+
+    public void setRunningQueriesMetricName(String runningQueriesMetricName)
+    {
+        this.runningQueriesMetricName = runningQueriesMetricName;
+    }
+
+    public String getQueuedQueriesMetricName()
+    {
+        return queuedQueriesMetricName;
+    }
+
+    public void setQueuedQueriesMetricName(String queuedQueriesMetricName)
+    {
+        this.queuedQueriesMetricName = queuedQueriesMetricName;
     }
 
     public Map<String, Float> getMetricMinimumValues()
