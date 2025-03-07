@@ -419,7 +419,7 @@ are the minimum or maximum values (inclusive) that are considered healthy. By de
 the only metric populated is:
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
 ```
@@ -430,7 +430,7 @@ worker count to 10 and disqualify clusters that have been experiencing frequent 
 Collections, set
 
 ```yaml
-monitorConfiguration:
+monitor:
     metricMinimumValues:
         trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
     metricMaximumValues:
@@ -446,19 +446,19 @@ method of backend clusters. Configure a username and password by adding
 `backendState` to your configuration. The username and password must be valid 
 across all backends.
 
+```yaml
+backendState:
+  username: "user"
+  password: "password"
+```
+
 Trino Gateway uses `explicitPrepare=false` by default. This property was introduced
 in Trino 431, and uses a single query for prepared statements, instead of a 
 `PREPARE/EXECUTE` pair. If you are using the JDBC health check option with older 
 versions of Trino, set
 ```yaml
-monitorConfiguration:
-   explicitPrepare: false
-```
-
-```yaml
-backendState:
-  username: "user"
-  password: "password"
+monitor:
+   explicitPrepare: true
 ```
 
 The query timeout can be set through
