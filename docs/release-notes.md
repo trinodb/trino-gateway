@@ -2,6 +2,21 @@
 
 ## 2025
 
+### Trino Gateway 15 (12 Mar 2025) { id="15" }
+
+Artifacts:
+
+* [JAR file gateway-ha-15-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/15/gateway-ha-15-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:15`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/15.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/15.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.15.0`
+
+Changes:
+
+* tbd
+
 ### Trino Gateway 14 (14 Feb 2025) { id="14" }
 
 Artifacts:
