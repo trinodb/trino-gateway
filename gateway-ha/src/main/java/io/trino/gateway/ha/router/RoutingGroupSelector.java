@@ -19,6 +19,8 @@ import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Optional;
+
 /**
  * RoutingGroupSelector provides a way to match an HTTP request to a Gateway routing group.
  */
@@ -32,7 +34,7 @@ public interface RoutingGroupSelector
      */
     static RoutingGroupSelector byRoutingGroupHeader()
     {
-        return request -> request.getHeader(ROUTING_GROUP_HEADER);
+        return request -> Optional.ofNullable(request.getHeader(ROUTING_GROUP_HEADER));
     }
 
     /**
@@ -60,5 +62,5 @@ public interface RoutingGroupSelector
      * Given an HTTP request find a routing group to direct the request to. If a routing group cannot
      * be determined return null.
      */
-    String findRoutingGroup(HttpServletRequest request);
+    Optional<String> findRoutingGroup(HttpServletRequest request);
 }
