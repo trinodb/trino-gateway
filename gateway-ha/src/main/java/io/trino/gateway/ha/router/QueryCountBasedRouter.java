@@ -231,7 +231,7 @@ public class QueryCountBasedRouter
     public String provideBackendForRoutingGroup(String routingGroup, String user)
     {
         return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideAdhocBackend(user));
+                .orElseGet(() -> provideAdhocBackend(user));
     }
 
     @Override
