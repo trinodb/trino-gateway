@@ -17,14 +17,12 @@ It  copies the following, necessary files to current directory:
 
 - `gateway-ha.jar` from Maven Central using the version specified in the script
 - `config.yaml` from the `docs` folder of the current project folder
-- `gateway-ha-persistence-postgres.sql` from the current project folder
 
 ```shell
 #!/usr/bin/env sh
 
 VERSION=14
 BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha"
-POSTGRES_SQL="gateway-ha-persistence-postgres.sql"
 JAR_FILE="gateway-ha-$VERSION-jar-with-dependencies.jar"
 GATEWAY_JAR="gateway-ha.jar"
 CONFIG_YAML="config.yaml"
@@ -38,7 +36,6 @@ copy_files() {
     fi
 
     [[ ! -f "$CONFIG_YAML" ]] && cp ../docs/$CONFIG_YAML .
-    [[ ! -f "$POSTGRES_SQL" ]] && cp ../gateway-ha/src/main/resources/$POSTGRES_SQL .
 }
 
 # Start PostgreSQL database if not running
@@ -50,7 +47,6 @@ start_postgres_db() {
             --name local-postgres -p 5432:5432 -e POSTGRES_PASSWORD=$PGPASSWORD -d postgres
         sleep 5
         docker exec local-postgres psql -U postgres -h localhost -c 'CREATE DATABASE gateway'
-        docker exec local-postgres psql -U postgres -h localhost -d gateway -f /tmp/$POSTGRES_SQL
     fi
 }
 
