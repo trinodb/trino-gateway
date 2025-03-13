@@ -21,7 +21,7 @@ It  copies the following, necessary files to current directory:
 ```shell
 #!/usr/bin/env sh
 
-VERSION=15
+VERSION=16
 BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha"
 JAR_FILE="gateway-ha-$VERSION-jar-with-dependencies.jar"
 GATEWAY_JAR="gateway-ha.jar"
