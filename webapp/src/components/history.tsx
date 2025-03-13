@@ -115,7 +115,7 @@ export function History() {
           onPageChange: list,
         }}>
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
-          <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
+          <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
