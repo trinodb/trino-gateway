@@ -67,13 +67,13 @@ CREATE TABLE IF NOT EXISTS resource_groups_global_properties (
 );
 
 CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
-    resource_group_id VARCHAR(256) NOT NULL,  -- WTF varchar?!
+    resource_group_id VARCHAR(256) NOT NULL,
     update_time DATETIME NOT NULL,
 
     -- Selector fields which must exactly match a query
     source VARCHAR(512) NOT NULL,
     environment VARCHAR(128),
-    query_type VARCHAR(128), -- (reduced from 512)
+    query_type VARCHAR(128),
 
     PRIMARY KEY (environment, source, query_type),
     UNIQUE (source, environment, query_type, resource_group_id)
