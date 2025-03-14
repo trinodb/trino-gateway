@@ -20,12 +20,12 @@ public class StochasticRoutingManager
         extends RoutingManager
 {
     private static final Logger log = Logger.get(StochasticRoutingManager.class);
-    QueryHistoryManager queryHistoryManager;
+    private final QueryHistoryManager queryHistoryManager;
 
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
     {
-        super(gatewayBackendManager);
+        super(gatewayBackendManager, queryHistoryManager);
         this.queryHistoryManager = queryHistoryManager;
     }
 

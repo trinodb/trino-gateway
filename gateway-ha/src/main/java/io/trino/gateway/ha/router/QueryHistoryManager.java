@@ -32,6 +32,8 @@ public interface QueryHistoryManager
 
     String getBackendForQueryId(String queryId);
 
+    String getRoutingGroupForQueryId(String queryId);
+
     TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);
@@ -45,6 +47,7 @@ public interface QueryHistoryManager
         private String source;
         private String backendUrl;
         private long captureTime;
+        private String routingGroup;
 
         public QueryDetail() {}
 
@@ -125,6 +128,17 @@ public interface QueryHistoryManager
             this.captureTime = captureTime;
         }
 
+        @JsonProperty
+        public String getRoutingGroup()
+        {
+            return this.routingGroup;
+        }
+
+        public void setRoutingGroup(String routingGroup)
+        {
+            this.routingGroup = routingGroup;
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -140,13 +154,14 @@ public interface QueryHistoryManager
                     Objects.equals(queryText, that.queryText) &&
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
-                    Objects.equals(backendUrl, that.backendUrl);
+                    Objects.equals(backendUrl, that.backendUrl) &&
+                    Objects.equals(routingGroup, that.routingGroup);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup);
         }
 
         @Override
@@ -159,6 +174,7 @@ public interface QueryHistoryManager
                     .add("source", source)
                     .add("backendUrl", backendUrl)
                     .add("captureTime", captureTime)
+                    .add("routingGroup", routingGroup)
                     .toString();
         }
     }
