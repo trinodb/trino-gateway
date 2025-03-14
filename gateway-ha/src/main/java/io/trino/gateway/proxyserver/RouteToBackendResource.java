@@ -15,6 +15,7 @@ package io.trino.gateway.proxyserver;
 
 import com.google.inject.Inject;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
+import io.trino.gateway.ha.handler.RoutingDestination;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
@@ -25,8 +26,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
-
-import java.net.URI;
 
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter.ROUTE_TO_BACKEND;
@@ -65,8 +64,8 @@ public class RouteToBackendResource
         if (multiReadHttpServletRequest.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
             proxyHandlerStats.recordRequest();
         }
-        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
-        proxyRequestHandler.postRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
+        RoutingDestination routingDestination = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+        proxyRequestHandler.postRequest(body, multiReadHttpServletRequest, asyncResponse, routingDestination);
     }
 
     @GET
@@ -74,8 +73,8 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
-        proxyRequestHandler.getRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+        RoutingDestination routingDestination = routingTargetHandler.getRoutingDestination(servletRequest);
+        proxyRequestHandler.getRequest(servletRequest, asyncResponse, routingDestination);
     }
 
     @DELETE
@@ -83,8 +82,8 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
-        proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+        RoutingDestination routingDestination = routingTargetHandler.getRoutingDestination(servletRequest);
+        proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, routingDestination);
     }
 
     @PUT
@@ -94,7 +93,7 @@ public class RouteToBackendResource
             @Suspended AsyncResponse asyncResponse)
     {
         MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
-        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
-        proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
+        RoutingDestination routingDestination = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+        proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, routingDestination);
     }
 }

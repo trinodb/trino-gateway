@@ -78,6 +78,12 @@ public interface QueryHistoryDao
     String findBackendUrlByQueryId(String queryId);
 
     @SqlQuery("""
+            SELECT routing_group FROM query_history
+            WHERE query_id = :queryId
+            """)
+    String findRoutingGroupByQueryId(String queryId);
+
+    @SqlQuery("""
             SELECT * FROM query_history
             WHERE 1 = 1 <condition>
             ORDER BY created DESC
@@ -104,10 +110,10 @@ public interface QueryHistoryDao
     List<Map<String, Object>> findDistribution(long created);
 
     @SqlUpdate("""
-            INSERT INTO query_history (query_id, query_text, backend_url, user_name, source, created)
-            VALUES (:queryId, :queryText, :backendUrl, :userName, :source, :created)
+            INSERT INTO query_history (query_id, query_text, backend_url, user_name, source, created, routing_group)
+            VALUES (:queryId, :queryText, :backendUrl, :userName, :source, :created, :routingGroup)
             """)
-    void insertHistory(String queryId, String queryText, String backendUrl, String userName, String source, long created);
+    void insertHistory(String queryId, String queryText, String backendUrl, String userName, String source, long created, String routingGroup);
 
     @SqlUpdate("""
             DELETE FROM query_history

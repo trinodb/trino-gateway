@@ -26,6 +26,7 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
+import io.trino.gateway.ha.handler.RoutingDestination;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -118,49 +119,50 @@ public class ProxyRequestHandler
     public void deleteRequest(
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestination routingDestination)
     {
         Request.Builder request = prepareDelete();
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestination, servletRequest, asyncResponse, request);
     }
 
     public void getRequest(
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestination routingDestination)
     {
         Request.Builder request = prepareGet();
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestination, servletRequest, asyncResponse, request);
     }
 
     public void postRequest(
             String statement,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestination routingDestination)
     {
         Request.Builder request = preparePost()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestination, servletRequest, asyncResponse, request);
     }
 
     public void putRequest(
             String statement,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
-            URI remoteUri)
+            RoutingDestination routingDestination)
     {
         Request.Builder request = preparePut()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
-        performRequest(remoteUri, servletRequest, asyncResponse, request);
+        performRequest(routingDestination, servletRequest, asyncResponse, request);
     }
 
     private void performRequest(
-            URI remoteUri,
+            RoutingDestination routingDestination,
             HttpServletRequest servletRequest,
             AsyncResponse asyncResponse,
             Request.Builder requestBuilder)
     {
+        URI remoteUri = routingDestination.clusterUri();
         requestBuilder.setUri(remoteUri);
 
         for (String name : list(servletRequest.getHeaderNames())) {
@@ -189,7 +191,7 @@ public class ProxyRequestHandler
 
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
             Optional<String> username = trinoRequestUserProvider.getInstance(servletRequest).getUser();
-            future = future.transform(response -> recordBackendForQueryId(request, response, username), executor);
+            future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
             }
@@ -266,7 +268,8 @@ public class ProxyRequestHandler
                         .build());
     }
 
-    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username)
+    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username,
+            RoutingDestination routingDestination)
     {
         log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
 
@@ -279,6 +282,7 @@ public class ProxyRequestHandler
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
+                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
@@ -288,6 +292,7 @@ public class ProxyRequestHandler
         else {
             log.error("Non OK HTTP Status code with response [%s] , Status code [%s]", response.body(), response.statusCode());
         }
+        queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryHistoryManager.submitQueryDetail(queryDetail);
         return response;
     }
