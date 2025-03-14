@@ -21,6 +21,7 @@ import jakarta.ws.rs.HttpMethod;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -118,8 +119,8 @@ public final class ProxyUtils
         return Optional.empty();
     }
 
-    public static String buildUriWithNewBackend(String backendHost, HttpServletRequest request)
+    public static URI buildUriWithNewCluster(String backendHost, HttpServletRequest request)
     {
-        return backendHost + request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
+        return URI.create(backendHost + request.getRequestURI() + (request.getQueryString() != null ? "?" + request.getQueryString() : ""));
     }
 }

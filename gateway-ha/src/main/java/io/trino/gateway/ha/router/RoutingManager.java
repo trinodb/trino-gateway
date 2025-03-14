@@ -47,10 +47,13 @@ public abstract class RoutingManager
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
+    private final LoadingCache<String, String> queryIdRoutingGroupCache;
+    private final QueryHistoryManager queryHistoryManager;
 
-    public RoutingManager(GatewayBackendManager gatewayBackendManager)
+    public RoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
     {
         this.gatewayBackendManager = gatewayBackendManager;
+        this.queryHistoryManager = queryHistoryManager;
         queryIdBackendCache =
                 CacheBuilder.newBuilder()
                         .maximumSize(10000)
@@ -62,6 +65,19 @@ public abstract class RoutingManager
                                     public String load(String queryId)
                                     {
                                         return findBackendForUnknownQueryId(queryId);
+                                    }
+                                });
+        queryIdRoutingGroupCache =
+                CacheBuilder.newBuilder()
+                        .maximumSize(10000)
+                        .expireAfterAccess(30, TimeUnit.MINUTES)
+                        .build(
+                                new CacheLoader<String, String>()
+                                {
+                                    @Override
+                                    public String load(String queryId)
+                                    {
+                                        return findRoutingGroupForUnknownQueryId(queryId);
                                     }
                                 });
 
@@ -78,10 +94,15 @@ public abstract class RoutingManager
         queryIdBackendCache.put(queryId, backend);
     }
 
+    public void setRoutingGroupForQueryId(String queryId, String routingGroup)
+    {
+        queryIdRoutingGroupCache.put(queryId, routingGroup);
+    }
+
     /**
      * Performs routing to an adhoc backend.
      */
-    public String provideAdhocBackend(String user)
+    public String provideAdhocCluster(String user)
     {
         List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
@@ -96,13 +117,13 @@ public abstract class RoutingManager
      * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
      * backend is found.
      */
-    public String provideBackendForRoutingGroup(String routingGroup, String user)
+    public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         List<ProxyBackendConfiguration> backends =
                 gatewayBackendManager.getActiveBackends(routingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
-            return provideAdhocBackend(user);
+            return provideAdhocCluster(user);
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId).getProxyTo();
@@ -122,6 +143,22 @@ public abstract class RoutingManager
             log.error("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return backendAddress;
+    }
+
+    /**
+     * Looks up the routing group associated with the queryId in the cache.
+     * If it's not in the cache, look up in query history
+     */
+    public String findRoutingGroupForQueryId(String queryId)
+    {
+        String routingGroup = null;
+        try {
+            routingGroup = queryIdRoutingGroupCache.get(queryId);
+        }
+        catch (ExecutionException e) {
+            log.error("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
+        }
+        return routingGroup;
     }
 
     public void updateBackEndHealth(String backendId, TrinoStatus value)
@@ -178,6 +215,16 @@ public abstract class RoutingManager
         }
         // Fallback on first active backend if queryId mapping not found.
         return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
+    }
+
+    /**
+     * Attempts to look up the routing group associated with the query id from query history table
+     */
+    protected String findRoutingGroupForUnknownQueryId(String queryId)
+    {
+        String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        setRoutingGroupForQueryId(queryId, routingGroup);
+        return routingGroup;
     }
 
     // Predicate helper function to remove the backends from the list

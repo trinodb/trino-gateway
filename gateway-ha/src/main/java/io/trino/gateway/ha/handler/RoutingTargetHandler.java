@@ -36,7 +36,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_INFO_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_NODE_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
-import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewBackend;
+import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static java.util.Objects.requireNonNull;
 
@@ -66,13 +66,27 @@ public class RoutingTargetHandler
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
-    public String getRoutingDestination(HttpServletRequest request)
+    public RoutingDestination getRoutingDestination(HttpServletRequest request)
     {
-        Optional<String> previousBackend = getPreviousBackend(request);
-        String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
-        logRewrite(clusterHost, request);
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+        Optional<String> previousCluster = getPreviousCluster(queryId, request);
+        RoutingDestination routingDestination = previousCluster.map(cluster -> {
+            String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
+                    .orElse("adhoc");
+            return new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request));
+        }).orElse(getClusterFromRoutingGroup(request));
+        logRewrite(routingDestination.clusterHost(), request);
+        return routingDestination;
+    }
 
-        return buildUriWithNewBackend(clusterHost, request);
+    private RoutingDestination getClusterFromRoutingGroup(HttpServletRequest request)
+    {
+        Optional<String> routingGroup = routingGroupSelector.findRoutingGroup(request);
+        String user = request.getHeader(USER_HEADER);
+        // This falls back on adhoc routing group if there is no cluster found for the routing group.
+        String group = routingGroup.orElse("adhoc");
+        String clusterHost = routingManager.provideClusterForRoutingGroup(group, user);
+        return new RoutingDestination(group, clusterHost, buildUriWithNewCluster(clusterHost, request));
     }
 
     public boolean isPathWhiteListed(String path)
@@ -87,20 +101,8 @@ public class RoutingTargetHandler
                 || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
     }
 
-    private String getBackendFromRoutingGroup(HttpServletRequest request)
+    private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
     {
-        String routingGroup = routingGroupSelector.findRoutingGroup(request);
-        String user = request.getHeader(USER_HEADER);
-        if (!isNullOrEmpty(routingGroup)) {
-            // This falls back on adhoc backend if there is no cluster found for the routing group.
-            return routingManager.provideBackendForRoutingGroup(routingGroup, user);
-        }
-        return routingManager.provideAdhocBackend(user);
-    }
-
-    private Optional<String> getPreviousBackend(HttpServletRequest request)
-    {
-        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
         if (queryId.isPresent()) {
             return queryId.map(routingManager::findBackendForQueryId);
         }
@@ -129,6 +131,6 @@ public class RoutingTargetHandler
                 request.getServerPort(),
                 request.getRequestURI(),
                 (request.getQueryString() != null ? "?" + request.getQueryString() : ""),
-                buildUriWithNewBackend(newBackend, request));
+                buildUriWithNewCluster(newBackend, request));
     }
 }
