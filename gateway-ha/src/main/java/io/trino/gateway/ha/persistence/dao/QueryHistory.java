@@ -24,7 +24,8 @@ public record QueryHistory(
         @ColumnName("backend_url") String backendUrl,
         @ColumnName("user_name") @Nullable String userName,
         @ColumnName("source") @Nullable String source,
-        @ColumnName("created") long created)
+        @ColumnName("created") long created,
+        @ColumnName("routing_group") String routingGroup)
 {
     public QueryHistory
     {

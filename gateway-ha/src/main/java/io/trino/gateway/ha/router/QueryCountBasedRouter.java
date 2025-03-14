@@ -222,16 +222,16 @@ public class QueryCountBasedRouter
     }
 
     @Override
-    public String provideAdhocBackend(String user)
+    public String provideAdhocCluster(String user)
     {
         return getBackendForRoutingGroup("adhoc", user).orElseThrow(() -> new RouterException("did not find any cluster for the adhoc routing group"));
     }
 
     @Override
-    public String provideBackendForRoutingGroup(String routingGroup, String user)
+    public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         return getBackendForRoutingGroup(routingGroup, user)
-                .orElseGet(() -> provideAdhocBackend(user));
+                .orElse(provideAdhocCluster(user));
     }
 
     @Override
