@@ -20,6 +20,9 @@ import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -60,11 +63,26 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
-    private String buildJdbcUrl(@Nullable String routingGroupDatabase)
+    public String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
         if (routingGroupDatabase != null) {
-            jdbcUrl = jdbcUrl.substring(0, jdbcUrl.lastIndexOf('/') + 1) + routingGroupDatabase;
+            try {
+                int index = jdbcUrl.indexOf("/") + 1;
+                URI uri = new URI(jdbcUrl.substring(index));
+                URI newUri = new URI(
+                        uri.getScheme(),
+                        uri.getUserInfo(),
+                        uri.getHost(),
+                        uri.getPort(),
+                        Path.of(uri.getPath()).resolveSibling(routingGroupDatabase).toString(),
+                        uri.getQuery(),
+                        uri.getFragment());
+                jdbcUrl = jdbcUrl.substring(0, index) + newUri;
+            }
+            catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
         }
         return jdbcUrl;
     }
