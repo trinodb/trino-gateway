@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { routingRulesApi, updateRoutingRulesApi } from "../api/webapp/routing-rules.ts";
 import { RoutingRulesData } from "../types/routing-rules";
-import { Button, Card, Form, Toast } from "@douyinfe/semi-ui";
+import { Button, Card, Form, Toast, Spin } from "@douyinfe/semi-ui";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { Role, useAccessStore } from "../store";
 import Locale from "../locales";
@@ -10,6 +10,8 @@ export function RoutingRules() {
     const [rules, setRules] = useState<RoutingRulesData[]>([]);
     const [editingStates, setEditingStates] = useState<boolean[]>([]);
     const [formApis, setFormApis] = useState<(FormApi<any> | null)[]>([]);
+    const [isExternalRouting, setIsExternalRouting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const access = useAccessStore();
 
     useEffect(() => {
@@ -17,13 +19,21 @@ export function RoutingRules() {
     }, []);
 
     const fetchRoutingRules = () => {
+        setIsLoading(true);
         routingRulesApi()
                 .then(data => {
-                    setRules(data);
-                    setEditingStates(new Array(data.length).fill(false));
-                    setFormApis(new Array(data.length).fill(null));
+                    if (data.isExternalRouting) {
+                        setIsExternalRouting(true);
+                    } else {
+                        setRules(data);
+                        setEditingStates(new Array(data.length).fill(false));
+                        setFormApis(new Array(data.length).fill(null));
+                        setIsExternalRouting(false);
+                    }
                 }).catch(() => {
             Toast.error(Locale.RoutingRules.ErrorFetch);
+        }).finally(() => {
+            setIsLoading(false);
         });
     };
 
@@ -80,8 +90,32 @@ export function RoutingRules() {
     };
 
     return (
-            <div>
-                {rules.map((rule, index) => (
+            <>
+                {isLoading ? (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingTop: '40px'
+                    }}>
+                        <Spin size="large" />
+                    </div>
+                ) : rules.length === 0 ? (
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'flex-start',
+                        paddingTop: '40px',
+                        fontSize: '16px',
+                        color: '#666'
+                    }}>
+                        {isExternalRouting ?
+                            "No routing rules available. Routing rules are managed by an external service." :
+                            "No routing rules configured. Add rules to manage query routing."
+                        }
+                    </div>
+                ) : (
+                    rules.map((rule, index) => (
                         <div key={index} style={{marginBottom: '20px'}}>
                             <Card
                                     shadows='always'
@@ -170,7 +204,7 @@ export function RoutingRules() {
                                 </Form>
                             </Card>
                         </div>
-                ))}
-            </div>
+                )))}
+            </>
     );
 }
