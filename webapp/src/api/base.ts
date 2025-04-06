@@ -17,6 +17,14 @@ export class ClientApi {
     if (res.status === 401 || res.status === 403) {
       this.authErrorHandler()
     }
+    else if (res.status === 204) {
+      // handle the case of Response.Status.NO_CONTENT when External Routing Service is used
+      return { isExternalRouting: true };
+    }
+    else if (res.status >= 500) {
+      const resJson = await res.json();
+      this.serverErrorHandler(resJson.msg);
+    }
     else if (res.status !== 200) {
       Toast.error({
         content: Locale.Error.Network,
@@ -118,6 +126,14 @@ export class ClientApi {
     const accessStore = useAccessStore.getState();
     accessStore.updateToken("");
     throw new Error(Locale.Auth.Expiration);
+  }
+  serverErrorHandler(msg: string): void {
+    Toast.error({
+      content: msg,
+      duration: 5,
+      theme: "light"
+    });
+    throw new Error(msg);
   }
 }
 
