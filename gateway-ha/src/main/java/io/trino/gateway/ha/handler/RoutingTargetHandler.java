@@ -17,13 +17,20 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -66,27 +73,36 @@ public class RoutingTargetHandler
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
-    public RoutingDestination getRoutingDestination(HttpServletRequest request)
+    public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
         Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
         Optional<String> previousCluster = getPreviousCluster(queryId, request);
-        RoutingDestination routingDestination = previousCluster.map(cluster -> {
+        RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
             String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
                     .orElse("adhoc");
-            return new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request));
+            return new RoutingTargetResponse(
+                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request)),
+                    request);
         }).orElse(getClusterFromRoutingGroup(request));
-        logRewrite(routingDestination.clusterHost(), request);
-        return routingDestination;
+        logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
+        return routingTargetResponse;
     }
 
-    private RoutingDestination getClusterFromRoutingGroup(HttpServletRequest request)
+    private RoutingTargetResponse getClusterFromRoutingGroup(HttpServletRequest request)
     {
-        Optional<String> routingGroup = routingGroupSelector.findRoutingGroup(request);
+        RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
         // This falls back on adhoc routing group if there is no cluster found for the routing group.
-        String group = routingGroup.orElse("adhoc");
-        String clusterHost = routingManager.provideClusterForRoutingGroup(group, user);
-        return new RoutingDestination(group, clusterHost, buildUriWithNewCluster(clusterHost, request));
+        String routingGroup = routingDestination.routingGroup() != null ? routingDestination.routingGroup() : "adhoc";
+        String clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
+        // Apply headers from RoutingDestination if there are any
+        HttpServletRequest modifiedRequest = request;
+        if (!routingDestination.externalHeaders().isEmpty()) {
+            modifiedRequest = new HeaderModifyingRequestWrapper(request, routingDestination.externalHeaders());
+        }
+        return new RoutingTargetResponse(
+                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request)),
+                modifiedRequest);
     }
 
     public boolean isPathWhiteListed(String path)
@@ -99,6 +115,51 @@ public class RoutingTargetHandler
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
                 || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
+    }
+
+    /**
+     * A wrapper for HttpServletRequest that allows modifying multiple headers.
+     */
+    private static class HeaderModifyingRequestWrapper
+            extends HttpServletRequestWrapper
+    {
+        private final Map<String, String> customHeaders;
+
+        public HeaderModifyingRequestWrapper(HttpServletRequest request, Map<String, String> customHeaders)
+        {
+            super(request);
+            this.customHeaders = customHeaders;
+        }
+
+        @Override
+        public String getHeader(String name)
+        {
+            if (customHeaders.containsKey(name)) {
+                return customHeaders.get(name);
+            }
+            return super.getHeader(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaders(String name)
+        {
+            if (customHeaders.containsKey(name)) {
+                return Collections.enumeration(Collections.singletonList(customHeaders.get(name)));
+            }
+            return super.getHeaders(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaderNames()
+        {
+            List<String> names = Collections.list(super.getHeaderNames());
+            for (String name : customHeaders.keySet()) {
+                if (!names.contains(name)) {
+                    names.add(name);
+                }
+            }
+            return Collections.enumeration(names);
+        }
     }
 
     private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
@@ -119,7 +180,6 @@ public class RoutingTargetHandler
                 return Optional.of(cookies.getFirst().getBackend());
             }
         }
-
         return Optional.empty();
     }
 

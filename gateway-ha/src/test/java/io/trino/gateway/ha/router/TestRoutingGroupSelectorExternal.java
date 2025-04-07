@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.JsonBodyGenerator;
@@ -37,7 +38,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -92,7 +92,7 @@ final class TestRoutingGroupSelectorExternal
         HttpServletRequest mockRequest = prepareMockRequest();
 
         // Create a mock response
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("test-group", null);
+        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("test-group", null, ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
@@ -140,7 +140,7 @@ final class TestRoutingGroupSelectorExternal
         // Set a mock header for ROUTING_GROUP_HEADER
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("default-group-api-failure");
         // Create a mock response that returns error in List<String>
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("fail-group", List.of("test-api-failure", "400 error"));
+        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("fail-group", List.of("test-api-failure", "400 error"), ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
@@ -149,10 +149,10 @@ final class TestRoutingGroupSelectorExternal
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         // Verify the response
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .contains("default-group-api-failure");
+        assertThat(routingGroup).isEqualTo("default-group-api-failure");
     }
 
     @Test
@@ -210,7 +210,7 @@ final class TestRoutingGroupSelectorExternal
         when(mockRequest.getHeader(USER_HEADER)).thenReturn("user");
 
         List<String> defaultHeaderNames = List.of("Accept-Encoding");
-        List<String> defaultAcceptEncodingValues = Arrays.asList("gzip", "deflate", "br");
+        List<String> defaultAcceptEncodingValues = List.of("gzip", "deflate", "br");
         Enumeration<String> headerNamesEnumeration = Collections.enumeration(defaultHeaderNames);
 
         when(mockRequest.getHeaderNames()).thenReturn(headerNamesEnumeration);
