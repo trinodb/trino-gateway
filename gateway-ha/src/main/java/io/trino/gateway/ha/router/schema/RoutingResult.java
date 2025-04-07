@@ -13,16 +13,13 @@
  */
 package io.trino.gateway.ha.router.schema;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Response from the external routing service that includes:
- * - routingGroup: The target routing group for the request
- * - errors: Any errors that occurred during routing
- * - externalHeaders: Headers that can be set in the request
+ * Contains the complete result of the routing process including:
+ * - uri: The target URI to route the request to
+ * - modifiedRequest: The request with any headers set by the external routing service
  */
-public record RoutingGroupExternalResponse(
-        String routingGroup,
-        List<String> errors,
-        Map<String, Object> externalHeaders) {}
+public record RoutingResult(
+        String uri,
+        HttpServletRequest modifiedRequest) {}
