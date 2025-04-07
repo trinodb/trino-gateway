@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -61,7 +61,7 @@ public class FileBasedRoutingGroupSelector
     }
 
     @Override
-    public Optional<String> findRoutingGroup(HttpServletRequest request)
+    public RoutingSelectorResponse findRoutingDestination(HttpServletRequest request)
     {
         Map<String, String> result = new HashMap<>();
         Map<String, Object> state = new HashMap<>();
@@ -85,7 +85,7 @@ public class FileBasedRoutingGroupSelector
                 rule.evaluateAction(result, data, state);
             }
         });
-        return Optional.ofNullable(result.get(RESULTS_ROUTING_GROUP_KEY));
+        return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY));
     }
 
     public List<RoutingRule> readRulesFromPath(Path rulesPath)
