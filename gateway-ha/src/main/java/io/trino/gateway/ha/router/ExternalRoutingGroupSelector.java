@@ -100,6 +100,18 @@ public class ExternalRoutingGroupSelector
             else if (response.errors() != null && !response.errors().isEmpty()) {
                 throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
             }
+
+            // Apply headers from response if not in excludeHeaders
+            if (response.externalHeaders() != null) {
+                response.externalHeaders().forEach((key, value) -> {
+                    if (!excludeHeaders.contains(key) && value != null) {
+                        // Store the header in a request attribute
+                        // This will be used by the RoutingTargetHandler to set the actual header
+                        servletRequest.setAttribute("MODIFIED_HEADER_" + key, value);
+                    }
+                });
+            }
+
             return response.routingGroup();
         }
         catch (Exception e) {

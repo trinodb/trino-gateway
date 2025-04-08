@@ -20,9 +20,13 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.schema.RoutingResult;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -66,13 +70,28 @@ public class RoutingTargetHandler
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
-    public String getRoutingDestination(HttpServletRequest request)
+    public RoutingResult resolveRouting(HttpServletRequest request)
     {
         Optional<String> previousBackend = getPreviousBackend(request);
         String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
         logRewrite(clusterHost, request);
 
-        return buildUriWithNewBackend(clusterHost, request);
+        // Apply headers from ExternalRoutingGroupSelector
+        HttpServletRequest modifiedRequest = request;
+        Enumeration<String> attributeNames = request.getAttributeNames();
+        while (attributeNames.hasMoreElements()) {
+            String attributeName = attributeNames.nextElement();
+            if (attributeName.startsWith("MODIFIED_HEADER_")) {
+                String headerName = attributeName.substring("MODIFIED_HEADER_".length());
+                Object headerValue = request.getAttribute(attributeName);
+                if (headerValue != null) {
+                    // Create a wrapper request that includes the modified header
+                    modifiedRequest = new HeaderModifyingRequestWrapper(modifiedRequest, headerName, headerValue);
+                }
+            }
+        }
+
+        return new RoutingResult(buildUriWithNewBackend(clusterHost, request), modifiedRequest);
     }
 
     public boolean isPathWhiteListed(String path)
@@ -96,6 +115,41 @@ public class RoutingTargetHandler
             return routingManager.provideBackendForRoutingGroup(routingGroup, user);
         }
         return routingManager.provideAdhocBackend(user);
+    }
+
+    /**
+     * A wrapper for HttpServletRequest that allows modifying headers.
+     */
+    private static class HeaderModifyingRequestWrapper
+            extends HttpServletRequestWrapper
+    {
+        private final String headerName;
+        private final Object headerValue;
+
+        public HeaderModifyingRequestWrapper(HttpServletRequest request, String headerName, Object headerValue)
+        {
+            super(request);
+            this.headerName = headerName;
+            this.headerValue = headerValue;
+        }
+
+        @Override
+        public String getHeader(String name)
+        {
+            if (name.equalsIgnoreCase(headerName)) {
+                return headerValue.toString();
+            }
+            return super.getHeader(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaders(String name)
+        {
+            if (name.equalsIgnoreCase(headerName)) {
+                return Collections.enumeration(Collections.singletonList(headerValue.toString()));
+            }
+            return super.getHeaders(name);
+        }
     }
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)
