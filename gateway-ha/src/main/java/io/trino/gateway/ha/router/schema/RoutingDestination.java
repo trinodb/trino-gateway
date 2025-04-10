@@ -13,15 +13,18 @@
  */
 package io.trino.gateway.ha.router.schema;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * Contains the complete result of the routing process including:
- * - uri: The target URI to route the request to
- * - modifiedRequest: The request with any headers set by the external routing service
- * or other routing selectors. The modifiedRequest might be a wrapper around the original
- * request with custom header handling.
+ * Contains the routing group and any external headers to be applied to the request.
  */
-public record RoutingResult(
-        String uri,
-        HttpServletRequest modifiedRequest) {}
+public record RoutingDestination(
+        String routingGroup,
+        Map<String, String> externalHeaders)
+{
+    public RoutingDestination(String routingGroup)
+    {
+        this(routingGroup, Collections.emptyMap());
+    }
+}

@@ -17,6 +17,7 @@ import io.airlift.http.client.HttpClient;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.router.schema.RoutingDestination;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -32,7 +33,7 @@ public interface RoutingGroupSelector
      */
     static RoutingGroupSelector byRoutingGroupHeader()
     {
-        return request -> request.getHeader(ROUTING_GROUP_HEADER);
+        return request -> new RoutingDestination(request.getHeader(ROUTING_GROUP_HEADER));
     }
 
     /**
@@ -60,5 +61,5 @@ public interface RoutingGroupSelector
      * Given an HTTP request find a routing group to direct the request to. If a routing group cannot
      * be determined return null.
      */
-    String findRoutingGroup(HttpServletRequest request);
+    RoutingDestination findRoutingDestination(HttpServletRequest request);
 }

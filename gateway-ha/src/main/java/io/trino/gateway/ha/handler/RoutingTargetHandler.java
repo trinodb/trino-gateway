@@ -20,6 +20,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.schema.RoutingDestination;
 import io.trino.gateway.ha.router.schema.RoutingResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -72,26 +74,55 @@ public class RoutingTargetHandler
 
     public RoutingResult resolveRouting(HttpServletRequest request)
     {
-        Optional<String> previousBackend = getPreviousBackend(request);
-        String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
-        logRewrite(clusterHost, request);
+        // Try to get previous backend - if present, use it directly
+        return getPreviousBackend(request)
+                .map(clusterHost -> {
+                    logRewrite(clusterHost, request);
+                    // Don't need to modify any headers as it won't affect an already running query
+                    return new RoutingResult(buildUriWithNewBackend(clusterHost, request), request);
+                })
+                .orElseGet(() -> {
+                    // No previous backend found, get routing info with headers
+                    RoutingInfo routingInfo = getRoutingInfo(request);
+                    String clusterHost = routingInfo.clusterHost();
+                    logRewrite(clusterHost, request);
 
-        // Apply headers from ExternalRoutingGroupSelector
-        HttpServletRequest modifiedRequest = request;
-        Enumeration<String> attributeNames = request.getAttributeNames();
-        while (attributeNames.hasMoreElements()) {
-            String attributeName = attributeNames.nextElement();
-            if (attributeName.startsWith("MODIFIED_HEADER_")) {
-                String headerName = attributeName.substring("MODIFIED_HEADER_".length());
-                Object headerValue = request.getAttribute(attributeName);
-                if (headerValue != null) {
-                    // Create a wrapper request that includes the modified header
-                    modifiedRequest = new HeaderModifyingRequestWrapper(modifiedRequest, headerName, headerValue);
-                }
-            }
+                    // Apply headers from RoutingDestination if there are any
+                    HttpServletRequest modifiedRequest = request;
+                    if (!routingInfo.routingDestination().externalHeaders().isEmpty()) {
+                        modifiedRequest = new HeaderModifyingRequestWrapper(request, routingInfo.routingDestination().externalHeaders());
+                    }
+                    return new RoutingResult(buildUriWithNewBackend(clusterHost, request), modifiedRequest);
+                });
+    }
+
+    /**
+     * Contains information needed for routing a request: the cluster host and the routing destination
+     * which may include header modifications.
+     */
+    private record RoutingInfo(
+            String clusterHost,
+            RoutingDestination routingDestination) {}
+
+    /**
+     * Gets both the cluster host and routing destination information from the request.
+     */
+    private RoutingInfo getRoutingInfo(HttpServletRequest request)
+    {
+        RoutingDestination routingDestination = routingGroupSelector.findRoutingDestination(request);
+        String routingGroup = routingDestination.routingGroup();
+        String user = request.getHeader(USER_HEADER);
+
+        String clusterHost;
+        if (!isNullOrEmpty(routingGroup)) {
+            // This falls back on adhoc backend if there is no cluster found for the routing group.
+            clusterHost = routingManager.provideBackendForRoutingGroup(routingGroup, user);
+        }
+        else {
+            clusterHost = routingManager.provideAdhocBackend(user);
         }
 
-        return new RoutingResult(buildUriWithNewBackend(clusterHost, request), modifiedRequest);
+        return new RoutingInfo(clusterHost, routingDestination);
     }
 
     public boolean isPathWhiteListed(String path)
@@ -106,38 +137,25 @@ public class RoutingTargetHandler
                 || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
     }
 
-    private String getBackendFromRoutingGroup(HttpServletRequest request)
-    {
-        String routingGroup = routingGroupSelector.findRoutingGroup(request);
-        String user = request.getHeader(USER_HEADER);
-        if (!isNullOrEmpty(routingGroup)) {
-            // This falls back on adhoc backend if there is no cluster found for the routing group.
-            return routingManager.provideBackendForRoutingGroup(routingGroup, user);
-        }
-        return routingManager.provideAdhocBackend(user);
-    }
-
     /**
-     * A wrapper for HttpServletRequest that allows modifying headers.
+     * A wrapper for HttpServletRequest that allows modifying multiple headers.
      */
     private static class HeaderModifyingRequestWrapper
             extends HttpServletRequestWrapper
     {
-        private final String headerName;
-        private final Object headerValue;
+        private final Map<String, String> customHeaders;
 
-        public HeaderModifyingRequestWrapper(HttpServletRequest request, String headerName, Object headerValue)
+        public HeaderModifyingRequestWrapper(HttpServletRequest request, Map<String, String> customHeaders)
         {
             super(request);
-            this.headerName = headerName;
-            this.headerValue = headerValue;
+            this.customHeaders = customHeaders;
         }
 
         @Override
         public String getHeader(String name)
         {
-            if (name.equalsIgnoreCase(headerName)) {
-                return headerValue.toString();
+            if (customHeaders.containsKey(name)) {
+                return customHeaders.get(name);
             }
             return super.getHeader(name);
         }
@@ -145,10 +163,22 @@ public class RoutingTargetHandler
         @Override
         public Enumeration<String> getHeaders(String name)
         {
-            if (name.equalsIgnoreCase(headerName)) {
-                return Collections.enumeration(Collections.singletonList(headerValue.toString()));
+            if (customHeaders.containsKey(name)) {
+                return Collections.enumeration(Collections.singletonList(customHeaders.get(name)));
             }
             return super.getHeaders(name);
+        }
+
+        @Override
+        public Enumeration<String> getHeaderNames()
+        {
+            List<String> names = Collections.list(super.getHeaderNames());
+            for (String name : customHeaders.keySet()) {
+                if (!names.contains(name)) {
+                    names.add(name);
+                }
+            }
+            return Collections.enumeration(names);
         }
     }
 

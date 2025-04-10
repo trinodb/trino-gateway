@@ -84,12 +84,14 @@ final class TestRoutingGroupSelector
 
         // If the header is present the routing group is the value of that header.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("batch_backend");
-        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest))
-                .isEqualTo("batch_backend");
+        RoutingGroupSelector routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isEqualTo("batch_backend");
 
         // If the header is not present just return null.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn(null);
-        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingGroup(mockRequest)).isNull();
+        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingDestination(mockRequest)).isNull();
     }
 
     @ParameterizedTest
@@ -102,8 +104,9 @@ final class TestRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isEqualTo("etl");
     }
 
     @Test
@@ -118,9 +121,9 @@ final class TestRoutingGroupSelector
         String encodedUsernamePassword = Base64.getEncoder().encodeToString("will:supersecret".getBytes(UTF_8));
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getHeader("Authorization")).thenReturn("Basic " + encodedUsernamePassword);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("will-group");
+        assertThat(routingGroup).isEqualTo("will-group");
     }
 
     @Test
@@ -139,8 +142,9 @@ final class TestRoutingGroupSelector
         when(mockRequest.getReader()).thenReturn(bufferedReader);
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat_default");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem_\\\"default");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("tbl-group");
+        assertThat(routingGroup).isEqualTo("tbl-group");
     }
 
     @Test
@@ -159,8 +163,9 @@ final class TestRoutingGroupSelector
         when(mockRequest.getReader()).thenReturn(bufferedReader);
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("catx");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("default");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("catalog-schema-group");
+        assertThat(routingGroup).isEqualTo("catalog-schema-group");
     }
 
     @Test
@@ -175,8 +180,9 @@ final class TestRoutingGroupSelector
 
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("other_catalog");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("other_schema");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("defaults-group");
+        assertThat(routingGroup).isEqualTo("defaults-group");
     }
 
     @Test
@@ -193,8 +199,9 @@ final class TestRoutingGroupSelector
         BufferedReader bufferedReader = new BufferedReader(reader);
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("type-group");
+        assertThat(routingGroup).isEqualTo("type-group");
     }
 
     @Test
@@ -208,8 +215,9 @@ final class TestRoutingGroupSelector
                         requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader("CREATE TABLE cat.schem.foo (c1 int)")));
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("resource-group-type-group");
+        assertThat(routingGroup).isEqualTo("resource-group-type-group");
     }
 
     @Test
@@ -227,8 +235,9 @@ final class TestRoutingGroupSelector
         BufferedReader bufferedReader = new BufferedReader(reader);
         HttpServletRequest mockRequest = prepareMockRequest();
         when(mockRequest.getReader()).thenReturn(bufferedReader);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("type-group");
+        assertThat(routingGroup).isEqualTo("type-group");
     }
 
     @Test
@@ -251,8 +260,9 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeaders(TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME)).thenReturn(Collections.enumeration(Arrays.asList(encodedStatements.split(","))));
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat");
         when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isEqualTo("statement-header-group");
+        assertThat(routingGroup).isEqualTo("statement-header-group");
     }
 
     @ParameterizedTest
@@ -267,8 +277,9 @@ final class TestRoutingGroupSelector
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl-special");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isEqualTo("etl-special");
     }
 
     @ParameterizedTest
@@ -283,7 +294,9 @@ final class TestRoutingGroupSelector
         // should return no match
         when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
                 "email=test@example.com,label=special");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest)).isNull();
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isNull();
     }
 
     @Test
@@ -309,8 +322,9 @@ final class TestRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .isEqualTo("etl");
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isEqualTo("etl");
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
@@ -324,7 +338,7 @@ final class TestRoutingGroupSelector
         Thread.sleep(2 * refreshPeriod.toMillis());
 
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
+        assertThat(routingGroupSelector.findRoutingDestination(mockRequest))
                 .isEqualTo("etl2");
         file.deleteOnExit();
     }

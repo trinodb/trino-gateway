@@ -25,14 +25,18 @@ import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.router.schema.RoutingDestination;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -78,7 +82,7 @@ public class ExternalRoutingGroupSelector
     }
 
     @Override
-    public String findRoutingGroup(HttpServletRequest servletRequest)
+    public RoutingDestination findRoutingDestination(HttpServletRequest servletRequest)
     {
         try {
             RoutingGroupExternalBody requestBody = createRequestBody(servletRequest);
@@ -101,24 +105,29 @@ public class ExternalRoutingGroupSelector
                 throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
             }
 
-            // Apply headers from response if not in excludeHeaders
+            // Filter out excluded headers and null values
+            Map<String, String> filteredHeaders = new HashMap<>();
             if (response.externalHeaders() != null) {
                 response.externalHeaders().forEach((key, value) -> {
                     if (!excludeHeaders.contains(key) && value != null) {
-                        // Store the header in a request attribute
-                        // This will be used by the RoutingTargetHandler to set the actual header
-                        servletRequest.setAttribute("MODIFIED_HEADER_" + key, value);
+                        filteredHeaders.put(key, value.toString());
                     }
                 });
+                // Log the headers that will be applied
+                if (!filteredHeaders.isEmpty()) {
+                    String headersStr = filteredHeaders.entrySet().stream()
+                            .map(entry -> entry.getKey() + "=" + entry.getValue())
+                            .collect(Collectors.joining(", "));
+                    log.info("External routing service modified headers to: %s", headersStr);
+                }
             }
-
-            return response.routingGroup();
+            return new RoutingDestination(response.routingGroup(), filteredHeaders);
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "
                     + "from external routing rules processing at " + uri);
         }
-        return servletRequest.getHeader(ROUTING_GROUP_HEADER);
+        return new RoutingDestination(servletRequest.getHeader(ROUTING_GROUP_HEADER));
     }
 
     private RoutingGroupExternalBody createRequestBody(HttpServletRequest request)
