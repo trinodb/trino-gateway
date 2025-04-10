@@ -155,10 +155,10 @@ final class TestRoutingGroupSelectorExternal
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         // Verify the response
-        assertThat(routingGroupSelector.findRoutingDestination(mockRequest))
-                .isEqualTo("default-group-api-failure");
+        assertThat(routingGroup).isEqualTo("default-group-api-failure");
     }
 
     @Test
@@ -206,30 +206,6 @@ final class TestRoutingGroupSelectorExternal
     {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
-        return mockRequest;
-    }
-
-    private HttpServletRequest prepareModifiableMockRequest()
-    {
-        HttpServletRequest mockRequest = prepareMockRequest();
-
-        // Create a map to store attributes
-        Map<String, Object> attributes = new HashMap<>();
-
-        // Setup setAttribute to store values in the map
-        doAnswer(invocation -> {
-            String name = invocation.getArgument(0);
-            Object value = invocation.getArgument(1);
-            attributes.put(name, value);
-            return null;
-        }).when(mockRequest).setAttribute(anyString(), any());
-
-        // Setup getAttribute to retrieve values from the map
-        when(mockRequest.getAttribute(anyString())).thenAnswer(invocation -> {
-            String name = invocation.getArgument(0);
-            return attributes.get(name);
-        });
-
         return mockRequest;
     }
 

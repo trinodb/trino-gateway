@@ -91,7 +91,10 @@ final class TestRoutingGroupSelector
 
         // If the header is not present just return null.
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn(null);
-        assertThat(RoutingGroupSelector.byRoutingGroupHeader().findRoutingDestination(mockRequest)).isNull();
+        routingGroupSelector = RoutingGroupSelector.byRoutingGroupHeader();
+        routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isNull();
     }
 
     @ParameterizedTest
@@ -336,10 +339,10 @@ final class TestRoutingGroupSelector
                             + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
         }
         Thread.sleep(2 * refreshPeriod.toMillis());
-
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        assertThat(routingGroupSelector.findRoutingDestination(mockRequest))
-                .isEqualTo("etl2");
+        routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+        assertThat(routingGroup).isEqualTo("etl2");
         file.deleteOnExit();
     }
 
