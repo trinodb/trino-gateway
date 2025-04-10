@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import io.airlift.http.client.HttpClient;
@@ -23,7 +22,6 @@ import io.airlift.http.client.Request;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
-import io.trino.gateway.ha.router.schema.RoutingDestination;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,9 +40,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
@@ -58,8 +54,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
