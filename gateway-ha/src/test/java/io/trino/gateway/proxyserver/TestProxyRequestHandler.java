@@ -94,8 +94,8 @@ final class TestProxyRequestHandler
 
         File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
 
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        System.setProperty("config", testConfigFile.getAbsolutePath());
+        HaGatewayLauncher.main(new String[] {});
 
         setUpBackend("custom", "http://localhost:" + customBackendPort, "externalUrl", true, "adhoc", routerPort);
     }

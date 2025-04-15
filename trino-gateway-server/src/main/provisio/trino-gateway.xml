@@ -1,0 +1,20 @@
+<runtime>
+    <!-- Target -->
+    <archive name="${project.artifactId}-${project.version}.tar.gz" hardLinkIncludes="**/*.jar" />
+
+    <!-- Launcher -->
+    <artifactSet to="bin">
+        <artifact id="io.airlift:launcher:tar.gz:bin:${dep.airlift.launcher.version}">
+            <unpack />
+        </artifact>
+        <artifact id="io.airlift:launcher:tar.gz:properties:${dep.airlift.launcher.version}">
+            <unpack filter="true" />
+        </artifact>
+    </artifactSet>
+
+    <!-- Gateway Server -->
+    <artifactSet to="lib">
+        <artifact id="${project.groupId}:gateway-ha:${project.version}" />
+    </artifactSet>
+
+</runtime>

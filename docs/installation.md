@@ -120,11 +120,10 @@ Find more information in [the related Trino documentation](https://trino.io/docs
 
 ## Configuration
 
-After downloading or building the JAR, rename it to `gateway-ha.jar`,
-and place it in a directory with read and write access such as `/opt/trinogateway`.
+After downloading or building the TAR, extract it to `trino-gateway-server`.
 
 Copy the example config file `config.yaml` from the `gateway-ha/`
-directory into the same directory, and update the configuration as needed.
+directory and JVM configuration file `docker/default/etc/jvm.config` into etc directory inside trino-gateway-server, and update the configuration as needed.
 
 Each component of the Trino Gateway has a corresponding node in the
 configuration YAML file.
@@ -243,12 +242,10 @@ proxyResponseConfiguration:
 
 ## Running Trino Gateway
 
-Start Trino Gateway with the following java command in the directory of the
-JAR and YAML files:
+Start Trino Gateway with the following command by cd to the Trino Gateway server directory :
 
 ```shell
-java -XX:MinRAMPercentage=50 -XX:MaxRAMPercentage=80 \
-    -jar gateway-ha.jar config.yaml
+bin/launcher start --config=etc/config.yaml
 ```
 
 ### Helm <a name="helm"></a>
@@ -315,10 +312,10 @@ However, a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
 is recommended to protect the database credentials required for this 
 configuration.
 
-By default, the Trino Gateway process is started with the following command:
+By default, the Trino Gateway process is started with the following command from the trino-gateway-server directory after extracting the TAR:
 
 ```shell
-java -XX:MinRAMPercentage=80.0 -XX:MaxRAMPercentage=80.0 -jar /usr/lib/trino-gateway/gateway-ha-jar-with-dependencies.jar /etc/trino-gateway/config.yaml
+bin/launcher start --config=etc/config.yaml
 ```
 
 You can customize details with the `command` node. It accepts a list, that must

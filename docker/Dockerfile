@@ -59,14 +59,16 @@ RUN \
     set -xeu && \
     groupadd trino --gid 1000 && \
     useradd trino --uid 1000 --gid 1000 --create-home && \
-    mkdir -p /usr/lib/trino-gateway /etc/trino-gateway && \
-    chown -R "trino:trino" /usr/lib/trino-gateway /etc/trino-gateway
+    mkdir -p /usr/lib/trino-gateway /data/trino-gateway && \
+    chown -R "trino:trino" /usr/lib/trino-gateway /data/trino-gateway
 
-COPY --chown=trino:trino gateway-ha /usr/lib/trino-gateway
+ARG TRINO_GATEWAY_VERSION
+COPY --chown=trino:trino trino-gateway-server-${TRINO_GATEWAY_VERSION} /usr/lib/trino-gateway
+COPY --chown=trino:trino default/etc /etc/trino-gateway
 
 EXPOSE 8080
 USER trino:trino
-CMD java -jar /usr/lib/trino-gateway/gateway-ha-jar-with-dependencies.jar "/etc/trino-gateway/config.yaml"
+CMD ["/usr/lib/trino-gateway/bin/run-trino-gateway"]
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
   CMD /usr/lib/trino-gateway/bin/health-check

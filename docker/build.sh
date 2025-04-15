@@ -85,23 +85,23 @@ check_environment
 
 if [ -n "$TRINO_GATEWAY_VERSION" ]; then
     echo "🎣 Downloading Trino Gateway server artifact for release version ${TRINO_GATEWAY_VERSION}"
-    "${SOURCE_DIR}/mvnw" -C dependency:get -Dtransitive=false -Dartifact="io.trino.gateway:gateway-ha:${TRINO_GATEWAY_VERSION}:jar:jar-with-dependencies"
+    "${SOURCE_DIR}/mvnw" -C dependency:get -Dtransitive=false -Dartifact="io.trino.gateway:trino-gateway-server:${TRINO_GATEWAY_VERSION}:tar.gz"
     local_repo=$("${SOURCE_DIR}/mvnw" -B help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
-    trino_gateway_ha="$local_repo/io/trino/gateway/gateway-ha/${TRINO_GATEWAY_VERSION}/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
+    trino_gateway_ha="$local_repo/io/trino/gateway/trino-gateway-server/${TRINO_GATEWAY_VERSION}/trino-gateway-server-${TRINO_GATEWAY_VERSION}.tar.gz"
     chmod +x "$trino_gateway_ha"
 else
     TRINO_GATEWAY_VERSION=$("${SOURCE_DIR}/mvnw" -f "${SOURCE_DIR}/pom.xml" --quiet help:evaluate -Dexpression=project.version -DforceStdout)
-    echo "🎯 Using currently built artifacts from the gateway-ha module with version ${TRINO_GATEWAY_VERSION}"
-    trino_gateway_ha="${SOURCE_DIR}/gateway-ha/target/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
+    echo "🎯 Using currently built artifacts with version ${TRINO_GATEWAY_VERSION}"
+    trino_gateway_ha="${SOURCE_DIR}/trino-gateway-server/target/trino-gateway-server-${TRINO_GATEWAY_VERSION}.tar.gz"
 fi
 
 echo "🧱 Preparing the image build context directory"
 WORK_DIR="$(mktemp -d)"
-GATEWAY_WORK_DIR="${WORK_DIR}/gateway-ha"
-mkdir "${GATEWAY_WORK_DIR}"
-cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}/gateway-ha-jar-with-dependencies.jar"
-cp -R bin "${GATEWAY_WORK_DIR}"
-cp "${SCRIPT_DIR}/Dockerfile" "${WORK_DIR}"
+cp "$trino_gateway_ha" "${WORK_DIR}/"
+tar -C "${WORK_DIR}" -xzf "${WORK_DIR}/trino-gateway-server-${TRINO_GATEWAY_VERSION}.tar.gz"
+rm "${WORK_DIR}/trino-gateway-server-${TRINO_GATEWAY_VERSION}.tar.gz"
+cp -R bin "${WORK_DIR}/trino-gateway-server-${TRINO_GATEWAY_VERSION}"
+cp -R default "${WORK_DIR}/"
 
 TAG_PREFIX="trino-gateway:${TRINO_GATEWAY_VERSION}"
 #version file is used by the Helm chart test
@@ -122,7 +122,8 @@ for arch in "${ARCHITECTURES[@]}"; do
         --build-arg TRINO_GATEWAY_BUILD_IMAGE="${TRINO_GATEWAY_BUILD_IMAGE}" \
         --platform "linux/$arch" \
         -f Dockerfile \
-        -t "${TAG_PREFIX}-$arch"
+        -t "${TAG_PREFIX}-$arch" \
+        --build-arg "TRINO_GATEWAY_VERSION=${TRINO_GATEWAY_VERSION}"
 done
 
 echo "🧹 Cleaning up the build context directory"

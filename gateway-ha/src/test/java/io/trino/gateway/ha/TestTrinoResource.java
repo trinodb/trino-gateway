@@ -72,8 +72,8 @@ final class TestTrinoResource
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 
         // Start Trino Gateway so migrations are run to create tables before inserting test data
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        System.setProperty("config", testConfigFile.getAbsolutePath());
+        HaGatewayLauncher.main(new String[] {});
 
         prepareData();
     }
