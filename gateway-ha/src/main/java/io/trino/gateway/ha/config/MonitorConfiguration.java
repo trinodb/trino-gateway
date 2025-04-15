@@ -19,6 +19,7 @@ import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 
 import java.util.Map;
 
+import static io.trino.gateway.ha.clustermonitor.BackendsMetricStats.DEFAULT_BACKEND_METRICS_REGISTRY_REFRESH_PERIOD;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class MonitorConfiguration
@@ -36,6 +37,8 @@ public class MonitorConfiguration
     private String runningQueriesMetricName = "trino_execution_name_QueryManager_RunningQueries";
 
     private String queuedQueriesMetricName = "trino_execution_name_QueryManager_QueuedQueries";
+
+    private Duration backendMetricsRegistryRefreshPeriod = DEFAULT_BACKEND_METRICS_REGISTRY_REFRESH_PERIOD;
 
     // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor
     private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 1f);
@@ -132,5 +135,15 @@ public class MonitorConfiguration
     public void setMetricMaximumValues(Map<String, Float> metricMaximumValues)
     {
         this.metricMaximumValues = metricMaximumValues;
+    }
+
+    public Duration getBackendMetricsRegistryRefreshPeriod()
+    {
+        return backendMetricsRegistryRefreshPeriod;
+    }
+
+    public void setBackendMetricsRegistryRefreshPeriod(Duration backendMetricsRegistryRefreshPeriod)
+    {
+        this.backendMetricsRegistryRefreshPeriod = backendMetricsRegistryRefreshPeriod;
     }
 }
