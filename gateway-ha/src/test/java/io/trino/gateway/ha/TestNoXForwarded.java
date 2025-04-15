@@ -57,8 +57,8 @@ final class TestNoXForwarded
         File testConfigFile =
                 HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-without-x-forwarded-template.yml");
         // Start Gateway
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        System.setProperty("config", testConfigFile.getAbsolutePath());
+        HaGatewayLauncher.main(new String[] {});
         // Now populate the backend
         HaGatewayTestUtils.setUpBackend(
                 "trino1", "http://localhost:" + backendPort, "externalUrl", true, "adhoc", routerPort);
