@@ -19,3 +19,4 @@ clusterStatsConfiguration:
 # This can be adjusted based on the coordinator state
 monitor:
   taskDelay: 1m
+  clusterMetricsRegistryRefreshPeriod: 30s
