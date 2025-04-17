@@ -16,12 +16,12 @@ package io.trino.gateway.ha.clustermonitor;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import org.weakref.jmx.Managed;
 
-public class BackendClusterMetricStats
+public class ClusterMetricsStats
 {
     private final String clusterName;
     private final GatewayBackendManager gatewayBackendManager;
 
-    public BackendClusterMetricStats(String clusterName, GatewayBackendManager gatewayBackendManager)
+    public ClusterMetricsStats(String clusterName, GatewayBackendManager gatewayBackendManager)
     {
         this.clusterName = clusterName;
         this.gatewayBackendManager = gatewayBackendManager;
@@ -36,7 +36,7 @@ public class BackendClusterMetricStats
     public int getActivationStatus()
     {
         return gatewayBackendManager.getBackendByName(clusterName)
-                .map(backend -> backend.isActive() ? 1 : 0)
+                .map(cluster -> cluster.isActive() ? 1 : 0)
                 .orElse(-1);
     }
 }

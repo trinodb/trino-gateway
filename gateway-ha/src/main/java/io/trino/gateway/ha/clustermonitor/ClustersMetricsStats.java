@@ -32,23 +32,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 @Singleton
-public class BackendsMetricStats
+public class ClustersMetricsStats
 {
-    private static final Logger log = Logger.get(BackendsMetricStats.class);
-    public static final Duration DEFAULT_BACKEND_METRICS_REGISTRY_REFRESH_PERIOD = new Duration(30, SECONDS);
+    private static final Logger log = Logger.get(ClustersMetricsStats.class);
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
     private final MonitorConfiguration monitorConfiguration;
     // MBeanExporter uses weak references, so statsMap is needed to maintain strong references to metric objects to prevent garbage collection
-    private final Map<String, BackendClusterMetricStats> statsMap = new HashMap<>();
+    private final Map<String, ClusterMetricsStats> statsMap = new HashMap<>();
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    public BackendsMetricStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
+    public ClustersMetricsStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.exporter = exporter;
@@ -58,14 +55,14 @@ public class BackendsMetricStats
     @PostConstruct
     public void start()
     {
-        Duration refreshInterval = monitorConfiguration.getBackendMetricsRegistryRefreshPeriod();
+        Duration refreshInterval = monitorConfiguration.getClusterMetricsRegistryRefreshPeriod();
         log.info("Running periodic metric refresh with interval of %s", refreshInterval);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                updateMetrics();
+                updateClustersMetricRegistry();
             }
             catch (Exception e) {
-                log.error(e, "Error refreshing backend metrics");
+                log.error(e, "Error refreshing cluster metrics");
             }
         }, 0, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
     }
@@ -76,42 +73,42 @@ public class BackendsMetricStats
         scheduledExecutor.shutdownNow();
     }
 
-    public synchronized void updateMetrics()
+    public synchronized void updateClustersMetricRegistry()
     {
-        // Get current backends from DB
-        Set<String> currentBackends = gatewayBackendManager.getAllBackends().stream()
+        // Get current clusters from DB
+        Set<String> currentClusters = gatewayBackendManager.getAllBackends().stream()
                 .map(ProxyBackendConfiguration::getName)
                 .collect(Collectors.toSet());
 
-        // Unregister metrics for removed backends
-        for (String registeredBackend : statsMap.keySet()) {
-            if (!currentBackends.contains(registeredBackend)) {
+        // Unregister metrics for removed clusters
+        for (String registeredCluster : statsMap.keySet()) {
+            if (!currentClusters.contains(registeredCluster)) {
                 try {
-                    exporter.unexportWithGeneratedName(BackendClusterMetricStats.class, registeredBackend);
-                    log.info("Unregistered metrics for removed cluster: %s", registeredBackend);
-                    statsMap.remove(registeredBackend);
+                    exporter.unexportWithGeneratedName(ClusterMetricsStats.class, registeredCluster);
+                    log.info("Unregistered metrics for removed cluster: %s", registeredCluster);
+                    statsMap.remove(registeredCluster);
                 }
                 catch (Exception e) {
-                    log.error(e, "Failed to unregister metrics for cluster: %s", registeredBackend);
+                    log.error(e, "Failed to unregister metrics for cluster: %s", registeredCluster);
                 }
             }
         }
 
-        // Register metrics for added backends
-        for (String backend : currentBackends) {
-            if (!statsMap.containsKey(backend)) {
-                registerBackendMetrics(backend);
+        // Register metrics for added clusters
+        for (String cluster : currentClusters) {
+            if (!statsMap.containsKey(cluster)) {
+                registerClusterMetrics(cluster);
             }
         }
     }
 
-    public synchronized void registerBackendMetrics(String clusterName)
+    public synchronized void registerClusterMetrics(String clusterName)
     {
-        BackendClusterMetricStats stats = new BackendClusterMetricStats(clusterName, gatewayBackendManager);
+        ClusterMetricsStats stats = new ClusterMetricsStats(clusterName, gatewayBackendManager);
 
         if (statsMap.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
             try {
-                exporter.exportWithGeneratedName(stats, BackendClusterMetricStats.class, clusterName);
+                exporter.exportWithGeneratedName(stats, ClusterMetricsStats.class, clusterName);
                 log.info("Registered metrics for cluster: %s", clusterName);
             }
             catch (Exception e) {
