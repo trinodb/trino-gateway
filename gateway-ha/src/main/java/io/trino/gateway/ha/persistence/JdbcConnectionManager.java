@@ -60,7 +60,7 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
-    private String buildJdbcUrl(@Nullable String routingGroupDatabase)
+    public String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
         if (routingGroupDatabase != null) {
