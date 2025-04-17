@@ -9,12 +9,12 @@ Trino Gateway records history of recent queries and displays links to check quer
 details page in respective trino cluster.
 ![trino.gateway.io](./assets/trinogateway_query_history.png)
 
-## Admin UI - add and modify backend information
+## Cluster UI - add and modify cluster information
 
-The admin page is used to configure the gateway to multiple backends.
-Existing backend information can also be modified using the same.
+The cluster page is used to configure Trino Gateway for multiple Trino clusters.
+Existing cluster information can also be modified using the edit button.
 
-![trino.gateway.io/entity](./assets/trinogateway_ha_admin.png)
+![trino.gateway.io/entity](./assets/trinogateway_cluster_page.png)
 
 
 ## Graceful shutdown
@@ -25,11 +25,11 @@ Query ID.
 
 To graceful shutdown a trino cluster without query losses, the steps are:
 
-1. Set the backend to deactivate state, this prevents any new incoming queries
-   from getting assigned to the backend.
-2. Poll the trino backend coorinator URL until the queued query count and the
-   running query count both hit 0.
-3. Terminate the trino Coordinator & Worker Java process.
+1. Deactivate the cluster by turning off the 'Active' switch. This ensures that no 
+   new incoming queries are routed to the cluster.
+2. Poll the Trino cluster coordinator URL until the queued query count and the
+   running query count are both zero.
+3. Terminate the Trino coordinator and worker Java processes.
 
 To gracefully shutdown a single worker process, refer to the [Trino 
 documentation](https://trino.io/docs/current/admin/graceful-shutdown.html) for
@@ -37,17 +37,20 @@ more details.
 
 ## Query routing options
 
-- The default router selects the backend randomly to route the queries. 
-- If you want to route the queries to the least loaded backend for a user
-i.e. backend with the least number of queries running or queued from a particular user,
-then use `QueryCountBasedRouter`, it can be configured by adding the module name 
-to config file's modules section like below
+- The default router selects the cluster randomly to route the queries. 
+- If you want to route the queries to the least loaded cluster for a user
+  so the cluster with the fewest running or queued queries,
+use `QueryCountBasedRouter`. You can enable it by adding the module name 
+to the `modules` section of the config file:
 
 ```yaml
 modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider
 ```
-- The router works on the stats it receives from the clusters about the load i.e number queries queued and running on a cluster at regular intervals which can be configured like below. The default interval is 1 min
+- The router operates based on the stats it receives from the clusters, such as 
+the number of queued and running queries. These values are retrieved at regular 
+intervals. This interval can be configured by setting `taskDelaySeconds` under
+`monitor` section in the config file. The default interval is 60
 ```yaml
 monitor:
   taskDelaySeconds: 10
