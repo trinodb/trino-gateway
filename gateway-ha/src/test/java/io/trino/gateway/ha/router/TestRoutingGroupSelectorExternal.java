@@ -22,8 +22,8 @@ import io.airlift.http.client.Request;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
-import io.trino.gateway.ha.router.schema.RoutingGroupExternalResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,8 +65,8 @@ final class TestRoutingGroupSelectorExternal
 {
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private HttpClient httpClient;
-    private static final JsonResponseHandler<RoutingGroupExternalResponse> ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER =
-            createJsonResponseHandler(jsonCodec(RoutingGroupExternalResponse.class));
+    private static final JsonResponseHandler<ExternalRouterResponse> ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER =
+            createJsonResponseHandler(jsonCodec(ExternalRouterResponse.class));
 
     @BeforeAll
     void initialize()
@@ -92,12 +92,12 @@ final class TestRoutingGroupSelectorExternal
         HttpServletRequest mockRequest = prepareMockRequest();
 
         // Create a mock response
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("test-group", null, ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", null, ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<JsonResponseHandler<RoutingGroupExternalResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
+        ArgumentCaptor<JsonResponseHandler<ExternalRouterResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
@@ -114,7 +114,7 @@ final class TestRoutingGroupSelectorExternal
                 .build();
 
         // Execute the request
-        RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER);
+        ExternalRouterResponse response = httpClient.execute(request, ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER);
 
         // Verify the response
         assertThat(response.routingGroup())
@@ -140,12 +140,12 @@ final class TestRoutingGroupSelectorExternal
         // Set a mock header for ROUTING_GROUP_HEADER
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("default-group-api-failure");
         // Create a mock response that returns error in List<String>
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("fail-group", List.of("test-api-failure", "400 error"), ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("fail-group", List.of("test-api-failure", "400 error"), ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<JsonResponseHandler<RoutingGroupExternalResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
+        ArgumentCaptor<JsonResponseHandler<ExternalRouterResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);

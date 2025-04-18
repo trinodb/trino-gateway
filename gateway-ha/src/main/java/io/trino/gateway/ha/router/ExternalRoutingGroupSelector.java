@@ -25,8 +25,8 @@ import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
-import io.trino.gateway.ha.router.schema.RoutingGroupExternalResponse;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -57,8 +56,8 @@ public class ExternalRoutingGroupSelector
     private final RequestAnalyzerConfig requestAnalyzerConfig;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
     private static final JsonCodec<RoutingGroupExternalBody> ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC = jsonCodec(RoutingGroupExternalBody.class);
-    private static final JsonResponseHandler<RoutingGroupExternalResponse> ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER =
-            createJsonResponseHandler(jsonCodec(RoutingGroupExternalResponse.class));
+    private static final JsonResponseHandler<ExternalRouterResponse> ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER =
+            createJsonResponseHandler(jsonCodec(ExternalRouterResponse.class));
 
     @VisibleForTesting
     ExternalRoutingGroupSelector(HttpClient httpClient, RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
@@ -95,7 +94,7 @@ public class ExternalRoutingGroupSelector
                     .build();
 
             // Execute the request and get the response
-            RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER);
+            ExternalRouterResponse response = httpClient.execute(request, ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER);
 
             // Check the response and return the routing group
             if (response == null) {
@@ -110,15 +109,12 @@ public class ExternalRoutingGroupSelector
             if (response.externalHeaders() != null) {
                 response.externalHeaders().forEach((key, value) -> {
                     if (!excludeHeaders.contains(key) && value != null) {
-                        filteredHeaders.put(key, value.toString());
+                        filteredHeaders.put(key, value);
                     }
                 });
                 // Log the headers that will be applied
                 if (!filteredHeaders.isEmpty()) {
-                    String headersStr = filteredHeaders.entrySet().stream()
-                            .map(entry -> entry.getKey() + "=" + entry.getValue())
-                            .collect(Collectors.joining(", "));
-                    log.info("External routing service modified headers to: %s", headersStr);
+                    log.info("External routing service modified headers to: %s", filteredHeaders);
                 }
             }
             return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders);
