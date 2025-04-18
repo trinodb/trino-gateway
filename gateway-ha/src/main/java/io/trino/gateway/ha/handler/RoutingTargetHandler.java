@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -83,12 +84,12 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request)),
                     request);
-        }).orElse(getClusterFromRoutingGroup(request));
+        }).orElse(getRoutingTargetResponse(request));
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
     }
 
-    private RoutingTargetResponse getClusterFromRoutingGroup(HttpServletRequest request)
+    private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
     {
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
@@ -152,13 +153,10 @@ public class RoutingTargetHandler
         @Override
         public Enumeration<String> getHeaderNames()
         {
-            List<String> names = Collections.list(super.getHeaderNames());
-            for (String name : customHeaders.keySet()) {
-                if (!names.contains(name)) {
-                    names.add(name);
-                }
-            }
-            return Collections.enumeration(names);
+            return Collections.enumeration(
+                    Stream.concat(Collections.list(super.getHeaderNames()).stream(), customHeaders.keySet().stream())
+                            .distinct()
+                            .toList());
         }
     }
 

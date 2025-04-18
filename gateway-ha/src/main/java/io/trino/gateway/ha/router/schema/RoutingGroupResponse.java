@@ -15,16 +15,20 @@ package io.trino.gateway.ha.router.schema;
 
 import jakarta.annotation.Nullable;
 
-import java.util.List;
 import java.util.Map;
 
 /**
- * Response from the external routing service that includes:
- * - routingGroup: The target routing group for the request (optional)
- * - errors: Any errors that occurred during routing
- * - externalHeaders: Headers that can be set in the request
+ Interface representing the response from a routing group selector.
+ This interface defines the contract for responses that determine how requests should be routed within
+    the Trino Gateway system.
+
+ Implementations of this interface are used to:
+    * Specify the target routing group for a request
+    * Provide additional headers that should be added to the request
  */
-public record RoutingGroupExternalResponse(
-        @Nullable String routingGroup,
-        List<String> errors,
-        Map<String, Object> externalHeaders){}
+public interface RoutingGroupResponse
+{
+    @Nullable String routingGroup();
+
+    Map<String, String> externalHeaders();
+}
