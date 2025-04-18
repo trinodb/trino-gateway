@@ -30,12 +30,16 @@ import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 @Path("/trino-gateway")
 public class WebUIStaticResource
 {
+    private static final String STATIC_PATH = "/static/";
+    private static final String ASSETS_PATH = STATIC_PATH + "assets/";
+    private static final String LOGO_PATH = STATIC_PATH + "logo.svg";
+
     @GET
     @Path("logo.svg")
     public Response getLogo(@Context ServletContext servletContext)
             throws IOException
     {
-        String fullPath = "/static/logo.svg";
+        String fullPath = LOGO_PATH;
         URL resource = getClass().getResource(fullPath);
         if (resource == null) {
             return Response.status(NOT_FOUND).build();
@@ -48,7 +52,7 @@ public class WebUIStaticResource
     public Response getAssetsFile(@PathParam("path") String path, @Context ServletContext servletContext)
             throws IOException
     {
-        String fullPath = "/static/assets/" + path;
+        String fullPath = ASSETS_PATH + path;
         if (!isCanonical(fullPath)) {
             // consider redirecting to the absolute path
             return Response.status(NOT_FOUND).build();

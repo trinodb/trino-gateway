@@ -76,15 +76,7 @@ public class HaGatewayLauncher
             app.initialize();
         }
         catch (ApplicationConfigurationException e) {
-            StringBuilder message = new StringBuilder();
-            message.append("Configuration is invalid\n");
-            message.append("==========\n");
-            addMessages(message, "Errors", ImmutableList.copyOf(e.getErrors()));
-            addMessages(message, "Warnings", ImmutableList.copyOf(e.getWarnings()));
-            message.append("\n");
-            message.append("==========");
-            logger.error("%s", message);
-            System.exit(100);
+            handleConfigurationException(e);
         }
         catch (Throwable e) {
             logger.error(e);
@@ -92,6 +84,18 @@ public class HaGatewayLauncher
         }
         logger.info("Server startup completed in %s", Duration.nanosSince(startTime).convertToMostSuccinctTimeUnit());
         logger.info("======== SERVER STARTED ========");
+    }
+
+    private void handleConfigurationException(ApplicationConfigurationException e)
+    {
+        StringBuilder message = new StringBuilder();
+        message.append("Configuration is invalid\n");
+        message.append("==========\n");
+        addMessages(message, "Errors", ImmutableList.copyOf(e.getErrors()));
+        addMessages(message, "Warnings", ImmutableList.copyOf(e.getWarnings()));
+        message.append("\n==========");
+        logger.error("%s", message);
+        System.exit(100);
     }
 
     private static void addMessages(StringBuilder output, String type, List<Object> messages)
