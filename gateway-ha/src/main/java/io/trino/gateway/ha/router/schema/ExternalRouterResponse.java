@@ -15,19 +15,17 @@ package io.trino.gateway.ha.router.schema;
 
 import jakarta.annotation.Nullable;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Response from the routing service that includes:
- * - routingGroup: The target routing group for the request (Optional)
- * - externalHeaders: Headers that can be set in the request (Currently can only be set in ExternalRoutingGroupSelector)
+ * Response from the external routing service that includes:
+ * - routingGroup: The target routing group for the request (optional)
+ * - errors: Any errors that occurred during routing
+ * - externalHeaders: Headers that can be set in the request
  */
-public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders)
-        implements RoutingGroupResponse
-{
-    public RoutingSelectorResponse(String routingGroup)
-    {
-        this(routingGroup, Collections.emptyMap());
-    }
-}
+public record ExternalRouterResponse(
+        @Nullable String routingGroup,
+        List<String> errors,
+        Map<String, String> externalHeaders)
+        implements RoutingGroupResponse {}
