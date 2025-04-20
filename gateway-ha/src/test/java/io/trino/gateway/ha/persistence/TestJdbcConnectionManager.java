@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class TestJdbcConnectionManager
 {
     @Test
-    public void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
+    void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:h2:/mydb";
         String expectedJdbcUrl = "jdbc:h2:/mydb";
@@ -34,7 +34,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithH2AndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithH2AndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:h2:/mydb";
         String routingGroupDatabase = "newdb";
@@ -47,7 +47,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithMySQLAndNoRoutingGroupDatabase()
+    void testBuildJdbcUrlWithMySQLAndNoRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
         String expectedJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
@@ -59,7 +59,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithMySQLAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithMySQLAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
         String routingGroupDatabase = "newdb";
@@ -72,7 +72,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithMySQLAndParametersAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithMySQLAndParametersAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
@@ -85,7 +85,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithPostgreSQLAndNoRoutingGroupDatabase()
+    void testBuildJdbcUrlWithPostgreSQLAndNoRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
         String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
@@ -97,7 +97,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithPostgreSQLAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithPostgreSQLAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
         String routingGroupDatabase = "newdb";
@@ -110,7 +110,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithPostgreSQLAndParametersAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithPostgreSQLAndParametersAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb?ssl=false&serverTimezone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
@@ -123,7 +123,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithOracleAndNoRoutingGroupDatabase()
+    void testBuildJdbcUrlWithOracleAndNoRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
         String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
@@ -135,7 +135,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithOracleAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithOracleAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
         String routingGroupDatabase = "newdb";
@@ -148,7 +148,7 @@ final class TestJdbcConnectionManager
     }
 
     @Test
-    public void testBuildJdbcUrlWithOracleAndParametersAndRoutingGroupDatabase()
+    void testBuildJdbcUrlWithOracleAndParametersAndRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb?sessionTimeZone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
