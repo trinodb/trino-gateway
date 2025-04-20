@@ -21,16 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestJdbcConnectionManager
 {
-    JdbcConnectionManager connectionManager;
-    DataStoreConfiguration db = new DataStoreConfiguration("", "sa", "sa", "", 4, true);
-
     @Test
     public void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
     {
         String inputJdbcUrl = "jdbc:h2:/mydb";
         String expectedJdbcUrl = "jdbc:h2:/mydb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -41,8 +39,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:h2:/mydb";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:h2:/newdb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -52,8 +51,9 @@ final class TestJdbcConnectionManager
     {
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
         String expectedJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -64,8 +64,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:mysql://localhost:3306/newdb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -76,8 +77,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:mysql://localhost:3306/newdb?useSSL=false&serverTimezone=Asia/Seoul";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -87,8 +89,9 @@ final class TestJdbcConnectionManager
     {
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
         String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -99,8 +102,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/newdb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -111,8 +115,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb?ssl=false&serverTimezone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/newdb?ssl=false&serverTimezone=Asia/Seoul";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -122,8 +127,9 @@ final class TestJdbcConnectionManager
     {
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
         String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -134,8 +140,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/newdb";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
@@ -146,8 +153,9 @@ final class TestJdbcConnectionManager
         String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb?sessionTimeZone=Asia/Seoul";
         String routingGroupDatabase = "newdb";
         String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/newdb?sessionTimeZone=Asia/Seoul";
-        db.setJdbcUrl(inputJdbcUrl);
-        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        DataStoreConfiguration db = new DataStoreConfiguration(inputJdbcUrl, "sa", "sa", "", 4, true);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+
         String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
