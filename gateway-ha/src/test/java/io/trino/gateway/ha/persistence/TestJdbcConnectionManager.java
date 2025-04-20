@@ -15,11 +15,7 @@ package io.trino.gateway.ha.persistence;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,29 +24,131 @@ final class TestJdbcConnectionManager
     JdbcConnectionManager connectionManager;
     DataStoreConfiguration db = new DataStoreConfiguration("", "sa", "sa", "", 4, true);
 
-    static Stream<Arguments> provideJdbcUrlAndDatabase()
+    @Test
+    public void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
     {
-        return Stream.of(
-            Arguments.of("jdbc:h2:/mydb", null, "jdbc:h2:/mydb"),
-            Arguments.of("jdbc:h2:/mydb", "newdb", "jdbc:h2:/newdb"),
-            Arguments.of("jdbc:mysql://localhost:3306/mydb", null, "jdbc:mysql://localhost:3306/mydb"),
-            Arguments.of("jdbc:mysql://localhost:3306/mydb", "newdb", "jdbc:mysql://localhost:3306/newdb"),
-            Arguments.of("jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul", "newdb", "jdbc:mysql://localhost:3306/newdb?useSSL=false&serverTimezone=Asia/Seoul"),
-            Arguments.of("jdbc:postgresql://localhost:5432/mydb", null, "jdbc:postgresql://localhost:5432/mydb"),
-            Arguments.of("jdbc:postgresql://localhost:5432/mydb", "newdb", "jdbc:postgresql://localhost:5432/newdb"),
-            Arguments.of("jdbc:postgresql://localhost:5432/mydb?ssl=false&serverTimezone=Asia/Seoul", "newdb", "jdbc:postgresql://localhost:5432/newdb?ssl=false&serverTimezone=Asia/Seoul"),
-            Arguments.of("jdbc:oracle:thin:@//localhost:1521/mydb", null, "jdbc:oracle:thin:@//localhost:1521/mydb"),
-            Arguments.of("jdbc:oracle:thin:@//localhost:1521/mydb", "newdb", "jdbc:oracle:thin:@//localhost:1521/newdb"),
-            Arguments.of("jdbc:oracle:thin:@//localhost:1521/mydb?sessionTimeZone=Asia/Seoul", "newdb", "jdbc:oracle:thin:@//localhost:1521/newdb?sessionTimeZone=Asia/Seoul"));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideJdbcUrlAndDatabase")
-    public void testBuildJdbcUrl(String inputJdbcUrl, String database, String expectedJdbcUrl)
-    {
+        String inputJdbcUrl = "jdbc:h2:/mydb";
+        String expectedJdbcUrl = "jdbc:h2:/mydb";
         db.setJdbcUrl(inputJdbcUrl);
         connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
-        String resultJdbcUrl = connectionManager.buildJdbcUrl(database);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithH2AndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:h2:/mydb";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:h2:/newdb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithMySQLAndNoRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+        String expectedJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithMySQLAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:mysql://localhost:3306/newdb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithMySQLAndParametersAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:mysql://localhost:3306/newdb?useSSL=false&serverTimezone=Asia/Seoul";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithPostgreSQLAndNoRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
+        String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithPostgreSQLAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/newdb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithPostgreSQLAndParametersAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:postgresql://localhost:5432/mydb?ssl=false&serverTimezone=Asia/Seoul";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:postgresql://localhost:5432/newdb?ssl=false&serverTimezone=Asia/Seoul";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithOracleAndNoRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
+        String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(null);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithOracleAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/newdb";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
+        assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
+    }
+
+    @Test
+    public void testBuildJdbcUrlWithOracleAndParametersAndRoutingGroupDatabase()
+    {
+        String inputJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/mydb?sessionTimeZone=Asia/Seoul";
+        String routingGroupDatabase = "newdb";
+        String expectedJdbcUrl = "jdbc:oracle:thin:@//localhost:1521/newdb?sessionTimeZone=Asia/Seoul";
+        db.setJdbcUrl(inputJdbcUrl);
+        connectionManager = new JdbcConnectionManager(Jdbi.create(inputJdbcUrl, "sa", "sa"), db);
+        String resultJdbcUrl = connectionManager.buildJdbcUrl(routingGroupDatabase);
         assertThat(resultJdbcUrl).isEqualTo(expectedJdbcUrl);
     }
 }
