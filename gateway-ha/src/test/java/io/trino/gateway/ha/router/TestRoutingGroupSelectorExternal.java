@@ -40,7 +40,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Optional;
 
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
@@ -53,7 +56,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -201,13 +207,13 @@ final class TestRoutingGroupSelectorExternal
         RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
-        String header_key = "X-Header";
-        String header_value = "some-value";
+        String headerKey = "X-Header";
+        String headerValue = "some-value";
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 ImmutableList.of(),
-                ImmutableMap.of(header_key, header_value));
+                ImmutableMap.of(headerKey, headerValue));
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -218,9 +224,9 @@ final class TestRoutingGroupSelectorExternal
         assertThat(routingSelectorResponse.routingGroup()).isNotNull().isEqualTo("test-group");
 
         // Verify header was set correctly
-        assertThat(routingSelectorResponse.externalHeaders().get(header_key)).isNotNull().isEqualTo(header_value);
-
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNotNull().isEqualTo(headerValue);
     }
+
     @Test
     void testExcludedHeaders()
             throws Exception
@@ -231,18 +237,17 @@ final class TestRoutingGroupSelectorExternal
         RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
-        String allowed_header_key = "X-Header";
-        String allowed_header_value = "should-be-set";
-        String excluded_header_key = "X-Custom-Header";
-        String excluded_header_value = "excluded-value";
-
+        String allowedHeaderKey = "X-Header";
+        String allowedHeaderValue = "should-be-set";
+        String excludedHeaderKey = "X-Custom-Header";
+        String excludedHeaderValue = "excluded-value";
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 ImmutableList.of(),
                 ImmutableMap.of(
-                        allowed_header_key, allowed_header_value,
-                        excluded_header_key, excluded_header_value));
+                        allowedHeaderKey, allowedHeaderValue,
+                        excludedHeaderKey, excludedHeaderValue));
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -251,9 +256,10 @@ final class TestRoutingGroupSelectorExternal
 
         // Verify
         assertThat(routingSelectorResponse.routingGroup()).isNotNull().isEqualTo("test-group");
-        assertThat(routingSelectorResponse.externalHeaders().get(allowed_header_key)).isNotNull().isEqualTo(allowed_header_value);
-        assertThat(routingSelectorResponse.externalHeaders().get(excluded_header_key)).isNull();
+        assertThat(routingSelectorResponse.externalHeaders().get(allowedHeaderKey)).isNotNull().isEqualTo(allowedHeaderValue);
+        assertThat(routingSelectorResponse.externalHeaders().get(excludedHeaderKey)).isNull();
     }
+
     @Test
     void testHeaderModificationWithErrors()
             throws Exception
@@ -263,13 +269,13 @@ final class TestRoutingGroupSelectorExternal
         RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
-        String header_key = "X-Header";
-        String header_value = "should-be-null";
+        String headerKey = "X-Header";
+        String headerValue = "should-be-null";
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 ImmutableList.of("Error occurred"),
-                ImmutableMap.of(header_key, header_value));
+                ImmutableMap.of(headerKey, headerValue));
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -278,7 +284,7 @@ final class TestRoutingGroupSelectorExternal
 
         // Verify
         assertThat(routingSelectorResponse.routingGroup()).isNull();
-        assertThat(routingSelectorResponse.externalHeaders().get(header_key)).isNull();
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNull();
     }
 
     @Test
@@ -290,13 +296,13 @@ final class TestRoutingGroupSelectorExternal
         RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
-        String header_key = "X-Empty-Group-Header";
-        String header_value = "should-be-set";
+        String headerKey = "X-Empty-Group-Header";
+        String headerValue = "should-be-set";
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "",
                 ImmutableList.of(),
-                ImmutableMap.of(header_key, header_value));
+                ImmutableMap.of(headerKey, headerValue));
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -305,7 +311,7 @@ final class TestRoutingGroupSelectorExternal
 
         // Verify
         assertThat(routingSelectorResponse.routingGroup()).isEmpty();
-        assertThat(routingSelectorResponse.externalHeaders().get(header_key)).isNotNull().isEqualTo(header_value);
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNotNull().isEqualTo(headerValue);
     }
 
     private HttpServletRequest prepareMockRequest()
@@ -357,5 +363,3 @@ final class TestRoutingGroupSelectorExternal
                 request.getParameterMap());
     }
 }
-
-
