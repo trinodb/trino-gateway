@@ -304,7 +304,7 @@ final class TestRoutingGroupSelectorExternal
         RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
 
         // Verify
-        assertThat(routingSelectorResponse.routingGroup()).isEqualTo("");
+        assertThat(routingSelectorResponse.routingGroup()).isEmpty();
         assertThat(routingSelectorResponse.externalHeaders().get(header_key)).isNotNull().isEqualTo(header_value);
     }
 
