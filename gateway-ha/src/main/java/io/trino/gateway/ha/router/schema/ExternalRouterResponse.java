@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router.schema;
 
+import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 
 import java.util.List;
@@ -28,4 +29,9 @@ public record ExternalRouterResponse(
         @Nullable String routingGroup,
         List<String> errors,
         Map<String, String> externalHeaders)
-        implements RoutingGroupResponse {}
+        implements RoutingGroupResponse
+{
+    public ExternalRouterResponse {
+        externalHeaders = ImmutableMap.copyOf(externalHeaders);
+    }
+}

@@ -13,9 +13,9 @@
  */
 package io.trino.gateway.ha.router.schema;
 
+import com.google.common.collect.ImmutableMap;
 import jakarta.annotation.Nullable;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -26,8 +26,12 @@ import java.util.Map;
 public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders)
         implements RoutingGroupResponse
 {
+    public RoutingSelectorResponse {
+        externalHeaders = ImmutableMap.copyOf(externalHeaders);
+    }
+
     public RoutingSelectorResponse(String routingGroup)
     {
-        this(routingGroup, Collections.emptyMap());
+        this(routingGroup, ImmutableMap.of());
     }
 }
