@@ -93,8 +93,10 @@ public class RoutingTargetHandler
     {
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
-        // This falls back on adhoc routing group if there is no cluster found for the routing group.
-        String routingGroup = routingDestination.routingGroup() != null ? routingDestination.routingGroup() : "adhoc";
+        // This falls back on adhoc routing group if there is no cluster found (or value is empty) for the routing group.
+        String routingGroup = (routingDestination.routingGroup() != null && !routingDestination.routingGroup().isEmpty())
+                ? routingDestination.routingGroup()
+                : "adhoc";
         String clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
