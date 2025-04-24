@@ -81,10 +81,9 @@ class TestRoutingTargetHandler
 
         // Set up header names enumeration
         List<String> headerNames = List.of(
-            USER_HEADER,
-            "Authorization",
-            "Cookie"
-        );
+                USER_HEADER,
+                "Authorization",
+                "Cookie");
         when(mockRequest.getHeaderNames()).thenReturn(Collections.enumeration(headerNames));
 
         // Set up individual header values
