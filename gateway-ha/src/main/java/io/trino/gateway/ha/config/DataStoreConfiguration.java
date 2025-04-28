@@ -22,6 +22,10 @@ public class DataStoreConfiguration
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
 
+    // TODO: Refactor to decouple DataStoreConfiguration from a specific
+    //  database implementation after adopting the Airlift configuration framework (https://github.com/trinodb/trino-gateway/issues/378)
+    private MysqlConfiguration mysqlConfiguration = new MysqlConfiguration();
+
     public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
     {
         this.jdbcUrl = jdbcUrl;
@@ -92,5 +96,15 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public MysqlConfiguration getMysqlConfiguration()
+    {
+        return mysqlConfiguration;
+    }
+
+    public void setMysqlConfiguration(MysqlConfiguration mysqlConfig)
+    {
+        this.mysqlConfiguration = mysqlConfig;
     }
 }

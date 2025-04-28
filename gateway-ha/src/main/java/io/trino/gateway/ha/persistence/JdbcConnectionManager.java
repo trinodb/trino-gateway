@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
@@ -20,27 +22,32 @@ import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
+@Singleton
 public class JdbcConnectionManager
 {
     private static final Logger log = Logger.get(JdbcConnectionManager.class);
 
     private final Jdbi jdbi;
     private final DataStoreConfiguration configuration;
+    private final JdbcPropertiesProvider jdbcPropertiesProvider;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
 
-    public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
+    @Inject
+    public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration, JdbcPropertiesProvider jdbcPropertiesProvider)
     {
         this.jdbi = requireNonNull(jdbi, "jdbi is null")
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
         this.configuration = configuration;
+        this.jdbcPropertiesProvider = requireNonNull(jdbcPropertiesProvider, "jdbcPropertiesProvider is null");
         startCleanUps();
     }
 
@@ -54,8 +61,9 @@ public class JdbcConnectionManager
         if (routingGroupDatabase == null) {
             return jdbi;
         }
+        Properties props = jdbcPropertiesProvider.getProperties(configuration);
 
-        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword())
+        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), props)
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }

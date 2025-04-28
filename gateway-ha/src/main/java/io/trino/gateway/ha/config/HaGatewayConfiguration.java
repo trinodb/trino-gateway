@@ -43,6 +43,7 @@ public class HaGatewayConfiguration
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
     private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
+    private boolean oracleBackend;
 
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
 
@@ -296,5 +297,15 @@ public class HaGatewayConfiguration
         {
             super(message);
         }
+    }
+
+    public boolean isOracleBackend()
+    {
+        return oracleBackend;
+    }
+
+    public void setOracleBackend(boolean oracleBackend)
+    {
+        this.oracleBackend = oracleBackend;
     }
 }
