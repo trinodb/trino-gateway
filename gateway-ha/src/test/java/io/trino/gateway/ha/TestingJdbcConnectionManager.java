@@ -14,6 +14,7 @@
 package io.trino.gateway.ha;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -33,12 +34,12 @@ public final class TestingJdbcConnectionManager
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        return new JdbcConnectionManager(jdbi, db);
+        return new JdbcConnectionManager(jdbi, db, new DefaultJdbcPropertiesProvider());
     }
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager(JdbcDatabaseContainer<?> container, DataStoreConfiguration config)
     {
         Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
-        return new JdbcConnectionManager(jdbi, config);
+        return new JdbcConnectionManager(jdbi, config, new DefaultJdbcPropertiesProvider());
     }
 }
