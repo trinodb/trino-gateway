@@ -102,15 +102,18 @@ if [ -n "$TRINO_GATEWAY_VERSION" ]; then
     chmod +x "$trino_gateway_ha"
 else
     TRINO_GATEWAY_VERSION=$("${SOURCE_DIR}/mvnw" -f "${SOURCE_DIR}/pom.xml" --quiet help:evaluate -Dexpression=project.version -DforceStdout)
-    echo "🎯 Using currently built artifacts from the gateway-ha module with version ${TRINO_GATEWAY_VERSION}"
-    trino_gateway_ha="${SOURCE_DIR}/gateway-ha/target/gateway-ha-${TRINO_GATEWAY_VERSION}-jar-with-dependencies.jar"
+    echo "🎯 Using currently built artifacts with version ${TRINO_GATEWAY_VERSION}"
+    trino_gateway_ha="${SOURCE_DIR}/gateway-server/target/gateway-server-${TRINO_GATEWAY_VERSION}.tar.gz"
 fi
 
 echo "🧱 Preparing the image build context directory"
 WORK_DIR="$(mktemp -d)"
 GATEWAY_WORK_DIR="${WORK_DIR}/gateway-ha"
-mkdir "${GATEWAY_WORK_DIR}"
-cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}/gateway-ha-jar-with-dependencies.jar"
+GATEWAY_SERVER_DIR="${WORK_DIR}/gateway-ha/gateway-server"
+mkdir -p "${GATEWAY_SERVER_DIR}/etc"
+touch "${GATEWAY_SERVER_DIR}/etc/jvm.config"
+tar -zx --strip 1 -C "${GATEWAY_SERVER_DIR}" -f "${trino_gateway_ha}"
+#cp "$trino_gateway_ha" "${GATEWAY_WORK_DIR}/gateway-ha-jar-with-dependencies.jar"
 cp -R bin "${GATEWAY_WORK_DIR}"
 cp "${SCRIPT_DIR}/Dockerfile" "${WORK_DIR}"
 
