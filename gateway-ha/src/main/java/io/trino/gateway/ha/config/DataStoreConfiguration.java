@@ -111,7 +111,7 @@ public class DataStoreConfiguration
         return mySqlConfiguration;
     }
 
-    public void setMysqlConfiguration(MySqlConfiguration mySqlConfig)
+    public void setMySqlConfiguration(MySqlConfiguration mySqlConfig)
     {
         this.mySqlConfiguration = mySqlConfig;
     }

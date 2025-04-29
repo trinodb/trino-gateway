@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
-import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -51,10 +50,7 @@ abstract class BaseTestQueryHistoryManager
                 true);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
-        HaGatewayConfiguration haGatewayConfiguration = new HaGatewayConfiguration();
-        haGatewayConfiguration.setDataStore(config);
-        haGatewayConfiguration.setOracleBackend(container.getJdbcUrl().startsWith("jdbc:oracle"));
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), jdbcConnectionManager.getConfiguration());
     }
 
     @AfterAll
