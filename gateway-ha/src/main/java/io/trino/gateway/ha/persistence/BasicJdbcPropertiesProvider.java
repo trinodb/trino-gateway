@@ -17,6 +17,16 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 
 import java.util.Properties;
 
+/**
+ * Default JDBC properties provider used as a fallback when no database-specific
+ * {@link JdbcPropertiesProvider} supports the given {@link DataStoreConfiguration}.
+ *
+ * <p>This provider simply sets the basic "user" and "password" properties
+ * and should always be the last provider in the list of available providers.
+ *
+ * <p>If a more specific provider (e.g., for MySQL, Oracle, etc.) supports the configuration,
+ * it should be preferred over this basic fallback.
+ */
 public class BasicJdbcPropertiesProvider
         implements JdbcPropertiesProvider
 {

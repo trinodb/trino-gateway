@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.util.Locale;
+
 public class DataStoreConfiguration
 {
     private String jdbcUrl;
@@ -21,6 +23,7 @@ public class DataStoreConfiguration
     private String driver;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    private DataStoreBackend dataStoreBackendType;
 
     // TODO: Refactor to decouple DataStoreConfiguration from a specific
     //  database implementation after adopting the Airlift configuration framework (https://github.com/trinodb/trino-gateway/issues/378)
@@ -106,5 +109,35 @@ public class DataStoreConfiguration
     public void setMysqlConfiguration(MysqlConfiguration mysqlConfig)
     {
         this.mysqlConfiguration = mysqlConfig;
+    }
+
+    public DataStoreBackend getDataStoreBackendType()
+    {
+        if (dataStoreBackendType != null) {
+            return dataStoreBackendType;
+        }
+
+        if (jdbcUrl != null) {
+            String url = jdbcUrl.toLowerCase(Locale.ROOT);
+            if (url.startsWith("jdbc:oracle:")) {
+                return DataStoreBackend.ORACLE;
+            }
+            if (url.startsWith("jdbc:mysql:")) {
+                return DataStoreBackend.MYSQL;
+            }
+            if (url.startsWith("jdbc:postgresql:")) {
+                return DataStoreBackend.POSTGRES;
+            }
+            if (url.startsWith("jdbc:h2:")) {
+                return DataStoreBackend.H2;
+            }
+        }
+
+        throw new IllegalStateException("Cannot infer DataStoreBackend from jdbcUrl: " + jdbcUrl);
+    }
+
+    public void setDataStoreBackendType(DataStoreBackend backendType)
+    {
+        this.dataStoreBackendType = backendType;
     }
 }

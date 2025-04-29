@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
-import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +36,7 @@ final class TestStochasticRoutingManager
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         backendManager = new HaGatewayManager(connectionManager.getJdbi());
-        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), new HaGatewayConfiguration());
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), connectionManager.getConfiguration());
         haRoutingManager = new StochasticRoutingManager(backendManager, historyManager);
     }
 

@@ -68,6 +68,11 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
+    public DataStoreConfiguration getConfiguration()
+    {
+        return configuration;
+    }
+
     private String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
