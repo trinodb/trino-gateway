@@ -16,6 +16,8 @@ package io.trino.gateway.ha.clustermonitor;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import org.weakref.jmx.Managed;
 
+import static java.util.Objects.requireNonNull;
+
 public class ClusterMetricsStats
 {
     private final String clusterName;
@@ -23,13 +25,8 @@ public class ClusterMetricsStats
 
     public ClusterMetricsStats(String clusterName, GatewayBackendManager gatewayBackendManager)
     {
-        this.clusterName = clusterName;
-        this.gatewayBackendManager = gatewayBackendManager;
-    }
-
-    public String getClusterName()
-    {
-        return clusterName;
+        this.clusterName = requireNonNull(clusterName, "clusterName is null");
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
     }
 
     @Managed

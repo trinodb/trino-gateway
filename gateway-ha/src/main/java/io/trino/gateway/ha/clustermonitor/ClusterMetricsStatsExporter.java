@@ -25,38 +25,41 @@ import jakarta.annotation.PreDestroy;
 import org.weakref.jmx.MBeanExporter;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 @Singleton
-public class ClustersMetricsStats
+public class ClusterMetricsStatsExporter
 {
-    private static final Logger log = Logger.get(ClustersMetricsStats.class);
+    private static final Logger log = Logger.get(ClusterMetricsStatsExporter.class);
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
     private final MonitorConfiguration monitorConfiguration;
-    // MBeanExporter uses weak references, so statsMap is needed to maintain strong references to metric objects to prevent garbage collection
-    private final Map<String, ClusterMetricsStats> statsMap = new HashMap<>();
+    // MBeanExporter uses weak references, so clustersStats Map is needed to maintain strong references to metric objects to prevent garbage collection
+    private final Map<String, ClusterMetricsStats> clustersStats = new HashMap<>();
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     @Inject
-    public ClustersMetricsStats(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
+    public ClusterMetricsStatsExporter(GatewayBackendManager gatewayBackendManager, MBeanExporter exporter, MonitorConfiguration monitorConfiguration)
     {
-        this.gatewayBackendManager = gatewayBackendManager;
-        this.exporter = exporter;
-        this.monitorConfiguration = monitorConfiguration;
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.exporter = requireNonNull(exporter, "exporter is null");
+        this.monitorConfiguration = requireNonNull(monitorConfiguration, "monitorConfiguration is null");
     }
 
     @PostConstruct
     public void start()
     {
         Duration refreshInterval = monitorConfiguration.getClusterMetricsRegistryRefreshPeriod();
-        log.info("Running periodic metric refresh with interval of %s", refreshInterval);
+        log.debug("Running periodic metric refresh with interval of %s", refreshInterval);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 updateClustersMetricRegistry();
@@ -64,7 +67,7 @@ public class ClustersMetricsStats
             catch (Exception e) {
                 log.error(e, "Error refreshing cluster metrics");
             }
-        }, 0, refreshInterval.toMillis(), TimeUnit.MILLISECONDS);
+        }, 0, refreshInterval.toMillis(), MILLISECONDS);
     }
 
     @PreDestroy
@@ -73,20 +76,23 @@ public class ClustersMetricsStats
         scheduledExecutor.shutdownNow();
     }
 
-    public synchronized void updateClustersMetricRegistry()
+    private synchronized void updateClustersMetricRegistry()
     {
         // Get current clusters from DB
         Set<String> currentClusters = gatewayBackendManager.getAllBackends().stream()
                 .map(ProxyBackendConfiguration::getName)
                 .collect(Collectors.toSet());
 
+        // Create a copy of keys to avoid concurrent modification
+        Set<String> registeredClusters = new HashSet<>(clustersStats.keySet());
+
         // Unregister metrics for removed clusters
-        for (String registeredCluster : statsMap.keySet()) {
+        for (String registeredCluster : registeredClusters) {
             if (!currentClusters.contains(registeredCluster)) {
                 try {
                     exporter.unexportWithGeneratedName(ClusterMetricsStats.class, registeredCluster);
-                    log.info("Unregistered metrics for removed cluster: %s", registeredCluster);
-                    statsMap.remove(registeredCluster);
+                    log.debug("Unregistered metrics for removed cluster: %s", registeredCluster);
+                    clustersStats.remove(registeredCluster);
                 }
                 catch (Exception e) {
                     log.error(e, "Failed to unregister metrics for cluster: %s", registeredCluster);
@@ -96,7 +102,7 @@ public class ClustersMetricsStats
 
         // Register metrics for added clusters
         for (String cluster : currentClusters) {
-            if (!statsMap.containsKey(cluster)) {
+            if (!clustersStats.containsKey(cluster)) {
                 registerClusterMetrics(cluster);
             }
         }
@@ -106,13 +112,13 @@ public class ClustersMetricsStats
     {
         ClusterMetricsStats stats = new ClusterMetricsStats(clusterName, gatewayBackendManager);
 
-        if (statsMap.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
+        if (clustersStats.putIfAbsent(clusterName, stats) == null) {  // null means the stats didn't exist previously and was inserted
             try {
                 exporter.exportWithGeneratedName(stats, ClusterMetricsStats.class, clusterName);
-                log.info("Registered metrics for cluster: %s", clusterName);
+                log.debug("Registered metrics for cluster: %s", clusterName);
             }
             catch (Exception e) {
-                statsMap.remove(clusterName);
+                clustersStats.remove(clusterName);
                 log.error(e, "Failed to register metrics for cluster: %s", clusterName);
             }
         }
