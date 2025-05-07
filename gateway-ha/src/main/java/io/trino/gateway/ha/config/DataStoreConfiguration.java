@@ -13,7 +13,10 @@
  */
 package io.trino.gateway.ha.config;
 
-import java.util.Locale;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Enumeration;
 
 public class DataStoreConfiguration
 {
@@ -23,11 +26,11 @@ public class DataStoreConfiguration
     private String driver;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
-    private DataStoreBackend dataStoreBackendType;
+    private DataStoreType dataStoreType;
 
     // TODO: Refactor to decouple DataStoreConfiguration from a specific
     //  database implementation after adopting the Airlift configuration framework (https://github.com/trinodb/trino-gateway/issues/378)
-    private MysqlConfiguration mysqlConfiguration = new MysqlConfiguration();
+    private MySqlConfiguration mySqlConfiguration = new MySqlConfiguration();
 
     public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
     {
@@ -101,43 +104,55 @@ public class DataStoreConfiguration
         this.runMigrationsEnabled = runMigrationsEnabled;
     }
 
-    public MysqlConfiguration getMysqlConfiguration()
+    public MySqlConfiguration getMySqlConfiguration()
     {
-        return mysqlConfiguration;
+        return mySqlConfiguration;
     }
 
-    public void setMysqlConfiguration(MysqlConfiguration mysqlConfig)
+    public void setMysqlConfiguration(MySqlConfiguration mysqlConfig)
     {
-        this.mysqlConfiguration = mysqlConfig;
+        this.mySqlConfiguration = mysqlConfig;
     }
 
-    public DataStoreBackend getDataStoreBackendType()
+    public DataStoreType getDataStoreType()
     {
-        if (dataStoreBackendType != null) {
-            return dataStoreBackendType;
+        if (dataStoreType != null) {
+            return dataStoreType;
+        }
+        if (jdbcUrl == null) {
+            throw new IllegalStateException("jdbcUrl must be set");
         }
 
-        if (jdbcUrl != null) {
-            String url = jdbcUrl.toLowerCase(Locale.ROOT);
-            if (url.startsWith("jdbc:oracle:")) {
-                return DataStoreBackend.ORACLE;
-            }
-            if (url.startsWith("jdbc:mysql:")) {
-                return DataStoreBackend.MYSQL;
-            }
-            if (url.startsWith("jdbc:postgresql:")) {
-                return DataStoreBackend.POSTGRES;
-            }
-            if (url.startsWith("jdbc:h2:")) {
-                return DataStoreBackend.H2;
+        try {
+            Enumeration<Driver> drivers = DriverManager.getDrivers();
+            while (drivers.hasMoreElements()) {
+                Driver driver = drivers.nextElement();
+                if (driver.acceptsURL(jdbcUrl)) {
+                    String driverClass = driver.getClass().getName();
+                    if (driverClass.contains("oracle")) {
+                        return DataStoreType.ORACLE;
+                    }
+                    if (driverClass.contains("mysql")) {
+                        return DataStoreType.MYSQL;
+                    }
+                    if (driverClass.contains("postgresql")) {
+                        return DataStoreType.POSTGRES;
+                    }
+                    if (driverClass.contains("h2")) {
+                        return DataStoreType.H2;
+                    }
+                    break;
+                }
             }
         }
-
-        throw new IllegalStateException("Cannot infer DataStoreBackend from jdbcUrl: " + jdbcUrl);
+        catch (SQLException e) {
+            throw new RuntimeException("Error enumerating JDBC drivers", e);
+        }
+        throw new IllegalStateException("Unable to infer DataStoreType for URL: " + jdbcUrl);
     }
 
-    public void setDataStoreBackendType(DataStoreBackend backendType)
+    public void setDataStoreType(DataStoreType backendType)
     {
-        this.dataStoreBackendType = backendType;
+        this.dataStoreType = backendType;
     }
 }

@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.trino.gateway.ha.HaGatewayTestUtils;
@@ -52,8 +53,17 @@ final class TestSpecificDbResourceGroupsManager
                 "sa", "org.h2.Driver", 4, false);
         HaGatewayConfiguration configuration = new HaGatewayConfiguration();
         configuration.setDataStore(db);
+        AbstractModule testConfigModule = new AbstractModule() {
+            @Override
+            protected void configure()
+            {
+                bind(HaGatewayConfiguration.class)
+                        .toInstance(configuration);
+            }
+        };
         Injector injector = Guice.createInjector(
-                new RouterBaseModule(configuration));
+                testConfigModule,
+                new RouterBaseModule());
 
         JdbcConnectionManager connectionManager = injector.getInstance(JdbcConnectionManager.class);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);

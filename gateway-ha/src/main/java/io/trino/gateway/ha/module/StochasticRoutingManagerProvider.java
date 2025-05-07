@@ -24,10 +24,7 @@ import io.trino.gateway.ha.router.StochasticRoutingManager;
 public class StochasticRoutingManagerProvider
             extends RouterBaseModule
 {
-    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
-    {
-        super(configuration);
-    }
+    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration) {}
 
     @Provides
     @Singleton

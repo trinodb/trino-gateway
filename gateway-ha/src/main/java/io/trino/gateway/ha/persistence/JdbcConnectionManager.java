@@ -61,9 +61,9 @@ public class JdbcConnectionManager
         if (routingGroupDatabase == null) {
             return jdbi;
         }
-        Properties props = jdbcPropertiesProvider.getProperties(configuration);
+        Properties properties = jdbcPropertiesProvider.getProperties(configuration);
 
-        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), props)
+        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), properties)
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }

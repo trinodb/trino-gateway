@@ -19,40 +19,39 @@ import com.mysql.cj.conf.PropertyDefinitions.SslMode;
 import com.mysql.cj.conf.PropertyKey;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.config.MysqlConfiguration;
+import io.trino.gateway.ha.config.MySqlConfiguration;
 import io.trino.gateway.ha.module.RouterBaseModule;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TestJdbcPropertiesProviderFactory
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+final class TestJdbcPropertiesProviderFactory
 {
-    private JdbcPropertiesProviderFactory factory;
-
-    @BeforeEach
-    void setUp()
+    private static JdbcPropertiesProviderFactory factoryFor(DataStoreConfiguration dbConfig)
     {
-        DataStoreConfiguration db = new DataStoreConfiguration("jdbc:h2:mem:test", "sa",
-                "sa", "org.h2.Driver", 4, false);
-        HaGatewayConfiguration haConfiguration = new HaGatewayConfiguration();
-        haConfiguration.setDataStore(db);
+        HaGatewayConfiguration haConfig = new HaGatewayConfiguration();
+        haConfig.setDataStore(dbConfig);
 
-        Injector injector = Guice.createInjector(new RouterBaseModule(haConfiguration));
-        factory = injector.getInstance(JdbcPropertiesProviderFactory.class);
+        Injector injector = Guice.createInjector(
+                binder -> binder.bind(HaGatewayConfiguration.class)
+                        .toInstance(haConfig),
+                new RouterBaseModule());
+        return injector.getInstance(JdbcPropertiesProviderFactory.class);
     }
 
-    private DataStoreConfiguration makeMysqlConfig(SslMode mode)
+    private DataStoreConfiguration makeMySqlConfig(SslMode mode)
     {
         DataStoreConfiguration db = new DataStoreConfiguration();
         db.setDriver("com.mysql.Driver");
         db.setJdbcUrl("jdbc:mysql://host/db");
         db.setUser("root");
         db.setPassword("root123");
-        MysqlConfiguration mysqlConfig = db.getMysqlConfiguration();
-        mysqlConfig.setSslMode(mode);
+        MySqlConfiguration mySqlConfiguration = db.getMySqlConfiguration();
+        mySqlConfiguration.setSslMode(mode);
         return db;
     }
 
@@ -70,11 +69,12 @@ class TestJdbcPropertiesProviderFactory
     void testBasicProviderWhenH2()
     {
         var cfg = makeH2Config();
+        var factory = factoryFor(cfg);
         var provider = factory.forConfig(cfg);
-        assertThat(provider).isInstanceOf(BasicJdbcPropertiesProvider.class);
+        assertThat(provider).isInstanceOf(DefaultJdbcPropertiesProvider.class);
 
-        Properties props = provider.getProperties(cfg);
-        assertThat(props)
+        Properties properties = provider.getProperties(cfg);
+        assertThat(properties)
                 .hasSize(2)
                 .containsEntry("user", "sa")
                 .containsEntry("password", "sa");
@@ -83,18 +83,19 @@ class TestJdbcPropertiesProviderFactory
     @Test
     void testMysqlProviderWhenSslDisabled()
     {
-        var cfg = makeMysqlConfig(SslMode.DISABLED);
+        var cfg = makeMySqlConfig(SslMode.DISABLED);
 
+        var factory = factoryFor(cfg);
         var provider = factory.forConfig(cfg);
         assertThat(provider).isInstanceOf(MySqlJdbcPropertiesProvider.class);
 
-        Properties props = provider.getProperties(cfg);
-        assertThat(props.getProperty("user")).isEqualTo("root");
-        assertThat(props.getProperty("password")).isEqualTo("root123");
-        assertThat(props.getProperty(PropertyKey.sslMode.getKeyName()))
+        Properties properties = provider.getProperties(cfg);
+        assertThat(properties.getProperty("user")).isEqualTo("root");
+        assertThat(properties.getProperty("password")).isEqualTo("root123");
+        assertThat(properties.getProperty(PropertyKey.sslMode.getKeyName()))
                 .isEqualTo("DISABLED");
 
-        assertThat(props).doesNotContainKeys(
+        assertThat(properties).doesNotContainKeys(
                 PropertyKey.clientCertificateKeyStoreUrl.getKeyName(),
                 PropertyKey.clientCertificateKeyStorePassword.getKeyName(),
                 PropertyKey.clientCertificateKeyStoreType.getKeyName(),
@@ -105,9 +106,10 @@ class TestJdbcPropertiesProviderFactory
     @Test
     void testMysqlProviderWhenVerifyCa()
     {
-        var cfg = makeMysqlConfig(SslMode.VERIFY_CA);
-        var mysqlConfig = cfg.getMysqlConfiguration();
-        mysqlConfig.setClientCertificateKeyStoreUrl("file:/tmp/cli.p12")
+        var cfg = makeMySqlConfig(SslMode.VERIFY_CA);
+        var factory = factoryFor(cfg);
+        var mySqlConfiguration = cfg.getMySqlConfiguration();
+        mySqlConfiguration.setClientCertificateKeyStoreUrl("file:/tmp/cli.p12")
                 .setClientCertificateKeyStorePassword("cpw")
                 .setClientCertificateKeyStoreType("PKCS12")
                 .setTrustCertificateKeyStoreUrl("file:/tmp/trs.p12")
@@ -116,13 +118,13 @@ class TestJdbcPropertiesProviderFactory
         var provider = factory.forConfig(cfg);
         assertThat(provider).isInstanceOf(MySqlJdbcPropertiesProvider.class);
 
-        var props = provider.getProperties(cfg);
-        assertThat(props.getProperty("user")).isEqualTo("root");
-        assertThat(props.getProperty(PropertyKey.sslMode.getKeyName()))
+        var properties = provider.getProperties(cfg);
+        assertThat(properties.getProperty("user")).isEqualTo("root");
+        assertThat(properties.getProperty(PropertyKey.sslMode.getKeyName()))
                 .isEqualTo("VERIFY_CA");
-        assertThat(props.getProperty(PropertyKey.clientCertificateKeyStoreUrl.getKeyName()))
+        assertThat(properties.getProperty(PropertyKey.clientCertificateKeyStoreUrl.getKeyName()))
                 .isEqualTo("file:/tmp/cli.p12");
-        assertThat(props.getProperty(PropertyKey.trustCertificateKeyStoreUrl.getKeyName()))
+        assertThat(properties.getProperty(PropertyKey.trustCertificateKeyStoreUrl.getKeyName()))
                 .isEqualTo("file:/tmp/trs.p12");
     }
 }

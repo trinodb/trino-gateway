@@ -20,7 +20,6 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import java.util.List;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 @Singleton
 public class JdbcPropertiesProviderFactory
@@ -30,13 +29,13 @@ public class JdbcPropertiesProviderFactory
     @Inject
     public JdbcPropertiesProviderFactory(List<JdbcPropertiesProvider> orderedProviders)
     {
-        this.providers = requireNonNull(orderedProviders, "providers is null");
+        this.providers = List.copyOf(orderedProviders);
     }
 
     public JdbcPropertiesProvider forConfig(DataStoreConfiguration config)
     {
         return providers.stream()
-                .filter(p -> p.supports(config))
+                .filter(provider -> provider.supports(config))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         format("No JdbcPropertiesProvider for driver: %s", config.getDriver())));

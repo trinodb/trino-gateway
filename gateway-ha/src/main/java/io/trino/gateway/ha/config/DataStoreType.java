@@ -13,7 +13,7 @@
  */
 package io.trino.gateway.ha.config;
 
-public enum DataStoreBackend {
+public enum DataStoreType {
     ORACLE,
     MYSQL,
     POSTGRES,

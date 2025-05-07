@@ -16,7 +16,7 @@ package io.trino.gateway.ha.persistence;
 import com.mysql.cj.conf.PropertyDefinitions.SslMode;
 import com.mysql.cj.conf.PropertyKey;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
-import io.trino.gateway.ha.config.MysqlConfiguration;
+import io.trino.gateway.ha.config.MySqlConfiguration;
 
 import java.util.Locale;
 import java.util.Properties;
@@ -37,39 +37,39 @@ public class MySqlJdbcPropertiesProvider
     @Override
     public Properties getProperties(DataStoreConfiguration configuration)
     {
-        Properties props = new Properties();
-        props.setProperty("user", configuration.getUser());
+        Properties properties = new Properties();
+        properties.setProperty("user", configuration.getUser());
 
-        MysqlConfiguration mysqlConfiguration = configuration.getMysqlConfiguration();
-        props.setProperty(PropertyKey.sslMode.getKeyName(), mysqlConfiguration.getSslMode().toString());
+        MySqlConfiguration mySqlConfiguration = configuration.getMySqlConfiguration();
+        properties.setProperty(PropertyKey.sslMode.getKeyName(), mySqlConfiguration.getSslMode().toString());
 
-        if (SslMode.VERIFY_CA.equals(mysqlConfiguration.getSslMode())) {
-            requireNonNull(mysqlConfiguration.getClientCertificateKeyStoreUrl(),
+        if (SslMode.VERIFY_CA.equals(mySqlConfiguration.getSslMode())) {
+            requireNonNull(mySqlConfiguration.getClientCertificateKeyStoreUrl(),
                     "clientCertificateKeyStoreUrl must be set when sslMode=VERIFY_CA");
-            requireNonNull(mysqlConfiguration.getClientCertificateKeyStorePassword(),
+            requireNonNull(mySqlConfiguration.getClientCertificateKeyStorePassword(),
                     "clientCertificateKeyStorePassword must be set when sslMode=VERIFY_CA");
-            requireNonNull(mysqlConfiguration.getTrustCertificateKeyStoreUrl(),
+            requireNonNull(mySqlConfiguration.getTrustCertificateKeyStoreUrl(),
                     "trustCertificateKeyStoreUrl must be set when sslMode=VERIFY_CA");
-            requireNonNull(mysqlConfiguration.getTrustCertificateKeyStorePassword(),
+            requireNonNull(mySqlConfiguration.getTrustCertificateKeyStorePassword(),
                     "trustCertificateKeyStorePassword must be set when sslMode=VERIFY_CA");
 
-            props.setProperty(PropertyKey.clientCertificateKeyStoreUrl.getKeyName(),
-                    mysqlConfiguration.getClientCertificateKeyStoreUrl());
-            props.setProperty(PropertyKey.clientCertificateKeyStorePassword.getKeyName(),
-                    mysqlConfiguration.getClientCertificateKeyStorePassword());
-            if (mysqlConfiguration.getClientCertificateKeyStoreType() != null) {
-                props.setProperty(
+            properties.setProperty(PropertyKey.clientCertificateKeyStoreUrl.getKeyName(),
+                    mySqlConfiguration.getClientCertificateKeyStoreUrl());
+            properties.setProperty(PropertyKey.clientCertificateKeyStorePassword.getKeyName(),
+                    mySqlConfiguration.getClientCertificateKeyStorePassword());
+            if (mySqlConfiguration.getClientCertificateKeyStoreType() != null) {
+                properties.setProperty(
                         PropertyKey.clientCertificateKeyStoreType.getKeyName(),
-                        mysqlConfiguration.getClientCertificateKeyStoreType());
+                        mySqlConfiguration.getClientCertificateKeyStoreType());
             }
-            props.setProperty(PropertyKey.trustCertificateKeyStoreUrl.getKeyName(),
-                    mysqlConfiguration.getTrustCertificateKeyStoreUrl());
-            props.setProperty(PropertyKey.trustCertificateKeyStorePassword.getKeyName(),
-                    mysqlConfiguration.getTrustCertificateKeyStorePassword());
+            properties.setProperty(PropertyKey.trustCertificateKeyStoreUrl.getKeyName(),
+                    mySqlConfiguration.getTrustCertificateKeyStoreUrl());
+            properties.setProperty(PropertyKey.trustCertificateKeyStorePassword.getKeyName(),
+                    mySqlConfiguration.getTrustCertificateKeyStorePassword());
         }
         else {
-            props.setProperty("password", configuration.getPassword());
+            properties.setProperty("password", configuration.getPassword());
         }
-        return props;
+        return properties;
     }
 }

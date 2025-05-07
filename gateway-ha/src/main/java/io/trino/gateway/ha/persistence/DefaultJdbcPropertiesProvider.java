@@ -27,7 +27,7 @@ import java.util.Properties;
  * <p>If a more specific provider (e.g., for MySQL, Oracle, etc.) supports the configuration,
  * it should be preferred over this basic fallback.
  */
-public class BasicJdbcPropertiesProvider
+public class DefaultJdbcPropertiesProvider
         implements JdbcPropertiesProvider
 {
     @Override
@@ -39,9 +39,9 @@ public class BasicJdbcPropertiesProvider
     @Override
     public Properties getProperties(DataStoreConfiguration configuration)
     {
-        Properties props = new Properties();
-        props.setProperty("user", configuration.getUser());
-        props.setProperty("password", configuration.getPassword());
-        return props;
+        Properties properties = new Properties();
+        properties.setProperty("user", configuration.getUser());
+        properties.setProperty("password", configuration.getPassword());
+        return properties;
     }
 }

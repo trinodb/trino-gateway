@@ -18,7 +18,7 @@ import com.mysql.cj.conf.PropertyDefinitions.SslMode;
 /**
  * Configuration for MySQL SSL (client cert and truststore settings).
  */
-public class MysqlConfiguration
+public class MySqlConfiguration
 {
     private SslMode sslMode = SslMode.DISABLED;
     private String clientCertificateKeyStoreUrl;
@@ -32,7 +32,7 @@ public class MysqlConfiguration
         return sslMode;
     }
 
-    public MysqlConfiguration setSslMode(SslMode sslMode)
+    public MySqlConfiguration setSslMode(SslMode sslMode)
     {
         this.sslMode = sslMode;
         return this;
@@ -43,7 +43,7 @@ public class MysqlConfiguration
         return clientCertificateKeyStoreUrl;
     }
 
-    public MysqlConfiguration setClientCertificateKeyStoreUrl(String url)
+    public MySqlConfiguration setClientCertificateKeyStoreUrl(String url)
     {
         this.clientCertificateKeyStoreUrl = url;
         return this;
@@ -54,7 +54,7 @@ public class MysqlConfiguration
         return clientCertificateKeyStorePassword;
     }
 
-    public MysqlConfiguration setClientCertificateKeyStorePassword(String password)
+    public MySqlConfiguration setClientCertificateKeyStorePassword(String password)
     {
         this.clientCertificateKeyStorePassword = password;
         return this;
@@ -65,7 +65,7 @@ public class MysqlConfiguration
         return clientCertificateKeyStoreType;
     }
 
-    public MysqlConfiguration setClientCertificateKeyStoreType(String type)
+    public MySqlConfiguration setClientCertificateKeyStoreType(String type)
     {
         this.clientCertificateKeyStoreType = type;
         return this;
@@ -76,7 +76,7 @@ public class MysqlConfiguration
         return trustCertificateKeyStoreUrl;
     }
 
-    public MysqlConfiguration setTrustCertificateKeyStoreUrl(String url)
+    public MySqlConfiguration setTrustCertificateKeyStoreUrl(String url)
     {
         this.trustCertificateKeyStoreUrl = url;
         return this;
@@ -87,7 +87,7 @@ public class MysqlConfiguration
         return trustCertificateKeyStorePassword;
     }
 
-    public MysqlConfiguration setTrustCertificateKeyStorePassword(String password)
+    public MySqlConfiguration setTrustCertificateKeyStorePassword(String password)
     {
         this.trustCertificateKeyStorePassword = password;
         return this;

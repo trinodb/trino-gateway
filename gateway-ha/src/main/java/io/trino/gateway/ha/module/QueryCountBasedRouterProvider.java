@@ -21,13 +21,12 @@ import io.trino.gateway.ha.router.QueryCountBasedRouter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
 
+import static java.util.Objects.requireNonNull;
+
 public class QueryCountBasedRouterProvider
           extends RouterBaseModule
 {
-    public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
-    {
-        super(configuration);
-    }
+    public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration) {}
 
     @Provides
     @Singleton
@@ -35,6 +34,8 @@ public class QueryCountBasedRouterProvider
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager)
     {
-        return new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager);
+        return new QueryCountBasedRouter(
+                requireNonNull(gatewayBackendManager, "gatewayBackendManager is null"),
+                requireNonNull(queryHistoryManager, "queryHistoryManager is null"));
     }
 }

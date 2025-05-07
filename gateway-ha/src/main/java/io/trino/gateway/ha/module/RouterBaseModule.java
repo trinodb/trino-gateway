@@ -19,7 +19,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.persistence.BasicJdbcPropertiesProvider;
+import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.JdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcPropertiesProviderFactory;
@@ -39,29 +39,26 @@ import java.util.Properties;
 public class RouterBaseModule
         extends AbstractModule
 {
-    private final HaGatewayConfiguration configuration;
-
-    public RouterBaseModule(HaGatewayConfiguration configuration)
-    {
-        this.configuration = configuration;
-    }
-
     @Override
     protected void configure()
     {
-        bind(HaGatewayConfiguration.class).toInstance(configuration);
-        bind(DataStoreConfiguration.class)
-                .toInstance(configuration.getDataStore());
-
         bind(ResourceGroupsManager.class).to(HaResourceGroupsManager.class);
         bind(GatewayBackendManager.class).to(HaGatewayManager.class);
         bind(QueryHistoryManager.class).to(HaQueryHistoryManager.class);
 
         bind(new TypeLiteral<List<JdbcPropertiesProvider>>() {}).toInstance(List.of(
                 new MySqlJdbcPropertiesProvider(),
-                new BasicJdbcPropertiesProvider()));
+                new DefaultJdbcPropertiesProvider()));
 
         bind(JdbcPropertiesProviderFactory.class).in(Singleton.class);
+    }
+
+    @Provides
+    @Singleton
+    public DataStoreConfiguration provideDataStoreConfiguration(
+            HaGatewayConfiguration configuration)
+    {
+        return configuration.getDataStore();
     }
 
     @Provides
@@ -70,10 +67,10 @@ public class RouterBaseModule
             DataStoreConfiguration configuration,
             JdbcPropertiesProviderFactory providerFactory)
     {
-        Properties props = providerFactory
+        Properties properties = providerFactory
                 .forConfig(configuration)
                 .getProperties(configuration);
-        Jdbi jdbi = Jdbi.create(configuration.getJdbcUrl(), props);
+        Jdbi jdbi = Jdbi.create(configuration.getJdbcUrl(), properties);
         jdbi.installPlugin(new SqlObjectPlugin());
         return jdbi;
     }
