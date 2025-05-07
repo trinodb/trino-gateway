@@ -42,7 +42,7 @@ public class ClusterMetricsStatsExporter
 
     private final MBeanExporter exporter;
     private final GatewayBackendManager gatewayBackendManager;
-    private final MonitorConfiguration monitorConfiguration;
+    private final Duration refreshInterval;
     // MBeanExporter uses weak references, so clustersStats Map is needed to maintain strong references to metric objects to prevent garbage collection
     private final Map<String, ClusterMetricsStats> clustersStats = new HashMap<>();
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -52,13 +52,13 @@ public class ClusterMetricsStatsExporter
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.exporter = requireNonNull(exporter, "exporter is null");
-        this.monitorConfiguration = requireNonNull(monitorConfiguration, "monitorConfiguration is null");
+        requireNonNull(monitorConfiguration, "monitorConfiguration is null");
+        this.refreshInterval = monitorConfiguration.getClusterMetricsRegistryRefreshPeriod();
     }
 
     @PostConstruct
     public void start()
     {
-        Duration refreshInterval = monitorConfiguration.getClusterMetricsRegistryRefreshPeriod();
         log.debug("Running periodic metric refresh with interval of %s", refreshInterval);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
