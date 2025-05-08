@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class HaGatewayManager
@@ -82,13 +83,30 @@ public class HaGatewayManager
     @Override
     public void deactivateBackend(String backendName)
     {
-        dao.deactivate(backendName);
+        updateClusterActivationStatus(backendName, false, () -> dao.deactivate(backendName));
     }
 
     @Override
     public void activateBackend(String backendName)
     {
-        dao.activate(backendName);
+        updateClusterActivationStatus(backendName, true, () -> dao.activate(backendName));
+    }
+
+    private void updateClusterActivationStatus(String clusterName, boolean newStatus, Runnable changeActiveStatus)
+    {
+        GatewayBackend model = dao.findFirstByName(clusterName);
+        checkState(model != null, "No cluster found with name: %s, could not (de)activate", clusterName);
+
+        boolean previousStatus = model.active();
+        changeActiveStatus.run();
+        logActivationStatusChange(clusterName, newStatus, previousStatus);
+    }
+
+    private static void logActivationStatusChange(String clusterName, boolean newStatus, boolean previousStatus)
+    {
+        if (previousStatus != newStatus) {
+            log.info("Backend cluster %s activation status set to active=%s (previous status: active=%s).", clusterName, previousStatus, newStatus);
+        }
     }
 
     @Override
@@ -111,6 +129,7 @@ public class HaGatewayManager
         }
         else {
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            logActivationStatusChange(backend.getName(), backend.isActive(), model.active());
         }
         return backend;
     }
