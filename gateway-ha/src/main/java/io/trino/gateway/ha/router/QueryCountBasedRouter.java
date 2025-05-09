@@ -17,6 +17,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -134,6 +135,7 @@ public class QueryCountBasedRouter
         }
     }
 
+    @Inject
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager)

@@ -13,7 +13,7 @@
  */
 package io.trino.gateway.ha.module;
 
-import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.QueryCountBasedRouter;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -21,17 +21,14 @@ import io.trino.gateway.ha.router.RoutingManager;
 public class QueryCountBasedRouterProvider
           extends RouterBaseModule
 {
-    private final QueryCountBasedRouter routingManager;
-
     public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
-        routingManager = new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager);
     }
 
-    @Provides
-    public RoutingManager getRoutingManager()
+    @Override
+    public void configure()
     {
-        return this.routingManager;
+        bind(RoutingManager.class).to(QueryCountBasedRouter.class).in(Scopes.SINGLETON);
     }
 }
