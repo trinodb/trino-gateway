@@ -19,6 +19,7 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.MySqlConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -28,7 +29,7 @@ final class TestJdbcPropertiesProviderFactory
 {
     private static JdbcPropertiesProviderFactory factoryFor()
     {
-        List<JdbcPropertiesProvider> providers = List.of(
+        List<JdbcPropertiesProvider> providers = Arrays.asList(
             new MySqlJdbcPropertiesProvider(),
             new DefaultJdbcPropertiesProvider());
         return new JdbcPropertiesProviderFactory(providers);

@@ -13,12 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-<<<<<<< HEAD
-=======
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
->>>>>>> c13a8db (address comments)
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
@@ -54,26 +48,8 @@ final class TestSpecificDbResourceGroupsManager
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
                 "sa", "org.h2.Driver", 4, false);
-<<<<<<< HEAD
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db, new DefaultJdbcPropertiesProvider());
-=======
-        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
-        configuration.setDataStore(db);
-        AbstractModule testConfigModule = new AbstractModule() {
-            @Override
-            protected void configure()
-            {
-                bind(HaGatewayConfiguration.class)
-                        .toInstance(configuration);
-            }
-        };
-        Injector injector = Guice.createInjector(
-                testConfigModule,
-                new RouterBaseModule());
-
-        JdbcConnectionManager connectionManager = injector.getInstance(JdbcConnectionManager.class);
->>>>>>> c13a8db (address comments)
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 
