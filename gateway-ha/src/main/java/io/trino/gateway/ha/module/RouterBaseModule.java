@@ -15,8 +15,15 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.persistence.JdbcPropertiesProvider;
+import io.trino.gateway.ha.persistence.JdbcPropertiesProviderFactory;
+import io.trino.gateway.ha.persistence.MySqlJdbcPropertiesProvider;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
@@ -24,45 +31,57 @@ import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+
+import java.util.List;
+import java.util.Properties;
 
 public class RouterBaseModule
         extends AbstractModule
 {
-    final ResourceGroupsManager resourceGroupsManager;
-    final GatewayBackendManager gatewayBackendManager;
-    final QueryHistoryManager queryHistoryManager;
-    final JdbcConnectionManager connectionManager;
-
-    public RouterBaseModule(HaGatewayConfiguration configuration)
+    @Override
+    protected void configure()
     {
-        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
-        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(jdbi);
-        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+        bind(ResourceGroupsManager.class).to(HaResourceGroupsManager.class);
+        bind(GatewayBackendManager.class).to(HaGatewayManager.class);
+        bind(QueryHistoryManager.class).to(HaQueryHistoryManager.class);
+
+        bind(new TypeLiteral<List<JdbcPropertiesProvider>>() {}).toInstance(List.of(
+                new MySqlJdbcPropertiesProvider(),
+                new DefaultJdbcPropertiesProvider()));
+
+        bind(JdbcPropertiesProviderFactory.class).in(Singleton.class);
     }
 
     @Provides
-    public JdbcConnectionManager getConnectionManager()
+    @Singleton
+    public DataStoreConfiguration provideDataStoreConfiguration(
+            HaGatewayConfiguration configuration)
     {
-        return this.connectionManager;
+        return configuration.getDataStore();
     }
 
     @Provides
-    public ResourceGroupsManager getResourceGroupsManager()
+    @Singleton
+    public Jdbi provideJdbi(
+            DataStoreConfiguration configuration,
+            JdbcPropertiesProviderFactory providerFactory)
     {
-        return this.resourceGroupsManager;
+        Properties properties = providerFactory
+                .forConfig(configuration)
+                .getProperties(configuration);
+        Jdbi jdbi = Jdbi.create(configuration.getJdbcUrl(), properties);
+        jdbi.installPlugin(new SqlObjectPlugin());
+        return jdbi;
     }
 
     @Provides
-    public GatewayBackendManager getGatewayBackendManager()
+    @Singleton
+    public JdbcConnectionManager provideConnectionManager(
+            Jdbi jdbi,
+            DataStoreConfiguration configuration,
+            JdbcPropertiesProviderFactory providerFactory)
     {
-        return this.gatewayBackendManager;
-    }
-
-    @Provides
-    public QueryHistoryManager getQueryHistoryManager()
-    {
-        return this.queryHistoryManager;
+        return new JdbcConnectionManager(jdbi, configuration, providerFactory.forConfig(configuration));
     }
 }

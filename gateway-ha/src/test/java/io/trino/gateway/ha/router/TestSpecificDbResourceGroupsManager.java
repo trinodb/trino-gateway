@@ -13,10 +13,14 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.module.RouterBaseModule;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -47,8 +51,21 @@ final class TestSpecificDbResourceGroupsManager
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
                 "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.setDataStore(db);
+        AbstractModule testConfigModule = new AbstractModule() {
+            @Override
+            protected void configure()
+            {
+                bind(HaGatewayConfiguration.class)
+                        .toInstance(configuration);
+            }
+        };
+        Injector injector = Guice.createInjector(
+                testConfigModule,
+                new RouterBaseModule());
+
+        JdbcConnectionManager connectionManager = injector.getInstance(JdbcConnectionManager.class);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 

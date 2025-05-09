@@ -14,30 +14,31 @@
 package io.trino.gateway.ha.module;
 
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.router.GatewayBackendManager;
+import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.StochasticRoutingManager;
 
 public class StochasticRoutingManagerProvider
             extends RouterBaseModule
 {
-    private final StochasticRoutingManager routingManager;
+    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration) {}
 
-    public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
+    @Provides
+    @Singleton
+    public StochasticRoutingManager provideStochasticRoutingManager(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager)
     {
-        super(configuration);
-        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
+        return new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
     }
 
     @Provides
-    public StochasticRoutingManager getHaRoutingManager()
+    @Singleton
+    public RoutingManager provideRoutingManager(StochasticRoutingManager routingManager)
     {
-        return this.routingManager;
-    }
-
-    @Provides
-    public RoutingManager getRoutingManager()
-    {
-        return getHaRoutingManager();
+        return routingManager;
     }
 }

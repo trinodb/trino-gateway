@@ -14,24 +14,28 @@
 package io.trino.gateway.ha.module;
 
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.QueryCountBasedRouter;
+import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
+
+import static java.util.Objects.requireNonNull;
 
 public class QueryCountBasedRouterProvider
           extends RouterBaseModule
 {
-    private final QueryCountBasedRouter routingManager;
-
-    public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
-    {
-        super(configuration);
-        routingManager = new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager);
-    }
+    public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration) {}
 
     @Provides
-    public RoutingManager getRoutingManager()
+    @Singleton
+    public RoutingManager provideRoutingManager(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager)
     {
-        return this.routingManager;
+        return new QueryCountBasedRouter(
+                requireNonNull(gatewayBackendManager, "gatewayBackendManager is null"),
+                requireNonNull(queryHistoryManager, "queryHistoryManager is null"));
     }
 }
