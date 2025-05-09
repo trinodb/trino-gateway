@@ -22,13 +22,11 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.MySqlConfiguration;
 import io.trino.gateway.ha.module.RouterBaseModule;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TestJdbcPropertiesProviderFactory
 {
     private static JdbcPropertiesProviderFactory factoryFor(DataStoreConfiguration dbConfig)
@@ -68,9 +66,9 @@ final class TestJdbcPropertiesProviderFactory
     @Test
     void testBasicProviderWhenH2()
     {
-        var cfg = makeH2Config();
-        var factory = factoryFor(cfg);
-        var provider = factory.forConfig(cfg);
+        DataStoreConfiguration cfg = makeH2Config();
+        JdbcPropertiesProviderFactory factory = factoryFor(cfg);
+        DefaultJdbcPropertiesProvider provider = (DefaultJdbcPropertiesProvider) factory.forConfig(cfg);
         assertThat(provider).isInstanceOf(DefaultJdbcPropertiesProvider.class);
 
         Properties properties = provider.getProperties(cfg);
@@ -83,10 +81,9 @@ final class TestJdbcPropertiesProviderFactory
     @Test
     void testMysqlProviderWhenSslDisabled()
     {
-        var cfg = makeMySqlConfig(SslMode.DISABLED);
-
-        var factory = factoryFor(cfg);
-        var provider = factory.forConfig(cfg);
+        DataStoreConfiguration cfg = makeMySqlConfig(SslMode.DISABLED);
+        JdbcPropertiesProviderFactory factory = factoryFor(cfg);
+        JdbcPropertiesProvider provider = factory.forConfig(cfg);
         assertThat(provider).isInstanceOf(MySqlJdbcPropertiesProvider.class);
 
         Properties properties = provider.getProperties(cfg);
@@ -106,19 +103,19 @@ final class TestJdbcPropertiesProviderFactory
     @Test
     void testMysqlProviderWhenVerifyCa()
     {
-        var cfg = makeMySqlConfig(SslMode.VERIFY_CA);
-        var factory = factoryFor(cfg);
-        var mySqlConfiguration = cfg.getMySqlConfiguration();
-        mySqlConfiguration.setClientCertificateKeyStoreUrl("file:/tmp/cli.p12")
+        DataStoreConfiguration cfg = makeMySqlConfig(SslMode.VERIFY_CA);
+        JdbcPropertiesProviderFactory factory = factoryFor(cfg);
+        MySqlConfiguration mysqlConfig = cfg.getMySqlConfiguration();
+        mysqlConfig.setClientCertificateKeyStoreUrl("file:/tmp/cli.p12")
                 .setClientCertificateKeyStorePassword("cpw")
                 .setClientCertificateKeyStoreType("PKCS12")
                 .setTrustCertificateKeyStoreUrl("file:/tmp/trs.p12")
                 .setTrustCertificateKeyStorePassword("tpw");
 
-        var provider = factory.forConfig(cfg);
+        JdbcPropertiesProvider provider = factory.forConfig(cfg);
         assertThat(provider).isInstanceOf(MySqlJdbcPropertiesProvider.class);
 
-        var properties = provider.getProperties(cfg);
+        Properties properties = provider.getProperties(cfg);
         assertThat(properties.getProperty("user")).isEqualTo("root");
         assertThat(properties.getProperty(PropertyKey.sslMode.getKeyName()))
                 .isEqualTo("VERIFY_CA");

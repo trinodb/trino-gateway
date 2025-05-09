@@ -13,9 +13,26 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.sql.Driver;
+
 public enum DataStoreType {
-    ORACLE,
-    MYSQL,
-    POSTGRES,
-    H2
+    ORACLE(oracle.jdbc.driver.OracleDriver.class),
+    MYSQL(com.mysql.cj.jdbc.Driver.class),
+    POSTGRES(org.postgresql.Driver.class),
+    H2(org.h2.Driver.class);
+
+    private final Class<? extends Driver> driverClass;
+
+    DataStoreType(Class<? extends Driver> driverClass)
+    {
+        this.driverClass = driverClass;
+    }
+
+    /**
+     * Returns the JDBC Driver class associated with this data store type.
+     */
+    public Class<? extends Driver> getDriverClass()
+    {
+        return driverClass;
+    }
 }

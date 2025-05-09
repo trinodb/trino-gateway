@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
@@ -20,6 +21,7 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import java.util.List;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 @Singleton
 public class JdbcPropertiesProviderFactory
@@ -29,7 +31,7 @@ public class JdbcPropertiesProviderFactory
     @Inject
     public JdbcPropertiesProviderFactory(List<JdbcPropertiesProvider> orderedProviders)
     {
-        this.providers = List.copyOf(orderedProviders);
+        this.providers = ImmutableList.copyOf(requireNonNull(orderedProviders, "providers is null"));
     }
 
     public JdbcPropertiesProvider forConfig(DataStoreConfiguration config)
