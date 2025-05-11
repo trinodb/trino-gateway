@@ -86,7 +86,7 @@ public class GatewayResource
             this.gatewayBackendManager.activateBackend(name);
         }
         catch (Exception e) {
-            log.error(e);
+            log.error(e, e.getMessage());
             return throwError(e);
         }
         return Response.ok().build();
