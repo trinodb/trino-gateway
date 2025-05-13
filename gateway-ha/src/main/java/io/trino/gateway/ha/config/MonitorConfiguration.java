@@ -29,6 +29,8 @@ public class MonitorConfiguration
 
     private Duration queryTimeout = new Duration(10, SECONDS);
 
+    private Duration clusterMetricsRegistryRefreshPeriod = new Duration(30, SECONDS);
+
     private boolean explicitPrepare;
 
     private String metricsEndpoint = "/metrics";
@@ -132,5 +134,15 @@ public class MonitorConfiguration
     public void setMetricMaximumValues(Map<String, Float> metricMaximumValues)
     {
         this.metricMaximumValues = metricMaximumValues;
+    }
+
+    public Duration getClusterMetricsRegistryRefreshPeriod()
+    {
+        return clusterMetricsRegistryRefreshPeriod;
+    }
+
+    public void setClusterMetricsRegistryRefreshPeriod(Duration clusterMetricsRegistryRefreshPeriod)
+    {
+        this.clusterMetricsRegistryRefreshPeriod = clusterMetricsRegistryRefreshPeriod;
     }
 }
