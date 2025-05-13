@@ -29,6 +29,11 @@ public class ClusterMetricsStats
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
     }
 
+    public String getClusterName()
+    {
+        return clusterName;
+    }
+
     @Managed
     public int getActivationStatus()
     {

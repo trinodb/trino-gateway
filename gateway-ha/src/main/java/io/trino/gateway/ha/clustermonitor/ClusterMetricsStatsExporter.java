@@ -52,7 +52,6 @@ public class ClusterMetricsStatsExporter
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.exporter = requireNonNull(exporter, "exporter is null");
-        requireNonNull(monitorConfiguration, "monitorConfiguration is null");
         this.refreshInterval = monitorConfiguration.getClusterMetricsRegistryRefreshPeriod();
     }
 
@@ -108,7 +107,7 @@ public class ClusterMetricsStatsExporter
         }
     }
 
-    public synchronized void registerClusterMetrics(String clusterName)
+    private synchronized void registerClusterMetrics(String clusterName)
     {
         ClusterMetricsStats stats = new ClusterMetricsStats(clusterName, gatewayBackendManager);
 
