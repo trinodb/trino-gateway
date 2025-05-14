@@ -47,7 +47,7 @@ COPY --chown=trino:trino gateway-ha /usr/lib/trino-gateway
 
 EXPOSE 8080
 USER trino:trino
-CMD java -jar /usr/lib/trino-gateway/gateway-ha-jar-with-dependencies.jar "/etc/trino-gateway/config.yaml"
+CMD /usr/lib/trino-gateway/gateway-server/bin/launcher start --config "/etc/trino-gateway/config.yaml"
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s \
   CMD /usr/lib/trino-gateway/bin/health-check
