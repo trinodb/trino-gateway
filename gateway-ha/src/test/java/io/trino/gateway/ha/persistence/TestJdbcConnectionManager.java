@@ -21,12 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestJdbcConnectionManager
 {
-    private JdbcConnectionManager createConnectionManager(String jdbcUrl)
-    {
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", 4, true);
-        return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db);
-    }
-
     @Test
     void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
     {
@@ -102,5 +96,11 @@ final class TestJdbcConnectionManager
     {
         JdbcConnectionManager connectionManager = createConnectionManager("jdbc:oracle:thin:@//localhost:1521/mydb?sessionTimeZone=Asia/Seoul");
         assertThat(connectionManager.buildJdbcUrl("newdb")).isEqualTo("jdbc:oracle:thin:@//localhost:1521/newdb?sessionTimeZone=Asia/Seoul");
+    }
+
+    private JdbcConnectionManager createConnectionManager(String jdbcUrl)
+    {
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", 4, true);
+        return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db);
     }
 }
