@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
@@ -63,7 +64,8 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
-    public String buildJdbcUrl(@Nullable String routingGroupDatabase)
+    @VisibleForTesting
+    String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
         if (routingGroupDatabase != null) {
