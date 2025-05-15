@@ -68,25 +68,25 @@ public class JdbcConnectionManager
     String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {
         String jdbcUrl = configuration.getJdbcUrl();
-        if (routingGroupDatabase != null) {
-            try {
-                int index = jdbcUrl.indexOf("/") + 1;
-                URI uri = new URI(jdbcUrl.substring(index));
-                URI newUri = new URI(
-                        uri.getScheme(),
-                        uri.getUserInfo(),
-                        uri.getHost(),
-                        uri.getPort(),
-                        Path.of(uri.getPath()).resolveSibling(routingGroupDatabase).toString(),
-                        uri.getQuery(),
-                        uri.getFragment());
-                jdbcUrl = jdbcUrl.substring(0, index) + newUri;
-            }
-            catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
+        if (routingGroupDatabase == null) {
+            return jdbcUrl;
         }
-        return jdbcUrl;
+        try {
+            int index = jdbcUrl.indexOf("/") + 1;
+            URI uri = new URI(jdbcUrl.substring(index));
+            URI newUri = new URI(
+                    uri.getScheme(),
+                    uri.getUserInfo(),
+                    uri.getHost(),
+                    uri.getPort(),
+                    Path.of(uri.getPath()).resolveSibling(routingGroupDatabase).toString(),
+                    uri.getQuery(),
+                    uri.getFragment());
+            return jdbcUrl.substring(0, index) + newUri;
+        }
+        catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void startCleanUps()
