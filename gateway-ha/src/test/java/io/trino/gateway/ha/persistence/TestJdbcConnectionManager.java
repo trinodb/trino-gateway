@@ -98,7 +98,7 @@ final class TestJdbcConnectionManager
         assertThat(connectionManager.buildJdbcUrl("newdb")).isEqualTo("jdbc:oracle:thin:@//localhost:1521/newdb?sessionTimeZone=Asia/Seoul");
     }
 
-    private JdbcConnectionManager createConnectionManager(String jdbcUrl)
+    private static JdbcConnectionManager createConnectionManager(String jdbcUrl)
     {
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", 4, true);
         return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db);
