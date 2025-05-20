@@ -37,6 +37,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Singleton
 public class ClusterMetricsStatsExporter
+        implements AutoCloseable
 {
     private static final Logger log = Logger.get(ClusterMetricsStatsExporter.class);
 
@@ -121,5 +122,21 @@ public class ClusterMetricsStatsExporter
                 log.error(e, "Failed to register metrics for cluster: %s", clusterName);
             }
         }
+    }
+
+    GatewayBackendManager getGatewayBackendManager()
+    {
+        return gatewayBackendManager;
+    }
+
+    MBeanExporter getExporter()
+    {
+        return exporter;
+    }
+
+    @Override
+    public void close()
+    {
+        stop();
     }
 }

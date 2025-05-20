@@ -17,7 +17,6 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.weakref.jmx.MBeanExporter;
 
@@ -30,78 +29,61 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class TestClusterMetricsStatsExporter
+final class TestClusterMetricsStatsExporter
 {
-    private GatewayBackendManager gatewayBackendManager;
-    private MBeanExporter exporter;
-    private MonitorConfiguration monitorConfiguration;
-    private ClusterMetricsStatsExporter statsExporter;
-
-    @BeforeEach
-    void setup()
-    {
-        gatewayBackendManager = mock(GatewayBackendManager.class);
-        exporter = mock(MBeanExporter.class);
-        monitorConfiguration = mock(MonitorConfiguration.class);
-
-        when(monitorConfiguration.getClusterMetricsRegistryRefreshPeriod())
-                .thenReturn(new Duration(1, TimeUnit.SECONDS));
-
-        statsExporter = new ClusterMetricsStatsExporter(
-                gatewayBackendManager,
-                exporter,
-                monitorConfiguration);
-    }
-
     @Test
     void testMetricsRegistrationForNewCluster()
             throws InterruptedException
     {
-        String clusterName1 = "test-cluster1";
-        ProxyBackendConfiguration cluster1 = createTestCluster(clusterName1);
-        String clusterName2 = "test-cluster2";
-        ProxyBackendConfiguration cluster2 = createTestCluster(clusterName2);
-        when(gatewayBackendManager.getAllBackends())
-                .thenReturn(List.of(cluster1)) // First return with 1 cluster
-                .thenReturn(List.of(cluster1, cluster2)); // Then return with 2 clusters to simulate addition
+        try (ClusterMetricsStatsExporter statsExporter = createStatsExporter()) {
+            String clusterName1 = "test-cluster1";
+            ProxyBackendConfiguration cluster1 = createTestCluster(clusterName1);
+            String clusterName2 = "test-cluster2";
+            ProxyBackendConfiguration cluster2 = createTestCluster(clusterName2);
+            when(statsExporter.getGatewayBackendManager().getAllBackends())
+                    .thenReturn(List.of(cluster1)) // First return with 1 cluster
+                    .thenReturn(List.of(cluster1, cluster2)); // Then return with 2 clusters to simulate addition
 
-        statsExporter.start();
-        Thread.sleep(2000);
+            statsExporter.start();
+            Thread.sleep(2000);
 
-        verify(exporter).exportWithGeneratedName(
-                argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName1)),
-                eq(ClusterMetricsStats.class), eq(clusterName1));
+            verify(statsExporter.getExporter()).exportWithGeneratedName(
+                    argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName1)),
+                    eq(ClusterMetricsStats.class), eq(clusterName1));
 
-        // Wait for next update where cluster is added
-        statsExporter.start();
-        Thread.sleep(2000);
+            // Wait for next update where cluster is added
+            statsExporter.start();
+            Thread.sleep(2000);
 
-        verify(exporter).exportWithGeneratedName(
-                argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName2)),
-                eq(ClusterMetricsStats.class), eq(clusterName2));
+            verify(statsExporter.getExporter()).exportWithGeneratedName(
+                    argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName2)),
+                    eq(ClusterMetricsStats.class), eq(clusterName2));
+        }
     }
 
     @Test
     public void testMetricsUnregistrationForRemovedCluster()
             throws InterruptedException
     {
-        String clusterName = "test-cluster";
-        ProxyBackendConfiguration cluster = createTestCluster(clusterName);
-        when(gatewayBackendManager.getAllBackends())
-                .thenReturn(List.of(cluster))  // First return with cluster
-                .thenReturn(List.of());        // Then return empty list to simulate removal
+        try (ClusterMetricsStatsExporter statsExporter = createStatsExporter()) {
+            String clusterName = "test-cluster";
+            ProxyBackendConfiguration cluster = createTestCluster(clusterName);
+            when(statsExporter.getGatewayBackendManager().getAllBackends())
+                    .thenReturn(List.of(cluster))  // First return with cluster
+                    .thenReturn(List.of());        // Then return empty list to simulate removal
 
-        statsExporter.start();
-        Thread.sleep(2000);
+            statsExporter.start();
+            Thread.sleep(2000);
 
-        verify(exporter).exportWithGeneratedName(
-                argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName)),
-                eq(ClusterMetricsStats.class), eq(clusterName));
+            verify(statsExporter.getExporter()).exportWithGeneratedName(
+                    argThat(stats -> stats instanceof ClusterMetricsStats && ((ClusterMetricsStats) stats).getClusterName().equals(clusterName)),
+                    eq(ClusterMetricsStats.class), eq(clusterName));
 
-        // Wait for next update where cluster is removed
-        Thread.sleep(2000);
+            // Wait for next update where cluster is removed
+            Thread.sleep(2000);
 
-        verify(exporter).unexportWithGeneratedName(eq(ClusterMetricsStats.class), eq(clusterName));
+            verify(statsExporter.getExporter()).unexportWithGeneratedName(eq(ClusterMetricsStats.class), eq(clusterName));
+        }
     }
 
     private static ProxyBackendConfiguration createTestCluster(String name)
@@ -109,5 +91,20 @@ class TestClusterMetricsStatsExporter
         ProxyBackendConfiguration cluster = new ProxyBackendConfiguration();
         cluster.setName(name);
         return cluster;
+    }
+
+    private ClusterMetricsStatsExporter createStatsExporter()
+    {
+        GatewayBackendManager gatewayBackendManager = mock(GatewayBackendManager.class);
+        MBeanExporter exporter = mock(MBeanExporter.class);
+        MonitorConfiguration monitorConfiguration = mock(MonitorConfiguration.class);
+
+        when(monitorConfiguration.getClusterMetricsRegistryRefreshPeriod())
+                .thenReturn(new Duration(1, TimeUnit.SECONDS));
+
+        return new ClusterMetricsStatsExporter(
+                gatewayBackendManager,
+                exporter,
+                monitorConfiguration);
     }
 }
