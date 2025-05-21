@@ -96,7 +96,7 @@ public class EntityEditorResource
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
                     log.info("Marking the cluster %s %s", backend.getName(), backend.isActive() ? "active" : "inactive");
-                    // We mark Trino PENDING here so gateway won't immediately route traffic to this cluster ye
+                    // We mark Trino PENDING here so gateway won't immediately route traffic to this cluster yet
                     // until it is marked healthy by the healthcheck
                     TrinoStatus trinoStatus = backend.isActive() ? TrinoStatus.PENDING : TrinoStatus.UNHEALTHY;
                     routingManager.updateBackEndHealth(backend.getName(), trinoStatus);

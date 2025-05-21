@@ -50,8 +50,8 @@ public interface QueryHistoryDao
             SELECT * FROM query_history
             WHERE 1 = 1 <condition>
             ORDER BY created DESC
-            LIMIT :limi
-            OFFSET :offse
+            LIMIT :limit
+            OFFSET :offset
             """)
     List<QueryHistory> pageQueryHistory(@Define("condition") String condition, @Bind("limit") int limit, @Bind("offset") int offset);
 
@@ -64,7 +64,7 @@ public interface QueryHistoryDao
     @SqlQuery("""
             SELECT FLOOR(created / 1000 / 60) AS minute,
                    backend_url AS backend_url,
-                   COUNT(1) AS query_coun
+                   COUNT(1) AS query_count
             FROM query_history
             WHERE created > :created
             GROUP BY minute, backend_url

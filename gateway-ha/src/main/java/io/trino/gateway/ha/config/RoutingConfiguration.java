@@ -18,9 +18,6 @@ import io.airlift.units.Duration;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-/**
- * Configuration for the routing behavior.
- */
 public class RoutingConfiguration
 {
     private Duration asyncTimeout = new Duration(2, MINUTES);
