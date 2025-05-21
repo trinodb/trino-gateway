@@ -29,6 +29,8 @@ import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -101,7 +103,11 @@ public class ExternalRoutingGroupSelector
                 throw new RuntimeException("Unexpected response: null");
             }
             else if (response.errors() != null && !response.errors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
+                log.warn("Query validation failed with errors: %s", String.join(", ", response.errors()));
+                throw new WebApplicationException(
+                        Response.status(Response.Status.BAD_REQUEST)
+                                .entity(response.errors())
+                                .build());
             }
 
             // Filter out excluded headers and null values
@@ -118,6 +124,10 @@ public class ExternalRoutingGroupSelector
                 }
             }
             return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders);
+        }
+        catch (WebApplicationException e) {
+            // Re-throw WebApplicationException to preserve status and entity
+            throw e;
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "
