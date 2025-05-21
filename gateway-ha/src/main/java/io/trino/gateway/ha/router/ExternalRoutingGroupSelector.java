@@ -29,6 +29,8 @@ import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,6 +54,7 @@ public class ExternalRoutingGroupSelector
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
     private final Set<String> excludeHeaders;
     private final URI uri;
+    private final Boolean propagateErrors;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
@@ -63,15 +66,16 @@ public class ExternalRoutingGroupSelector
     ExternalRoutingGroupSelector(HttpClient httpClient, RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
-        this.excludeHeaders = ImmutableSet.<String>builder()
+        excludeHeaders = ImmutableSet.<String>builder()
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
+        propagateErrors = rulesExternalConfiguration.isPropagateErrors();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
         try {
-            this.uri = new URI(requireNonNull(rulesExternalConfiguration.getUrlPath(),
+            uri = new URI(requireNonNull(rulesExternalConfiguration.getUrlPath(),
                     "Invalid URL provided, using routing group header as default."));
         }
         catch (URISyntaxException e) {
@@ -101,7 +105,13 @@ public class ExternalRoutingGroupSelector
                 throw new RuntimeException("Unexpected response: null");
             }
             else if (response.errors() != null && !response.errors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
+                if (propagateErrors) {
+                    log.warn("Query validation failed with errors: %s", String.join(", ", response.errors()));
+                    throw new WebApplicationException(
+                            Response.status(Response.Status.BAD_REQUEST)
+                                    .entity(response.errors())
+                                    .build());
+                }
             }
 
             // Filter out excluded headers and null values
@@ -118,6 +128,10 @@ public class ExternalRoutingGroupSelector
                 }
             }
             return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders);
+        }
+        catch (WebApplicationException e) {
+            // Re-throw WebApplicationException to preserve status and entity
+            throw e;
         }
         catch (Exception e) {
             log.error(e, "Error occurred while retrieving routing group "

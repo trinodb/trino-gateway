@@ -32,14 +32,16 @@ public class RouterBaseModule
     final GatewayBackendManager gatewayBackendManager;
     final QueryHistoryManager queryHistoryManager;
     final JdbcConnectionManager connectionManager;
+    final HaGatewayConfiguration haGatewayConfiguration;
 
     public RouterBaseModule(HaGatewayConfiguration configuration)
     {
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
         connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(jdbi);
+        gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+        haGatewayConfiguration = configuration;
     }
 
     @Provides
