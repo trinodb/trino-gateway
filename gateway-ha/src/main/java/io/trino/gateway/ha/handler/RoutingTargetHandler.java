@@ -21,6 +21,9 @@ import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,11 +71,23 @@ public class RoutingTargetHandler
 
     public String getRoutingDestination(HttpServletRequest request)
     {
-        Optional<String> previousBackend = getPreviousBackend(request);
-        String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
-        logRewrite(clusterHost, request);
+        try {
+            Optional<String> previousBackend = getPreviousBackend(request);
+            String clusterHost = previousBackend.orElseGet(() -> getBackendFromRoutingGroup(request));
+            logRewrite(clusterHost, request);
 
-        return buildUriWithNewBackend(clusterHost, request);
+            return buildUriWithNewBackend(clusterHost, request);
+        }
+        catch (NotFoundException e) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .entity(e.getMessage())
+                            .build());
+        }
+        catch (WebApplicationException e) {
+            // Re-throw other WebApplicationExceptions (like BAD_REQUEST from query validation)
+            throw e;
+        }
     }
 
     public boolean isPathWhiteListed(String path)
@@ -92,7 +107,7 @@ public class RoutingTargetHandler
         String routingGroup = routingGroupSelector.findRoutingGroup(request);
         String user = request.getHeader(USER_HEADER);
         if (!isNullOrEmpty(routingGroup)) {
-            // This falls back on adhoc backend if there is no cluster found for the routing group.
+            // This falls back on default routing group backend if there is no cluster found for the routing group.
             return routingManager.provideBackendForRoutingGroup(routingGroup, user);
         }
         return routingManager.provideAdhocBackend(user);

@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -155,7 +156,8 @@ final class TestQueryCountBasedRouter
                 .addAll(getClusterStatsList("etl"))
                 .build();
 
-        queryCountBasedRouter = new QueryCountBasedRouter(null, null);
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        queryCountBasedRouter = new QueryCountBasedRouter(null, null, routingConfiguration);
         queryCountBasedRouter.updateBackEndStats(clusters);
     }
 

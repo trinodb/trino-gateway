@@ -26,7 +26,7 @@ public class StochasticRoutingManagerProvider
     public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
-        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
+        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager, configuration.getRouting());
     }
 
     @Provides

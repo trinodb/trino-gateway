@@ -29,6 +29,10 @@ public interface GatewayBackendDao
             """)
     List<GatewayBackend> findActiveBackend();
 
+    /**
+     * @deprecated Use {@link #findActiveBackendByRoutingGroup(String)} with the configured default routing group
+     */
+    @Deprecated
     @SqlQuery("""
             SELECT * FROM gateway_backend
             WHERE active = true AND routing_group = 'adhoc'

@@ -20,7 +20,9 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.NotFoundException;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -47,10 +49,12 @@ public abstract class RoutingManager
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
+    private final String defaultRoutingGroup;
 
-    public RoutingManager(GatewayBackendManager gatewayBackendManager)
+    public RoutingManager(GatewayBackendManager gatewayBackendManager, RoutingConfiguration routingConfiguration)
     {
         this.gatewayBackendManager = gatewayBackendManager;
+        this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         queryIdBackendCache =
                 CacheBuilder.newBuilder()
                         .maximumSize(10000)
@@ -83,7 +87,7 @@ public abstract class RoutingManager
      */
     public String provideAdhocBackend(String user)
     {
-        List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
+        List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveBackends(defaultRoutingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.size() == 0) {
             throw new IllegalStateException("Number of active backends found zero");
@@ -100,6 +104,10 @@ public abstract class RoutingManager
     {
         List<ProxyBackendConfiguration> backends =
                 gatewayBackendManager.getActiveBackends(routingGroup);
+        // Check if any backends exist for the routing group (even before filtering unhealthy ones)
+        if (backends.isEmpty()) {
+            throw new NotFoundException("Routing group does not exist: " + routingGroup);
+        }
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
             return provideAdhocBackend(user);
@@ -177,7 +185,7 @@ public abstract class RoutingManager
             log.warn("Query id [%s] not found", queryId);
         }
         // Fallback on first active backend if queryId mapping not found.
-        return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
+        return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).get(0).getProxyTo();
     }
 
     // Predicate helper function to remove the backends from the list

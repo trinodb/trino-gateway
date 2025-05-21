@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 
 public class StochasticRoutingManager
         extends RoutingManager
@@ -25,7 +26,15 @@ public class StochasticRoutingManager
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
     {
-        super(gatewayBackendManager);
+        this(gatewayBackendManager, queryHistoryManager, null);
+    }
+
+    public StochasticRoutingManager(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager,
+            RoutingConfiguration routingConfiguration)
+    {
+        super(gatewayBackendManager, routingConfiguration);
         this.queryHistoryManager = queryHistoryManager;
     }
 
