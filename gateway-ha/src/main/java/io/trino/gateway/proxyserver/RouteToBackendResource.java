@@ -14,8 +14,10 @@
 package io.trino.gateway.proxyserver;
 
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
+import io.trino.gateway.ha.router.ExternalRoutingError;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -25,11 +27,13 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter.ROUTE_TO_BACKEND;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -40,6 +44,7 @@ import static java.util.Objects.requireNonNull;
 @Path(ROUTE_TO_BACKEND)
 public class RouteToBackendResource
 {
+    private static final Logger log = Logger.get(RouteToBackendResource.class);
     private final ProxyHandlerStats proxyHandlerStats;
     private final ProxyRequestHandler proxyRequestHandler;
     private final RoutingTargetHandler routingTargetHandler;
@@ -61,12 +66,56 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
-        if (multiReadHttpServletRequest.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
-            proxyHandlerStats.recordRequest();
+        try {
+            MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
+            if (multiReadHttpServletRequest.getRequestURI().startsWith(V1_STATEMENT_PATH)) {
+                proxyHandlerStats.recordRequest();
+            }
+            String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+            proxyRequestHandler.postRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
         }
-        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
-        proxyRequestHandler.postRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
+        catch (ExternalRoutingError e) {
+            // Handle external routing API errors with 500 status
+            log.warn("External routing API error: %s", e.getMessage());
+            asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(e.getMessage())
+                    .build());
+        }
+        catch (IllegalArgumentException e) {
+            // Check if this is a query validation error
+            if (e.getMessage() != null && e.getMessage().contains("Query validation failed")) {
+                log.warn("Rejecting query due to validation failure: %s", e.getMessage());
+                // Make sure the response has the correct content type for JSON
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .type("application/json")
+                        .entity("{\"error\": {\"message\": \"" + e.getMessage() + "\", \"errorCode\": 1, \"errorName\": \"VALIDATION_ERROR\", \"errorType\": \"USER_ERROR\"}}")
+                        .build());
+            }
+            else {
+                // Regular routing error - return 404
+                log.warn("Routing error: %s", e.getMessage());
+                asyncResponse.resume(Response.status(Response.Status.NOT_FOUND)
+                        .entity(e.getMessage())
+                        .build());
+            }
+        }
+        catch (Exception e) {
+            log.error(e, "Error handling request");
+            
+            // Check if this is an external API error
+            if (e.getMessage() != null && e.getMessage().startsWith("EXTERNAL_API_ERROR:")) {
+                String errorMessage = e.getMessage().substring("EXTERNAL_API_ERROR:".length());
+                log.warn("External API error: %s", errorMessage);
+                asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(errorMessage)
+                        .build());
+                return;
+            }
+            
+            asyncResponse.resume(Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Internal server error: " + e.getMessage())
+                    .build());
+        }
     }
 
     @GET
@@ -74,17 +123,13 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
-        proxyRequestHandler.getRequest(servletRequest, asyncResponse, URI.create(remoteUri));
-    }
-
-    @DELETE
-    public void deleteHandler(
-            @Context HttpServletRequest servletRequest,
-            @Suspended AsyncResponse asyncResponse)
-    {
-        String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
-        proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+        try {
+            String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
+            proxyRequestHandler.getRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+        }
+        catch (IllegalArgumentException e) {
+            asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build());
+        }
     }
 
     @PUT
@@ -93,8 +138,27 @@ public class RouteToBackendResource
             @Context HttpServletRequest servletRequest,
             @Suspended AsyncResponse asyncResponse)
     {
-        MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
-        String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
-        proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
+        try {
+            MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
+            String remoteUri = routingTargetHandler.getRoutingDestination(multiReadHttpServletRequest);
+            proxyRequestHandler.putRequest(body, multiReadHttpServletRequest, asyncResponse, URI.create(remoteUri));
+        }
+        catch (IllegalArgumentException e) {
+            asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build());
+        }
+    }
+
+    @DELETE
+    public void deleteHandler(
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse)
+    {
+        try {
+            String remoteUri = routingTargetHandler.getRoutingDestination(servletRequest);
+            proxyRequestHandler.deleteRequest(servletRequest, asyncResponse, URI.create(remoteUri));
+        }
+        catch (IllegalArgumentException e) {
+            asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build());
+        }
     }
 }

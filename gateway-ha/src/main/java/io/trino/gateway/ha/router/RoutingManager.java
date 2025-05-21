@@ -93,13 +93,33 @@ public abstract class RoutingManager
     }
 
     /**
+     * Check if a routing group exists in the system.
+     */
+    public boolean doesRoutingGroupExist(String routingGroup)
+    {
+        List<ProxyBackendConfiguration> allBackends = gatewayBackendManager.getAllBackends();
+        return allBackends.stream().anyMatch(backend -> routingGroup.equals(backend.getRoutingGroup()));
+    }
+
+    /**
      * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
      * backend is found.
      */
     public String provideBackendForRoutingGroup(String routingGroup, String user)
     {
+        // First check if routing group exists at all
+        if (!doesRoutingGroupExist(routingGroup)) {
+            throw new IllegalArgumentException("Routing group does not exist: " + routingGroup);
+        }
+
         List<ProxyBackendConfiguration> backends =
                 gatewayBackendManager.getActiveBackends(routingGroup);
+
+        // If no active backends for this routing group, fall back to adhoc
+        if (backends.isEmpty()) {
+            return provideAdhocBackend(user);
+        }
+
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
             return provideAdhocBackend(user);

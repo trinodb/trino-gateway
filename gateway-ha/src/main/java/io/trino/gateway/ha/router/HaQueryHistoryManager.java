@@ -125,6 +125,9 @@ public class HaQueryHistoryManager
         List<Map<String, Object>> results = dao.findDistribution(ts);
         List<DistributionResponse.LineChart> resList = new ArrayList<>();
         for (Map<String, Object> model : results) {
+            if (model.get("minute") == null || model.get("query_count") == null || model.get("backend_url") == null) {
+                continue;
+            }
             DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
             long minute = (long) Float.parseFloat(model.get("minute").toString());
             Instant instant = Instant.ofEpochSecond(minute * 60L);

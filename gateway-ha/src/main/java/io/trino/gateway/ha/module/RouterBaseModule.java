@@ -38,7 +38,7 @@ public class RouterBaseModule
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
         connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(jdbi);
+        gatewayBackendManager = new HaGatewayManager(jdbi, configuration);
         queryHistoryManager = new HaQueryHistoryManager(jdbi);
     }
 

@@ -16,6 +16,8 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 final class TestQueryCountBasedRouter
 {
@@ -155,7 +158,13 @@ final class TestQueryCountBasedRouter
                 .addAll(getClusterStatsList("etl"))
                 .build();
 
-        queryCountBasedRouter = new QueryCountBasedRouter(null, null);
+        // Create mock configuration
+        HaGatewayConfiguration mockConfig = new HaGatewayConfiguration();
+        RoutingConfiguration routingConfig = new RoutingConfiguration();
+        routingConfig.setDefaultRoutingGroup("adhoc");
+        mockConfig.setRouting(routingConfig);
+
+        queryCountBasedRouter = new QueryCountBasedRouter(null, null, mockConfig);
         queryCountBasedRouter.updateBackEndStats(clusters);
     }
 
@@ -213,10 +222,13 @@ final class TestQueryCountBasedRouter
     @Test
     void testAdhocRoutingGroupFailOver()
     {
-        // The ETL routing group doesn't exist
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
-        assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
-        assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
+        // This test is now deprecated as we throw exception for non-existent routing groups
+        // The implementation changed to throw an exception instead of falling back to default
+        assertThatThrownBy(() -> {
+            queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        })
+                .isInstanceOf(RouterException.class)
+                .hasMessage("The router group does not exist: NonExisting");
     }
 
     @Test
@@ -229,7 +241,7 @@ final class TestQueryCountBasedRouter
                 .build();
         queryCountBasedRouter.updateBackEndStats(clusters);
 
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        String proxyTo = queryCountBasedRouter.provideAdhocBackend("u1");
         assertThat(BACKEND_URL_4).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -246,8 +258,30 @@ final class TestQueryCountBasedRouter
 
         queryCountBasedRouter.updateBackEndStats(clusters);
 
-        String proxyTo = queryCountBasedRouter.provideBackendForRoutingGroup("NonExisting", "u1");
+        String proxyTo = queryCountBasedRouter.provideAdhocBackend("u1");
         assertThat(BACKEND_URL_5).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
+    }
+
+    @Test
+    void testEmptyRoutingGroupThrowsException()
+    {
+        // Empty routing group should also throw an exception
+        assertThatThrownBy(() -> {
+            queryCountBasedRouter.provideBackendForRoutingGroup("", "u1");
+        })
+                .isInstanceOf(RouterException.class)
+                .hasMessage("The router group does not exist: ");
+    }
+
+    @Test
+    void testNullRoutingGroupThrowsException()
+    {
+        // Null routing group should throw a different exception since Java will NPE
+        // before our custom check runs
+        assertThatThrownBy(() -> {
+            queryCountBasedRouter.provideBackendForRoutingGroup(null, "u1");
+        })
+                .isInstanceOf(NullPointerException.class);
     }
 }

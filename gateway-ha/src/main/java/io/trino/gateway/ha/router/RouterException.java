@@ -14,7 +14,7 @@
 package io.trino.gateway.ha.router;
 
 public class RouterException
-        extends IllegalStateException
+        extends IllegalArgumentException
 {
     public RouterException(String message)
     {

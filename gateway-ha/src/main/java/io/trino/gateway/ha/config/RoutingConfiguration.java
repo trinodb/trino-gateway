@@ -13,15 +13,21 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.airlift.units.Duration;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
+/**
+ * Configuration for the routing behavior.
+ */
 public class RoutingConfiguration
 {
     private Duration asyncTimeout = new Duration(2, MINUTES);
 
     private boolean addXForwardedHeaders = true;
+
+    private String defaultRoutingGroup;
 
     public Duration getAsyncTimeout()
     {
@@ -41,5 +47,20 @@ public class RoutingConfiguration
     public void setAddXForwardedHeaders(boolean addXForwardedHeaders)
     {
         this.addXForwardedHeaders = addXForwardedHeaders;
+    }
+
+    @JsonProperty
+    public String getDefaultRoutingGroup()
+    {
+        if (defaultRoutingGroup == null || defaultRoutingGroup.trim().isEmpty()) {
+            return "adhoc";
+        }
+        return defaultRoutingGroup;
+    }
+
+    @JsonProperty
+    public void setDefaultRoutingGroup(String defaultRoutingGroup)
+    {
+        this.defaultRoutingGroup = defaultRoutingGroup;
     }
 }

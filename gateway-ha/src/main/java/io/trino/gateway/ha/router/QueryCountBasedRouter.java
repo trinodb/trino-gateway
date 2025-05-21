@@ -20,6 +20,7 @@ import com.google.errorprone.annotations.concurrent.GuardedBy;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,7 @@ public class QueryCountBasedRouter
     private static final Logger log = Logger.get(QueryCountBasedRouter.class);
     @GuardedBy("this")
     private List<LocalStats> clusterStats;
+    private final String defaultRoutingGroup;
 
     @VisibleForTesting
     synchronized List<LocalStats> clusterStats()
@@ -136,10 +138,12 @@ public class QueryCountBasedRouter
 
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager)
+            QueryHistoryManager queryHistoryManager,
+            HaGatewayConfiguration configuration)
     {
         super(gatewayBackendManager, queryHistoryManager);
         clusterStats = new ArrayList<>();
+        this.defaultRoutingGroup = configuration.getRouting().getDefaultRoutingGroup();
     }
 
     private int compareStats(LocalStats lhs, LocalStats rhs, String user)
@@ -224,12 +228,22 @@ public class QueryCountBasedRouter
     @Override
     public String provideAdhocBackend(String user)
     {
-        return getBackendForRoutingGroup("adhoc", user).orElseThrow(() -> new RouterException("did not find any cluster for the adhoc routing group"));
+        return getBackendForRoutingGroup(defaultRoutingGroup, user)
+                .orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
     }
 
     @Override
     public String provideBackendForRoutingGroup(String routingGroup, String user)
     {
+        // Check if the requested routing group exists
+        boolean routingGroupExists;
+        synchronized (this) {
+            routingGroupExists = clusterStats.stream()
+                    .anyMatch(stats -> routingGroup.equals(stats.routingGroup()));
+        }
+        if (!routingGroupExists) {
+            throw new RouterException("The router group does not exist: " + routingGroup);
+        }
         return getBackendForRoutingGroup(routingGroup, user)
                 .orElse(provideAdhocBackend(user));
     }

@@ -13,7 +13,9 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,7 +34,12 @@ final class TestHaGatewayManager
     void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
+        // Create a mock configuration with default routing group
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        routingConfiguration.setDefaultRoutingGroup("adhoc");
+        configuration.setRouting(routingConfiguration);
+        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), configuration);
     }
 
     @Test

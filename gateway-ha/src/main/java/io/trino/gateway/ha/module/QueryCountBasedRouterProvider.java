@@ -26,7 +26,7 @@ public class QueryCountBasedRouterProvider
     public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
-        routingManager = new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager);
+        routingManager = new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager, configuration);
     }
 
     @Provides

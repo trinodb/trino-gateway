@@ -17,6 +17,8 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.router.ExternalRoutingError;
+import io.trino.gateway.ha.router.ExternalRoutingGroupSelector.QueryValidationException;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -89,13 +91,37 @@ public class RoutingTargetHandler
 
     private String getBackendFromRoutingGroup(HttpServletRequest request)
     {
-        String routingGroup = routingGroupSelector.findRoutingGroup(request);
-        String user = request.getHeader(USER_HEADER);
-        if (!isNullOrEmpty(routingGroup)) {
-            // This falls back on adhoc backend if there is no cluster found for the routing group.
-            return routingManager.provideBackendForRoutingGroup(routingGroup, user);
+        try {
+            log.info("RoutingTargetHandler: About to call routingGroupSelector.findRoutingGroup");
+            String routingGroup = routingGroupSelector.findRoutingGroup(request);
+            log.info("RoutingTargetHandler: routingGroupSelector returned routingGroup: %s", routingGroup);
+            String user = request.getHeader(USER_HEADER);
+            if (!isNullOrEmpty(routingGroup)) {
+                try {
+                    // This falls back on adhoc backend if there is no cluster found for the routing group.
+                    log.info("RoutingTargetHandler: Getting backend for routing group: %s", routingGroup);
+                    String backend = routingManager.provideBackendForRoutingGroup(routingGroup, user);
+                    log.info("RoutingTargetHandler: Provided backend %s for routing group %s", backend, routingGroup);
+                    return backend;
+                }
+                catch (IllegalArgumentException e) {
+                    log.error("Error providing backend for routing group %s: %s", routingGroup, e.getMessage());
+                    throw e; // Propagate the exception to be handled by the error handler
+                }
+            }
+            log.info("RoutingTargetHandler: No routing group found, providing adhoc backend for user: %s", user);
+            return routingManager.provideAdhocBackend(user);
         }
-        return routingManager.provideAdhocBackend(user);
+        catch (QueryValidationException e) {
+            // Propagate query validation failures to the client
+            log.warn("Query validation failed: %s", e.getMessage());
+            throw new IllegalArgumentException("Query validation failed: " + e.getMessage());
+        }
+        catch (ExternalRoutingError e) {
+            // Propagate external routing API errors directly
+            log.warn("External routing API error: %s", e.getMessage());
+            throw e;
+        }
     }
 
     private Optional<String> getPreviousBackend(HttpServletRequest request)

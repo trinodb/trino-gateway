@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -79,13 +80,36 @@ public class ExternalRoutingGroupSelector
         httpClient = new JettyHttpClient(new HttpClientConfig());
     }
 
+    /**
+     * Exception to indicate a validation error in the query.
+     * This will be propagated to the client.
+     */
+    public static class QueryValidationException
+            extends RuntimeException
+    {
+        private final List<String> errors;
+
+        public QueryValidationException(List<String> errors)
+        {
+            super("Query validation failed: " + String.join(", ", errors));
+            this.errors = errors;
+        }
+
+        public List<String> getErrors()
+        {
+            return errors;
+        }
+    }
+
     @Override
     public String findRoutingGroup(HttpServletRequest servletRequest)
     {
+        log.info("ExternalRoutingGroupSelector: Starting to find routing group for request to %s", servletRequest.getRequestURI());
         Request request;
         JsonBodyGenerator<RoutingGroupExternalBody> requestBodyGenerator;
         try {
             RoutingGroupExternalBody requestBody = createRequestBody(servletRequest);
+            log.info("ExternalRoutingGroupSelector: Created request body for external routing rules at %s", uri);
             requestBodyGenerator = jsonBodyGenerator(ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC, requestBody);
             request = preparePost()
                     .addHeader(CONTENT_TYPE, JSON_UTF_8.toString())
@@ -94,23 +118,47 @@ public class ExternalRoutingGroupSelector
                     .setBodyGenerator(requestBodyGenerator)
                     .build();
 
+            log.info("ExternalRoutingGroupSelector: Making external routing request to %s", uri);
             // Execute the request and get the response
             RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER);
 
             // Check the response and return the routing group
             if (response == null) {
+                log.warn("ExternalRoutingGroupSelector: Unexpected response: null from %s", uri);
                 throw new RuntimeException("Unexpected response: null");
             }
             else if (response.errors() != null && !response.errors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
+                // Instead of just logging the error and falling back to the header,
+                // throw a QueryValidationException that will be propagated to the client
+                log.warn("ExternalRoutingGroupSelector: Query validation failed with errors: %s", String.join(", ", response.errors()));
+                
+                if (requestAnalyzerConfig.isAnalyzeRequest()) {
+                    // When query analysis is enabled, provide detailed error information
+                    throw new ExternalRoutingError(response.errors());
+                }
+                else {
+                    // Simplified error handling when query analysis is disabled
+                    throw new RuntimeException("External routing API error: " + String.join(", ", response.errors()));
+                }
             }
+            log.info("ExternalRoutingGroupSelector: Received routing group: %s from %s", response.routingGroup(), uri);
             return response.routingGroup();
         }
-        catch (Exception e) {
-            log.error(e, "Error occurred while retrieving routing group "
-                    + "from external routing rules processing at " + uri);
+        catch (QueryValidationException e) {
+            // Rethrow validation exceptions to propagate them to the client
+            throw e;
         }
-        return servletRequest.getHeader(ROUTING_GROUP_HEADER);
+        catch (ExternalRoutingError e) {
+            // Propagate external routing API errors
+            throw e;
+        }
+        catch (Exception e) {
+            log.error(e, "ExternalRoutingGroupSelector: Error occurred while retrieving routing group "
+                    + "from external routing rules processing at %s", uri);
+        }
+        String headerRoutingGroup = servletRequest.getHeader(ROUTING_GROUP_HEADER);
+        log.info("ExternalRoutingGroupSelector: Falling back to header routing group: %s", headerRoutingGroup);
+        return headerRoutingGroup;
     }
 
     private RoutingGroupExternalBody createRequestBody(HttpServletRequest request)

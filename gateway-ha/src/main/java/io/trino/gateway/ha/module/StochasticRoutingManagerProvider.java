@@ -15,6 +15,7 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.Provides;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.router.QueryCountBasedRouter;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.StochasticRoutingManager;
 
@@ -26,7 +27,7 @@ public class StochasticRoutingManagerProvider
     public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
-        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
+        routingManager = new QueryCountBasedRouter(gatewayBackendManager, queryHistoryManager, configuration);
     }
 
     @Provides

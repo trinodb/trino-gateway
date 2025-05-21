@@ -356,7 +356,7 @@ final class TestGatewayHaMultipleBackend
                         .addHeader("Cookie", String.format("%s=%s", tamperedCookie.getName(), tamperedCookie.getValue()))
                         .build();
         Response callbackResponse = httpClient.newCall(callbackRequest).execute();
-        assertThat(callbackResponse.code()).isEqualTo(500);
+        assertThat(callbackResponse.code()).isEqualTo(404);
     }
 
     @AfterAll

@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
@@ -32,10 +33,12 @@ public class HaGatewayManager
     private static final Logger log = Logger.get(HaGatewayManager.class);
 
     private final GatewayBackendDao dao;
+    private final String defaultRoutingGroup;
 
-    public HaGatewayManager(Jdbi jdbi)
+    public HaGatewayManager(Jdbi jdbi, HaGatewayConfiguration configuration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
+        this.defaultRoutingGroup = configuration.getRouting().getDefaultRoutingGroup();
     }
 
     @Override
@@ -56,7 +59,7 @@ public class HaGatewayManager
     public List<ProxyBackendConfiguration> getActiveAdhocBackends()
     {
         try {
-            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend();
+            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend(defaultRoutingGroup);
             return upcast(proxyBackendList);
         }
         catch (Exception e) {

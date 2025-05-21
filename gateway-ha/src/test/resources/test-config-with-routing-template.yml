@@ -8,6 +8,9 @@ dataStore:
   password: sa
   driver: org.h2.Driver
 
+routing:
+  defaultRoutingGroup: system
+
 modules:
   - io.trino.gateway.ha.module.HaGatewayProviderModule
   - io.trino.gateway.ha.module.ClusterStateListenerModule
