@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
@@ -59,6 +60,7 @@ import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
+import io.trino.gateway.proxyserver.ProxyResponseTransformer;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 
 import java.util.List;
@@ -83,6 +85,7 @@ public class HaGatewayProviderModule
     protected void configure()
     {
         jaxrsBinder(binder()).bindInstance(resourceSecurityDynamicFeature);
+        bind(ProxyResponseTransformer.class).in(Scopes.SINGLETON);
     }
 
     @Inject

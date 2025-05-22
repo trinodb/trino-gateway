@@ -13,14 +13,12 @@
  */
 package io.trino.gateway.proxyserver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.Request;
-import io.airlift.http.client.StaticBodyGenerator;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
@@ -29,10 +27,7 @@ import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
-import io.trino.gateway.ha.router.QueryHistoryManager;
-import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.TrinoRequestUser;
-import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 import jakarta.annotation.PreDestroy;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
@@ -41,12 +36,9 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -63,11 +55,9 @@ import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
-import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTORY;
-import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
+import static io.trino.gateway.proxyserver.ProxyResponseTransformer.getRemoteTarget;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
-import static jakarta.ws.rs.core.Response.Status.OK;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
@@ -77,30 +67,26 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 public class ProxyRequestHandler
 {
     private static final Logger log = Logger.get(ProxyRequestHandler.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
     private final HttpClient httpClient;
-    private final RoutingManager routingManager;
-    private final QueryHistoryManager queryHistoryManager;
     private final boolean cookiesEnabled;
     private final boolean addXForwardedHeaders;
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
     private final ProxyResponseConfiguration proxyResponseConfiguration;
+    private final ProxyResponseTransformer proxyResponseTransformer;
 
     @Inject
     public ProxyRequestHandler(
             @ForProxy HttpClient httpClient,
-            RoutingManager routingManager,
-            QueryHistoryManager queryHistoryManager,
+            ProxyResponseTransformer proxyResponseTransformer,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
-        this.routingManager = requireNonNull(routingManager, "routingManager is null");
-        this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
+        this.proxyResponseTransformer = requireNonNull(proxyResponseTransformer, "proxyResponseTransformer is null");
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(haGatewayConfiguration.getRequestAnalyzerConfig());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
@@ -190,8 +176,8 @@ public class ProxyRequestHandler
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
-            Optional<String> username = trinoRequestUserProvider.getInstance(servletRequest).getUser();
-            future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
+            String username = trinoRequestUserProvider.getInstance(servletRequest).getUser().orElse(null);
+            future = future.transform(response -> proxyResponseTransformer.transform(request, response, username, routingDestination), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
             }
@@ -223,11 +209,6 @@ public class ProxyRequestHandler
             }
         }
         return ImmutableList.of();
-    }
-
-    private static String getRemoteTarget(URI remoteUri)
-    {
-        return format("%s://%s", remoteUri.getScheme(), remoteUri.getAuthority());
     }
 
     private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie)
@@ -266,51 +247,6 @@ public class ProxyRequestHandler
                         .type(TEXT_PLAIN_TYPE)
                         .entity(message)
                         .build());
-    }
-
-    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username,
-            RoutingDestination routingDestination)
-    {
-        log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
-
-        QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
-
-        log.debug("Extracting proxy destination : [%s] for request : [%s]", queryDetail.getBackendUrl(), request.getUri());
-
-        if (response.statusCode() == OK.getStatusCode()) {
-            try {
-                HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
-                queryDetail.setQueryId(results.get("id"));
-                routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
-                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
-                log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
-            }
-            catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
-            }
-        }
-        else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s]", response.body(), response.statusCode());
-        }
-        queryDetail.setRoutingGroup(routingDestination.routingGroup());
-        queryHistoryManager.submitQueryDetail(queryDetail);
-        return response;
-    }
-
-    public static QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(Request request, Optional<String> username)
-    {
-        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
-        queryDetail.setBackendUrl(getRemoteTarget(request.getUri()));
-        queryDetail.setCaptureTime(System.currentTimeMillis());
-        username.ifPresent(queryDetail::setUser);
-        queryDetail.setSource(request.getHeader(SOURCE_HEADER));
-
-        String queryText = new String(((StaticBodyGenerator) request.getBodyGenerator()).getBody(), UTF_8);
-        queryDetail.setQueryText(
-                queryText.length() > QUERY_TEXT_LENGTH_FOR_HISTORY
-                        ? queryText.substring(0, QUERY_TEXT_LENGTH_FOR_HISTORY) + "..."
-                        : queryText);
-        return queryDetail;
     }
 
     private void addXForwardedHeaders(HttpServletRequest servletRequest, Request.Builder requestBuilder)
