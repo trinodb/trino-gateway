@@ -68,7 +68,7 @@ Set the `privilegesField` to retrieve privileges from an OAuth claim.
 
 - For OAuth Trino Gateway uses `oidc/callback` where as Trino uses `oauth2` path
 - Trino Gateway should have its own client id
-- All the Trino backend clusters should have a single client id.
+- All the Trino clusters should have a single client id.
 - Trino Gateway needs to pass thorugh the Trino Oauth2 requests only to one of the clusters.
 - One way to handle it is to set a special rule like below:
 ```yaml
@@ -80,7 +80,7 @@ Set the `privilegesField` to retrieve privileges from an OAuth claim.
     - "result.put(\"routingGroup\", \"oauth2-handler\")"
 ```
 - That also means you need to have a cluster with that routing group.
-- It's ok to replicate an existing cluster backend record with a different name for that purpose.
+- It's ok to replicate an existing Trino cluster record with a different name for that purpose.
 
 ### Form/Basic authentication
 
@@ -129,11 +129,11 @@ authentication:
 Trino Gateway supports the following roles in regex string format:
 
 - admin : Allows access to the Editor tab, which can be used to configure the
-  backends
+  clusters
 
 - user : Allows access to the rest of the website
 
-- api : Allows access to rest apis to configure the backends
+- api : Allows access to rest apis to configure the clusters
 
 Users with attributes next to the role will be giving those privileges the
 users. You can use the preset users defined in the yaml file. 
