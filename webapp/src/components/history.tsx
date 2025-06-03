@@ -59,7 +59,7 @@ export function History() {
 
   const linkQueryRender = (text: string, record: HistoryDetail) => {
     return (
-      <Text link={{ href: `${record.backendUrl}/ui/query.html?${text}`, target: '_blank' }} underline>{text}</Text>
+      <Text link={{ href: `${record.externalUrl}/ui/query.html?${text}`, target: '_blank' }} underline>{text}</Text>
     );
   }
 
@@ -123,7 +123,7 @@ export function History() {
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
           <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup" render={routingGroupRender} />
           <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
-          <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrl" render={linkRender} />
+          <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
           <Column title="QueryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
