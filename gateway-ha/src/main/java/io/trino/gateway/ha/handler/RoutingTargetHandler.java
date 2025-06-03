@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import io.trino.gateway.ha.router.GatewayCookie;
@@ -81,8 +82,10 @@ public class RoutingTargetHandler
         RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
             String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
                     .orElse("adhoc");
+            String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
+                    .orElse(cluster);
             return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request)),
+                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
                     request);
         }).orElse(getRoutingTargetResponse(request));
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
@@ -97,14 +100,16 @@ public class RoutingTargetHandler
         String routingGroup = (routingDestination.routingGroup() != null && !routingDestination.routingGroup().isEmpty())
                 ? routingDestination.routingGroup()
                 : "adhoc";
-        String clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
+        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
+        String clusterHost = backendConfiguration.getProxyTo();
+        String externalUrl = backendConfiguration.getExternalUrl();
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
         if (!routingDestination.externalHeaders().isEmpty()) {
             modifiedRequest = new HeaderModifyingRequestWrapper(request, routingDestination.externalHeaders());
         }
         return new RoutingTargetResponse(
-                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request)),
+                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl),
                 modifiedRequest);
     }
 

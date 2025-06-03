@@ -293,6 +293,7 @@ public class ProxyRequestHandler
             log.error("Non OK HTTP Status code with response [%s] , Status code [%s]", response.body(), response.statusCode());
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
+        queryDetail.setExternalUrl(routingDestination.externalUrl());
         queryHistoryManager.submitQueryDetail(queryDetail);
         return response;
     }

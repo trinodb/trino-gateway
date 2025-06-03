@@ -11,8 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.handler.schema;
+package io.trino.gateway.ha.router;
 
-import java.net.URI;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-public record RoutingDestination(String routingGroup, String clusterHost, URI clusterUri, String externalUrl) {}
+public class TestExternalUrlQueryHistoryPostgreSql
+        extends BaseExternalUrlQueryHistoryTest
+{
+    public TestExternalUrlQueryHistoryPostgreSql()
+    {
+        super(new PostgreSQLContainer<>("postgres:15.5"));
+    }
+}
