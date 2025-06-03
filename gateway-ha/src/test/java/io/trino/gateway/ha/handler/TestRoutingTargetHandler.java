@@ -105,7 +105,7 @@ class TestRoutingTargetHandler
         config = provideGatewayConfiguration();
         httpClient = Mockito.mock(HttpClient.class);
         routingManager = Mockito.mock(RoutingManager.class);
-        when(routingManager.provideBackendConfiguration("test-group", "test-user")).thenReturn(new ProxyBackendConfiguration());
+        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(new ProxyBackendConfiguration());
         request = prepareMockRequest();
 
         // Initialize the handler with the configuration
