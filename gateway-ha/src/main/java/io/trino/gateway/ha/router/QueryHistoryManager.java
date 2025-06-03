@@ -34,6 +34,8 @@ public interface QueryHistoryManager
 
     String getRoutingGroupForQueryId(String queryId);
 
+    String getExternalUrlForQueryId(String queryId);
+
     TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);
@@ -48,6 +50,7 @@ public interface QueryHistoryManager
         private String backendUrl;
         private long captureTime;
         private String routingGroup;
+        private String externalUrl;
 
         public QueryDetail() {}
 
@@ -139,6 +142,17 @@ public interface QueryHistoryManager
             this.routingGroup = routingGroup;
         }
 
+        @JsonProperty
+        public String getExternalUrl()
+        {
+            return externalUrl;
+        }
+
+        public void setExternalUrl(String externalUrl)
+        {
+            this.externalUrl = externalUrl;
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -155,13 +169,14 @@ public interface QueryHistoryManager
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
                     Objects.equals(backendUrl, that.backendUrl) &&
-                    Objects.equals(routingGroup, that.routingGroup);
+                    Objects.equals(routingGroup, that.routingGroup) &&
+                    Objects.equals(externalUrl, that.externalUrl);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup, externalUrl);
         }
 
         @Override
@@ -175,6 +190,7 @@ public interface QueryHistoryManager
                     .add("backendUrl", backendUrl)
                     .add("captureTime", captureTime)
                     .add("routingGroup", routingGroup)
+                    .add("externalUrl", externalUrl)
                     .toString();
         }
     }
