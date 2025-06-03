@@ -6,6 +6,7 @@ export interface HistoryDetail {
   backendUrl: string;
   captureTime: number;
   routingGroup: string;
+  externalUrl: string;
 }
 
 export interface HistoryData {
