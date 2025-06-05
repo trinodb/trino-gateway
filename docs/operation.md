@@ -49,11 +49,11 @@ modules:
 ```
 - The router operates based on the stats it receives from the clusters, such as 
 the number of queued and running queries. These values are retrieved at regular 
-intervals. This interval can be configured by setting `taskDelaySeconds` under
-`monitor` section in the config file. The default interval is 60
+intervals. This interval can be configured by setting `taskDelay` under
+`monitor` section in the config file. The default interval is 1 minute
 ```yaml
 monitor:
-  taskDelaySeconds: 10
+  taskDelay: 1m
 ```
 
 ## Monitoring <a name="monitoring"></a>
