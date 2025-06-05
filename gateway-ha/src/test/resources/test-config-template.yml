@@ -13,7 +13,7 @@ clusterStatsConfiguration:
   monitorType: INFO_API
 
 monitor:
-  taskDelaySeconds: 1
+  taskDelay: 1s
 
 extraWhitelistPaths:
   - '/v1/custom.*'
