@@ -54,6 +54,7 @@ public class ExternalRoutingGroupSelector
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
     private final Set<String> excludeHeaders;
     private final URI uri;
+    private final Boolean propagateErrors;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
@@ -69,6 +70,7 @@ public class ExternalRoutingGroupSelector
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
+        this.propagateErrors = rulesExternalConfiguration.isPropagateErrors();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
@@ -103,11 +105,13 @@ public class ExternalRoutingGroupSelector
                 throw new RuntimeException("Unexpected response: null");
             }
             else if (response.errors() != null && !response.errors().isEmpty()) {
-                log.warn("Query validation failed with errors: %s", String.join(", ", response.errors()));
-                throw new WebApplicationException(
-                        Response.status(Response.Status.BAD_REQUEST)
-                                .entity(response.errors())
-                                .build());
+                if (propagateErrors) {
+                    log.warn("Query validation failed with errors: %s", String.join(", ", response.errors()));
+                    throw new WebApplicationException(
+                            Response.status(Response.Status.BAD_REQUEST)
+                                    .entity(response.errors())
+                                    .build());
+                }
             }
 
             // Filter out excluded headers and null values

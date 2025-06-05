@@ -228,7 +228,7 @@ public class QueryCountBasedRouter
     }
 
     @Override
-    public String provideAdhocCluster(String user)
+    public String provideDefaultCluster(String user)
     {
         return getBackendForRoutingGroup(defaultRoutingGroup, user).orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
     }
@@ -237,7 +237,7 @@ public class QueryCountBasedRouter
     public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideAdhocCluster(user));
+                .orElse(provideDefaultCluster(user));
     }
 
     @Override
