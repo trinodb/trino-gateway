@@ -39,8 +39,15 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
+import io.trino.gateway.ha.router.GatewayBackendManager;
+import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.HaQueryHistoryManager;
+import io.trino.gateway.ha.router.HaResourceGroupsManager;
+import io.trino.gateway.ha.router.QueryHistoryManager;
+import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.security.ApiAuthenticator;
@@ -59,6 +66,7 @@ import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
 import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import org.jdbi.v3.core.Jdbi;
 
 import java.util.List;
 import java.util.Map;
@@ -77,6 +85,10 @@ public class HaGatewayProviderModule
     private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
+    private final ResourceGroupsManager resourceGroupsManager;
+    private final GatewayBackendManager gatewayBackendManager;
+    private final QueryHistoryManager queryHistoryManager;
+    private final JdbcConnectionManager connectionManager;
 
     @Override
     protected void configure()
@@ -101,6 +113,12 @@ public class HaGatewayProviderModule
 
         OAuth2GatewayCookieConfigurationPropertiesProvider oAuth2GatewayCookieConfigurationPropertiesProvider = OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance();
         oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
+
+        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
+        connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
+        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
+        gatewayBackendManager = new HaGatewayManager(jdbi);
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
@@ -253,8 +271,30 @@ public class HaGatewayProviderModule
     }
 
     @Provides
+    @Singleton
     public MonitorConfiguration getMonitorConfiguration()
     {
         return configuration.getMonitor();
+    }
+
+    @Provides
+    @Singleton
+    public ResourceGroupsManager getResourceGroupsManager()
+    {
+        return this.resourceGroupsManager;
+    }
+
+    @Provides
+    @Singleton
+    public GatewayBackendManager getGatewayBackendManager()
+    {
+        return this.gatewayBackendManager;
+    }
+
+    @Provides
+    @Singleton
+    public QueryHistoryManager getQueryHistoryManager()
+    {
+        return queryHistoryManager;
     }
 }
