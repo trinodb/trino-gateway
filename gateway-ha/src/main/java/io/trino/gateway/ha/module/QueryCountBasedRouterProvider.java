@@ -13,22 +13,33 @@
  */
 package io.trino.gateway.ha.module;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.QueryCountBasedRouter;
 import io.trino.gateway.ha.router.RoutingManager;
 
+import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
+
 public class QueryCountBasedRouterProvider
-          extends RouterBaseModule
+        extends AbstractModule
 {
+    private static final Logger logger = Logger.get(QueryCountBasedRouterProvider.class);
+
+    // We require all modules to take HaGatewayConfiguration as the only parameter
     public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
     {
-        super(configuration);
+        // no-op
     }
 
     @Override
     public void configure()
     {
-        bind(RoutingManager.class).to(QueryCountBasedRouter.class).in(Scopes.SINGLETON);
+        logger.info("Using QueryCountBasedRouterProvider instead of default");
+        newOptionalBinder(binder(), RoutingManager.class)
+                .setBinding()
+                .to(QueryCountBasedRouter.class)
+                .in(Scopes.SINGLETON);
     }
 }
