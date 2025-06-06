@@ -95,9 +95,9 @@ export function History() {
             <>
               <Form.Select field="backendUrl" label='RoutedTo' style={{ width: 200 }} showClear placeholder={Locale.History.RoutedToTip}>
                 {backendData?.map(b => (
-                  <Form.Select.Option key={b.proxyTo} value={b.proxyTo}>
-                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.proxyTo]}</Tag>
-                    <Text>{b.proxyTo}</Text>
+                  <Form.Select.Option key={b.externalUrl} value={b.externalUrl}>
+                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.externalUrl]}</Tag>
+                    <Text>{b.externalUrl}</Text>
                   </Form.Select.Option>
                 ))}
               </Form.Select>
