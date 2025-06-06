@@ -2,14 +2,14 @@ serverConfig:
   node.environment: test
   http-server.http.port: 8080
   http-server.https.enabled: true
-  http-server.https.port: REQUEST_ROUTER_PORT
-  http-server.https.keystore.path: LOCALHOST_JKS
+  http-server.https.port: ${ENV:REQUEST_ROUTER_PORT}
+  http-server.https.keystore.path: ${ENV:LOCALHOST_JKS}
   http-server.https.keystore.key: 123456
 
 dataStore:
-  jdbcUrl: POSTGRESQL_JDBC_URL
-  user: POSTGRESQL_USER
-  password: POSTGRESQL_PASSWORD
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
 
 extraWhitelistPaths:
@@ -33,8 +33,8 @@ authentication:
     tokenEndpoint: http://localhost:4444/oauth2/token
     authorizationEndpoint: http://localhost:4444/oauth2/auth
     jwkEndpoint: http://localhost:4444/.well-known/jwks.json
-    redirectUrl: https://localhost:REQUEST_ROUTER_PORT/oidc/callback
-    redirectWebUrl: https://localhost:REQUEST_ROUTER_PORT/
+    redirectUrl: https://localhost:${ENV:REQUEST_ROUTER_PORT}/oidc/callback
+    redirectWebUrl: https://localhost:${ENV:REQUEST_ROUTER_PORT}/
     userIdField: sub
     scopes:
       - openid
