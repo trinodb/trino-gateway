@@ -16,6 +16,7 @@ package io.trino.gateway.ha.security;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import okhttp3.Cookie;
@@ -44,11 +45,15 @@ import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.URL;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -144,8 +149,14 @@ final class TestOIDC
         PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:16");
         gatewayBackendDatabase.start();
 
+        URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(ROUTER_PORT))
+                .put("LOCALHOST_JKS", Path.of(resource.toURI()).toString())
+                .putAll(buildPostgresVars(gatewayBackendDatabase))
+                .buildOrThrow();
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(gatewayBackendDatabase, ROUTER_PORT, "auth/oauth-test-config.yml");
+                HaGatewayTestUtils.buildGatewayConfig("auth/oauth-test-config.yml", additionalVars);
         String[] args = {testConfigFile.getAbsolutePath()};
         System.out.println(ROUTER_PORT);
         HaGatewayLauncher.main(args);

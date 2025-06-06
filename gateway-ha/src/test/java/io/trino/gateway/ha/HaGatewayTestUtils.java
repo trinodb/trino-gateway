@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha;
 
+import com.google.common.collect.ImmutableMap;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
@@ -34,9 +35,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static io.trino.gateway.ha.util.ConfigurationUtils.replaceEnvironmentVariables;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -81,18 +83,23 @@ public class HaGatewayTestUtils
     public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
             throws Exception
     {
-        URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
-        String configStr =
-                getResourceFileContent(configFile)
-                        .replace("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
-                        .replace("POSTGRESQL_JDBC_URL", postgreSqlContainer.getJdbcUrl())
-                        .replace("POSTGRESQL_USER", postgreSqlContainer.getUsername())
-                        .replace("POSTGRESQL_PASSWORD", postgreSqlContainer.getPassword())
-                        .replace(
-                                "APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
-                        .replace("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
-                        .replace("LOCALHOST_JKS", Path.of(resource.toURI()).toString())
-                        .replace("RESOURCES_DIR", Path.of("src", "test", "resources").toAbsolutePath().toString());
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgreSqlContainer))
+                .buildOrThrow();
+        return buildGatewayConfig(configFile, additionalVars);
+    }
+
+    public static File buildGatewayConfig(String configFile, Map<String, String> additionalVars)
+            throws Exception
+    {
+        Map<String, String> vars = ImmutableMap.<String, String>builder()
+                .put("APPLICATION_CONNECTOR_PORT", String.valueOf(30000 + (int) (Math.random() * 1000)))
+                .put("ADMIN_CONNECTOR_PORT", String.valueOf(31000 + (int) (Math.random() * 1000)))
+                .put("RESOURCES_DIR", Path.of("src", "test", "resources").toAbsolutePath().toString())
+                .putAll(additionalVars)
+                .buildOrThrow();
+        String configStr = replaceEnvironmentVariables(getResourceFileContent(configFile), vars);
 
         File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
 
@@ -102,6 +109,15 @@ public class HaGatewayTestUtils
 
         log.info("Test Gateway Config \n[%s]", configStr);
         return target;
+    }
+
+    public static Map<String, String> buildPostgresVars(PostgreSQLContainer<?> postgresql)
+    {
+        return ImmutableMap.<String, String>builder()
+                .put("POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl())
+                .put("POSTGRESQL_USER", postgresql.getUsername())
+                .put("POSTGRESQL_PASSWORD", postgresql.getPassword())
+                .buildOrThrow();
     }
 
     public static String getResourceFileContent(String fileName)
