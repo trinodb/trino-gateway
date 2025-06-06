@@ -33,6 +33,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Map;
 
 import static io.airlift.http.client.HttpStatus.NOT_FOUND;
 import static io.airlift.http.client.HttpStatus.OK;
@@ -60,8 +61,13 @@ final class TestTrinoResource
     {
         postgresql.start();
         // Prepare config and database tables
+        Map<String, String> additionalVars = Map.of(
+                "REQUEST_ROUTER_PORT", String.valueOf(routerPort),
+                "POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl(),
+                "POSTGRESQL_USER", postgresql.getUsername(),
+                "POSTGRESQL_PASSWORD", postgresql.getPassword());
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-template.yml", additionalVars);
 
         // Setup resource group manager
         DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);

@@ -116,8 +116,14 @@ final class TestGatewayHaMultipleBackend
             }
         });
 
+        Map<String, String> additionalVars = Map.of(
+                "REQUEST_ROUTER_PORT", String.valueOf(routerPort),
+                "POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl(),
+                "POSTGRESQL_USER", postgresql.getUsername(),
+                "POSTGRESQL_PASSWORD", postgresql.getPassword());
+
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-template.yml", additionalVars);
 
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
