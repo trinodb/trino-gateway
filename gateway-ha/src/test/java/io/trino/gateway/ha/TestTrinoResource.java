@@ -14,6 +14,7 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.HaResourceGroupsManager;
@@ -33,9 +34,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Map;
 
 import static io.airlift.http.client.HttpStatus.NOT_FOUND;
 import static io.airlift.http.client.HttpStatus.OK;
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
@@ -60,8 +63,12 @@ final class TestTrinoResource
     {
         postgresql.start();
         // Prepare config and database tables
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-template.yml", additionalVars);
 
         // Setup resource group manager
         DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);

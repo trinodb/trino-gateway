@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.proxyserver;
 
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -30,10 +31,12 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.HaGatewayTestUtils.prepareMockBackend;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +86,11 @@ final class TestProxyRequestHandler
 
         postgresql.start();
 
-        File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
+        File testConfigFile = buildGatewayConfig("test-config-template.yml", additionalVars);
 
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);

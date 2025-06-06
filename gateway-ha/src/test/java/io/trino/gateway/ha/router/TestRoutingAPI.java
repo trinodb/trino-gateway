@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
@@ -33,7 +34,9 @@ import org.testcontainers.containers.TrinoContainer;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -60,8 +63,12 @@ final class TestRoutingAPI
         postgresql.start();
 
         // seed database
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-routing-rules-api.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-with-routing-rules-api.yml", additionalVars);
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);

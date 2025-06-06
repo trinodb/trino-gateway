@@ -15,6 +15,7 @@ package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -33,7 +34,9 @@ import org.testcontainers.containers.TrinoContainer;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -55,8 +58,14 @@ final class TestGatewayHaSingleBackend
         int backendPort = trino.getMappedPort(8080);
 
         postgresql.start();
+
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
+
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-template.yml", additionalVars);
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);

@@ -50,6 +50,7 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -116,8 +117,12 @@ final class TestGatewayHaMultipleBackend
             }
         });
 
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-template.yml", additionalVars);
 
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
