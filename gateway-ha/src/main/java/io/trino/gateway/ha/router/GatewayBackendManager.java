@@ -24,11 +24,7 @@ public interface GatewayBackendManager
 
     List<ProxyBackendConfiguration> getAllActiveBackends();
 
-    /**
-     * @deprecated Use {@link #getActiveBackends(String)} with the configured default routing group
-     */
-    @Deprecated
-    List<ProxyBackendConfiguration> getActiveAdhocBackends();
+    List<ProxyBackendConfiguration> getActiveDefaultBackends();
 
     List<ProxyBackendConfiguration> getActiveBackends(String routingGroup);
 

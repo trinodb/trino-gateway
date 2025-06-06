@@ -103,11 +103,11 @@ public abstract class RoutingManager
     }
 
     /**
-     * Performs routing to an adhoc backend.
+     * Performs routing to a default backend.
      */
     public String provideDefaultCluster(String user)
     {
-        List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveBackends(defaultRoutingGroup);
+        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveDefaultBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
             throw new IllegalStateException("Number of active backends found zero");
@@ -117,16 +117,13 @@ public abstract class RoutingManager
     }
 
     /**
-     * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
+     * Performs routing to a given cluster group. This falls back to a default backend, if no scheduled
      * backend is found.
      */
     public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         List<ProxyBackendConfiguration> backends =
                 gatewayBackendManager.getActiveBackends(routingGroup);
-        if (backends.isEmpty()) {
-            throw new IllegalStateException("Number of active backends found zero");
-        }
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
             return provideDefaultCluster(user);

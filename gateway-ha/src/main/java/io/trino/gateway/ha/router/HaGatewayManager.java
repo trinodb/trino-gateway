@@ -56,7 +56,7 @@ public class HaGatewayManager
     }
 
     @Override
-    public List<ProxyBackendConfiguration> getActiveAdhocBackends()
+    public List<ProxyBackendConfiguration> getActiveDefaultBackends()
     {
         try {
             return getActiveBackends(defaultRoutingGroup);

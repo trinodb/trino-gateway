@@ -103,10 +103,6 @@ public class RoutingTargetHandler
                     .entity(e.getMessage())
                     .build());
         }
-        catch (WebApplicationException e) {
-            // Re-throw other WebApplicationExceptions (like BAD_REQUEST from query validation)
-            throw e;
-        }
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
@@ -114,17 +110,15 @@ public class RoutingTargetHandler
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
         String routingGroup;
-        String clusterHost;
 
         // This falls back on default routing group backend if there is no cluster found for the routing group.
         if (!isNullOrEmpty(routingDestination.routingGroup())) {
             routingGroup = routingDestination.routingGroup();
-            clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
         }
         else {
             routingGroup = defaultRoutingGroup;
-            clusterHost = routingManager.provideDefaultCluster(user);
         }
+        String clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
 
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
