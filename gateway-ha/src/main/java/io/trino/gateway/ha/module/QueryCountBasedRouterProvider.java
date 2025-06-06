@@ -15,20 +15,25 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.Scopes;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.router.QueryCountBasedRouter;
 import io.trino.gateway.ha.router.RoutingManager;
 
 public class QueryCountBasedRouterProvider
           extends RouterBaseModule
 {
+    private final HaGatewayConfiguration configuration;
+
     public QueryCountBasedRouterProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
+        this.configuration = configuration;
     }
 
     @Override
     public void configure()
     {
+        bind(RoutingConfiguration.class).toInstance(configuration.getRouting());
         bind(RoutingManager.class).to(QueryCountBasedRouter.class).in(Scopes.SINGLETON);
     }
 }
