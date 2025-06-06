@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,7 +55,12 @@ final class TestAuthorization
             throws Exception
     {
         postgresql.start();
-        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "auth/auth-test-config.yml");
+        Map<String, String> additionalVars = Map.of(
+                "REQUEST_ROUTER_PORT", String.valueOf(routerPort),
+                "POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl(),
+                "POSTGRESQL_USER", postgresql.getUsername(),
+                "POSTGRESQL_PASSWORD", postgresql.getPassword());
+        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig("auth/auth-test-config.yml", additionalVars);
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
     }

@@ -33,6 +33,7 @@ import org.testcontainers.containers.TrinoContainer;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
@@ -60,8 +61,13 @@ final class TestRoutingAPI
         postgresql.start();
 
         // seed database
+        Map<String, String> additionalVars = Map.of(
+                "REQUEST_ROUTER_PORT", String.valueOf(routerPort),
+                "POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl(),
+                "POSTGRESQL_USER", postgresql.getUsername(),
+                "POSTGRESQL_PASSWORD", postgresql.getPassword());
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-routing-rules-api.yml");
+                HaGatewayTestUtils.buildGatewayConfig("test-config-with-routing-rules-api.yml", additionalVars);
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);

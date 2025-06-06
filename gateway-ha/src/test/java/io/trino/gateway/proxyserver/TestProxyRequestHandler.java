@@ -30,6 +30,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -83,7 +84,12 @@ final class TestProxyRequestHandler
 
         postgresql.start();
 
-        File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+        Map<String, String> additionalVars = Map.of(
+                "REQUEST_ROUTER_PORT", String.valueOf(routerPort),
+                "POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl(),
+                "POSTGRESQL_USER", postgresql.getUsername(),
+                "POSTGRESQL_PASSWORD", postgresql.getPassword());
+        File testConfigFile = buildGatewayConfig("test-config-template.yml", additionalVars);
 
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
