@@ -274,7 +274,7 @@ public abstract class RoutingManager
     protected String findExternalUrlForUnknownQueryId(String queryId)
     {
         String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
-        setRoutingGroupForQueryId(queryId, externalUrl);
+        setExternalUrlForQueryId(queryId, externalUrl);
         return externalUrl;
     }
 
