@@ -15,7 +15,6 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import jakarta.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -43,9 +42,9 @@ final class TestRoutingManagerNotFound
     @Test
     void testNonExistentRoutingGroupThrowsNotFoundException()
     {
-        // When requesting a non-existent routing group, a NotFoundException should be thrown
-        assertThatThrownBy(() -> routingManager.provideBackendForRoutingGroup("non_existent_group", "user"))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("Routing group does not exist: non_existent_group");
+        // When requesting a non-existent routing group, an IllegalStateException should be thrown
+        assertThatThrownBy(() -> routingManager.provideClusterForRoutingGroup("non_existent_group", "user"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Number of active backends found zero");
     }
 }

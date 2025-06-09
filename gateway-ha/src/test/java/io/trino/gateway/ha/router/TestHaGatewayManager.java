@@ -53,7 +53,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getAllBackends()).hasSize(1);
         assertThat(haGatewayManager.getActiveBackends("adhoc")).hasSize(1);
         assertThat(haGatewayManager.getActiveBackends("unknown")).isEmpty();
-        assertThat(haGatewayManager.getActiveAdhocBackends()).hasSize(1);
+        assertThat(haGatewayManager.getActiveDefaultBackends()).hasSize(1);
 
         // Update a backend
         ProxyBackendConfiguration adhoc = new ProxyBackendConfiguration();

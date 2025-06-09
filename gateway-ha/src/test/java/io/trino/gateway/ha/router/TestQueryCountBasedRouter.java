@@ -192,7 +192,7 @@ final class TestQueryCountBasedRouter
     {
         // The user u2 has different number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queued for that user
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u2");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u2");
         assertThat(BACKEND_URL_2).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -200,7 +200,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithDifferentQueueLengthUser2()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u3");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u3");
         assertThat(BACKEND_URL_1).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -208,7 +208,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithNoQueuedQueries()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u101");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u101");
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
     }
 
