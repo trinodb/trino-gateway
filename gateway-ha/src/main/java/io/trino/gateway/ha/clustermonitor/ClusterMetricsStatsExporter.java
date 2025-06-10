@@ -122,6 +122,9 @@ public class ClusterMetricsStatsExporter
                 log.error(e, "Failed to register metrics for cluster: %s", clusterName);
             }
         }
+        else {
+            log.warn("Attempted to register metrics for duplicate cluster name: %s. This may cause JMX registration issues.", clusterName);
+        }
     }
 
     GatewayBackendManager getGatewayBackendManager()

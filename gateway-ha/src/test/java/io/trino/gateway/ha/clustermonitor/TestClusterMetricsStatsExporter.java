@@ -52,7 +52,6 @@ final class TestClusterMetricsStatsExporter
                     eq(ClusterMetricsStats.class), eq(clusterName1));
 
             // Wait for next update where cluster is added
-            statsExporter.start();
             Thread.sleep(2000);
 
             verify(statsExporter.getExporter()).exportWithGeneratedName(
