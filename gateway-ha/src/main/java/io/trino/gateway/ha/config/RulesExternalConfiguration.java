@@ -46,7 +46,7 @@ public class RulesExternalConfiguration
         return this.propagateErrors;
     }
 
-    public void setPropagateErrors(Boolean propagateErrors)
+    public void setPropagateErrors(boolean propagateErrors)
     {
         this.propagateErrors = propagateErrors;
     }

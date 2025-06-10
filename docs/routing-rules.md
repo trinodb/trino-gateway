@@ -7,7 +7,7 @@ route requests. If this header is not specified, requests are sent to the defaul
 
 You can configure a default routing group by setting the `defaultRoutingGroup` under the `routing` section. 
 This group will be used whenever routing information is unavailable or the external routing service fails. 
-If not configured, the fallback remains the built-in adhoc group.
+If not configured, the fallback remains the built-in group `adhoc`.
 
 ```yaml
 routing:
@@ -57,7 +57,7 @@ routingRules:
 * Check headers to exclude when making API requests, specifics depend on the
   network configuration.
 * Optionally, set propagateErrors to true to propagate error messages from the external
-  routing service to the client when the response contains non-empty errors.
+  routing service to the client if the response includes any errors.
 
 If there is error parsing the routing rules configuration file, an error is
 logged, and requests are routed using the routing group header
@@ -104,7 +104,7 @@ return a result with the following criteria:
 * Response status code of OK (200)
 * Message in JSON format
 * Only one group can be returned
-* If errors is not null, then query would route to the default configured routing group or adhoc
+* If errors is not null, then query would route to either the default configured routing group or `adhoc` group.
 
 ```json
 {
@@ -150,7 +150,7 @@ In addition to the default objects, rules may optionally utilize
 , which provide information about the user and query respectively.
 You must include an action of the form `result.put(\"routingGroup\", \"foo\")`
 to trigger routing of a request that satisfies the condition to the specific
-routing group. Without this action, the default configured group or adhoc group is used and the
+routing group. Without this action, the default configured group or `adhoc` group is used and the
 whole routing rule is redundant.
 
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
