@@ -75,3 +75,16 @@ oauth2GatewayCookieConfiguration:
     - "/custom/logout"
   lifetime: "5m"
 ```
+
+## Routing URLs
+
+Each Trino backend to the Trino Gateway supports both a proxyTo URL and external URL.
+While the proxy URL is used internally by the Gateway to route the requests based on routing rules and query identifiers, 
+the external URL represents a user accessible address for the Trino backend cluster, 
+and is commonly used to access [Trino web UI](https://trino.io/docs/current/admin/web-interface.html)  
+
+For example, when using a Kubernetes Service, the proxyTo URL might be `trino-backend-service.trino-namespace.svc.cluster.local:8083`
+for communication between the Gateway and the Trino backend.
+Meanwhile, the external URL for the same backend cluster could be `trino.domain.com`.
+If there is no user-accessible URL available for a backend cluster,
+the external URL can be set to the Trino Gateway address itself or to the proxyTo URL.
