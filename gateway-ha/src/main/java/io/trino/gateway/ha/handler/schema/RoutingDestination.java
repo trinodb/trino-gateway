@@ -11,8 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.router.schema;
+package io.trino.gateway.ha.handler.schema;
 
-import java.util.List;
+import java.net.URI;
 
-public record RoutingGroupExternalResponse(String routingGroup, List<String> errors) {}
+public record RoutingDestination(String routingGroup, String clusterHost, URI clusterUri) {}

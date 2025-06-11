@@ -50,7 +50,7 @@ Use the following steps to create a new router:
 - The router listens to the list of `ClusterStats` via the`updateBackEndStats`
   method.
 - This method is called on regular intervals defined in the config 
-  parameter `monitor=>taskDelaySeconds`.
+  parameter `monitor=>taskDelay`.
 - Each element in the list corresponds to each backend cluster.
 - Only the stats from the healthy cluster are reported, unhealthy clusters are
   not included in the list. If you have three cluster backends and one is
@@ -70,9 +70,6 @@ backendState:
 
 clusterStatsConfiguration:
   monitorType: UI_API
-
-monitor:
-  taskDelaySeconds: 10
 
 modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider

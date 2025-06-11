@@ -463,7 +463,7 @@ public class GatewayWebAppResource
     }
 
     @GET
-    @RolesAllowed("ADMIN")
+    @RolesAllowed("USER")
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/getUIConfiguration")
     public Response getUIConfiguration()

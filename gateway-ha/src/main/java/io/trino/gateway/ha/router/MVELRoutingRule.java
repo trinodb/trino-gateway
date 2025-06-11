@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -127,13 +128,13 @@ public class MVELRoutingRule
     @Override
     public String toString()
     {
-        return "MVELRoutingRule{" +
-                "name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", priority=" + priority +
-                ", condition=" + decompile(condition) +
-                ", actions=" + String.join(",", actions.stream().map(DebugTools::decompile).toList()) +
-                ", parserContext=" + parserContext +
-                '}';
+        return toStringHelper(this)
+                .add("name", name)
+                .add("description", description)
+                .add("priority", priority)
+                .add("condition", decompile(condition))
+                .add("actions", String.join(",", actions.stream().map(DebugTools::decompile).toList()))
+                .add("parserContext", parserContext)
+                .toString();
     }
 }

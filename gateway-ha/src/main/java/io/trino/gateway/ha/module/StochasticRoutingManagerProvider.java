@@ -13,7 +13,7 @@
  */
 package io.trino.gateway.ha.module;
 
-import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.StochasticRoutingManager;
@@ -21,23 +21,14 @@ import io.trino.gateway.ha.router.StochasticRoutingManager;
 public class StochasticRoutingManagerProvider
             extends RouterBaseModule
 {
-    private final StochasticRoutingManager routingManager;
-
     public StochasticRoutingManagerProvider(HaGatewayConfiguration configuration)
     {
         super(configuration);
-        routingManager = new StochasticRoutingManager(gatewayBackendManager, queryHistoryManager);
     }
 
-    @Provides
-    public StochasticRoutingManager getHaRoutingManager()
+    @Override
+    public void configure()
     {
-        return this.routingManager;
-    }
-
-    @Provides
-    public RoutingManager getRoutingManager()
-    {
-        return getHaRoutingManager();
+        bind(RoutingManager.class).to(StochasticRoutingManager.class).in(Scopes.SINGLETON);
     }
 }

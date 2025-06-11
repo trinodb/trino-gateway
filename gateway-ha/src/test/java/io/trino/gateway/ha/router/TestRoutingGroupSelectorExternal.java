@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.JsonBodyGenerator;
@@ -21,8 +23,9 @@ import io.airlift.http.client.Request;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
-import io.trino.gateway.ha.router.schema.RoutingGroupExternalResponse;
+import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +40,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -65,8 +67,8 @@ final class TestRoutingGroupSelectorExternal
 {
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private HttpClient httpClient;
-    private static final JsonResponseHandler<RoutingGroupExternalResponse> ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER =
-            createJsonResponseHandler(jsonCodec(RoutingGroupExternalResponse.class));
+    private static final JsonResponseHandler<ExternalRouterResponse> ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER =
+            createJsonResponseHandler(jsonCodec(ExternalRouterResponse.class));
 
     @BeforeAll
     void initialize()
@@ -92,12 +94,12 @@ final class TestRoutingGroupSelectorExternal
         HttpServletRequest mockRequest = prepareMockRequest();
 
         // Create a mock response
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("test-group", null);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", null, ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<JsonResponseHandler<RoutingGroupExternalResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
+        ArgumentCaptor<JsonResponseHandler<ExternalRouterResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
@@ -114,7 +116,7 @@ final class TestRoutingGroupSelectorExternal
                 .build();
 
         // Execute the request
-        RoutingGroupExternalResponse response = httpClient.execute(request, ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER);
+        ExternalRouterResponse response = httpClient.execute(request, ROUTING_GROUP_REST_API_JSON_RESPONSE_HANDLER);
 
         // Verify the response
         assertThat(response.routingGroup())
@@ -140,19 +142,19 @@ final class TestRoutingGroupSelectorExternal
         // Set a mock header for ROUTING_GROUP_HEADER
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("default-group-api-failure");
         // Create a mock response that returns error in List<String>
-        RoutingGroupExternalResponse mockResponse = new RoutingGroupExternalResponse("fail-group", List.of("test-api-failure", "400 error"));
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("fail-group", List.of("test-api-failure", "400 error"), ImmutableMap.of());
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<JsonResponseHandler<RoutingGroupExternalResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
+        ArgumentCaptor<JsonResponseHandler<ExternalRouterResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
 
         // Mock the behavior of httpClient.execute
         when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         // Verify the response
-        assertThat(routingGroupSelector.findRoutingGroup(mockRequest))
-                .contains("default-group-api-failure");
+        assertThat(routingGroup).isEqualTo("default-group-api-failure");
     }
 
     @Test
@@ -196,6 +198,122 @@ final class TestRoutingGroupSelectorExternal
         assertThat(validHeaders.size()).isEqualTo(1);
     }
 
+    @Test
+    void testFindRoutingDestinationWithHeaderValues()
+            throws Exception
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+        String headerKey = "X-Header";
+        String headerValue = "some-value";
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                ImmutableList.of(),
+                ImmutableMap.of(headerKey, headerValue));
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(routingSelectorResponse.routingGroup()).isNotNull().isEqualTo("test-group");
+
+        // Verify header was set correctly
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNotNull().isEqualTo(headerValue);
+    }
+
+    @Test
+    void testExcludedHeaders()
+            throws Exception
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setExcludeHeaders(ImmutableList.of("X-Custom-Header"));
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+        String allowedHeaderKey = "X-Header";
+        String allowedHeaderValue = "should-be-set";
+        String excludedHeaderKey = "X-Custom-Header";
+        String excludedHeaderValue = "excluded-value";
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                ImmutableList.of(),
+                ImmutableMap.of(
+                        allowedHeaderKey, allowedHeaderValue,
+                        excludedHeaderKey, excludedHeaderValue));
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(routingSelectorResponse.routingGroup()).isNotNull().isEqualTo("test-group");
+        assertThat(routingSelectorResponse.externalHeaders().get(allowedHeaderKey)).isNotNull().isEqualTo(allowedHeaderValue);
+        assertThat(routingSelectorResponse.externalHeaders().get(excludedHeaderKey)).isNull();
+    }
+
+    @Test
+    void testHeaderModificationWithErrors()
+            throws Exception
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+        String headerKey = "X-Header";
+        String headerValue = "should-be-null";
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                ImmutableList.of("Error occurred"),
+                ImmutableMap.of(headerKey, headerValue));
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(routingSelectorResponse.routingGroup()).isNull();
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNull();
+    }
+
+    @Test
+    void testHeaderModificationWithEmptyRoutingGroup()
+            throws Exception
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+        String headerKey = "X-Empty-Group-Header";
+        String headerValue = "should-be-set";
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "",
+                ImmutableList.of(),
+                ImmutableMap.of(headerKey, headerValue));
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(routingSelectorResponse.routingGroup()).isEmpty();
+        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNotNull().isEqualTo(headerValue);
+    }
+
     private HttpServletRequest prepareMockRequest()
     {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -210,7 +328,7 @@ final class TestRoutingGroupSelectorExternal
         when(mockRequest.getHeader(USER_HEADER)).thenReturn("user");
 
         List<String> defaultHeaderNames = List.of("Accept-Encoding");
-        List<String> defaultAcceptEncodingValues = Arrays.asList("gzip", "deflate", "br");
+        List<String> defaultAcceptEncodingValues = List.of("gzip", "deflate", "br");
         Enumeration<String> headerNamesEnumeration = Collections.enumeration(defaultHeaderNames);
 
         when(mockRequest.getHeaderNames()).thenReturn(headerNamesEnumeration);
