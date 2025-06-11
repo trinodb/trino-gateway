@@ -28,10 +28,10 @@ import java.util.Map;
 public record ExternalRouterResponse(
         @Nullable String routingGroup,
         List<String> errors,
-        Map<String, String> externalHeaders)
+        @Nullable Map<String, String> externalHeaders)
         implements RoutingGroupResponse
 {
     public ExternalRouterResponse {
-        externalHeaders = ImmutableMap.copyOf(externalHeaders);
+        externalHeaders = externalHeaders == null ? ImmutableMap.of() : ImmutableMap.copyOf(externalHeaders);
     }
 }

@@ -95,6 +95,14 @@ return a result with the following criteria:
 * Only one group can be returned
 * If errors is not null, then query would route to default routing group adhoc
 
+#### Request headers modification
+
+The external routing service can optionally return an `externalHeaders` map in its response
+to add or modify HTTP headers before the request is forwarded.
+
+This enables dynamic customization of request behavior, such as injecting session properties
+or setting client tags before the request reaches the Trino cluster.
+
 ```json
 {
     "routingGroup": "test-group",
@@ -102,7 +110,11 @@ return a result with the following criteria:
         "Error1",
         "Error2",
         "Error3"
-    ]
+    ],
+    "externalHeaders": {
+        "x-trino-client-tags": "['etl']",
+        "x-trino-session": "query_max_memory=50GB,optimize_metadata_queries=false"
+    }
 }
 ```
 
