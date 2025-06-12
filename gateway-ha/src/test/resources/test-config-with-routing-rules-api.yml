@@ -1,11 +1,11 @@
 serverConfig:
   node.environment: test
-  http-server.http.port: REQUEST_ROUTER_PORT
+  http-server.http.port: ${ENV:REQUEST_ROUTER_PORT}
 
 dataStore:
-  jdbcUrl: POSTGRESQL_JDBC_URL
-  user: POSTGRESQL_USER
-  password: POSTGRESQL_PASSWORD
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
 
 clusterStatsConfiguration:
@@ -35,4 +35,4 @@ uiConfiguration:
 
 routingRules:
   rulesEngineEnabled: true
-  rulesConfigPath: "RESOURCES_DIR/rules/routing_rules_update.yml"
+  rulesConfigPath: "${ENV:RESOURCES_DIR}/rules/routing_rules_update.yml"

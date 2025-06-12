@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import okhttp3.MediaType;
@@ -36,8 +37,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -54,7 +57,11 @@ final class TestAuthorization
             throws Exception
     {
         postgresql.start();
-        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "auth/auth-test-config.yml");
+        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
+                .put("REQUEST_ROUTER_PORT", String.valueOf(routerPort))
+                .putAll(buildPostgresVars(postgresql))
+                .build();
+        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig("auth/auth-test-config.yml", additionalVars);
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
     }
