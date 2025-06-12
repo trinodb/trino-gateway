@@ -35,8 +35,8 @@ To enable them, set the environment variable `TG_RUN_ORACLE_TESTS=true`. These t
 will always be run in GitHub CI.
 
 ```shell
-cd gateway-ha/target/
-java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../config.yaml
+cd trino-gateway-server/target/trino-gateway-server-{{VERSION}}
+bin/launcher start --config path/to/config.yaml
 ```
 
 #### In Docker

@@ -109,10 +109,11 @@ public class HaGatewayLauncher
             throws Exception
     {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Expected exactly one argument (path of configuration file)");
+        String configFile = System.getProperty("config");
+        if (configFile == null) {
+            throw new IllegalArgumentException("Configuration file not specified. Use -Dconfig=<config-file>");
         }
-        String config = Files.readString(Path.of(args[0]));
+        String config = Files.readString(Path.of(configFile));
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(replaceEnvironmentVariables(config), HaGatewayConfiguration.class);
         FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
         List<Module> modules = addModules(haGatewayConfiguration);
