@@ -18,9 +18,5 @@ clusterStatsConfiguration:
 
 # This can be adjusted based on the coordinator state
 monitor:
-<<<<<<< amybubu/add-activation-status-metrics
-  taskDelaySeconds: 10
-  clusterMetricsRegistryRefreshPeriod: 30s
-=======
   taskDelay: 1m
->>>>>>> main
+  clusterMetricsRegistryRefreshPeriod: 30s
