@@ -288,6 +288,30 @@ final class TestRoutingGroupSelectorExternal
     }
 
     @Test
+    void testHeaderModificationWithNoExternalHeaders()
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                ImmutableList.of(),
+                null);
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(routingSelectorResponse.routingGroup()).isEqualTo("test-group");
+        assertThat(routingSelectorResponse.externalHeaders()).isEqualTo(ImmutableMap.of());
+    }
+
+    @Test
     void testHeaderModificationWithEmptyRoutingGroup()
             throws Exception
     {
