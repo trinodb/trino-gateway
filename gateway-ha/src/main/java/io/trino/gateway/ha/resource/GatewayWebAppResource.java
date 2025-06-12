@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
@@ -76,6 +77,7 @@ public class GatewayWebAppResource
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
+    private final HaGatewayConfiguration haGatewayConfiguration;
 
     @Inject
     public GatewayWebAppResource(
@@ -92,6 +94,7 @@ public class GatewayWebAppResource
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
+        this.haGatewayConfiguration = configuration;
     }
 
     @POST
@@ -160,7 +163,7 @@ public class GatewayWebAppResource
         Map<String, List<DistributionResponse.LineChart>> lineChartMap = lineChart.stream().collect(Collectors.groupingBy(DistributionResponse.LineChart::getName));
         List<DistributionResponse.DistributionChart> distributionChart = lineChartMap.values().stream().map(d -> {
             DistributionResponse.DistributionChart dc = new DistributionResponse.DistributionChart();
-            DistributionResponse.LineChart lc = d.get(0);
+            DistributionResponse.LineChart lc = d.getFirst();
             long sum = d.stream().collect(Collectors.summarizingLong(DistributionResponse.LineChart::getQueryCount)).getSum();
             dc.setQueryCount(sum);
             dc.setBackendUrl(lc.getBackendUrl());
@@ -446,6 +449,10 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
+        if (haGatewayConfiguration.getRoutingRules().isRulesEngineEnabled() && haGatewayConfiguration.getRoutingRules().getRulesType() == RulesType.EXTERNAL) {
+            return Response.status(Response.Status.NO_CONTENT)
+                    .entity(Result.fail("Routing rules are managed by an external service")).build();
+        }
         List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
         return Response.ok(Result.ok(routingRulesList)).build();
     }
