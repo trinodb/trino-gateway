@@ -13,14 +13,11 @@
  */
 package io.trino.gateway.proxyserver;
 
-import com.google.common.collect.ListMultimap;
-import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.Request;
 import io.airlift.http.client.Response;
 import io.airlift.http.client.ResponseHandler;
 import io.airlift.units.DataSize;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
-import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,17 +48,6 @@ public class ProxyResponseHandler
         }
         catch (IOException e) {
             throw new ProxyException("Failed reading response from remote Trino server", e);
-        }
-    }
-
-    public record ProxyResponse(
-            int statusCode,
-            ListMultimap<HeaderName, String> headers,
-            String body)
-    {
-        public ProxyResponse
-        {
-            requireNonNull(headers, "headers is null");
         }
     }
 }
