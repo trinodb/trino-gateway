@@ -43,6 +43,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
@@ -285,6 +286,30 @@ final class TestRoutingGroupSelectorExternal
         // Verify
         assertThat(routingSelectorResponse.routingGroup()).isNull();
         assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNull();
+    }
+
+    @Test
+    void testHeaderModificationWithNoExternalHeaders()
+    {
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+
+        List<String> errors = ImmutableList.of();
+        Map<String, String> externalHeaders = null;
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                errors,
+                externalHeaders);
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
+
+        assertThat(routingSelectorResponse.routingGroup()).isEqualTo("test-group");
+        assertThat(routingSelectorResponse.externalHeaders()).isEmpty();
     }
 
     @Test
