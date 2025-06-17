@@ -85,4 +85,3 @@ and is commonly used to access [Trino web UI](https://trino.io/docs/current/admi
 
 For example, in a Kubernetes environment, the `proxyTo` URL might be `trino-backend-service.trino-namespace.svc.cluster.local:8083`
 for communication between the Trino Gateway and Trino clusters, and the external URL for the same backend cluster might be `trino.domain.com`.
-Meanwhile, the external URL for the same backend cluster could be `trino.domain.com`.
