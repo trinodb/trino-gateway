@@ -34,6 +34,8 @@ public interface QueryHistoryManager
 
     String getRoutingGroupForQueryId(String queryId);
 
+    String getExternalUrlForQueryId(String queryId);
+
     TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);
@@ -48,6 +50,7 @@ public interface QueryHistoryManager
         private String backendUrl;
         private long captureTime;
         private String routingGroup;
+        private String externalUrl;
 
         public QueryDetail() {}
 
@@ -137,6 +140,17 @@ public interface QueryHistoryManager
         public void setRoutingGroup(String routingGroup)
         {
             this.routingGroup = routingGroup;
+        }
+
+        @JsonProperty
+        public String getExternalUrl()
+        {
+            return this.externalUrl;
+        }
+
+        public void setExternalUrl(String externalUrl)
+        {
+            this.externalUrl = externalUrl;
         }
 
         @Override
