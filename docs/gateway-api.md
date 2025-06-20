@@ -1,5 +1,8 @@
 # Gateway API
 
+Please note that if there are duplicate `proxyTo` URLs in the backend configuration, 
+the RoutedTo in the Query History page might not be shown correctly.
+
 ## Add or update a backend
 
 ```shell
