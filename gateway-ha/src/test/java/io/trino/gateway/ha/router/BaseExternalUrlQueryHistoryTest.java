@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class BaseExternalUrlQueryHistoryTest
 {
-    protected final JdbcDatabaseContainer<?> container;
+    private final JdbcDatabaseContainer<?> container;
     private QueryHistoryManager queryHistoryManager;
 
     protected BaseExternalUrlQueryHistoryTest(JdbcDatabaseContainer<?> container)

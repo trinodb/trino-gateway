@@ -43,7 +43,7 @@ final class TestHaGatewayManager
         backend.setRoutingGroup("adhoc");
         backend.setName("adhoc1");
         backend.setProxyTo("adhoc1.trino.gateway.io");
-        backend.setExternalUrl("adhoc1.trino.gateway.io");
+        backend.setExternalUrl("adhoc1.external.trino.gateway.io");
         ProxyBackendConfiguration updated = haGatewayManager.addBackend(backend);
         assertThat(updated).isEqualTo(backend);
 
@@ -52,6 +52,8 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getActiveBackends("adhoc")).hasSize(1);
         assertThat(haGatewayManager.getActiveBackends("unknown")).isEmpty();
         assertThat(haGatewayManager.getActiveAdhocBackends()).hasSize(1);
+
+        assertThat(haGatewayManager.getActiveAdhocBackends().getFirst().getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
 
         // Update a backend
         ProxyBackendConfiguration adhoc = new ProxyBackendConfiguration();
@@ -82,33 +84,16 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
                 .containsExactly("adhoc");
-    }
 
-    @Test
-    void testDefaultExternalUrl()
-    {
-        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
-        backend.setActive(true);
-        backend.setRoutingGroup("adhoc");
-        backend.setName("adhoc1");
-        backend.setProxyTo("adhoc1.trino.gateway.io");
-        haGatewayManager.addBackend(backend);
-        final ProxyBackendConfiguration backendConfiguration = haGatewayManager.getActiveBackends("adhoc").get(0);
-        assertThat(backendConfiguration.getExternalUrl()).isEqualTo(backend.getExternalUrl());
-    }
-
-    @Test
-    void testSettingExternalUrl()
-    {
-        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
-        backend.setActive(true);
-        backend.setRoutingGroup("adhoc");
-        backend.setName("adhoc1");
-        backend.setProxyTo("adhoc1.trino.gateway.io");
-        backend.setExternalUrl("adhoc1.external.trino.gateway.io");
-        haGatewayManager.addBackend(backend);
-        final ProxyBackendConfiguration backendConfiguration = haGatewayManager.getActiveBackends("adhoc").get(0);
-        assertThat(backendConfiguration.getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
+        // Test default externalUrl to proxyUrl
+        ProxyBackendConfiguration adhoc2 = new ProxyBackendConfiguration();
+        adhoc2.setActive(true);
+        adhoc2.setRoutingGroup("adhoc2");
+        adhoc2.setName("adhoc2");
+        adhoc2.setProxyTo("adhoc2.trino.gateway.io");
+        haGatewayManager.addBackend(adhoc2);
+        final ProxyBackendConfiguration backendConfigurationAdhoc2 = haGatewayManager.getActiveBackends("adhoc2").getFirst();
+        assertThat(backendConfigurationAdhoc2.getExternalUrl()).isEqualTo(adhoc2.getExternalUrl());
     }
 
     @Test
