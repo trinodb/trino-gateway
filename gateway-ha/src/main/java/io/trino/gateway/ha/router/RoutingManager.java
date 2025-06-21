@@ -121,7 +121,7 @@ public abstract class RoutingManager
     /**
      * Performs routing to an adhoc backend.
      */
-    public ProxyBackendConfiguration provideAdhocBackendConfiguration(String user)
+    private ProxyBackendConfiguration provideAdhocBackendConfiguration(String user)
     {
         List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));

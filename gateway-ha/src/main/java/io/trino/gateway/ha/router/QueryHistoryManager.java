@@ -169,13 +169,14 @@ public interface QueryHistoryManager
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
                     Objects.equals(backendUrl, that.backendUrl) &&
-                    Objects.equals(routingGroup, that.routingGroup);
+                    Objects.equals(routingGroup, that.routingGroup) &&
+                    Objects.equals(externalUrl, that.externalUrl);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup, externalUrl);
         }
 
         @Override
@@ -189,6 +190,7 @@ public interface QueryHistoryManager
                     .add("backendUrl", backendUrl)
                     .add("captureTime", captureTime)
                     .add("routingGroup", routingGroup)
+                    .add("externalUrl", externalUrl)
                     .toString();
         }
     }
