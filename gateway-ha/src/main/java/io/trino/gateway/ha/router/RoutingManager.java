@@ -169,7 +169,7 @@ public abstract class RoutingManager
             backendAddress = queryIdBackendCache.get(queryId);
         }
         catch (ExecutionException e) {
-            log.error("Exception while loading queryId from cache %s", e.getLocalizedMessage());
+            log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return backendAddress;
     }
@@ -181,7 +181,7 @@ public abstract class RoutingManager
             externalUrl = queryIdExternalUrlCache.get(queryId);
         }
         catch (ExecutionException e) {
-            log.error("Exception while loading queryId from cache %s", e.getLocalizedMessage());
+            log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return externalUrl;
     }
@@ -197,7 +197,7 @@ public abstract class RoutingManager
             routingGroup = queryIdRoutingGroupCache.get(queryId);
         }
         catch (ExecutionException e) {
-            log.error("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
+            log.warn("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
         }
         return routingGroup;
     }
