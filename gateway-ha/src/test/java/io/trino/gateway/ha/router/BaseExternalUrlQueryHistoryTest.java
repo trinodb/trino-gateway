@@ -30,12 +30,15 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-abstract class TestExternalUrlQueryHistory
+abstract class BaseExternalUrlQueryHistoryTest
 {
-    protected final JdbcDatabaseContainer<?> container = startContainer();
+    protected final JdbcDatabaseContainer<?> container;
     private QueryHistoryManager queryHistoryManager;
 
-    protected abstract JdbcDatabaseContainer<?> startContainer();
+    protected BaseExternalUrlQueryHistoryTest(JdbcDatabaseContainer<?> container)
+    {
+        this.container = container;
+    }
 
     @BeforeAll
     void setUp()

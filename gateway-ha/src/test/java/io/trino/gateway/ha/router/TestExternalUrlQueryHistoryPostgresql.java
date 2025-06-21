@@ -17,10 +17,14 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 public class TestExternalUrlQueryHistoryPostgresql
-        extends TestExternalUrlQueryHistory
+        extends BaseExternalUrlQueryHistoryTest
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    public TestExternalUrlQueryHistoryPostgresql()
+    {
+        super(createPostgresqlContainer());
+    }
+
+    private static JdbcDatabaseContainer<?> createPostgresqlContainer()
     {
         JdbcDatabaseContainer<?> container = new PostgreSQLContainer<>("postgres:15.5");
         container.start();

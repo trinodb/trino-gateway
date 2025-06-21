@@ -17,10 +17,14 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.OracleContainer;
 
 public class TestExternalUrlQueryHistoryOracle
-        extends TestExternalUrlQueryHistory
+        extends BaseExternalUrlQueryHistoryTest
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    public TestExternalUrlQueryHistoryOracle()
+    {
+        super(createOracleContainer());
+    }
+
+    private static JdbcDatabaseContainer<?> createOracleContainer()
     {
         JdbcDatabaseContainer<?> container = new OracleContainer("gvenzl/oracle-xe:21-slim");
         container.start();

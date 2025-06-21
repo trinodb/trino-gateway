@@ -60,7 +60,7 @@ public abstract class RoutingManager
                         .maximumSize(10000)
                         .expireAfterAccess(30, TimeUnit.MINUTES)
                         .build(
-                                new CacheLoader<String, String>()
+                                new CacheLoader<>()
                                 {
                                     @Override
                                     public String load(String queryId)
@@ -73,7 +73,7 @@ public abstract class RoutingManager
                         .maximumSize(10000)
                         .expireAfterAccess(30, TimeUnit.MINUTES)
                         .build(
-                                new CacheLoader<String, String>()
+                                new CacheLoader<>()
                                 {
                                     @Override
                                     public String load(String queryId)
@@ -86,7 +86,7 @@ public abstract class RoutingManager
                         .maximumSize(10000)
                         .expireAfterAccess(30, TimeUnit.MINUTES)
                         .build(
-                                new CacheLoader<String, String>()
+                                new CacheLoader<>()
                                 {
                                     @Override
                                     public String load(String queryId)
@@ -121,7 +121,7 @@ public abstract class RoutingManager
     /**
      * Performs routing to an adhoc backend.
      */
-    private ProxyBackendConfiguration provideAdhocBackendConfiguration(String user)
+    private ProxyBackendConfiguration provideAdhocBackendConfiguration()
     {
         List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
@@ -134,7 +134,7 @@ public abstract class RoutingManager
 
     public String provideAdhocCluster(String user)
     {
-        return provideAdhocBackendConfiguration(user).getProxyTo();
+        return provideAdhocBackendConfiguration().getProxyTo();
     }
 
     /**
@@ -147,7 +147,7 @@ public abstract class RoutingManager
                 gatewayBackendManager.getActiveBackends(routingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
-            return provideAdhocBackendConfiguration(user);
+            return provideAdhocBackendConfiguration();
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);

@@ -85,6 +85,33 @@ final class TestHaGatewayManager
     }
 
     @Test
+    void testDefaultExternalUrl()
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setActive(true);
+        backend.setRoutingGroup("adhoc");
+        backend.setName("adhoc1");
+        backend.setProxyTo("adhoc1.trino.gateway.io");
+        haGatewayManager.addBackend(backend);
+        final ProxyBackendConfiguration backendConfiguration = haGatewayManager.getActiveBackends("adhoc").get(0);
+        assertThat(backendConfiguration.getExternalUrl()).isEqualTo(backend.getExternalUrl());
+    }
+
+    @Test
+    void testSettingExternalUrl()
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setActive(true);
+        backend.setRoutingGroup("adhoc");
+        backend.setName("adhoc1");
+        backend.setProxyTo("adhoc1.trino.gateway.io");
+        backend.setExternalUrl("adhoc1.external.trino.gateway.io");
+        haGatewayManager.addBackend(backend);
+        final ProxyBackendConfiguration backendConfiguration = haGatewayManager.getActiveBackends("adhoc").get(0);
+        assertThat(backendConfiguration.getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
+    }
+
+    @Test
     void testRemoveTrailingSlashInUrl()
     {
         ProxyBackendConfiguration etl = new ProxyBackendConfiguration();

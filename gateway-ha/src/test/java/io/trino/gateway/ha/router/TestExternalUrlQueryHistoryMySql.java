@@ -17,10 +17,14 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 
 public class TestExternalUrlQueryHistoryMySql
-        extends TestExternalUrlQueryHistory
+        extends BaseExternalUrlQueryHistoryTest
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    public TestExternalUrlQueryHistoryMySql()
+    {
+        super(createMySqlContainer());
+    }
+
+    private static JdbcDatabaseContainer<?> createMySqlContainer()
     {
         JdbcDatabaseContainer<?> container = new MySQLContainer<>("mysql:8.0.36");
         container.start();
