@@ -15,6 +15,7 @@ package io.trino.gateway.ha.module;
 
 import com.google.inject.Scopes;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.StochasticRoutingManager;
 
@@ -29,6 +30,7 @@ public class StochasticRoutingManagerProvider
     @Override
     public void configure()
     {
+        bind(RoutingConfiguration.class).toInstance(haGatewayConfiguration.getRouting());
         bind(RoutingManager.class).to(StochasticRoutingManager.class).in(Scopes.SINGLETON);
     }
 }
