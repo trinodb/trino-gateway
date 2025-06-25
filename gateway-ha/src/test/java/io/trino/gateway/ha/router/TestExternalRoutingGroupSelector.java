@@ -28,6 +28,7 @@ import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -63,7 +64,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-final class TestRoutingGroupSelectorExternal
+final class TestExternalRoutingGroupSelector
 {
     RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private HttpClient httpClient;
@@ -131,29 +132,25 @@ final class TestRoutingGroupSelectorExternal
     }
 
     @Test
-    void testApiFailure()
+    void testFallbackToHeaderOnApiFailure()
     {
+        // Mock this specific test an HTTP request
+        HttpClient httpClient = mock(HttpClient.class);
+
         RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
-
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
-        // Set a mock header for ROUTING_GROUP_HEADER
         when(mockRequest.getHeader(ROUTING_GROUP_HEADER)).thenReturn("default-group-api-failure");
-        // Create a mock response that returns error in List<String>
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse("fail-group", List.of("test-api-failure", "400 error"), ImmutableMap.of());
 
-        // Create ArgumentCaptor
-        ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<JsonResponseHandler<ExternalRouterResponse>> handlerCaptor = ArgumentCaptor.forClass(JsonResponseHandler.class);
+        // Simulate failure
+        when(httpClient.execute(any(), any())).thenThrow(new RuntimeException("Simulated failure"));
 
         // Mock the behavior of httpClient.execute
-        when(httpClient.execute(requestCaptor.capture(), handlerCaptor.capture())).thenReturn(mockResponse);
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
-        // Verify the response
+        // Fallback expected
         assertThat(routingGroup).isEqualTo("default-group-api-failure");
     }
 
@@ -283,8 +280,9 @@ final class TestRoutingGroupSelectorExternal
         RoutingSelectorResponse routingSelectorResponse = selector.findRoutingDestination(mockRequest);
 
         // Verify
-        assertThat(routingSelectorResponse.routingGroup()).isNull();
-        assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNull();
+        assertThat(routingSelectorResponse.externalHeaders())
+                .doesNotContainKey(ROUTING_GROUP_HEADER)
+                .containsEntry(headerKey, "should-be-null");
     }
 
     @Test
@@ -329,6 +327,49 @@ final class TestRoutingGroupSelectorExternal
         // Verify
         assertThat(routingSelectorResponse.routingGroup()).isEmpty();
         assertThat(routingSelectorResponse.externalHeaders().get(headerKey)).isNotNull().isEqualTo(headerValue);
+    }
+
+    @Test
+    void testPropagateErrorsFalseResponseWithErrors()
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setPropagateErrors(false);
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group", List.of("some-error"), ImmutableMap.of());
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingSelectorResponse result = selector.findRoutingDestination(mockRequest);
+
+        // Verify
+        assertThat(result.routingGroup()).isEqualTo("test-group");
+    }
+
+    @Test
+    void testPropagateErrorsTrueResponseWithErrors()
+    {
+        // Setup
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setPropagateErrors(true);
+        RoutingGroupSelector selector = RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+
+        HttpServletRequest mockRequest = prepareMockRequest();
+        setMockHeaders(mockRequest);
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group", List.of("some-error"), ImmutableMap.of());
+
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute & Verify
+        assertThatThrownBy(() -> selector.findRoutingDestination(mockRequest))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(400));
     }
 
     private HttpServletRequest prepareMockRequest()

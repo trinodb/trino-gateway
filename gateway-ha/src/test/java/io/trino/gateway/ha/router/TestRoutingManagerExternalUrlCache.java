@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -29,6 +30,7 @@ final class TestRoutingManagerExternalUrlCache
     private GatewayBackendManager backendManager;
     private QueryHistoryManager queryHistoryManager;
     private QueryHistoryManager mockQueryHistoryManager;
+    private RoutingConfiguration routingConfiguration;
 
     @BeforeAll
     void setUp()
@@ -36,8 +38,9 @@ final class TestRoutingManagerExternalUrlCache
         backendManager = Mockito.mock(GatewayBackendManager.class);
         queryHistoryManager = Mockito.mock(QueryHistoryManager.class);
         mockQueryHistoryManager = Mockito.mock(QueryHistoryManager.class);
+        routingConfiguration = Mockito.mock(RoutingConfiguration.class);
 
-        routingManager = new TestRoutingManager(backendManager, queryHistoryManager);
+        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration);
     }
 
     @Test
@@ -113,7 +116,8 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager);
+        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager,
+                routingConfiguration);
 
         String queryId = "mock-test-query";
         String expectedUrl = "https://mock-gateway.example.com";
@@ -128,9 +132,10 @@ final class TestRoutingManagerExternalUrlCache
     private static class TestRoutingManager
             extends RoutingManager
     {
-        public TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
+        public TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
+                                  RoutingConfiguration routingConfiguration)
         {
-            super(gatewayBackendManager, queryHistoryManager);
+            super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
         }
 
         @Override

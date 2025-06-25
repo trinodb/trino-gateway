@@ -3,8 +3,14 @@
 Trino Gateway includes a routing rules engine.
 
 By default, Trino Gateway reads the `X-Trino-Routing-Group` request header to
-route requests. If this header is not specified, requests are sent to the
-default routing group called `adhoc`.
+route requests. Use the `defaultRoutingGroup` setting to specify a fallback group, 
+defaults to the `adhoc` group.
+
+
+```yaml
+routing:
+    defaultRoutingGroup: "test-group"
+```
 
 The routing rules engine feature enables you to either write custom logic to
 route requests based on the request info such as any of the [request
@@ -40,6 +46,7 @@ routingRules:
         excludeHeaders:
             - 'Authorization'
             - 'Accept-Encoding'
+        propagateErrors: false
 ```
 
 * Redirect URLs are not supported.
@@ -47,6 +54,8 @@ routingRules:
   corresponding header values from being sent in the POST request.
 * Check headers to exclude when making API requests, specifics depend on the
   network configuration.
+* Set `propagateErrors` to `true` to forward routing service errors to  
+  clients if present in the response.
 
 If there is error parsing the routing rules configuration file, an error is
 logged, and requests are routed using the routing group header
@@ -93,7 +102,7 @@ return a result with the following criteria:
 * Response status code of OK (200)
 * Message in JSON format
 * Only one group can be returned
-* If errors is not null, then query would route to default routing group adhoc
+* If `errors` is not null, the query is routed to the configured default group
 
 #### Request headers modification
 
@@ -151,7 +160,7 @@ In addition to the default objects, rules may optionally utilize
 , which provide information about the user and query respectively.
 You must include an action of the form `result.put(\"routingGroup\", \"foo\")`
 to trigger routing of a request that satisfies the condition to the specific
-routing group. Without this action, the default adhoc group is used and the
+routing group. Without this action, the configured default group is used and the
 whole routing rule is redundant.
 
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
@@ -184,8 +193,7 @@ You can use the `contains` operator
 condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
 ```
 
-If no rules match, then the request is routed to the default `adhoc` routing
-group.
+If no rules match, then the request is routed to the configured default routing group.
 
 ### TrinoStatus
 
