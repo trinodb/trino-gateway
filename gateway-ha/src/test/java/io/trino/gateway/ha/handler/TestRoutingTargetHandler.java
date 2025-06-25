@@ -26,6 +26,7 @@ import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -33,13 +34,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +59,8 @@ class TestRoutingTargetHandler
     {
         HaGatewayConfiguration config = new HaGatewayConfiguration();
         config.setRequestAnalyzerConfig(new RequestAnalyzerConfig());
+
+        config.getRouting().setDefaultRoutingGroup("default-group");
 
         // Configure excluded headers
         RulesExternalConfiguration rulesExternalConfig = new RulesExternalConfiguration();
@@ -107,7 +110,9 @@ class TestRoutingTargetHandler
         request = prepareMockRequest();
 
         // Initialize the handler with the configuration
-        handler = new RoutingTargetHandler(routingManager, RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
+        handler = new RoutingTargetHandler(
+                routingManager,
+                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
     }
 
     @Test
@@ -118,10 +123,7 @@ class TestRoutingTargetHandler
         Map<String, String> modifiedHeaders = ImmutableMap.of(
                 "X-Original-Header", "new-value",
                 "X-New-Header", "new-value");
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group",
-                Collections.emptyList(),
-                modifiedHeaders);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", Collections.emptyList(), modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -142,10 +144,7 @@ class TestRoutingTargetHandler
         Map<String, String> modifiedHeaders = ImmutableMap.of(
                 "Authorization", "new-token",
                 "Cookie", "new-session");
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group",
-                Collections.emptyList(),
-                modifiedHeaders);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", Collections.emptyList(), modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -163,10 +162,7 @@ class TestRoutingTargetHandler
             throws Exception
     {
         // Setup routing group selector response with no header modifications
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group",
-                Collections.emptyList(),
-                ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", Collections.emptyList(), ImmutableMap.of());
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -185,10 +181,7 @@ class TestRoutingTargetHandler
         Map<String, String> modifiedHeaders = ImmutableMap.of(
                 "X-Empty-Header", "",
                 "X-New-Header", "new-value");
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group",
-                Collections.emptyList(),
-                modifiedHeaders);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", Collections.emptyList(), modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -208,39 +201,111 @@ class TestRoutingTargetHandler
         // Setup routing group selector response with empty routing group
         Map<String, String> modifiedHeaders = ImmutableMap.of(
                 "X-Empty-Group-Header", "should-be-set");
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "",
-                Collections.emptyList(),
-                modifiedHeaders);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("", Collections.emptyList(), modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
         RoutingTargetResponse response = handler.resolveRouting(request);
 
         // Verify that when no routing group header is set, we default to "adhoc"
-        assertThat(response.routingDestination().routingGroup()).isEqualTo("adhoc");
+        assertThat(response.routingDestination().routingGroup()).isEqualTo("default-group");
         assertThat(response.modifiedRequest().getHeader("X-Empty-Group-Header"))
                 .isEqualTo("should-be-set");
     }
 
     @Test
-    void testErrorsGiven()
-            throws Exception
+    void testResponsePropertiesNull()
     {
-        // Setup routing group selector response with errors
-        Map<String, String> modifiedHeaders = ImmutableMap.of(
-                "X-New-Header", "new-value");
-        List<String> someErrors = Arrays.asList("ErrorA", "ErrorB");
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group",  // This value should be ignored due to errors
-                someErrors,
-                modifiedHeaders);
+        // Setup
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, null, ImmutableMap.of());
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
-        RoutingTargetResponse response = handler.resolveRouting(request);
+        RoutingTargetResponse result = handler.resolveRouting(request);
 
-        // Verify that when errors are present, we default to "adhoc" group
-        assertThat(response.routingDestination().routingGroup()).isEqualTo("adhoc");
+        // Verify
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("default-group");
+    }
+
+    @Test
+    void testResponseGroupSetResponseErrorsNull()
+    {
+        // Setup
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group", null, ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingTargetResponse result = handler.resolveRouting(request);
+
+        // Verify
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("test-group");
+    }
+
+    @Test
+    void testPropagateErrorsFalseResponseGroupNullResponseErrorsSet()
+    {
+        // Setup
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingTargetResponse result = handler.resolveRouting(request);
+
+        // Verify
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("default-group");
+    }
+
+    @Test
+    void testPropagateErrorsFalseResponseGroupAndErrorsSet()
+    {
+        // Setup
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingTargetResponse result = handler.resolveRouting(request);
+
+        // Verify
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("test-group");
+    }
+
+    @Test
+    void testPropagateErrorsTrueResponseGroupNullResponseErrorsSet()
+            throws Exception
+    {
+        // Setup
+        RoutingTargetHandler handler = createHandlerWithPropagateErrorsTrue();
+
+        config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Verify & Execute
+        assertThatThrownBy(() -> handler.resolveRouting(request))
+                .isInstanceOf(WebApplicationException.class);
+    }
+
+    @Test
+    void testPropagateErrorsTrueResponseGroupAndErrorsSet()
+            throws Exception
+    {
+        // Setup
+        RoutingTargetHandler handler = createHandlerWithPropagateErrorsTrue();
+
+        ExternalRouterResponse response = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(response);
+
+        // Verify & Execute
+        assertThatThrownBy(() -> handler.resolveRouting(request))
+                .isInstanceOf(WebApplicationException.class);
+    }
+
+    private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()
+    {
+        config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);
+        return new RoutingTargetHandler(
+                routingManager,
+                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
     }
 }

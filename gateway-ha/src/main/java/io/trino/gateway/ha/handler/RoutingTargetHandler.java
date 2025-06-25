@@ -53,6 +53,7 @@ public class RoutingTargetHandler
     private static final Logger log = Logger.get(RoutingTargetHandler.class);
     private final RoutingManager routingManager;
     private final RoutingGroupSelector routingGroupSelector;
+    private final String defaultRoutingGroup;
     private final List<String> statementPaths;
     private final List<Pattern> extraWhitelistPaths;
     private final boolean requestAnalyserClientsUseV2Format;
@@ -67,6 +68,7 @@ public class RoutingTargetHandler
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
+        this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
         extraWhitelistPaths = requireNonNull(haGatewayConfiguration.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
         requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
@@ -78,13 +80,16 @@ public class RoutingTargetHandler
     {
         Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
         Optional<String> previousCluster = getPreviousCluster(queryId, request);
+
         RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
             String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
-                    .orElse("adhoc");
+                    .orElse(defaultRoutingGroup);
+
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request)),
                     request);
         }).orElse(getRoutingTargetResponse(request));
+
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
     }
@@ -93,11 +98,13 @@ public class RoutingTargetHandler
     {
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
-        // This falls back on adhoc routing group if there is no cluster found (or value is empty) for the routing group.
-        String routingGroup = (routingDestination.routingGroup() != null && !routingDestination.routingGroup().isEmpty())
+
+        // This falls back on default routing group backend if there is no cluster found for the routing group.
+        String routingGroup = !isNullOrEmpty(routingDestination.routingGroup())
                 ? routingDestination.routingGroup()
-                : "adhoc";
+                : defaultRoutingGroup;
         String clusterHost = routingManager.provideClusterForRoutingGroup(routingGroup, user);
+
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
         if (!routingDestination.externalHeaders().isEmpty()) {
