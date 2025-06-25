@@ -1,9 +1,16 @@
 # Gateway API
 
-Please note that if there are duplicate `proxyTo` URLs in the backend configuration, 
-the RoutedTo in the Query History page might not be shown correctly.
+The REST API for Trino Gateway can be used to update routing configuration for
+the Trino clusters. Note that the API calls do not perform actions on the
+clusters themselves.
 
-## Add or update a backend
+The example commands are for a Trino Gateway server running at
+`http://localhost:8080`.
+
+If there are duplicate `proxyTo` URLs in the configuration, the `Name` in the
+**Query History** page of the UI might not show correctly.
+
+## Add or update a Trino cluster
 
 ```shell
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
@@ -14,9 +21,9 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
     }'
 ```
 
-If the backend URL is different from the `proxyTo` URL (for example if they are
-internal vs. external hostnames). You can use the optional `externalUrl` field
-to override the link in the Active Backends page.
+If the Trino cluster URL is different from the `proxyTo` URL, for example if
+they are internal and external hostnames used, you can use the optional
+`externalUrl` field to override the link in the **Active Backends** page.
 
 ```shell
 curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
@@ -28,9 +35,14 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
     }'
 ```
 
-## Get all backends
+## List all Trino clusters
 
-`curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND`
+```shell
+curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
+```
+
+Returns a JSON array of Trino cluster:
+
 ```json
 [
     {
@@ -57,25 +69,26 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
 ]
 ```
 
-## Delete a backend
+## Delete a Trino cluster
 
 ```shell
 curl -X POST -d "trino3" http://localhost:8080/gateway/backend/modify/delete
 ```
 
-## Deactivate a backend
+## Deactivate a Trino cluster
 
 ```shell
 curl -X POST http://localhost:8080/gateway/backend/deactivate/trino-2
 ```
 
-## Get all active backends
+## List all active Trino clusters
 
 ```shell
 curl -X GET http://localhost:8080/gateway/backend/active
 ```
 
-Will return a JSON array of active Trino cluster backends:
+Returns a JSON array of active Trino clusters:
+
 ```json
 [
     {
@@ -88,18 +101,22 @@ Will return a JSON array of active Trino cluster backends:
 ]
 ```
 
-## Activate a backend
+## Activate a Trino cluster
 
 ```shell
 curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 ```
 
-## Update Routing Rules
+## Update routing rules
 
-This API can be used to programmatically update the Routing Rules.
-Rule will be updated based on the rule name.
+The API can be used to programmatically update the routing rules. Rule are
+updated based on the rule name. Storage of the rules must use a writeable file
+and the configuration 'rulesType: FILE'.
 
-For this feature to work with multiple replicas of the Trino Gateway, you will need to provide a shared storage that supports file locking for the routing rules file. If multiple replicas are used with local storage, then rules will get out of sync when updated.
+For this feature to work with multiple replicas of the Trino Gateway, you must
+provide a shared storage that supports file locking for the routing rules file.
+If multiple replicas are used with local storage, then rules get out of
+sync when updated.
 
 ```shell
 curl -X POST http://localhost:8080/webapp/updateRoutingRules \
@@ -111,20 +128,4 @@ curl -X POST http://localhost:8080/webapp/updateRoutingRules \
         "condition": "updated condition"
     }'
 ```
-### Disable Routing Rules UI
 
-You can set the `disablePages` config to disable pages on the UI.
-
-The following pages are available:
-- `dashboard`
-- `cluster`
-- `resource-group`
-- `selector`
-- `history`
-- `routing-rules`
-
-```yaml
-uiConfiguration:
-  disablePages:
-    - 'routing-rules'
-```
