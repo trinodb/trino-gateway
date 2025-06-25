@@ -55,7 +55,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getActiveBackends("unknown")).isEmpty();
         assertThat(haGatewayManager.getActiveDefaultBackends()).hasSize(1);
 
-        assertThat(haGatewayManager.getActiveAdhocBackends().getFirst().getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
+        assertThat(haGatewayManager.getActiveDefaultBackends().getFirst().getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
 
         // Update a backend
         ProxyBackendConfiguration adhoc = new ProxyBackendConfiguration();

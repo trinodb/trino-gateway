@@ -19,6 +19,7 @@ public class RulesExternalConfiguration
 {
     private String urlPath;
     private List<String> excludeHeaders;
+    private boolean propagateErrors;
 
     public String getUrlPath()
     {
@@ -38,5 +39,15 @@ public class RulesExternalConfiguration
     public void setExcludeHeaders(List<String> excludeHeaders)
     {
         this.excludeHeaders = excludeHeaders;
+    }
+
+    public boolean isPropagateErrors()
+    {
+        return this.propagateErrors;
+    }
+
+    public void setPropagateErrors(boolean propagateErrors)
+    {
+        this.propagateErrors = propagateErrors;
     }
 }
