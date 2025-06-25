@@ -70,14 +70,26 @@ public class HaGatewayTestUtils
                 .setResponseCode(200));
     }
 
-    public static void seedRequiredData(String h2DbFilePath)
+    /**
+     * Seeds required data for PostgreSQL database using testcontainers.
+     *
+     * @param jdbi The Jdbi instance connected to the PostgreSQL database
+     */
+    public static void seedRequiredDataPostgres(Jdbi jdbi)
     {
-        String jdbcUrl = "jdbc:h2:" + h2DbFilePath;
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         try (Handle handle = jdbi.open()) {
-            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-postgres.sql"))
                     .execute();
         }
+    }
+
+    /**
+     * @deprecated Use seedRequiredDataPostgres instead
+     */
+    @Deprecated
+    public static void seedRequiredData(String h2DbFilePath)
+    {
+        throw new UnsupportedOperationException("H2 database is no longer supported. Use PostgreSQL with testcontainers instead.");
     }
 
     public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)

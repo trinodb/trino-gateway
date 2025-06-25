@@ -64,6 +64,16 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
+    /**
+     * Builds a JDBC URL for the specified routing group database.
+     * If routingGroupDatabase is null, returns the original JDBC URL.
+     * Otherwise, replaces the database name in the JDBC URL with the specified routing group database.
+     *
+     * @param routingGroupDatabase The name of the routing group database
+     * @return The JDBC URL with the database name replaced if routingGroupDatabase is not null
+     * @throws IllegalArgumentException if the JDBC URL is null or invalid
+     * @throws RuntimeException if there is an error parsing the URI
+     */
     @VisibleForTesting
     String buildJdbcUrl(@Nullable String routingGroupDatabase)
     {

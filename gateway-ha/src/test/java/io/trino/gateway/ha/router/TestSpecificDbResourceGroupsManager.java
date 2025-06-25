@@ -21,9 +21,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.List;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
@@ -36,18 +35,30 @@ final class TestSpecificDbResourceGroupsManager
 {
     private String specificDb;
 
+    private PostgreSQLContainer<?> postgres;
+
     @BeforeAll
     @Override
     void setUp()
     {
-        specificDb = "h2db-" + System.currentTimeMillis();
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), specificDb).toFile();
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
-        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
-                "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        specificDb = "pg_test_db_" + System.currentTimeMillis();
+        postgres = new PostgreSQLContainer<>("postgres:14-alpine")
+                .withDatabaseName(specificDb)
+                .withUsername("test")
+                .withPassword("test");
+        postgres.start();
+
+        String jdbcUrl = postgres.getJdbcUrl();
+        DataStoreConfiguration db = new DataStoreConfiguration(
+                jdbcUrl,
+                postgres.getUsername(),
+                postgres.getPassword(),
+                "org.postgresql.Driver",
+                4,
+                true);
+
+        Jdbi jdbi = Jdbi.create(jdbcUrl, postgres.getUsername(), postgres.getPassword());
+        HaGatewayTestUtils.seedRequiredDataPostgres(jdbi);
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
@@ -76,11 +87,61 @@ final class TestSpecificDbResourceGroupsManager
     @Test
     void testReadSpecificDbResourceGroup()
     {
-        this.createResourceGroup("admin2");
-        List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
-                .readAllResourceGroups(specificDb);
-        assertThat(resourceGroups).isNotNull();
-        resourceGroupManager.deleteResourceGroup(1, specificDb);
+        // Create the resource group with a unique name
+        String uniqueName = "admin2_" + System.currentTimeMillis();
+
+        try {
+            // Create the resource group
+            ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+            resourceGroup.setName(uniqueName);
+            resourceGroup.setHardConcurrencyLimit(20);
+            resourceGroup.setMaxQueued(200);
+            resourceGroup.setJmxExport(true);
+            resourceGroup.setSoftMemoryLimit("80%");
+            ResourceGroupsDetail createdGroup = resourceGroupManager.createResourceGroup(resourceGroup, specificDb);
+
+            // Get the assigned ID
+            Long resourceGroupId = createdGroup.getResourceGroupId();
+            assertThat(resourceGroupId).isNotNull();
+
+            // Read all resource groups
+            List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
+                    .readAllResourceGroups(specificDb);
+
+            // Basic assertions
+            assertThat(resourceGroups).isNotNull();
+            assertThat(resourceGroups).isNotEmpty();
+
+            // Print all resource groups for debugging
+            System.out.println("Found " + resourceGroups.size() + " resource groups:");
+            for (ResourceGroupsDetail group : resourceGroups) {
+                System.out.println("Group: id=" + group.getResourceGroupId() + ", name=" + group.getName());
+            }
+
+            // Verify the resource group was created with the expected properties
+            boolean foundGroup = false;
+            for (ResourceGroupsDetail group : resourceGroups) {
+                if (uniqueName.equals(group.getName())) {
+                    foundGroup = true;
+                    assertThat(group.getHardConcurrencyLimit()).isEqualTo(20);
+                    assertThat(group.getMaxQueued()).isEqualTo(200);
+                    assertThat(group.getJmxExport()).isEqualTo(Boolean.TRUE);
+                    assertThat(group.getSoftMemoryLimit()).isEqualTo("80%");
+                    break;
+                }
+            }
+            assertThat(foundGroup).isTrue();
+        }
+        finally {
+            // Clean up - we don't need to specify an ID since we're using a unique name
+            List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(specificDb);
+            for (ResourceGroupsDetail group : resourceGroups) {
+                if (uniqueName.equals(group.getName())) {
+                    resourceGroupManager.deleteResourceGroup(group.getResourceGroupId(), specificDb);
+                    break;
+                }
+            }
+        }
     }
 
     @Test

@@ -25,20 +25,6 @@ import static org.mockito.Mockito.when;
 final class TestJdbcConnectionManager
 {
     @Test
-    void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
-    {
-        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:h2:/mydb");
-        assertThat(connectionManager.buildJdbcUrl(null)).isEqualTo("jdbc:h2:/mydb");
-    }
-
-    @Test
-    void testBuildJdbcUrlWithH2AndRoutingGroupDatabase()
-    {
-        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:h2:/mydb");
-        assertThat(connectionManager.buildJdbcUrl("newdb")).isEqualTo("jdbc:h2:/newdb");
-    }
-
-    @Test
     void testBuildJdbcUrlWithMySQLAndNoRoutingGroupDatabase()
     {
         JdbcConnectionManager connectionManager = createConnectionManager("jdbc:mysql://localhost:3306/mydb");
