@@ -68,7 +68,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getQueryId()
         {
-            return this.queryId;
+            return queryId;
         }
 
         public void setQueryId(String queryId)
@@ -79,7 +79,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getQueryText()
         {
-            return this.queryText;
+            return queryText;
         }
 
         public void setQueryText(String queryText)
@@ -90,7 +90,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getUser()
         {
-            return this.user;
+            return user;
         }
 
         public void setUser(String user)
@@ -101,7 +101,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getSource()
         {
-            return this.source;
+            return source;
         }
 
         public void setSource(String source)
@@ -112,7 +112,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getBackendUrl()
         {
-            return this.backendUrl;
+            return backendUrl;
         }
 
         public void setBackendUrl(String backendUrl)
@@ -123,7 +123,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public long getCaptureTime()
         {
-            return this.captureTime;
+            return captureTime;
         }
 
         public void setCaptureTime(long captureTime)
@@ -134,7 +134,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getRoutingGroup()
         {
-            return this.routingGroup;
+            return routingGroup;
         }
 
         public void setRoutingGroup(String routingGroup)

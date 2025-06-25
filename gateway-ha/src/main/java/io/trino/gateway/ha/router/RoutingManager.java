@@ -61,7 +61,7 @@ public abstract class RoutingManager
                         .maximumSize(10000)
                         .expireAfterAccess(30, TimeUnit.MINUTES)
                         .build(
-                                new CacheLoader<String, String>()
+                                new CacheLoader<>()
                                 {
                                     @Override
                                     public String load(String queryId)
@@ -74,7 +74,7 @@ public abstract class RoutingManager
                         .maximumSize(10000)
                         .expireAfterAccess(30, TimeUnit.MINUTES)
                         .build(
-                                new CacheLoader<String, String>()
+                                new CacheLoader<>()
                                 {
                                     @Override
                                     public String load(String queryId)
