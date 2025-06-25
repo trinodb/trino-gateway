@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,8 @@ final class TestHaGatewayManager
     void setUp()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi());
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
     }
 
     @Test
@@ -51,7 +53,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getAllBackends()).hasSize(1);
         assertThat(haGatewayManager.getActiveBackends("adhoc")).hasSize(1);
         assertThat(haGatewayManager.getActiveBackends("unknown")).isEmpty();
-        assertThat(haGatewayManager.getActiveAdhocBackends()).hasSize(1);
+        assertThat(haGatewayManager.getActiveDefaultBackends()).hasSize(1);
 
         assertThat(haGatewayManager.getActiveAdhocBackends().getFirst().getExternalUrl()).isEqualTo("adhoc1.external.trino.gateway.io");
 

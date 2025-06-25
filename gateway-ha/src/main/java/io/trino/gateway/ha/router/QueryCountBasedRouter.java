@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +37,7 @@ public class QueryCountBasedRouter
     private static final Logger log = Logger.get(QueryCountBasedRouter.class);
     @GuardedBy("this")
     private List<LocalStats> clusterStats;
+    private final String defaultRoutingGroup;
 
     @VisibleForTesting
     synchronized List<LocalStats> clusterStats()
@@ -138,9 +140,11 @@ public class QueryCountBasedRouter
     @Inject
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager)
+            QueryHistoryManager queryHistoryManager,
+            RoutingConfiguration routingConfiguration)
     {
-        super(gatewayBackendManager, queryHistoryManager);
+        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         clusterStats = new ArrayList<>();
     }
 
@@ -224,16 +228,16 @@ public class QueryCountBasedRouter
     }
 
     @Override
-    public String provideAdhocCluster(String user)
+    public String provideDefaultCluster(String user)
     {
-        return getBackendForRoutingGroup("adhoc", user).orElseThrow(() -> new RouterException("did not find any cluster for the adhoc routing group"));
+        return getBackendForRoutingGroup(defaultRoutingGroup, user).orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
     }
 
     @Override
     public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideAdhocCluster(user));
+                .orElse(provideDefaultCluster(user));
     }
 
     @Override
