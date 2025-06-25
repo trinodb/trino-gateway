@@ -31,7 +31,7 @@ public interface ExactMatchSourceSelectorsDao
             SELECT * FROM exact_match_source_selectors
             WHERE
                 resource_group_id = :resourceGroupId
-                AND update_time   = :updateTime
+                AND update_time   = CAST(:updateTime AS TIMESTAMP)
                 AND source        = :source
                 AND environment   = :environment
                 AND query_type    = :queryType
@@ -42,7 +42,7 @@ public interface ExactMatchSourceSelectorsDao
     @SqlUpdate("""
             INSERT INTO exact_match_source_selectors
             (resource_group_id, update_time, source, environment, query_type)
-            VALUES (:resourceGroupId, :updateTime, :source, :environment, :queryType)
+            VALUES (:resourceGroupId, CAST(:updateTime AS TIMESTAMP), :source, :environment, :queryType)
             """)
     void insert(@BindBean ResourceGroupsManager.ExactSelectorsDetail exactSelectors);
 }

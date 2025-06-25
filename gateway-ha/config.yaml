@@ -12,6 +12,20 @@ dataStore:
   password: P0stG&es
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
+  environments:
+    development:
+      jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_dev
+      user: trino_gateway_dev_admin
+      password: P0stG&es
+    testing:
+      jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_test
+      user: trino_gateway_test_admin
+      password: P0stG&es
+    production:
+      jdbcUrl: jdbc:postgresql://db.example.com:5432/trino_gateway_prod
+      user: trino_gateway_prod_admin
+      password: ${ENV:PROD_DB_PASSWORD}
+      queryHistoryHoursRetention: 168  # 7 days for production
 
 clusterStatsConfiguration:
   monitorType: INFO_API

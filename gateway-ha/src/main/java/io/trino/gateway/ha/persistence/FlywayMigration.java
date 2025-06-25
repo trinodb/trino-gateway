@@ -26,6 +26,14 @@ public class FlywayMigration
 
     private FlywayMigration() {}
 
+    /**
+     * Determines the migration scripts location based on the JDBC URL.
+     * Supports PostgreSQL, MySQL, and Oracle databases.
+     *
+     * @param configDbUrl The JDBC URL of the database
+     * @return The location of migration scripts for the specific database type
+     * @throws IllegalArgumentException if the database type is not supported
+     */
     private static String getLocation(String configDbUrl)
     {
         if (configDbUrl.startsWith("jdbc:postgresql")) {

@@ -31,6 +31,7 @@ import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.tracing.TracingModule;
 import io.airlift.units.Duration;
 import io.trino.gateway.baseapp.BaseApp;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.FlywayMigration;
@@ -114,7 +115,20 @@ public class HaGatewayLauncher
         }
         String config = Files.readString(Path.of(args[0]));
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(replaceEnvironmentVariables(config), HaGatewayConfiguration.class);
-        FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
+
+        // Get the current environment from system property or environment variable
+        String environment = System.getProperty("trino.gateway.environment",
+                System.getenv().getOrDefault("TRINO_GATEWAY_ENVIRONMENT", "development"));
+
+        logger.info("Starting Trino Gateway in environment: %s", environment);
+
+        // Get environment-specific database configuration
+        DataStoreConfiguration dataStore = haGatewayConfiguration.getDataStore().forEnvironment(environment);
+
+        // Update the configuration with the environment-specific database configuration
+        haGatewayConfiguration.setDataStore(dataStore);
+
+        FlywayMigration.migrate(dataStore);
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
     }
