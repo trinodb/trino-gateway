@@ -226,6 +226,10 @@
             <version>2.1.7</version>
             <exclusions>
                 <exclusion>
+                    <groupId>org.apache.mina</groupId>
+                    <artifactId>mina-core</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.servicemix.bundles</groupId>
                     <artifactId>org.apache.servicemix.bundles.dom4j</artifactId>
                 </exclusion>
