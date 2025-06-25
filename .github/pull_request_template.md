@@ -17,9 +17,8 @@ More info at https://trino.io/development/process#release-note -->
 ## Release notes
 
 ( ) This is not user-visible or is docs only, and no release notes are required.
-( ) Release notes are required. Please propose a release note for me.
 ( ) Release notes are required, with the following suggested text:
 
 ```markdown
-* Fix some things. ({issue}`issuenumber`)
+* Fix some things.
 ```
