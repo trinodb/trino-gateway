@@ -125,7 +125,7 @@ public abstract class RoutingManager
     /**
      * Performs routing to a default backend.
      */
-    private ProxyBackendConfiguration provideDefaultCluster()
+    private ProxyBackendConfiguration provideDefaultBackendConfiguration()
     {
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveDefaultBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
@@ -134,6 +134,11 @@ public abstract class RoutingManager
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);
+    }
+
+    public String provideDefaultCluster(String user)
+    {
+        return provideDefaultBackendConfiguration().getProxyTo();
     }
 
     /**
@@ -146,7 +151,7 @@ public abstract class RoutingManager
                 gatewayBackendManager.getActiveBackends(routingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
-            return provideDefaultCluster();
+            return provideDefaultBackendConfiguration();
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);
