@@ -105,7 +105,7 @@ public class HaGatewayManager
     private static void logActivationStatusChange(String clusterName, boolean newStatus, boolean previousStatus)
     {
         if (previousStatus != newStatus) {
-            log.info("Backend cluster %s activation status set to active=%s (previous status: active=%s).", clusterName, previousStatus, newStatus);
+            log.info("Backend cluster %s activation status set to active=%s (previous status: active=%s).", clusterName, newStatus, previousStatus);
         }
     }
 
