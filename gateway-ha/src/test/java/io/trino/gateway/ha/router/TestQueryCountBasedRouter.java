@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -155,7 +156,8 @@ final class TestQueryCountBasedRouter
                 .addAll(getClusterStatsList("etl"))
                 .build();
 
-        queryCountBasedRouter = new QueryCountBasedRouter(null, null);
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        queryCountBasedRouter = new QueryCountBasedRouter(null, null, routingConfiguration);
         queryCountBasedRouter.updateBackEndStats(clusters);
     }
 
@@ -190,7 +192,7 @@ final class TestQueryCountBasedRouter
     {
         // The user u2 has different number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queued for that user
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u2");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u2");
         assertThat(BACKEND_URL_2).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -198,7 +200,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithDifferentQueueLengthUser2()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u3");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u3");
         assertThat(BACKEND_URL_1).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
     }
@@ -206,7 +208,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithNoQueuedQueries()
     {
-        String proxyTo = queryCountBasedRouter.provideAdhocCluster("u101");
+        String proxyTo = queryCountBasedRouter.provideDefaultCluster("u101");
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
     }
 

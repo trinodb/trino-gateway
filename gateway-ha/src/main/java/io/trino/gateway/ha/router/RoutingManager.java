@@ -20,6 +20,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.HttpMethod;
 
@@ -48,13 +49,15 @@ public abstract class RoutingManager
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
+    private final String defaultRoutingGroup;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
     private final LoadingCache<String, String> queryIdExternalUrlCache;
     private final QueryHistoryManager queryHistoryManager;
 
-    public RoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager)
+    public RoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, RoutingConfiguration routingConfiguration)
     {
         this.gatewayBackendManager = gatewayBackendManager;
+        this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.queryHistoryManager = queryHistoryManager;
         queryIdBackendCache =
                 CacheBuilder.newBuilder()
@@ -120,26 +123,21 @@ public abstract class RoutingManager
     }
 
     /**
-     * Performs routing to an adhoc backend.
+     * Performs routing to a default backend.
      */
-    private ProxyBackendConfiguration provideAdhocBackendConfiguration()
+    private ProxyBackendConfiguration provideDefaultCluster()
     {
-        List<ProxyBackendConfiguration> backends = this.gatewayBackendManager.getActiveAdhocBackends();
+        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveDefaultBackends();
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
-        if (backends.size() == 0) {
+        if (backends.isEmpty()) {
             throw new IllegalStateException("Number of active backends found zero");
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);
     }
 
-    public String provideAdhocCluster(String user)
-    {
-        return provideAdhocBackendConfiguration().getProxyTo();
-    }
-
     /**
-     * Performs routing to a given cluster group. This falls back to an adhoc backend, if no scheduled
+     * Performs routing to a given cluster group. This falls back to a default backend, if no scheduled
      * backend is found.
      */
     public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
@@ -148,7 +146,7 @@ public abstract class RoutingManager
                 gatewayBackendManager.getActiveBackends(routingGroup);
         backends.removeIf(backend -> isBackendNotHealthy(backend.getName()));
         if (backends.isEmpty()) {
-            return provideAdhocBackendConfiguration();
+            return provideDefaultCluster();
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);
@@ -259,7 +257,7 @@ public abstract class RoutingManager
             log.warn("Query id [%s] not found", queryId);
         }
         // Fallback on first active backend if queryId mapping not found.
-        return gatewayBackendManager.getActiveAdhocBackends().get(0).getProxyTo();
+        return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).get(0).getProxyTo();
     }
 
     /**

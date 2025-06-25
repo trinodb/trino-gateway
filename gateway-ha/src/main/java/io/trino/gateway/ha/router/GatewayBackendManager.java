@@ -24,7 +24,7 @@ public interface GatewayBackendManager
 
     List<ProxyBackendConfiguration> getAllActiveBackends();
 
-    List<ProxyBackendConfiguration> getActiveAdhocBackends();
+    List<ProxyBackendConfiguration> getActiveDefaultBackends();
 
     List<ProxyBackendConfiguration> getActiveBackends(String routingGroup);
 

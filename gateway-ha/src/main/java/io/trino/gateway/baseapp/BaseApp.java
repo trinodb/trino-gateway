@@ -22,6 +22,7 @@ import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterMetricsStatsExporter;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.resource.EntityEditorResource;
@@ -122,6 +123,7 @@ public class BaseApp
     public void configure(Binder binder)
     {
         binder.bind(HaGatewayConfiguration.class).toInstance(configuration);
+        binder.bind(RoutingConfiguration.class).toInstance(configuration.getRouting());
         binder.bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
         registerAuthFilters(binder);
         registerResources(binder);

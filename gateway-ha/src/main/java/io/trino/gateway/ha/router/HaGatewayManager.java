@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
 import org.jdbi.v3.core.Jdbi;
@@ -33,10 +34,12 @@ public class HaGatewayManager
     private static final Logger log = Logger.get(HaGatewayManager.class);
 
     private final GatewayBackendDao dao;
+    private final String defaultRoutingGroup;
 
-    public HaGatewayManager(Jdbi jdbi)
+    public HaGatewayManager(Jdbi jdbi, RoutingConfiguration routingConfiguration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
+        this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
     }
 
     @Override
@@ -54,14 +57,13 @@ public class HaGatewayManager
     }
 
     @Override
-    public List<ProxyBackendConfiguration> getActiveAdhocBackends()
+    public List<ProxyBackendConfiguration> getActiveDefaultBackends()
     {
         try {
-            List<GatewayBackend> proxyBackendList = dao.findActiveAdhocBackend();
-            return upcast(proxyBackendList);
+            return getActiveBackends(defaultRoutingGroup);
         }
         catch (Exception e) {
-            log.info("Error fetching all backends: %s", e.getLocalizedMessage());
+            log.info("Error fetching backends for default routing group: %s", e.getLocalizedMessage());
         }
         return ImmutableList.of();
     }
