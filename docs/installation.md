@@ -200,6 +200,25 @@ additionalStatementPaths:
   - '/v2/statement'
 ```
 
+### Deactivate UI pages
+
+You can set the `disablePages` configuration to deactivate UI pages.
+
+```yaml
+uiConfiguration:
+  disablePages:
+    - 'routing-rules'
+```
+
+The following pages are available:
+
+- `dashboard`
+- `cluster`
+- `resource-group`
+- `selector`
+- `history`
+- `routing-rules`
+
 ## Configure behind a load balancer
 
 A possible deployment of Trino Gateway is to run multiple instances of Trino 
