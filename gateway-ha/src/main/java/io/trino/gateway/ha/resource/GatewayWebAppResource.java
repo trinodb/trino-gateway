@@ -18,6 +18,8 @@ import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.RoutingRulesConfiguration;
+import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
@@ -73,6 +75,8 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
+    private final boolean isRulesEngineEnabled;
+    private final RulesType ruleType;
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
@@ -92,6 +96,9 @@ public class GatewayWebAppResource
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
+        RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
+        isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
+        ruleType = routingRules.getRulesType();
     }
 
     @POST
@@ -446,6 +453,10 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
+        if (isRulesEngineEnabled && ruleType == RulesType.EXTERNAL) {
+            return Response.status(Response.Status.NO_CONTENT)
+                    .entity(Result.fail("Routing rules are managed by an external service")).build();
+        }
         List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
         return Response.ok(Result.ok(routingRulesList)).build();
     }
