@@ -49,7 +49,7 @@ final class TestDatabaseMigrationsMySql
                 ");";
         String resourceGroupsTable = "CREATE TABLE resource_groups (\n" +
                 "    resource_group_id BIGINT NOT NULL AUTO_INCREMENT,\n" +
-                "    name VARCHAR(250) NOT NULL,\n" +
+                "    name VARCHAR(250) NOT NULL UNIQUE,\n" +
                 "    soft_memory_limit VARCHAR(128) NOT NULL,\n" +
                 "    max_queued INT NOT NULL,\n" +
                 "    soft_concurrency_limit INT NULL,\n" +
