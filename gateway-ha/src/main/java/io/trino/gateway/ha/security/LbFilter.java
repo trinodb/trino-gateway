@@ -61,7 +61,7 @@ public class LbFilter
             String idToken = Optional
                     .ofNullable(requestContext.getCookies().get(SessionCookie.OAUTH_ID_TOKEN))
                     .map(Cookie::getValue)
-                    .orElse(getToken(requestContext.getHeaders().getFirst(HttpHeaders.AUTHORIZATION)));
+                    .orElseGet(() -> getToken(requestContext.getHeaders().getFirst(HttpHeaders.AUTHORIZATION)));
 
             LbPrincipal principal = idTokenAuthenticator.authenticate(idToken)
                     .orElseThrow(() -> new AuthenticationException("Authentication error"));
