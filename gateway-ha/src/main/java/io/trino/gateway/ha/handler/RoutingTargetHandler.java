@@ -84,7 +84,7 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request)),
                     request);
-        }).orElse(getRoutingTargetResponse(request));
+        }).orElseGet(() -> getRoutingTargetResponse(request));
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
     }

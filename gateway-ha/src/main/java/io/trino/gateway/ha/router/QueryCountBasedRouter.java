@@ -206,9 +206,9 @@ public class QueryCountBasedRouter
         // so that they can be used for next queries to route
         // We assume that if a user has queued queries then newly arriving queries
         // for that user would also be queued
-        int count = stats.userQueuedCount() == null ? 0 : stats.userQueuedCount().getOrDefault(user, 0);
-        if (count > 0) {
-            stats.userQueuedCount().put(user, count + 1);
+        Map<String, Integer> queuedCounts = stats.userQueuedCount();
+        if (queuedCounts != null && queuedCounts.getOrDefault(user, 0) > 0) {
+            queuedCounts.merge(user, 1, Integer::sum);
             return;
         }
         // Else the we assume that the query would be running
@@ -233,7 +233,7 @@ public class QueryCountBasedRouter
     public String provideClusterForRoutingGroup(String routingGroup, String user)
     {
         return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideAdhocCluster(user));
+                .orElseGet(() -> provideAdhocCluster(user));
     }
 
     @Override

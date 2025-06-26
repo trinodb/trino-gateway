@@ -25,8 +25,8 @@ import io.trino.gateway.ha.persistence.dao.Selectors;
 import io.trino.gateway.ha.persistence.dao.SelectorsDao;
 import jakarta.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
@@ -90,13 +90,10 @@ public class HaResourceGroupsManager
             @Nullable String routingGroupDatabase)
     {
         ResourceGroupsDao dao = getResourceGroupsDao(routingGroupDatabase);
-        ResourceGroups model = dao.findFirstById(resourceGroup.getResourceGroupId());
-        if (model == null) {
-            dao.create(resourceGroup);
-        }
-        else {
-            dao.update(resourceGroup);
-        }
+        Optional.ofNullable(dao.findFirstById(resourceGroup.getResourceGroupId()))
+                .ifPresentOrElse(
+                        _ -> dao.update(resourceGroup),
+                        () -> dao.create(resourceGroup));
         return resourceGroup;
     }
 
@@ -153,13 +150,10 @@ public class HaResourceGroupsManager
             @Nullable String routingGroupDatabase)
     {
         SelectorsDao dao = getSelectorsDao(routingGroupDatabase);
-        Selectors model = dao.findFirst(selector);
-        if (model == null) {
-            dao.insert(updatedSelector);
-        }
-        else {
-            dao.update(selector, updatedSelector);
-        }
+        Optional.ofNullable(dao.findFirst(selector))
+                .ifPresentOrElse(
+                        _ -> dao.update(selector, updatedSelector),
+                        () -> dao.insert(updatedSelector));
         return updatedSelector;
     }
 
@@ -213,14 +207,10 @@ public class HaResourceGroupsManager
             @Nullable String routingGroupDatabase)
     {
         ResourceGroupsGlobalPropertiesDao dao = getDao(routingGroupDatabase);
-        ResourceGroupsGlobalProperties model = dao.findFirstByName(globalProperty.getName());
-
-        if (model == null) {
-            dao.insert(globalProperty.getName(), globalProperty.getValue());
-        }
-        else {
-            dao.update(globalProperty.getName(), globalProperty.getValue());
-        }
+        Optional.ofNullable(dao.findFirstByName(globalProperty.getName()))
+                .ifPresentOrElse(
+                        _ -> dao.update(globalProperty.getName(), globalProperty.getValue()),
+                        () -> dao.insert(globalProperty.getName(), globalProperty.getValue()));
         return globalProperty;
     }
 
@@ -263,8 +253,9 @@ public class HaResourceGroupsManager
     public ExactSelectorsDetail getExactMatchSourceSelector(
             ExactSelectorsDetail exactSelectorDetail)
     {
-        ExactMatchSourceSelectors exactSelector = exactMatchSourceSelectorsDao.findFirst(exactSelectorDetail);
-        return upcastExactSelectors(exactSelector);
+        return Optional.ofNullable(exactMatchSourceSelectorsDao.findFirst(exactSelectorDetail))
+                .map(HaResourceGroupsManager::upcastExactSelectors)
+                .orElse(null);
     }
 
     private SelectorsDao getSelectorsDao(@Nullable String routingGroupDatabase)
@@ -284,15 +275,14 @@ public class HaResourceGroupsManager
 
     private static List<GlobalPropertiesDetail> upcast(List<ResourceGroupsGlobalProperties> globalPropertiesList)
     {
-        List<GlobalPropertiesDetail> globalProperties = new ArrayList<>();
-        for (ResourceGroupsGlobalProperties dao : globalPropertiesList) {
-            GlobalPropertiesDetail globalPropertiesDetail = new GlobalPropertiesDetail();
-            globalPropertiesDetail.setName(dao.name());
-            globalPropertiesDetail.setValue(dao.value());
-
-            globalProperties.add(globalPropertiesDetail);
-        }
-        return globalProperties;
+        return globalPropertiesList.stream()
+                .map(dao -> {
+                    GlobalPropertiesDetail detail = new GlobalPropertiesDetail();
+                    detail.setName(dao.name());
+                    detail.setValue(dao.value());
+                    return detail;
+                })
+                .collect(toImmutableList());
     }
 
     private static ExactSelectorsDetail upcastExactSelectors(ExactMatchSourceSelectors exactMatchSourceSelector)

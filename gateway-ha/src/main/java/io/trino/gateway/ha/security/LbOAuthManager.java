@@ -127,7 +127,7 @@ public class LbOAuthManager
             return buildUnauthorizedResponse();
         }
         return Response.status(FOUND)
-                .location(oauthConfig.getRedirectWebUrl().orElse(URI.create(redirectLocation)))
+                .location(oauthConfig.getRedirectWebUrl().orElseGet(() -> URI.create(redirectLocation)))
                 .cookie(SessionCookie.getTokenCookie(idToken))
                 .cookie(OidcCookie.delete())
                 .build();
