@@ -66,6 +66,35 @@ docker kill local-postgres && docker rm local-postgres
 kill -5 $(jps | grep gateway-ha.jar | cut -d' ' -f1)
 ```
 
+## Trino Gateway config file
+
+The configuration file is deserialized into an instance of `HaGatewayConfiguration` using Jackson's `ObjectMapper`. 
+Therefore, the top-level keys in the configuration file must match the field names defined in the 
+`HaGatewayConfiguration` class.
+
+For example, if `HaGatewayConfiguration` includes a field named `serverConfig` of type `Map<String, String>`, 
+the configuration can be defined as:
+
+```yaml
+serverConfig:
+  node.environment: test
+  http-server.http.port: 8080
+```
+Each entry under `serverConfig` in the configuration file will be deserialized into a corresponding key-value pair 
+within the `Map<String, String>` field.
+
+The configuration file supports environment variable substitution using the `${ENV:<variable_name>}` syntax. 
+For example, to load datastore credentials from environment variables:
+
+```yaml
+dataStore:
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
+  driver: org.postgresql.Driver
+```
+This setup will automatically resolve each placeholder by fetching the corresponding value from the environment.
+
 ## Add Trino backends
 
 This following script starts two dockerized Trino servers at 
