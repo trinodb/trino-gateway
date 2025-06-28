@@ -59,8 +59,6 @@ public interface ResourceGroupsManager
 
     List<ExactSelectorsDetail> readExactMatchSourceSelector();
 
-    ExactSelectorsDetail getExactMatchSourceSelector(ExactSelectorsDetail exactSelectorDetail);
-
     class ResourceGroupsDetail
             implements Comparable<ResourceGroupsDetail>
     {

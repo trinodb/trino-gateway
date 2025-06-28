@@ -364,13 +364,5 @@ public class TestResourceGroupsManager
         assertThat(exactSelectorsDetails.get(0).getSource()).isEqualTo("@test@test_pipeline");
         assertThat(exactSelectorsDetails.get(0).getEnvironment()).isEqualTo("test");
         assertThat(exactSelectorsDetails.get(0).getQueryType()).isEqualTo("query_type");
-
-        ExactSelectorsDetail exactSelector =
-                resourceGroupManager.getExactMatchSourceSelector(exactSelectorsDetails.get(0));
-
-        assertThat(exactSelector.getResourceGroupId()).isEqualTo("0");
-        assertThat(exactSelector.getSource()).isEqualTo("@test@test_pipeline");
-        assertThat(exactSelector.getEnvironment()).isEqualTo("test");
-        assertThat(exactSelector.getQueryType()).isEqualTo("query_type");
     }
 }
