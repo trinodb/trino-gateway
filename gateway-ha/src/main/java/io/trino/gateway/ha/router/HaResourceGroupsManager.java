@@ -256,17 +256,6 @@ public class HaResourceGroupsManager
                 .collect(toImmutableList());
     }
 
-    /**
-     * Gets exact match source selector from db.
-     */
-    @Override
-    public ExactSelectorsDetail getExactMatchSourceSelector(
-            ExactSelectorsDetail exactSelectorDetail)
-    {
-        ExactMatchSourceSelectors exactSelector = exactMatchSourceSelectorsDao.findFirst(exactSelectorDetail);
-        return upcastExactSelectors(exactSelector);
-    }
-
     private SelectorsDao getSelectorsDao(@Nullable String routingGroupDatabase)
     {
         return connectionManager.getJdbi(routingGroupDatabase).onDemand(SelectorsDao.class);
