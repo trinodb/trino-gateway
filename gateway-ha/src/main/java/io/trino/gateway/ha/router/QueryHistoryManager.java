@@ -34,6 +34,8 @@ public interface QueryHistoryManager
 
     String getRoutingGroupForQueryId(String queryId);
 
+    String getExternalUrlForQueryId(String queryId);
+
     TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);
@@ -48,6 +50,7 @@ public interface QueryHistoryManager
         private String backendUrl;
         private long captureTime;
         private String routingGroup;
+        private String externalUrl;
 
         public QueryDetail() {}
 
@@ -65,7 +68,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getQueryId()
         {
-            return this.queryId;
+            return queryId;
         }
 
         public void setQueryId(String queryId)
@@ -76,7 +79,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getQueryText()
         {
-            return this.queryText;
+            return queryText;
         }
 
         public void setQueryText(String queryText)
@@ -87,7 +90,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getUser()
         {
-            return this.user;
+            return user;
         }
 
         public void setUser(String user)
@@ -98,7 +101,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getSource()
         {
-            return this.source;
+            return source;
         }
 
         public void setSource(String source)
@@ -109,7 +112,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getBackendUrl()
         {
-            return this.backendUrl;
+            return backendUrl;
         }
 
         public void setBackendUrl(String backendUrl)
@@ -120,7 +123,7 @@ public interface QueryHistoryManager
         @JsonProperty
         public long getCaptureTime()
         {
-            return this.captureTime;
+            return captureTime;
         }
 
         public void setCaptureTime(long captureTime)
@@ -131,12 +134,23 @@ public interface QueryHistoryManager
         @JsonProperty
         public String getRoutingGroup()
         {
-            return this.routingGroup;
+            return routingGroup;
         }
 
         public void setRoutingGroup(String routingGroup)
         {
             this.routingGroup = routingGroup;
+        }
+
+        @JsonProperty
+        public String getExternalUrl()
+        {
+            return externalUrl;
+        }
+
+        public void setExternalUrl(String externalUrl)
+        {
+            this.externalUrl = externalUrl;
         }
 
         @Override
@@ -155,13 +169,14 @@ public interface QueryHistoryManager
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
                     Objects.equals(backendUrl, that.backendUrl) &&
-                    Objects.equals(routingGroup, that.routingGroup);
+                    Objects.equals(routingGroup, that.routingGroup) &&
+                    Objects.equals(externalUrl, that.externalUrl);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup, externalUrl);
         }
 
         @Override
@@ -175,6 +190,7 @@ public interface QueryHistoryManager
                     .add("backendUrl", backendUrl)
                     .add("captureTime", captureTime)
                     .add("routingGroup", routingGroup)
+                    .add("externalUrl", externalUrl)
                     .toString();
         }
     }

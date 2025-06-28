@@ -11,8 +11,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.handler.schema;
+package io.trino.gateway.ha.router;
 
-import java.net.URI;
+import org.testcontainers.containers.MySQLContainer;
 
-public record RoutingDestination(String routingGroup, String clusterHost, URI clusterUri, String externalUrl) {}
+public class TestExternalUrlQueryHistoryMySql
+        extends BaseExternalUrlQueryHistoryTest
+{
+    public TestExternalUrlQueryHistoryMySql()
+    {
+        super(new MySQLContainer<>("mysql:8.0.36"));
+    }
+}

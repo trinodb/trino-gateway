@@ -59,7 +59,7 @@ export function History() {
 
   const linkQueryRender = (text: string, record: HistoryDetail) => {
     return (
-      <Text link={{ href: `${record.backendUrl}/ui/query.html?${text}`, target: '_blank' }} underline>{text}</Text>
+      <Text link={{ href: `${record.externalUrl}/ui/query.html?${text}`, target: '_blank' }} underline>{text}</Text>
     );
   }
 
@@ -95,9 +95,9 @@ export function History() {
             <>
               <Form.Select field="backendUrl" label='RoutedTo' style={{ width: 200 }} showClear placeholder={Locale.History.RoutedToTip}>
                 {backendData?.map(b => (
-                  <Form.Select.Option key={b.proxyTo} value={b.proxyTo}>
-                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.proxyTo]}</Tag>
-                    <Text>{b.proxyTo}</Text>
+                  <Form.Select.Option key={b.externalUrl} value={b.externalUrl}>
+                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.externalUrl]}</Tag>
+                    <Text>{b.externalUrl}</Text>
                   </Form.Select.Option>
                 ))}
               </Form.Select>
@@ -123,7 +123,7 @@ export function History() {
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
           <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup" render={routingGroupRender} />
           <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
-          <Column title="RoutedTo" dataIndex="backendUrl" key="backendUrl" render={linkRender} />
+          <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
           <Column title="QueryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
