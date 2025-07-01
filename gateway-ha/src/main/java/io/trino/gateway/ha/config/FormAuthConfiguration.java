@@ -13,10 +13,15 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
+import java.util.concurrent.TimeUnit;
+
 public class FormAuthConfiguration
 {
     private SelfSignKeyPairConfiguration selfSignKeyPair;
     private String ldapConfigPath;
+    private Duration sessionTimeout = new Duration(30, TimeUnit.MINUTES);
 
     public FormAuthConfiguration(SelfSignKeyPairConfiguration selfSignKeyPair, String ldapConfigPath)
     {
@@ -44,5 +49,15 @@ public class FormAuthConfiguration
     public void setLdapConfigPath(String ldapConfigPath)
     {
         this.ldapConfigPath = ldapConfigPath;
+    }
+
+    public Duration getSessionTimeout()
+    {
+        return this.sessionTimeout;
+    }
+
+    public void setSessionTimeout(Duration sessionTimeout)
+    {
+        this.sessionTimeout = sessionTimeout;
     }
 }

@@ -19,6 +19,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
@@ -26,10 +27,13 @@ import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
@@ -38,6 +42,8 @@ import static java.util.Locale.ENGLISH;
 public class LbFormAuthManager
 {
     private static final Logger log = Logger.get(LbFormAuthManager.class);
+    private static final long SERVER_START_TIME = System.currentTimeMillis();
+    private static final Duration DEFAULT_SESSION_TIMEOUT = new Duration(30, TimeUnit.MINUTES);
     /**
      * Cookie key to pass the token.
      */
@@ -45,6 +51,7 @@ public class LbFormAuthManager
     private final Map<String, UserConfiguration> presetUsers;
     private final Map<String, String> pagePermissions;
     private final LbLdapClient lbLdapClient;
+    private final Duration sessionTimeout;
 
     public LbFormAuthManager(FormAuthConfiguration configuration,
             Map<String, UserConfiguration> presetUsers,
@@ -58,9 +65,12 @@ public class LbFormAuthManager
         if (configuration != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
                     .getSelfSignKeyPair());
+            this.sessionTimeout = configuration.getSessionTimeout() != null ?
+                    configuration.getSessionTimeout() : DEFAULT_SESSION_TIMEOUT;
         }
         else {
             this.lbKeyProvider = null;
+            this.sessionTimeout = DEFAULT_SESSION_TIMEOUT;
         }
 
         if (configuration != null && configuration.getLdapConfigPath() != null) {
@@ -105,6 +115,21 @@ public class LbFormAuthManager
             DecodedJWT jwt = JWT.decode(idToken);
 
             if (LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.empty())) {
+                // Check if token was issued before server restart
+                Optional<Claim> serverStartClaim = Optional.ofNullable(jwt.getClaim("server_start"));
+                if (serverStartClaim.isPresent() && !serverStartClaim.orElseThrow().isNull()) {
+                    long tokenServerStart = serverStartClaim.orElseThrow().asLong();
+                    if (tokenServerStart != SERVER_START_TIME) {
+                        log.info("Token invalidated due to server restart");
+                        return Optional.empty();
+                    }
+                }
+                // Check token expiration
+                Optional<Date> expiresAt = Optional.ofNullable(jwt.getExpiresAt());
+                if (expiresAt.isPresent() && expiresAt.orElseThrow().before(new Date())) {
+                    log.info("Token expired");
+                    return Optional.empty();
+                }
                 return Optional.of(jwt.getClaims());
             }
         }
@@ -124,10 +149,16 @@ public class LbFormAuthManager
 
             Map<String, Object> headers = Map.of("alg", "RS256");
 
+            Instant now = Instant.now();
+            Instant expiration = now.plusSeconds(sessionTimeout.roundTo(TimeUnit.SECONDS));
+
             token = JWT.create()
                     .withHeader(headers)
                     .withIssuer(SessionCookie.SELF_ISSUER_ID)
                     .withSubject(username)
+                    .withIssuedAt(Date.from(now))
+                    .withExpiresAt(Date.from(expiration))
+                    .withClaim("server_start", SERVER_START_TIME)
                     .sign(algorithm);
         }
         catch (JWTCreationException exception) {
@@ -166,5 +197,10 @@ public class LbFormAuthManager
         return roles.stream()
                 .flatMap(role -> Stream.of(pagePermissions.get(role).split("_")))
                 .distinct().toList();
+    }
+
+    public long getServerStartTime()
+    {
+        return SERVER_START_TIME;
     }
 }
