@@ -29,6 +29,7 @@
 
     <modules>
         <module>gateway-ha</module>
+        <module>trino-gateway-server</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/trinodb/trino-gateway.git</connection>
@@ -44,6 +45,7 @@
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
+        <dep.airlift.launcher.version>304</dep.airlift.launcher.version>
     </properties>
 
     <dependencyManagement>
