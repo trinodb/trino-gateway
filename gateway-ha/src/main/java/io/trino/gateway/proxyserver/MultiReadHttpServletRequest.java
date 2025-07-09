@@ -45,13 +45,13 @@ public class MultiReadHttpServletRequest
             @Override
             public boolean isFinished()
             {
-                return byteArrayInputStream.available() > 0;
+                return byteArrayInputStream.available() <= 0;
             }
 
             @Override
             public boolean isReady()
             {
-                return false;
+                return true;
             }
 
             @Override
@@ -62,6 +62,13 @@ public class MultiReadHttpServletRequest
                     throws IOException
             {
                 return byteArrayInputStream.read();
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len)
+                    throws IOException
+            {
+                return byteArrayInputStream.read(b, off, len);
             }
         };
     }
