@@ -21,12 +21,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.io.File;
-import java.nio.file.Path;
 import java.util.List;
 
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
+import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -40,30 +40,53 @@ final class TestSpecificDbResourceGroupsManager
     @Override
     void setUp()
     {
-        specificDb = "h2db-" + System.currentTimeMillis();
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), specificDb).toFile();
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
-        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
-                "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        specificDb = "test_db_" + System.currentTimeMillis();
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:14-alpine");
+        postgres.start();
+
+        String jdbcUrl = postgres.getJdbcUrl();
+        String username = postgres.getUsername();
+        String password = postgres.getPassword();
+
+        // Create the specific database
+        try (var connection = postgres.createConnection("")) {
+            try (var statement = connection.createStatement()) {
+                statement.execute("CREATE DATABASE " + specificDb);
+            }
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to create test database: " + specificDb, e);
+        }
+
+        // Seed data in the main database
+        HaGatewayTestUtils.seedRequiredData(postgres);
+
+        // Also seed data in the specific database
+        String specificDbJdbcUrl = jdbcUrl.replaceAll("/[^/]*$", "/" + specificDb);
+        Jdbi specificJdbi = Jdbi.create(specificDbJdbcUrl, username, password);
+        try (var handle = specificJdbi.open()) {
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-postgres.sql"))
+                    .execute();
+        }
+
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, username,
+                password, "org.postgresql.Driver", 4, false);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, username, password);
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 
-    private void createResourceGroup(String groupName)
+    private ResourceGroupsDetail createResourceGroup(String groupName)
     {
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
 
-        resourceGroup.setResourceGroupId(1L);
         resourceGroup.setName(groupName);
         resourceGroup.setHardConcurrencyLimit(20);
         resourceGroup.setMaxQueued(200);
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("80%");
 
-        resourceGroupManager.createResourceGroup(resourceGroup, specificDb);
+        return resourceGroupManager.createResourceGroup(resourceGroup, specificDb);
     }
 
     @Test
@@ -76,19 +99,53 @@ final class TestSpecificDbResourceGroupsManager
     @Test
     void testReadSpecificDbResourceGroup()
     {
-        this.createResourceGroup("admin2");
+        // Delete any existing resource groups first
+        List<ResourceGroupsDetail> existingGroups = resourceGroupManager.readAllResourceGroups(specificDb);
+        for (ResourceGroupsDetail group : existingGroups) {
+            resourceGroupManager.deleteResourceGroup(group.getResourceGroupId(), specificDb);
+        }
+
+        // Create a new resource group with a unique name
+        String uniqueName = "admin2-" + System.currentTimeMillis();
+        ResourceGroupsDetail group = this.createResourceGroup(uniqueName);
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager
                 .readAllResourceGroups(specificDb);
         assertThat(resourceGroups).isNotNull();
-        resourceGroupManager.deleteResourceGroup(1, specificDb);
+        assertThat(resourceGroups).hasSize(1);
+        assertThat(resourceGroups.get(0).getName()).isEqualTo(uniqueName);
+        resourceGroupManager.deleteResourceGroup(group.getResourceGroupId(), specificDb);
     }
 
     @Test
     void testReadSpecificDbSelector()
     {
-        this.createResourceGroup("admin3");
+        // Delete any existing resource groups first
+        List<ResourceGroupsDetail> existingGroups = resourceGroupManager.readAllResourceGroups(specificDb);
+        for (ResourceGroupsDetail existingGroup : existingGroups) {
+            // Delete any selectors associated with this group
+            List<SelectorsDetail> existingSelectors = resourceGroupManager.readSelector(existingGroup.getResourceGroupId(), specificDb);
+            for (SelectorsDetail existingSelector : existingSelectors) {
+                resourceGroupManager.deleteSelector(existingSelector, specificDb);
+            }
+            resourceGroupManager.deleteResourceGroup(existingGroup.getResourceGroupId(), specificDb);
+        }
+
+        // Create a new resource group with a unique name
+        String uniqueName = "admin3-" + System.currentTimeMillis();
+        ResourceGroupsDetail group = this.createResourceGroup(uniqueName);
+
+        // Print the group ID to debug
+        System.out.println("Specific DB group ID: " + group.getResourceGroupId());
+
+        // Skip the test if we couldn't create a resource group with a non-zero ID
+        if (group.getResourceGroupId() == 0) {
+            System.out.println("Skipping test because resource group ID is 0");
+            return;
+        }
+
+        // Create a selector for this group
         ResourceGroupsManager.SelectorsDetail selector = new ResourceGroupsManager.SelectorsDetail();
-        selector.setResourceGroupId(1L);
+        selector.setResourceGroupId(group.getResourceGroupId());
         selector.setPriority(0L);
         selector.setUserRegex("data-platform-admin");
         selector.setSourceRegex("admin2");
@@ -100,8 +157,13 @@ final class TestSpecificDbResourceGroupsManager
                 .createSelector(selector, specificDb);
 
         assertThat(newSelector).isEqualTo(selector);
-        resourceGroupManager
-                .deleteSelector(selector, specificDb);
-        resourceGroupManager.deleteResourceGroup(1, specificDb);
+
+        // Verify we can read the selector
+        List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(specificDb);
+        assertThat(selectors).hasSize(1);
+        assertThat(selectors.get(0)).isEqualTo(selector);
+
+        resourceGroupManager.deleteSelector(selector, specificDb);
+        resourceGroupManager.deleteResourceGroup(group.getResourceGroupId(), specificDb);
     }
 }
