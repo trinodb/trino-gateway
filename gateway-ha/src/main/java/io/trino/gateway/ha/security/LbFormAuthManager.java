@@ -45,10 +45,12 @@ public class LbFormAuthManager
     private final Map<String, UserConfiguration> presetUsers;
     private final Map<String, String> pagePermissions;
     private final LbLdapClient lbLdapClient;
+    private final AuthorizationManager authorizationManager;
 
     public LbFormAuthManager(FormAuthConfiguration configuration,
             Map<String, UserConfiguration> presetUsers,
-            Map<String, String> pagePermissions)
+            Map<String, String> pagePermissions,
+            AuthorizationManager authorizationManager)
     {
         this.presetUsers = presetUsers;
         this.pagePermissions = pagePermissions.entrySet().stream()
@@ -69,11 +71,17 @@ public class LbFormAuthManager
         else {
             lbLdapClient = null;
         }
+        this.authorizationManager = authorizationManager;
     }
 
     public String getUserIdField()
     {
         return "sub";
+    }
+
+    public String getPrivilegesField()
+    {
+        return "privileges";
     }
 
     /**
@@ -128,6 +136,7 @@ public class LbFormAuthManager
                     .withHeader(headers)
                     .withIssuer(SessionCookie.SELF_ISSUER_ID)
                     .withSubject(username)
+                    .withClaim(getPrivilegesField(), authorizationManager.getPrivileges(username))
                     .sign(algorithm);
         }
         catch (JWTCreationException exception) {

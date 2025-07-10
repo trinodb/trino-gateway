@@ -18,6 +18,7 @@ import com.auth0.jwt.interfaces.Claim;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
@@ -48,7 +49,7 @@ final class TestLbAuthenticator
     private static final Logger log = Logger.get(TestLbAuthenticator.class);
 
     private static final String USER = "username";
-    private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
+    private static final String privileges = "ADMIN_USER_API";
     private static final String ID_TOKEN = "TOKEN";
 
     @Test
@@ -63,7 +64,7 @@ final class TestLbAuthenticator
 
         Mockito
                 .when(authorization.getPrivileges(USER))
-                .thenReturn(MEMBER_OF);
+                .thenReturn(privileges);
         LbOAuthManager authentication = Mockito.mock(LbOAuthManager.class);
 
         Mockito
@@ -74,7 +75,7 @@ final class TestLbAuthenticator
                 .when(authentication.getUserIdField())
                 .thenReturn("sub");
 
-        LbPrincipal principal = new LbPrincipal(USER, MEMBER_OF);
+        LbPrincipal principal = new LbPrincipal(USER, privileges);
 
         LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
 
@@ -104,7 +105,7 @@ final class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api_user")));
+        assertThat(principal).hasValue(new LbPrincipal(USER, "admin_api_user"));
     }
 
     @Test
@@ -131,7 +132,7 @@ final class TestLbAuthenticator
 
         LbAuthenticator lbAuthenticator = new LbAuthenticator(oAuthManager, Mockito.mock(AuthorizationManager.class));
         Optional<LbPrincipal> principal = lbAuthenticator.authenticate(ID_TOKEN);
-        assertThat(principal).hasValue(new LbPrincipal(USER, Optional.of("admin_api")));
+        assertThat(principal).hasValue(new LbPrincipal(USER, "admin_api"));
     }
 
     @Test
@@ -184,7 +185,8 @@ final class TestLbAuthenticator
                 "user1", new UserConfiguration("priv1, priv2", "pass1"),
                 "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
-        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, new HashMap<>());
+        AuthorizationManager authorizationManager = new AuthorizationManager(new AuthorizationConfiguration(), presetUsers);
+        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, new HashMap<>(), authorizationManager);
 
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isTrue();
@@ -198,7 +200,7 @@ final class TestLbAuthenticator
     void testNoLdapNoPresetUsers()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of(), null);
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
     }
@@ -207,7 +209,7 @@ final class TestLbAuthenticator
     void testWrongLdapConfig()
             throws Exception
     {
-        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of());
+        LbFormAuthManager authentication = new LbFormAuthManager(null, null, ImmutableMap.of(), null);
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isFalse();
     }
@@ -219,7 +221,7 @@ final class TestLbAuthenticator
         Map<String, String> pagePermission = new HashMap<>();
         pagePermission.put("user", null);
 
-        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, unmodifiableMap(pagePermission));
+        LbFormAuthManager authentication = new LbFormAuthManager(null, presetUsers, unmodifiableMap(pagePermission), null);
         assertThat(authentication.authenticate(new BasicCredentials("user1", "pass1")))
                 .isTrue();
     }
@@ -249,7 +251,8 @@ final class TestLbAuthenticator
                 "user1", new UserConfiguration("priv1, priv2", "pass1"),
                 "user2", new UserConfiguration("priv2, priv2", "pass2"));
 
-        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>());
+        AuthorizationManager authorizationManager = new AuthorizationManager(null, presetUsers);
+        LbFormAuthManager lbFormAuthManager = new LbFormAuthManager(formAuthConfig, presetUsers, new HashMap<>(), authorizationManager);
         RestLoginRequest restLoginRequest = new RestLoginRequest("user1", "pass1");
         Result<?> r = lbFormAuthManager.processRESTLogin(restLoginRequest);
         assertThat(Result.isSuccess(r)).isTrue();

@@ -20,7 +20,6 @@ import jakarta.ws.rs.core.SecurityContext;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Optional;
 
 import static jakarta.ws.rs.Priorities.AUTHENTICATION;
 
@@ -37,7 +36,7 @@ public class NoopFilter
             @Override
             public Principal getUserPrincipal()
             {
-                return new LbPrincipal("user", Optional.of("ADMIN_USER_API"));
+                return new LbPrincipal("user", "ADMIN_USER_API");
             }
 
             @Override

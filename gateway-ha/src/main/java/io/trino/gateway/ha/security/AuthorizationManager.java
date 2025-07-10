@@ -13,10 +13,13 @@
  */
 package io.trino.gateway.ha.security;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,6 +27,7 @@ public class AuthorizationManager
 {
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
+    private final AuthorizationConfiguration authorizationConfiguration;
 
     public AuthorizationManager(AuthorizationConfiguration configuration,
             Map<String, UserConfiguration> presetUsers)
@@ -35,9 +39,42 @@ public class AuthorizationManager
         else {
             lbLdapClient = null;
         }
+        this.authorizationConfiguration = configuration;
     }
 
-    public Optional<String> getPrivileges(String username)
+    @VisibleForTesting
+    public AuthorizationManager(Map<String, UserConfiguration> presetUsers, LbLdapClient lbLdapClient, AuthorizationConfiguration authorizationConfiguration)
+    {
+        this.presetUsers = presetUsers;
+        this.lbLdapClient = lbLdapClient;
+        this.authorizationConfiguration = authorizationConfiguration;
+    }
+
+    public String getPrivileges(String username)
+    {
+        if (authorizationConfiguration == null) {
+            return "ADMIN_USER_API";
+        }
+        Optional<String> memberOf = getMemberOf(username);
+        List<String> privileges = new ArrayList<String>();
+
+        if (authorizationConfiguration.getAdmin() != null) {
+            memberOf.filter(m -> m.matches(authorizationConfiguration.getAdmin())).ifPresent(m -> privileges.add("ADMIN"));
+        }
+        if (authorizationConfiguration.getUser() != null) {
+            memberOf.filter(m -> m.matches(authorizationConfiguration.getUser())).ifPresent(m -> privileges.add("USER"));
+        }
+        if (authorizationConfiguration.getApi() != null) {
+            memberOf.filter(m -> m.matches(authorizationConfiguration.getApi())).ifPresent(m -> privileges.add("API"));
+        }
+
+        if (privileges.isEmpty()) {
+            return "";
+        }
+        return String.join("_", privileges);
+    }
+
+    public Optional<String> getMemberOf(String username)
     {
         //check the preset users
         String privs = "";

@@ -70,7 +70,7 @@ public class LbAuthenticator
                 privileges = Optional.ofNullable(role);
             }
 
-            return Optional.of(new LbPrincipal(userId, privileges));
+            return Optional.of(new LbPrincipal(userId, privileges.orElse("")));
         }
         return oauthManager
                 .getClaimsFromIdToken(idToken)

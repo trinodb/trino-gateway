@@ -15,18 +15,17 @@ package io.trino.gateway.ha.security;
 
 import java.security.Principal;
 import java.util.Objects;
-import java.util.Optional;
 
 public class LbPrincipal
         implements Principal
 {
     private final String name;
-    private final Optional<String> memberOf;
+    private final String privileges;
 
-    public LbPrincipal(String name, Optional<String> memberOf)
+    public LbPrincipal(String name, String privileges)
     {
         this.name = name;
-        this.memberOf = memberOf;
+        this.privileges = privileges;
     }
 
     @Override
@@ -39,13 +38,13 @@ public class LbPrincipal
             return false;
         }
         LbPrincipal that = (LbPrincipal) o;
-        return name.equals(that.name) && memberOf.equals(that.memberOf);
+        return name.equals(that.name) && privileges.equals(that.privileges);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(name, memberOf);
+        return Objects.hash(name, privileges);
     }
 
     @Override
@@ -54,8 +53,8 @@ public class LbPrincipal
         return name;
     }
 
-    public Optional<String> getMemberOf()
+    public String getPrivileges()
     {
-        return this.memberOf;
+        return this.privileges;
     }
 }

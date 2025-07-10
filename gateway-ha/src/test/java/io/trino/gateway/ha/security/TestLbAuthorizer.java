@@ -13,138 +13,103 @@
  */
 package io.trino.gateway.ha.security;
 
-import io.airlift.log.Logger;
-import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-import java.util.regex.PatternSyntaxException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestLbAuthorizer
 {
-    private static final Logger log = Logger.get(TestLbAuthorizer.class);
-
     private static final String USER = "username";
     private static final String ADMIN_ROLE = "ADMIN";
     private static final String USER_ROLE = "USER";
     private static final String API_ROLE = "API";
     private static final String UNKNOWN_ROLE = "UNKNOWN";
-    private static final String PVFX_DATA_31 = "PVFX_DATA_31";
-    private static LbPrincipal principal;
     private static LbAuthorizer authorizer;
-    private static AuthorizationConfiguration configuration;
 
     @BeforeAll
-    static void setup()
+    public static void setup()
     {
-        configuration = new AuthorizationConfiguration();
-        principal = new LbPrincipal(USER, Optional.of(PVFX_DATA_31));
+        authorizer = new LbAuthorizer();
     }
 
-    static void configureRole(String regex, String role)
-    {
-        if (role.equalsIgnoreCase(ADMIN_ROLE)) {
-            configuration.setAdmin(regex);
-            authorizer = new LbAuthorizer(configuration);
-        }
-        if (role.equalsIgnoreCase(USER_ROLE)) {
-            configuration.setUser(regex);
-            authorizer = new LbAuthorizer(configuration);
-        }
-        if (role.equalsIgnoreCase(API_ROLE)) {
-            configuration.setApi(regex);
-            authorizer = new LbAuthorizer(configuration);
-        }
-    }
-
-    static void assertMatch(String role)
+    static void assertMatch(LbPrincipal principal, String role)
     {
         assertThat(authorizer.authorize(principal, role, null)).isTrue();
     }
 
-    static void assertNotMatch(String role)
+    static void assertNotMatch(LbPrincipal principal, String role)
     {
         assertThat(authorizer.authorize(principal, role, null)).isFalse();
     }
 
-    static void assertBadPattern(String role)
+    @Test
+    public void testBasic()
     {
-        log.info("Configured bad regex pattern for role [%s]", role);
-        try {
-            assertNotMatch(role);
-        }
-        catch (PatternSyntaxException e) {
-            log.info("Failed to compile ==> OKAY");
-        }
+        LbPrincipal principal = new LbPrincipal(USER, "ADMIN_USER_API");
+        assertMatch(principal, ADMIN_ROLE);
+        assertMatch(principal, USER_ROLE);
+        assertMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE); // UNKNOWN ROLE should always return FALSE
     }
 
     @Test
-    void testBasic()
+    public void testMultiplePrivileges()
     {
-        configureRole(PVFX_DATA_31, ADMIN_ROLE);
-        assertMatch(ADMIN_ROLE);
-
-        configureRole(PVFX_DATA_31, UNKNOWN_ROLE);
-        assertNotMatch(UNKNOWN_ROLE); // UNKNOWN ROLE should always return FALSE
-
-        configureRole("PVFX", USER_ROLE);
-        assertNotMatch(USER_ROLE);
-
-        configureRole("DATA", API_ROLE);
-        assertNotMatch(API_ROLE);
-
-        configureRole("31", ADMIN_ROLE);
-        assertNotMatch(ADMIN_ROLE);
+        LbPrincipal principal = new LbPrincipal(USER, "ADMIN_USER");
+        assertMatch(principal, ADMIN_ROLE);
+        assertMatch(principal, USER_ROLE);
+        assertNotMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
     }
 
     @Test
-    void testZeroOrMoreCharacters()
+    public void testUserApiPrivileges()
     {
-        configureRole("PVFX(.*)", ADMIN_ROLE);
-        assertMatch(ADMIN_ROLE);
-
-        configureRole("(?i)pvfx(.*)", USER_ROLE);
-        assertMatch(USER_ROLE);
-
-        configureRole("(.*)", API_ROLE);
-        assertMatch(API_ROLE);
-
-        configureRole("PVFX_DATA_31(.*)", ADMIN_ROLE);
-        assertMatch(ADMIN_ROLE);
-
-        configureRole("(.*)_31", USER_ROLE);
-        assertMatch(USER_ROLE);
-
-        configureRole("(.*)DATA(.*)", API_ROLE);
-        assertMatch(API_ROLE);
-
-        configureRole("^.+$", ADMIN_ROLE);
-        assertMatch(ADMIN_ROLE);
-
-        configureRole("^.+$", UNKNOWN_ROLE);
-        assertNotMatch(UNKNOWN_ROLE); // UNKNOWN ROLE should always return FALSE
-
-        configureRole("(.*)DATA", USER_ROLE);
-        assertNotMatch(USER_ROLE);
-
-        configureRole("PVFX__(.*)", API_ROLE);
-        assertNotMatch(API_ROLE);
+        LbPrincipal principal = new LbPrincipal(USER, "USER_API");
+        assertNotMatch(principal, ADMIN_ROLE);
+        assertMatch(principal, USER_ROLE);
+        assertMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
     }
 
     @Test
-    void testBadPatterns()
-            throws Exception
+    public void testAdminOnlyPrivilege()
     {
-        configureRole("^[a-zA--Z0-9_]+$", ADMIN_ROLE); // bad range
-        assertBadPattern(ADMIN_ROLE);
+        LbPrincipal principal = new LbPrincipal(USER, "ADMIN");
+        assertMatch(principal, ADMIN_ROLE);
+        assertNotMatch(principal, USER_ROLE);
+        assertNotMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
+    }
 
-        configureRole("^[a-zA-Z0-9_*$", USER_ROLE);    // missing ]
-        assertBadPattern(USER_ROLE);
+    @Test
+    public void testUserOnlyPrivilege()
+    {
+        LbPrincipal principal = new LbPrincipal(USER, "USER");
+        assertNotMatch(principal, ADMIN_ROLE);
+        assertMatch(principal, USER_ROLE);
+        assertNotMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
+    }
 
-        configureRole("^[a-zA-Z0-9_]+$\\", API_ROLE);  // nothing to escape
-        assertBadPattern(API_ROLE);
+    @Test
+    public void testApiOnlyPrivilege()
+    {
+        LbPrincipal principal = new LbPrincipal(USER, "API");
+        assertNotMatch(principal, ADMIN_ROLE);
+        assertNotMatch(principal, USER_ROLE);
+        assertMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
+    }
+
+    @Test
+    public void testNoPrivileges()
+    {
+        LbPrincipal principal = new LbPrincipal(USER, "");
+        assertNotMatch(principal, ADMIN_ROLE);
+        assertNotMatch(principal, USER_ROLE);
+        assertNotMatch(principal, API_ROLE);
+        assertNotMatch(principal, UNKNOWN_ROLE);
     }
 }

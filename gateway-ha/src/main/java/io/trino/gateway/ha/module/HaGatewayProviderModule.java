@@ -104,9 +104,10 @@ public class HaGatewayProviderModule
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
-        formAuthManager = getFormAuthManager(configuration);
 
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
+        formAuthManager = getFormAuthManager(configuration);
+
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
         backendStateConnectionManager = new BackendStateManager();
 
@@ -137,7 +138,7 @@ public class HaGatewayProviderModule
         AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
         if (authenticationConfiguration != null && authenticationConfiguration.getForm() != null) {
             return new LbFormAuthManager(authenticationConfiguration.getForm(),
-                    configuration.getPresetUsers(), configuration.getPagePermissions());
+                    configuration.getPresetUsers(), configuration.getPagePermissions(), authorizationManager);
         }
         return null;
     }
@@ -156,7 +157,7 @@ public class HaGatewayProviderModule
 
         if (formAuthManager != null) {
             authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
+                    new FormAuthenticator(formAuthManager),
                     authorizer,
                     "Bearer",
                     new LbUnauthorizedHandler(defaultType)));
@@ -174,7 +175,7 @@ public class HaGatewayProviderModule
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
         Authorizer authorizer = (authorizationConfig != null)
-                ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
+                ? new LbAuthorizer() : new NoopAuthorizer();
 
         AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
 
