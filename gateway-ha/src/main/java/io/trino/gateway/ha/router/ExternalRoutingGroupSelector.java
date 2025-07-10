@@ -29,6 +29,8 @@ import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static io.airlift.http.client.JsonBodyGenerator.jsonBodyGenerator;
@@ -52,6 +55,7 @@ public class ExternalRoutingGroupSelector
     private static final Logger log = Logger.get(ExternalRoutingGroupSelector.class);
     private final Set<String> excludeHeaders;
     private final URI uri;
+    private final boolean propagateErrors;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
     private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
@@ -67,6 +71,7 @@ public class ExternalRoutingGroupSelector
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
+        propagateErrors = rulesExternalConfiguration.isPropagateErrors();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
@@ -101,7 +106,13 @@ public class ExternalRoutingGroupSelector
                 throw new RuntimeException("Unexpected response: null");
             }
             else if (response.errors() != null && !response.errors().isEmpty()) {
-                throw new RuntimeException("Response with error: " + String.join(", ", response.errors()));
+                if (propagateErrors) {
+                    log.warn("Query validation failed with errors: %s", String.join(", ", response.errors()));
+                    throw new WebApplicationException(
+                            Response.status(Response.Status.BAD_REQUEST)
+                                    .entity(response.errors())
+                                    .build());
+                }
             }
 
             // Filter out excluded headers and null values
@@ -120,6 +131,7 @@ public class ExternalRoutingGroupSelector
             return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders);
         }
         catch (Exception e) {
+            throwIfInstanceOf(e, WebApplicationException.class);
             log.error(e, "Error occurred while retrieving routing group "
                     + "from external routing rules processing at " + uri);
         }

@@ -31,12 +31,6 @@ public interface GatewayBackendDao
 
     @SqlQuery("""
             SELECT * FROM gateway_backend
-            WHERE active = true AND routing_group = 'adhoc'
-            """)
-    List<GatewayBackend> findActiveAdhocBackend();
-
-    @SqlQuery("""
-            SELECT * FROM gateway_backend
             WHERE active = true AND routing_group = :routingGroup
             """)
     List<GatewayBackend> findActiveBackendByRoutingGroup(String routingGroup);
