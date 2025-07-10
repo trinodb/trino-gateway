@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.security;
 
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.security.util.Authorizer;
 import jakarta.annotation.Nullable;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -23,11 +22,9 @@ public class LbAuthorizer
         implements Authorizer
 {
     private static final Logger log = Logger.get(LbAuthorizer.class);
-    private final AuthorizationConfiguration configuration;
 
-    public LbAuthorizer(AuthorizationConfiguration configuration)
+    public LbAuthorizer()
     {
-        this.configuration = configuration;
     }
 
     @Override
@@ -37,23 +34,26 @@ public class LbAuthorizer
     {
         switch (role) {
             case "ADMIN":
-                log.info("User '%s' with memberOf(%s) was identified as ADMIN(%s)",
-                        principal.getName(), principal.getMemberOf(), configuration.getAdmin());
-                return principal.getMemberOf()
-                        .filter(m -> m.matches(configuration.getAdmin()))
-                        .isPresent();
+                if (principal.getPrivileges().contains("ADMIN")) {
+                    log.info("User '%s' with memberOf(%s) was identified as ADMIN",
+                            principal.getName(), principal.getPrivileges());
+                    return true;
+                }
+                return false;
             case "USER":
-                log.info("User '%s' with memberOf(%s) identified as USER(%s)",
-                        principal.getName(), principal.getMemberOf(), configuration.getUser());
-                return principal.getMemberOf()
-                        .filter(m -> m.matches(configuration.getUser()))
-                        .isPresent();
+                if (principal.getPrivileges().contains("USER")) {
+                    log.info("User '%s' with memberOf(%s) identified as USER",
+                            principal.getName(), principal.getPrivileges());
+                    return true;
+                }
+                return false;
             case "API":
-                log.info("User '%s' with memberOf(%s) identified as API(%s)",
-                        principal.getName(), principal.getMemberOf(), configuration.getApi());
-                return principal.getMemberOf()
-                        .filter(m -> m.matches(configuration.getApi()))
-                        .isPresent();
+                if (principal.getPrivileges().contains("API")) {
+                    log.info("User '%s' with memberOf(%s) identified as API",
+                            principal.getName(), principal.getPrivileges());
+                    return true;
+                }
+                return false;
             default:
                 log.warn("User '%s' with role %s has no regex match based on ldap search",
                         principal.getName(), role);

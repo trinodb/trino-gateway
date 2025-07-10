@@ -27,6 +27,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -37,12 +38,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 final class TestLbFilter
 {
     private static final String USER = "username";
-    private static final Optional<String> MEMBER_OF = Optional.of("PVFX_DATA_31");
+    private static final String MEMBER_OF = "PVFX_DATA_31";
     private static final String ID_TOKEN = "TOKEN";
 
     private LbOAuthManager oauthManager;
-    private AuthorizationManager authorizationManager;
     private ContainerRequestContext requestContext;
+    private LbAuthorizer authorizer;
 
     @BeforeAll
     void setup()
@@ -59,14 +60,9 @@ final class TestLbFilter
                 .thenReturn(Optional.of(Map.of("sub", claim)));
         Mockito.when(oauthManager.getUserIdField()).thenReturn("sub");
 
-        // Set authorization manager with membership
-        authorizationManager = Mockito.mock(AuthorizationManager.class);
-        Mockito
-                .when(authorizationManager.getPrivileges(USER))
-                .thenReturn(MEMBER_OF);
-
         // Request context for the auth filter
         requestContext = Mockito.mock(ContainerRequestContext.class);
+        authorizer = new LbAuthorizer();
     }
 
     @Test
@@ -75,7 +71,7 @@ final class TestLbFilter
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
         configuration.setAdmin("NO_MEMBER");
-        configuration.setUser(MEMBER_OF.orElseThrow());
+        configuration.setUser(MEMBER_OF);
 
         Mockito
                 .when(requestContext.getCookies())
@@ -86,11 +82,11 @@ final class TestLbFilter
                 .when(requestContext.getHeaders())
                 .thenReturn(new MultivaluedHashMap());
 
+        AuthorizationManager authorizationManager = getAuthorizationManager(configuration);
         LbAuthenticator authenticator = new LbAuthenticator(
                 oauthManager,
                 authorizationManager);
 
-        LbAuthorizer authorizer = new LbAuthorizer(configuration);
         LbFilter lbFilter = new LbFilter(
                 authenticator,
                 authorizer,
@@ -116,8 +112,8 @@ final class TestLbFilter
             throws Exception
     {
         AuthorizationConfiguration configuration = new AuthorizationConfiguration();
-        configuration.setAdmin(MEMBER_OF.orElseThrow());
-        configuration.setUser(MEMBER_OF.orElseThrow());
+        configuration.setAdmin(MEMBER_OF);
+        configuration.setUser(MEMBER_OF);
 
         MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
         headers.addFirst(HttpHeaders.AUTHORIZATION, "Bearer " + ID_TOKEN);
@@ -128,10 +124,11 @@ final class TestLbFilter
         Mockito
                 .when(requestContext.getHeaders())
                 .thenReturn(headers);
+
+        AuthorizationManager authorizationManager = getAuthorizationManager(configuration);
         LbAuthenticator authenticator = new LbAuthenticator(
                 oauthManager,
                 authorizationManager);
-        LbAuthorizer authorizer = new LbAuthorizer(configuration);
         LbFilter lbFilter = new LbFilter(
                 authenticator,
                 authorizer,
@@ -165,10 +162,11 @@ final class TestLbFilter
                     .thenReturn(Map.of());
             Mockito.when(requestContext.getHeaders())
                     .thenReturn(headers);
+
+            AuthorizationManager authorizationManager = getAuthorizationManager(configuration);
             LbAuthenticator authenticator = new LbAuthenticator(
                     oauthManager,
                     authorizationManager);
-            LbAuthorizer authorizer = new LbAuthorizer(configuration);
             LbFilter lbFilter = new LbFilter(
                     authenticator,
                     authorizer,
@@ -178,5 +176,13 @@ final class TestLbFilter
             // Exception is thrown when the authentication fails
             lbFilter.filter(requestContext);
         }).isInstanceOf(WebApplicationException.class);
+    }
+
+    private AuthorizationManager getAuthorizationManager(AuthorizationConfiguration configuration)
+    {
+        LbLdapClient lbLdapClient = Mockito.mock(LbLdapClient.class);
+        Mockito.when(lbLdapClient.getMemberOf(USER)).thenReturn(MEMBER_OF);
+
+        return new AuthorizationManager(new HashMap<>(), lbLdapClient, configuration);
     }
 }
