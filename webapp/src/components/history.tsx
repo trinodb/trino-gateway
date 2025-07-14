@@ -133,13 +133,33 @@ export function History() {
           onPageChange: list,
         }}>
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
-          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup" render={routingGroupRender} />
+          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup"
+            sorter={(a, b) => {
+              if (!a || !b) return 0;
+              return a.routingGroup.localeCompare(b.routingGroup);
+            }}
+            filters={
+                [...new Set(backendData?.map(b => b.routingGroup))]
+                        .map(routingGroup => {
+                            return {
+                                text: routingGroup,
+                                value: routingGroup
+                            }
+                        })}
+            onFilter={(value, record) => {
+                if (!record) return false;
+                return value === record.routingGroup
+            }}
+            render={routingGroupRender} />
           <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
           <Column title="QueryText" dataIndex="queryText" key="queryText" width={300} render={queryTextRender} />
-          <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} />
+          <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} sorter={(a, b) => {
+            if (!a || !b) return 0;
+            return a.captureTime - b.captureTime;
+          }} />
         </Table>
       </Card>
       <Modal
