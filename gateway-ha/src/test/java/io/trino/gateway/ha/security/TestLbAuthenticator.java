@@ -177,6 +177,26 @@ final class TestLbAuthenticator
     }
 
     @Test
+    void testAuthenticatorUserIdFieldNotExist()
+    {
+        Claim claim = Mockito.mock(Claim.class);
+        AuthorizationManager authorization = Mockito.mock(AuthorizationManager.class);
+        LbOAuthManager authentication = Mockito.mock(LbOAuthManager.class);
+
+        Mockito.when(authentication.getClaimsFromIdToken(ID_TOKEN))
+                .thenReturn(Optional.of(Map.of("no-sub", claim)));
+        Mockito.when(authentication.getUserIdField())
+                .thenReturn("sub");
+        Mockito.when(authentication.getPrivilegesField())
+                .thenReturn(Optional.of("role_list"));
+
+        LbAuthenticator lbAuth = new LbAuthenticator(authentication, authorization);
+
+        assertThatThrownBy(() -> lbAuth.authenticate(ID_TOKEN))
+                .hasMessageStartingWith("UserId field does not exist");
+    }
+
+    @Test
     void testPresetUsers()
             throws Exception
     {
