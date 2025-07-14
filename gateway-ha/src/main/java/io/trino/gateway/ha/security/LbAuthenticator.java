@@ -51,7 +51,12 @@ public class LbAuthenticator
         Optional<String> privilegesField = oauthManager.getPrivilegesField();
         if (privilegesField.isPresent()) {
             Map<String, Claim> claims = oauthManager.getClaimsFromIdToken(idToken).orElseThrow();
-            String userId = claims.get(userIdField).asString().replace("\"", "");
+            Claim userIdClaim = claims.get(userIdField);
+            if (userIdClaim == null) {
+                log.error("Required userId field %s not found", userIdField);
+                throw new AuthenticationException("UserId field does not exist");
+            }
+            String userId = userIdClaim.asString().replace("\"", "");
 
             Claim claim = claims.get(privilegesField.orElseThrow());
             if (claim == null) {
