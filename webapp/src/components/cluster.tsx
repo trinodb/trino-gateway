@@ -92,8 +92,9 @@ export function Cluster() {
     <>
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
         <Table dataSource={backendData} pagination={false} rowKey={"name"}>
-          <Column title="Name" dataIndex="name" key="name" />
+          <Column title="Name" dataIndex="name" key="name" sorter={(a, b) => a.name.localeCompare(b.name)} />
           <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup"
+            sorter={(a, b) => a.routingGroup.localeCompare(b.routingGroup)}
             filters={
               [...new Set(backendData?.map(b => b.routingGroup))]
                 .map(routingGroup => {
@@ -107,8 +108,8 @@ export function Cluster() {
             }} />
           <Column title="ProxyToUrl" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
           <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
-          <Column title="Queued" dataIndex="queued" key="queued" />
-          <Column title="Running" dataIndex="running" key="running" />
+          <Column title="Queued" dataIndex="queued" key="queued" sorter={(a, b) => a.queued - b.queued} />
+          <Column title="Running" dataIndex="running" key="running" sorter={(a, b) => a.running - b.running} />
           <Column title="Active" dataIndex="active" key="active" render={switchRender} />
           <Column title="Status" dataIndex="status" key="status" render={statusRender}/>
           {access.hasRole(Role.ADMIN) && (
