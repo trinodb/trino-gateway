@@ -70,6 +70,13 @@ public class MultiReadHttpServletRequest
             {
                 return byteArrayInputStream.read(b, off, len);
             }
+
+            @Override
+            public int read(byte[] b)
+                    throws IOException
+            {
+                return byteArrayInputStream.read(b);
+            }
         };
     }
 
