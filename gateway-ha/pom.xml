@@ -13,6 +13,7 @@
     <artifactId>gateway-ha</artifactId>
     <packaging>jar</packaging>
     <name>gateway-ha</name>
+    <description>Core of Trino Gateway</description>
 
     <properties>
         <environments>development</environments>
@@ -74,6 +75,7 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
+            <classifier>classes</classifier>
         </dependency>
 
         <dependency>
