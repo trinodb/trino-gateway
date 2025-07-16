@@ -18,7 +18,7 @@ export function Dashboard() {
   const [distributionDetail, setDistributionDetail] = useState<DistributionDetail>();
 
   useEffect(() => {
-    distributionApi({})
+    distributionApi({ latestHour: 1 })
       .then(data => {
         setDistributionDetail(data);
       }).catch(() => { });
