@@ -13,13 +13,13 @@
  */
 package io.trino.gateway.ha.router;
 
-import org.testcontainers.containers.OracleContainer;
+import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 
 public class TestExternalUrlQueryHistoryOracle
         extends BaseExternalUrlQueryHistoryTest
 {
     public TestExternalUrlQueryHistoryOracle()
     {
-        super(new OracleContainer("gvenzl/oracle-xe:21-slim"));
+        super(getOracleContainer());
     }
 }
