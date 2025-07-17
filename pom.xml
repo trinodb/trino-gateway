@@ -39,10 +39,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.targetJdk>23</project.build.targetJdk>
-        <air.java.version>23</air.java.version>
+        <project.build.targetJdk>24</project.build.targetJdk>
+        <air.java.version>24.0.2</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
+        <air.modernizer.java-version>8</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
     </properties>
 
