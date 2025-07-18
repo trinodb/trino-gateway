@@ -2,6 +2,43 @@
 
 ## 2025
 
+### Trino Gateway 16 (18++ Jul 2025) { id="16" }
+
+Artifacts:
+
+* [JAR file gateway-ha-16-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/16/gateway-ha-16-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:16`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/16.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/16.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.16.0`
+
+Changes:
+
+* Allow configuration of default routing group. 
+  ([#687](https://github.com/trinodb/trino-gateway/pull/687))
+* Improve error propagation when using an external routing service.
+  ([#687](https://github.com/trinodb/trino-gateway/pull/687))
+* Add support for HTTP header modifications by an external routing service.
+  ([#646](https://github.com/trinodb/trino-gateway/pull/646))
+* Add cluster activation status metric and emit to `v1/jmx`.
+  ([#673](https://github.com/trinodb/trino-gateway/pull/673))
+* Display routing in the query history page.
+  ([#607](https://github.com/trinodb/trino-gateway/pull/607))
+* Rename `RoutedTo` to `Name`field in query history page.
+  ([#639](https://github.com/trinodb/trino-gateway/pull/639))
+* Use external URL for query routing history display.
+  ([#693](https://github.com/trinodb/trino-gateway/pull/693))
+* Improve telemetry for cluster status changes.
+  ([#672](https://github.com/trinodb/trino-gateway/pull/672))
+* Improve properties handling for JDBC connection to the database.
+  ([#651](https://github.com/trinodb/trino-gateway/pull/651))
+* [:warning: Breaking change:](#breaking) Rename the task delay configuration
+  for the monitor to `taskDelay` and to support duration instead of seconds.
+  ([#695](https://github.com/trinodb/trino-gateway/pull/695))
+* Prevent UI access issue for users when some pages are restricted. 
+ ([#664](https://github.com/trinodb/trino-gateway/pull/664))
+
 ### Trino Gateway 15 (12 Mar 2025) { id="15" }
 
 Artifacts:
