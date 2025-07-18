@@ -1,0 +1,100 @@
+name: Release new version
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      STAGED_REPOSITORY: target/checkout/target/staging-deploy
+
+    steps:
+      - name: Check if release is running from main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "Release is only allowed from main branch"
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Install java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '24'
+          distribution: 'temurin'
+          gpg-private-key: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          cache: 'maven'
+
+      - name: Configure git
+        run: |
+          git config user.name "Trino release automation"
+          git config user.email "releases@trinodb.io"
+
+      - name: Lock branch before release
+        uses: github/lock@4b471665c639f45b2383e1e1ae4f8e0a882a8b6d # v2
+        id: release-lock
+        with:
+          mode: 'lock'
+
+      - name: Run mvn release:prepare
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+        run: |
+          ./mvnw -B release:prepare -Poss-release,oss-stage
+
+      - name: Determine release version
+        run: |
+          export VERSION=$(grep 'scm.tag=' release.properties | cut -d'=' -f2)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Releasing version: ${VERSION}"
+
+      - name: Run mvn release:perform to local staging
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+        run: |
+          ./mvnw -B release:perform -Poss-release,oss-stage
+
+      - name: Display git status and history, checkout release tag
+        run: |
+          git status
+          git log --oneline -n 2
+
+      - name: Run njord:validate
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+          MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_NEXUS2_MAVEN_CENTRAL_USERNAME }}
+          MAVENCENTRAL_PASSWORD: ${{ secrets.JRELEASER_NEXUS2_MAVEN_CENTRAL_TOKEN }}
+        run: |
+          ./mvnw njord:list
+          ./mvnw njord:status
+          ./mvnw njord:validate
+
+      - name: Run njord:publish
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+          MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_NEXUS2_MAVEN_CENTRAL_USERNAME }}
+          MAVENCENTRAL_PASSWORD: ${{ secrets.JRELEASER_NEXUS2_MAVEN_CENTRAL_TOKEN }}
+        run:
+          ./mvnw njord:publish -Poss-release,oss-stage -Ddetails -Dfull
+
+      - name: Push git changes
+        run: |
+          git status
+          git describe
+          git push origin main
+          git push origin --tags
+
+      - name: Unlock branch after a release
+        uses: github/lock@4b471665c639f45b2383e1e1ae4f8e0a882a8b6d # v2
+        id: release-unlock
+        with:
+          mode: 'unlock'
