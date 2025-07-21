@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
@@ -45,12 +46,14 @@ public class ClusterStatsJmxMonitor
     private final HttpClient client;
     private final String username;
     private final String password;
+    private final boolean xForwardedProtoHeader;
 
     public ClusterStatsJmxMonitor(HttpClient client, BackendStateConfiguration backendStateConfiguration)
     {
         this.client = requireNonNull(client, "client is null");
         this.username = backendStateConfiguration.getUsername();
         this.password = backendStateConfiguration.getPassword();
+        this.xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
     }
 
     private static void updateClusterStatsFromDiscoveryNodeManagerResponse(JmxResponse response, ClusterStats.Builder clusterStats)
@@ -125,13 +128,16 @@ public class ClusterStatsJmxMonitor
         requireNonNull(mbeanName, "mbeanName is null");
 
         String jmxUrl = backend.getProxyTo();
-        Request preparedRequest = prepareGet()
+        Request.Builder requestBuilder = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(jmxUrl))
                         .appendPath(JMX_PATH)
                         .appendPath(mbeanName)
                         .build())
-                .addHeader("X-Trino-User", username)
-                .build();
+                .addHeader("X-Trino-User", username);
+        if (xForwardedProtoHeader) {
+            requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
+        }
+        Request preparedRequest = requestBuilder.build();
 
         boolean isHttps = preparedRequest.getUri().getScheme().equalsIgnoreCase("https");
 

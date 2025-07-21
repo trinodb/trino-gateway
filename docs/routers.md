@@ -67,6 +67,7 @@ backendState:
   username: <usernme>
   password: <password>
   ssl: <false/true>
+  xForwardedProtoHeader: <false/true>
 
 clusterStatsConfiguration:
   monitorType: UI_API
