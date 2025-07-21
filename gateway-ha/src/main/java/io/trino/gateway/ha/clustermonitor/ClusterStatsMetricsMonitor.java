@@ -35,6 +35,7 @@ import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.ResponseHandlerUtils.propagate;
@@ -58,6 +59,7 @@ public class ClusterStatsMetricsMonitor
     private final ImmutableSet<String> metricNames;
     private final Map<String, Float> metricMinimumValues;
     private final Map<String, Float> metricMaximumValues;
+    private final boolean xForwardedProtoHeader;
 
     public ClusterStatsMetricsMonitor(HttpClient httpClient, BackendStateConfiguration backendStateConfiguration, MonitorConfiguration monitorConfiguration)
     {
@@ -81,6 +83,7 @@ public class ClusterStatsMetricsMonitor
                 .addAll(metricMaximumValues.keySet())
                 .build();
         metricsResponseHandler = new MetricsResponseHandler(metricNames);
+        xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
     }
 
     private static ClusterStats getUnhealthyStats(ProxyBackendConfiguration backend)
@@ -134,11 +137,15 @@ public class ClusterStatsMetricsMonitor
             uri.addParameter("name[]", metric);
         }
 
-        Request request = prepareGet()
+        Request.Builder requestBuilder = prepareGet()
                 .setUri(uri.build())
                 .addHeader(identityHeader.name, identityHeader.value)
-                .addHeader("Content-Type", "application/openmetrics-text; version=1.0.0; charset=utf-8")
-                .build();
+                .addHeader("Content-Type", "application/openmetrics-text; version=1.0.0; charset=utf-8");
+        if (xForwardedProtoHeader) {
+            requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
+        }
+        Request request = requestBuilder.build();
+
         try {
             return httpClient.execute(request, metricsResponseHandler);
         }
