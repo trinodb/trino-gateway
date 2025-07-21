@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_QUEUED_LIST_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
@@ -48,11 +49,13 @@ public class ClusterStatsHttpMonitor
 
     private final String username;
     private final String password;
+    private final boolean xForwardedProtoHeader;
 
     public ClusterStatsHttpMonitor(BackendStateConfiguration backendStateConfiguration)
     {
         username = backendStateConfiguration.getUsername();
         password = backendStateConfiguration.getPassword();
+        xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
     }
 
     @Override
@@ -137,10 +140,13 @@ public class ClusterStatsHttpMonitor
         }
 
         String targetUrl = backend.getProxyTo() + path;
-        Request request = new Request.Builder()
+        Request.Builder requestBuilder = new Request.Builder()
                 .url(HttpUrl.parse(targetUrl))
-                .get()
-                .build();
+                .get();
+        if (xForwardedProtoHeader) {
+            requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
+        }
+        Request request = requestBuilder.build();
 
         Call call = client.newCall(request);
 
