@@ -126,18 +126,7 @@ public class GatewayWebAppResource
     public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
         TableData<?> queryHistory;
-        if (!securityContext.isUserInRole("ADMIN")) {
-            queryHistory = queryHistoryManager.findQueryHistory(new QueryHistoryRequest(
-                    query.page(),
-                    query.size(),
-                    securityContext.getUserPrincipal().getName(),
-                    query.backendUrl(),
-                    query.queryId(),
-                    query.source()));
-        }
-        else {
-            queryHistory = queryHistoryManager.findQueryHistory(query);
-        }
+        queryHistory = queryHistoryManager.findQueryHistory(query);
         return Response.ok(Result.ok(queryHistory)).build();
     }
 
