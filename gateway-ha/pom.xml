@@ -26,7 +26,7 @@
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.18.0</dep.mockito.version>
         <dep.okhttp3.version>4.12.0</dep.okhttp3.version>
-        <dep.trino.version>474</dep.trino.version>
+        <dep.trino.version>476</dep.trino.version>
     </properties>
 
     <dependencies>
