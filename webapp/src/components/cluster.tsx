@@ -93,7 +93,7 @@ export function Cluster() {
       <Card bordered={false} className={styles.card} bodyStyle={{ padding: '10px' }}>
         <Table dataSource={backendData} pagination={false} rowKey={"name"}>
           <Column title="Name" dataIndex="name" key="name" />
-          <Column title="routingGroup" dataIndex="routingGroup" key="routingGroup"
+          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup"
             filters={
               [...new Set(backendData?.map(b => b.routingGroup))]
                 .map(routingGroup => {
@@ -105,7 +105,7 @@ export function Cluster() {
             onFilter={(value, record) => {
               return value === record.routingGroup
             }} />
-          <Column title="ProxyTo" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
+          <Column title="ProxyToUrl" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
           <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="Queued" dataIndex="queued" key="queued" />
           <Column title="Running" dataIndex="running" key="running" />
