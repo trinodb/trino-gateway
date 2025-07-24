@@ -13,22 +13,23 @@
  */
 package io.trino.gateway.ha.security;
 
+import com.auth0.jwt.interfaces.Claim;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.security.util.AuthenticationException;
 import io.trino.gateway.ha.security.util.IdTokenAuthenticator;
 
+import java.util.Map;
 import java.util.Optional;
 
 public class FormAuthenticator
         implements IdTokenAuthenticator
 {
+    private static final Logger log = Logger.get(FormAuthenticator.class);
     private final LbFormAuthManager formAuthManager;
-    private final AuthorizationManager authorizationManager;
 
-    public FormAuthenticator(LbFormAuthManager formAuthManager,
-            AuthorizationManager authorizationManager)
+    public FormAuthenticator(LbFormAuthManager formAuthManager)
     {
         this.formAuthManager = formAuthManager;
-        this.authorizationManager = authorizationManager;
     }
 
     /**
@@ -43,11 +44,27 @@ public class FormAuthenticator
             throws AuthenticationException
     {
         String userIdField = formAuthManager.getUserIdField();
-        return formAuthManager
-                .getClaimsFromIdToken(idToken)
-                .map(c -> c.get(userIdField))
-                .map(Object::toString)
-                .map(s -> s.replace("\"", ""))
-                .map(sub -> new LbPrincipal(sub, authorizationManager.getPrivileges(sub)));
+        String privilegesField = formAuthManager.getPrivilegesField();
+
+        Map<String, Claim> claims = null;
+        try {
+            claims = formAuthManager.getClaimsFromIdToken(idToken).orElseThrow();
+        }
+        catch (Exception e) {
+            return Optional.empty();
+        }
+        String userId = claims.get(userIdField).asString().replace("\"", "");
+
+        Claim claim = claims.get(privilegesField);
+        if (claim == null || claim.asString() == null) {
+            log.warn("No privileges found for user %s in idToken", userId);
+            throw new AuthenticationException("No privileges found for user " + userId + " in idToken");
+        }
+
+        String privileges = claim.asString();
+        if (privileges == null) {
+            privileges = "";
+        }
+        return Optional.of(new LbPrincipal(userId, privileges));
     }
 }
