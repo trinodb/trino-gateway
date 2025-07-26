@@ -35,18 +35,15 @@ public class LbAuthorizer
             String role,
             @Nullable ContainerRequestContext ctx)
     {
-        switch (role) {
-            case "ADMIN":
-                return hasRole(principal, role, configuration.getAdmin());
-            case "USER":
-                return hasRole(principal, role, configuration.getUser());
-            case "API":
-                return hasRole(principal, role, configuration.getApi());
-            default:
-                log.warn("User '%s' with role %s has no regex match based on ldap search",
-                        principal.getName(), role);
-                return false;
-        }
+        return switch (role) {
+            case "ADMIN" -> hasRole(principal, role, configuration.getAdmin());
+            case "USER" -> hasRole(principal, role, configuration.getUser());
+            case "API" -> hasRole(principal, role, configuration.getApi());
+            default -> {
+                log.warn("User '%s' with role %s has no regex match based on ldap search", principal.getName(), role);
+                yield false;
+            }
+        };
     }
 
     private static boolean hasRole(LbPrincipal principal, String role, String regex)

@@ -15,7 +15,6 @@ package io.trino.gateway.ha.resource;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
@@ -90,7 +89,7 @@ public class EntityEditorResource
         EntityType entityType = EntityType.valueOf(entityTypeStr);
         try {
             switch (entityType) {
-                case GATEWAY_BACKEND:
+                case GATEWAY_BACKEND -> {
                     //TODO: make the gateway backend database sensitive
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
@@ -105,13 +104,13 @@ public class EntityEditorResource
                             ClusterStats.builder(backend.getName())
                                     .trinoStatus(trinoStatus)
                                     .build());
-                    break;
-                case RESOURCE_GROUP:
+                }
+                case RESOURCE_GROUP -> {
                     ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
                             ResourceGroupsDetail.class);
                     resourceGroupsManager.updateResourceGroup(resourceGroupDetails, database);
-                    break;
-                case SELECTOR:
+                }
+                case SELECTOR -> {
                     SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
                             SelectorsDetail.class);
                     List<SelectorsDetail> oldSelectorDetails =
@@ -123,8 +122,7 @@ public class EntityEditorResource
                     else {
                         resourceGroupsManager.createSelector(selectorDetails, database);
                     }
-                    break;
-                default:
+                }
             }
         }
         catch (IOException e) {
@@ -143,15 +141,10 @@ public class EntityEditorResource
     {
         EntityType entityType = EntityType.valueOf(entityTypeStr);
 
-        switch (entityType) {
-            case GATEWAY_BACKEND:
-                return Response.ok(gatewayBackendManager.getAllBackends()).build();
-            case RESOURCE_GROUP:
-                return Response.ok(resourceGroupsManager.readAllResourceGroups(database)).build();
-            case SELECTOR:
-                return Response.ok(resourceGroupsManager.readAllSelectors(database)).build();
-            default:
-        }
-        return Response.ok(ImmutableList.of()).build();
+        return switch (entityType) {
+            case GATEWAY_BACKEND -> Response.ok(gatewayBackendManager.getAllBackends()).build();
+            case RESOURCE_GROUP -> Response.ok(resourceGroupsManager.readAllResourceGroups(database)).build();
+            case SELECTOR -> Response.ok(resourceGroupsManager.readAllSelectors(database)).build();
+        };
     }
 }
