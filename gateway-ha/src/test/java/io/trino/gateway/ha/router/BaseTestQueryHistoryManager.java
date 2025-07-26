@@ -50,7 +50,7 @@ abstract class BaseTestQueryHistoryManager
                 true);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"));
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), jdbcConnectionManager.getConfiguration());
     }
 
     @AfterAll
