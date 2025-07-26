@@ -106,6 +106,7 @@
                             -Xep:InvalidThrows:ERROR \
                             -Xep:JavaTimeDefaultTimeZone:ERROR \
                             -Xep:MissingOverride:ERROR \
+                            -Xep:StatementSwitchToExpressionSwitch:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
                             -Xep:TraditionalSwitchExpression:ERROR \
                             -Xep:TypeParameterUnusedInFormals:ERROR \
