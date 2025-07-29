@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styles from './history.module.scss';
 import Locale from "../locales";
-import { Button, Card, Form, Table, Tag, Typography } from "@douyinfe/semi-ui";
+import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
 import { HistoryData, HistoryDetail } from "../types/history";
@@ -22,6 +22,9 @@ export function History() {
     const username = sessionStorage.getItem('username');
     return username ? JSON.parse(username) : { user: access.userName };
   });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedText, setSelectedText] = useState<string>("");
+  const [okText, setOkText] = useState("Copy to Clipboard");
 
   useEffect(() => {
     backendsApi({})
@@ -75,11 +78,20 @@ export function History() {
     );
   }
 
-  const ellipsisRender = (text: string) => {
-    return (
-      <Typography.Text ellipsis={{ showTooltip: true }}>{text}</Typography.Text>
+    const handleShowModal = (text: string) => {
+        setSelectedText(text);
+        setModalVisible(true);
+    };
+
+    const queryTextRender = (text: string) => (
+      <Typography.Text
+         link={{ onClick: () => handleShowModal(text) }}
+         underline
+         style={{ cursor: "pointer" }}
+      >
+         View Query
+      </Typography.Text>
     );
-  }
 
   const routingGroupRender = (_: string, record: HistoryDetail) => {
     return (
@@ -126,10 +138,30 @@ export function History() {
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
-          <Column title="QueryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
+          <Column title="QueryText" dataIndex="queryText" key="queryText" width={300} render={queryTextRender} />
           <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} />
         </Table>
       </Card>
+      <Modal
+        title="Query Text"
+        visible={modalVisible}
+        onCancel={() => {
+            setModalVisible(false);
+            setOkText("Copy to Clipboard");
+        }}
+        size={"large"}
+        okText={okText}
+        onOk={() => {
+            navigator.clipboard.writeText(selectedText).then(() => {
+                setOkText("Copied!")
+            }).catch(() => {
+                setOkText("Copy Failed")
+            });
+        }}
+        bodyStyle={{ overflow: 'auto', width: 'auto', maxHeight: '60vh'}}
+      >
+        <CodeHighlight lineNumber={true} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", width: 'auto', height: 'auto' }} language={"sql"} code={selectedText}></CodeHighlight>
+      </Modal>
     </>
   );
 }
