@@ -14,6 +14,7 @@
 package io.trino.gateway.proxyserver;
 
 import io.trino.gateway.ha.HaGatewayLauncher;
+import io.trino.gateway.ha.router.QueryHistoryManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,12 +31,19 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.io.File;
+import java.net.URI;
+import java.util.Optional;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static io.airlift.http.client.Request.Builder.preparePost;
+import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
 import static io.trino.gateway.ha.HaGatewayTestUtils.prepareMockBackend;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
+import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
@@ -115,5 +123,39 @@ final class TestProxyRequestHandler
         try (Response response = httpClient.newCall(postRequest).execute()) {
             assertThat(response.code()).isEqualTo(NOT_FOUND);
         }
+    }
+
+    @Test
+    void testGetQueryDetailsFromRequest()
+    {
+        // A sample query longer than 200 characters to test against truncation.
+        String longQuery = """
+        SELECT
+            c.customer_name,
+            c.customer_region,
+            COUNT(o.order_id) AS total_orders,
+            SUM(o.order_value) AS total_revenue
+        FROM
+            hive.sales_data.customers AS c
+        JOIN
+            hive.sales_data.orders AS o
+                ON c.customer_id = o.customer_id
+        WHERE
+            o.order_date >= date '2023-01-01'""";
+
+        io.airlift.http.client.Request request = preparePost()
+                .setUri(URI.create("http://localhost:" + routerPort + V1_STATEMENT_PATH))
+                .addHeader(SOURCE_HEADER, "trino-cli")
+                .setBodyGenerator(createStaticBodyGenerator(longQuery, UTF_8))
+                .build();
+
+        Optional<String> username = Optional.of("test_user");
+
+        QueryHistoryManager.QueryDetail queryDetail = ProxyRequestHandler.getQueryDetailsFromRequest(request, username);
+
+        assertThat(queryDetail.getQueryText()).isEqualTo(longQuery).hasSizeGreaterThan(200);
+        assertThat(queryDetail.getUser()).isEqualTo(username.get());
+        assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
+        assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
     }
 }
