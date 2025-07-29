@@ -103,6 +103,7 @@ export function Cluster() {
                   }
                 })}
             onFilter={(value, record) => {
+              if (!record) return false;
               return value === record.routingGroup
             }} />
           <Column title="ProxyToUrl" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
