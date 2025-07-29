@@ -89,6 +89,12 @@
             <artifactId>oauth2-oidc-sdk</artifactId>
             <version>11.25</version>
             <classifier>jdk11</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+                    <artifactId>json-smart</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -128,11 +134,23 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>http-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>jetty-http2-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>http-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>jetty-http2-common</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -281,6 +299,12 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>9.3.0</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
