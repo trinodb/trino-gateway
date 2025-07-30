@@ -108,7 +108,7 @@ final class TestJdbcConnectionManager
         DataStoreConfiguration dataStoreConfiguration = Mockito.mock(DataStoreConfiguration.class);
         when(dataStoreConfiguration.getJdbcUrl()).thenReturn(null);
 
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create("jdbc:h2:/mydb", "sa", "sa"), dataStoreConfiguration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create("jdbc:h2:/mydb", "sa", "sa"), dataStoreConfiguration, new DefaultJdbcPropertiesProvider());
         assertThatThrownBy(() -> connectionManager.buildJdbcUrl(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("JDBC URL cannot be null");
@@ -126,6 +126,6 @@ final class TestJdbcConnectionManager
     private static JdbcConnectionManager createConnectionManager(String jdbcUrl)
     {
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", 4, true);
-        return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db);
+        return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db, new DefaultJdbcPropertiesProvider());
     }
 }

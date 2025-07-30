@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
@@ -36,6 +37,7 @@ public class HaGatewayManager
     private final GatewayBackendDao dao;
     private final String defaultRoutingGroup;
 
+    @Inject
     public HaGatewayManager(Jdbi jdbi, RoutingConfiguration routingConfiguration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
