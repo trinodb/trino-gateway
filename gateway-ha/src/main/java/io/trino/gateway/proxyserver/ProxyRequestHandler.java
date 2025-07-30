@@ -63,7 +63,6 @@ import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
-import static io.trino.gateway.ha.handler.ProxyUtils.QUERY_TEXT_LENGTH_FOR_HISTORY;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
@@ -307,10 +306,7 @@ public class ProxyRequestHandler
         queryDetail.setSource(request.getHeader(SOURCE_HEADER));
 
         String queryText = new String(((StaticBodyGenerator) request.getBodyGenerator()).getBody(), UTF_8);
-        queryDetail.setQueryText(
-                queryText.length() > QUERY_TEXT_LENGTH_FOR_HISTORY
-                        ? queryText.substring(0, QUERY_TEXT_LENGTH_FOR_HISTORY) + "..."
-                        : queryText);
+        queryDetail.setQueryText(queryText);
         return queryDetail;
     }
 
