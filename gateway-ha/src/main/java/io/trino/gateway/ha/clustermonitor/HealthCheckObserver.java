@@ -28,6 +28,6 @@ public class HealthCheckObserver
     @Override
     public void observe(java.util.List<ClusterStats> clustersStats)
     {
-        routingManager.updateBackEndStats(clustersStats);
+        routingManager.updateClusterStats(clustersStats);
     }
 }
