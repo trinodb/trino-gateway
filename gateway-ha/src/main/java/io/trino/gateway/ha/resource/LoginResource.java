@@ -185,4 +185,18 @@ public class LoginResource
         }
         return Response.ok(Result.ok("Ok", loginType)).build();
     }
+
+    @POST
+    @Path("serverInfo")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response serverInfo()
+    {
+        long serverStartTime = System.currentTimeMillis();
+        if (formAuthManager != null) {
+            serverStartTime = formAuthManager.getServerStartTime();
+        }
+        Map<String, Object> serverInfo = Map.of("serverStart", serverStartTime);
+        return Response.ok(Result.ok(serverInfo)).build();
+    }
 }
