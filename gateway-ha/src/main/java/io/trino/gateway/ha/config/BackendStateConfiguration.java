@@ -18,6 +18,7 @@ public class BackendStateConfiguration
     private String username;
     private String password = "";
     private Boolean ssl = false;
+    private boolean xForwardedProtoHeader;
 
     public BackendStateConfiguration() {}
 
@@ -49,5 +50,15 @@ public class BackendStateConfiguration
     public void setSsl(Boolean ssl)
     {
         this.ssl = ssl;
+    }
+
+    public boolean getXForwardedProtoHeader()
+    {
+        return xForwardedProtoHeader;
+    }
+
+    public void setXForwardedProtoHeader(boolean xForwardedProtoHeader)
+    {
+        this.xForwardedProtoHeader = xForwardedProtoHeader;
     }
 }
