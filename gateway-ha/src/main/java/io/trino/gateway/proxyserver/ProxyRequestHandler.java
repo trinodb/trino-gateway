@@ -14,6 +14,7 @@
 package io.trino.gateway.proxyserver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -255,7 +256,7 @@ public class ProxyRequestHandler
 
     private static Response handleProxyException(Request request, ProxyException e)
     {
-        log.warn(e, "Proxy request failed: %s %s", request.getMethod(), request.getUri());
+        log.warn("Proxy request failed: %s %s - %s", request.getMethod(), request.getUri(), Throwables.getStackTraceAsString(e));
         throw badRequest(e.getMessage());
     }
 
