@@ -116,8 +116,7 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager,
-                routingConfiguration);
+        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration);
 
         String queryId = "mock-test-query";
         String expectedUrl = "https://mock-gateway.example.com";
@@ -130,7 +129,7 @@ final class TestRoutingManagerExternalUrlCache
     }
 
     private static class TestRoutingManager
-            extends RoutingManager
+            extends StochasticRoutingManager
     {
         public TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
                                   RoutingConfiguration routingConfiguration)

@@ -15,34 +15,28 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.errorprone.annotations.concurrent.GuardedBy;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryCountBasedRouter
-        extends StochasticRoutingManager
+        extends BaseRoutingManager
 {
-    private static final Logger log = Logger.get(QueryCountBasedRouter.class);
-    @GuardedBy("this")
-    private List<LocalStats> clusterStats;
-    private final String defaultRoutingGroup;
+    private ConcurrentHashMap<String, LocalStats> clusterStats;
 
     @VisibleForTesting
-    synchronized List<LocalStats> clusterStats()
+    synchronized Map<String, LocalStats> clusterStats()
     {
-        return ImmutableList.copyOf(clusterStats);
+        return ImmutableMap.copyOf(clusterStats);
     }
 
     static class LocalStats
@@ -144,8 +138,7 @@ public class QueryCountBasedRouter
             RoutingConfiguration routingConfiguration)
     {
         super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
-        this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
-        clusterStats = new ArrayList<>();
+        clusterStats = new ConcurrentHashMap<>();
     }
 
     private int compareStats(LocalStats lhs, LocalStats rhs, String user)
@@ -169,6 +162,31 @@ public class QueryCountBasedRouter
         return Integer.compare(lhs.runningQueryCount(), rhs.runningQueryCount());
     }
 
+    private void updateLocalStats(LocalStats stats, String user)
+    {
+        // The live stats refresh every few seconds, so we update the stats immediately
+        // so that they can be used for next queries to route
+        // We assume that if a user has queued queries then newly arriving queries
+        // for that user would also be queued
+        int count = stats.userQueuedCount() == null ? 0 : stats.userQueuedCount().getOrDefault(user, 0);
+        if (count > 0) {
+            stats.userQueuedCount().put(user, count + 1);
+            return;
+        }
+        // Else the we assume that the query would be running
+        // so update the clusterstat with the +1 running queries
+        stats.runningQueryCount(stats.runningQueryCount() + 1);
+    }
+
+    @Override
+    public synchronized void updateClusterStats(List<ClusterStats> stats)
+    {
+        updateBackEndHealth(stats);
+        for (ClusterStats stat : stats) {
+            clusterStats.put(stat.clusterId(), new LocalStats(stat));
+        }
+    }
+
     // We sort and find the backend based on the individual user's count of the queued queries
     // first, in case user doesn't have any queries queued we use the cluster wide stats
     //
@@ -188,61 +206,11 @@ public class QueryCountBasedRouter
     // if a user has queries queued then we assume that the routed query will be also queued or
     // else we assume it would be scheduled immediately and we increment the stats for the running
     // queries
-
-    private synchronized Optional<LocalStats> getClusterToRoute(String user, String routingGroup)
-    {
-        log.debug("sorting cluster stats for %s %s", user, routingGroup);
-        List<LocalStats> filteredList = clusterStats.stream()
-                    .filter(stats -> stats.trinoStatus() == TrinoStatus.HEALTHY)
-                    .filter(stats -> routingGroup.equals(stats.routingGroup()))
-                    .collect(Collectors.toList());
-
-        if (filteredList.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(Collections.min(filteredList, (lhs, rhs) -> compareStats(lhs, rhs, user)));
-    }
-
-    private void updateLocalStats(LocalStats stats, String user)
-    {
-        // The live stats refresh every few seconds, so we update the stats immediately
-        // so that they can be used for next queries to route
-        // We assume that if a user has queued queries then newly arriving queries
-        // for that user would also be queued
-        int count = stats.userQueuedCount() == null ? 0 : stats.userQueuedCount().getOrDefault(user, 0);
-        if (count > 0) {
-            stats.userQueuedCount().put(user, count + 1);
-            return;
-        }
-        // Else the we assume that the query would be running
-        // so update the clusterstat with the +1 running queries
-        stats.runningQueryCount(stats.runningQueryCount() + 1);
-    }
-
-    private synchronized Optional<String> getBackendForRoutingGroup(String routingGroup, String user)
-    {
-        Optional<LocalStats> cluster = getClusterToRoute(user, routingGroup);
-        cluster.ifPresent(c -> updateLocalStats(c, user));
-        return cluster.map(c -> c.proxyTo());
-    }
-
     @Override
-    public String provideDefaultCluster(String user)
+    protected synchronized Optional<ProxyBackendConfiguration> selectBackend(List<ProxyBackendConfiguration> backends, String user)
     {
-        return getBackendForRoutingGroup(defaultRoutingGroup, user).orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
-    }
-
-    @Override
-    public String provideClusterForRoutingGroup(String routingGroup, String user)
-    {
-        return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideDefaultCluster(user));
-    }
-
-    @Override
-    public synchronized void updateBackEndStats(List<ClusterStats> stats)
-    {
-        clusterStats = stats.stream().map(a -> new LocalStats(a)).collect(Collectors.toList());
+        Optional<ProxyBackendConfiguration> cluster = backends.stream().min((a, b) -> compareStats(clusterStats.get(a.getName()), clusterStats.get(b.getName()), user));
+        cluster.ifPresent(c -> updateLocalStats(clusterStats.get(c.getName()), user));
+        return cluster;
     }
 }
