@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class QueryCountBasedRouter
         private int queuedQueryCount;
         private TrinoStatus trinoStatus;
         private String proxyTo;
+        private String externalUrl;
         private String routingGroup;
         private String clusterId;
         private Map<String, Integer> userQueuedCount;
@@ -62,6 +64,7 @@ public class QueryCountBasedRouter
             queuedQueryCount = stats.queuedQueryCount();
             trinoStatus = stats.trinoStatus();
             proxyTo = stats.proxyTo();
+            externalUrl = stats.externalUrl();
             routingGroup = stats.routingGroup();
             if (stats.userQueuedCount() != null) {
                 userQueuedCount = new HashMap<String, Integer>(stats.userQueuedCount());
@@ -116,6 +119,16 @@ public class QueryCountBasedRouter
             this.proxyTo = proxyTo;
         }
 
+        public String getExternalUrl()
+        {
+            return this.externalUrl;
+        }
+
+        public void externalUrl(String externalUrl)
+        {
+            this.externalUrl = externalUrl;
+        }
+
         public String routingGroup()
         {
             return this.routingGroup;
@@ -134,6 +147,16 @@ public class QueryCountBasedRouter
         public void userQueuedCount(Map<String, Integer> userQueuedCount)
         {
             this.userQueuedCount = userQueuedCount;
+        }
+
+        ProxyBackendConfiguration backendConfiguration()
+        {
+            ProxyBackendConfiguration backendConfiguration = new ProxyBackendConfiguration();
+            backendConfiguration.setExternalUrl(externalUrl);
+            backendConfiguration.setProxyTo(proxyTo);
+            backendConfiguration.setRoutingGroup(routingGroup);
+            backendConfiguration.setActive(true);
+            return backendConfiguration;
         }
     }
 
@@ -231,6 +254,21 @@ public class QueryCountBasedRouter
     public String provideDefaultCluster(String user)
     {
         return getBackendForRoutingGroup(defaultRoutingGroup, user).orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
+    }
+
+    public Optional<ProxyBackendConfiguration> getBackendConfigurationForRoutingGroup(String routingGroup, String user)
+    {
+        Optional<LocalStats> localStats = getClusterToRoute(user, routingGroup);
+        localStats.ifPresent(stats -> updateLocalStats(stats, user));
+        return localStats.map(LocalStats::backendConfiguration);
+    }
+
+    @Override
+    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
+    {
+        return getBackendConfigurationForRoutingGroup(routingGroup, user)
+                .orElseGet(() -> getBackendConfigurationForRoutingGroup(defaultRoutingGroup, user)
+                        .orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup)));
     }
 
     @Override
