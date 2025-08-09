@@ -305,7 +305,7 @@ the key. Finally, you can deploy Trino Gateway with the chart from the root
 of this repository:
 
 ```shell
-helm install tg --values values-override.yaml helm/trino-gateway 
+helm install tg --values values-override.yaml trino/trino-gateway 
 ```
 
 Secrets for `authenticationSecret` and `backendState` can be provisioned
