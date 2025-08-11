@@ -17,9 +17,7 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-
-import java.io.File;
-import java.nio.file.Path;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 public final class TestingJdbcConnectionManager
 {
@@ -27,12 +25,18 @@ public final class TestingJdbcConnectionManager
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager()
     {
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
-        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:14-alpine")
+                .withDatabaseName("testdb")
+                .withInitScript("gateway-ha-persistence-postgres.sql");
+        postgres.start();
+
+        String jdbcUrl = postgres.getJdbcUrl();
+        String username = postgres.getUsername();
+        String password = postgres.getPassword();
+
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, username, password, "org.postgresql.Driver", 4, false);
+        Jdbi jdbi = Jdbi.create(jdbcUrl, username, password);
+
         return new JdbcConnectionManager(jdbi, db);
     }
 
