@@ -39,7 +39,6 @@ public final class ProxyUtils
     public static final String AUTHORIZATION = "Authorization";
 
     private static final Logger log = Logger.get(ProxyUtils.class);
-    public static final int QUERY_TEXT_LENGTH_FOR_HISTORY = 200;
     /**
      * This regular expression matches query ids as they appear in the path of a URL. The query id must be preceded
      * by a "/". A query id is defined as three groups of digits separated by underscores, with a final group
