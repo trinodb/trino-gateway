@@ -14,7 +14,7 @@
 package io.trino.gateway.proxyserver;
 
 import com.google.inject.Inject;
-import io.trino.gateway.ha.handler.RoutingTargetHandler;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
@@ -35,19 +35,19 @@ public class RouterPreMatchContainerRequestFilter
 {
     public static final String ROUTE_TO_BACKEND = "/trino-gateway/internal/route_to_backend";
 
-    private final RoutingTargetHandler routingTargetHandler;
+    private final HaGatewayConfiguration haGatewayConfiguration;
 
     @Inject
-    public RouterPreMatchContainerRequestFilter(RoutingTargetHandler routingTargetHandler)
+    public RouterPreMatchContainerRequestFilter(HaGatewayConfiguration haGatewayConfiguration)
     {
-        this.routingTargetHandler = requireNonNull(routingTargetHandler);
+        this.haGatewayConfiguration = requireNonNull(haGatewayConfiguration);
     }
 
     @Override
     public void filter(ContainerRequestContext request)
             throws IOException
     {
-        if (routingTargetHandler.isPathWhiteListed(request.getUriInfo().getRequestUri().getPath())) {
+        if (haGatewayConfiguration.isPathWhiteListed(request.getUriInfo().getRequestUri().getPath())) {
             request.setRequestUri(URI.create(ROUTE_TO_BACKEND));
         }
     }
