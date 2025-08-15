@@ -121,13 +121,26 @@ export function History() {
           onPageChange: list,
         }}>
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
-          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup" render={routingGroupRender} />
+          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup"
+                  sorter={(a, b) => a.routingGroup.localeCompare(b.routingGroup)}
+                  filters={
+                      [...new Set(backendData?.map(b => b.routingGroup))]
+                              .map(routingGroup => {
+                                  return {
+                                      text: routingGroup,
+                                      value: routingGroup
+                                  }
+                              })}
+                  onFilter={(value, record) => {
+                      return value === record.routingGroup
+                  }}
+                  render={routingGroupRender} />
           <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />
           <Column title="QueryText" dataIndex="queryText" key="queryText" ellipsis={true} width={300} render={ellipsisRender} />
-          <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} />
+          <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} sorter={(a, b) => a.captureTime - b.captureTime} />
         </Table>
       </Card>
     </>
