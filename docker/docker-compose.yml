@@ -18,7 +18,7 @@ services:
         type: bind
 
   postgres:
-    image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres}
+    image: ${TRINO_GATEWAY_POSTGRES_IMAGE:-postgres:17-alpine}
     environment:
       - PGPORT=5432
       - POSTGRES_PASSWORD=P0stG&es
