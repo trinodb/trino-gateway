@@ -171,6 +171,8 @@ abstract class BaseExternalUrlQueryHistoryTest
     @Test
     void testQueryDetailEqualsAndHashCodeWithExternalUrl()
     {
+        long captureTime = System.currentTimeMillis();
+
         QueryHistoryManager.QueryDetail queryDetail1 = new QueryHistoryManager.QueryDetail();
         queryDetail1.setQueryId("equals-test-1");
         queryDetail1.setQueryText("SELECT 1");
@@ -179,7 +181,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail1.setSource("sqlWorkbench");
         queryDetail1.setRoutingGroup("adhoc");
         queryDetail1.setExternalUrl("https://external.example.com");
-        queryDetail1.setCaptureTime(System.currentTimeMillis());
+        queryDetail1.setCaptureTime(captureTime);
 
         QueryHistoryManager.QueryDetail queryDetail2 = new QueryHistoryManager.QueryDetail();
         queryDetail2.setQueryId("equals-test-1");
@@ -189,7 +191,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail2.setSource("sqlWorkbench");
         queryDetail2.setRoutingGroup("adhoc");
         queryDetail2.setExternalUrl("https://external.example.com");
-        queryDetail2.setCaptureTime(System.currentTimeMillis());
+        queryDetail2.setCaptureTime(captureTime);
 
         // Test equals
         assertThat(queryDetail1).isEqualTo(queryDetail2);
