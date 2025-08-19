@@ -65,7 +65,7 @@ final class TestGatewayHaMultipleBackend
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
 
     public static String oauthInitiatePath = OAuth2GatewayCookie.OAUTH2_PATH;
     public static String oauthCallbackPath = oauthInitiatePath + "/callback";

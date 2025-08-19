@@ -43,7 +43,7 @@ public final class TrinoGatewayRunner
         trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();
 
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer("postgres:16");
+        PostgreSQLContainer<?> postgres = new PostgreSQLContainer("postgres:17");
         postgres.withUsername("trino_gateway_db_admin");
         postgres.withPassword("P0stG&es");
         postgres.withDatabaseName("trino_gateway_db");

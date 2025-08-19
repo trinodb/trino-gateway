@@ -22,7 +22,7 @@ public class TestQueryHistoryManagerPostgresql
     @Override
     protected final JdbcDatabaseContainer<?> startContainer()
     {
-        JdbcDatabaseContainer<?> container = new PostgreSQLContainer<>("postgres:16");
+        JdbcDatabaseContainer<?> container = new PostgreSQLContainer<>("postgres:17");
         container.start();
         return container;
     }
