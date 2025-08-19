@@ -45,7 +45,7 @@ final class TestAuthorization
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
 

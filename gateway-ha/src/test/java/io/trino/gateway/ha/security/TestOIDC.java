@@ -75,7 +75,7 @@ final class TestOIDC
     {
         Network network = Network.newNetwork();
 
-        PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:16")
+        PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:17")
                 .withNetwork(network)
                 .withNetworkAliases("hydra-db")
                 .withUsername("hydra")
@@ -146,7 +146,7 @@ final class TestOIDC
                         "--callbacks", callbackUrl);
         clientCreatingContainer.start();
 
-        PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:16");
+        PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:17");
         gatewayBackendDatabase.start();
 
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
