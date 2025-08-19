@@ -41,7 +41,7 @@ import static org.testcontainers.utility.MountableFile.forClasspathResource;
 final class TestGatewayHaSingleBackend
 {
     private TrinoContainer trino;
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:16");
+    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
