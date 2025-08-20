@@ -40,7 +40,7 @@ final class TestRoutingManagerNotFound
     void testNonExistentRoutingGroupThrowsNotFoundException()
     {
         // When requesting a non-existent routing group, an IllegalStateException should be thrown
-        assertThatThrownBy(() -> routingManager.provideClusterForRoutingGroup("non_existent_group", "user"))
+        assertThatThrownBy(() -> routingManager.provideBackendConfiguration("non_existent_group", "user"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Number of active backends found zero");
     }

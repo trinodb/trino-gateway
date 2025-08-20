@@ -69,7 +69,7 @@ final class TestStochasticRoutingManager
             haRoutingManager.updateBackEndHealth(backend, TrinoStatus.UNHEALTHY);
         }
 
-        assertThat(haRoutingManager.provideClusterForRoutingGroup(groupName, ""))
+        assertThat(haRoutingManager.provideBackendConfiguration(groupName, "").getProxyTo())
                 .isEqualTo("test_group0.trino.example.com");
     }
 }

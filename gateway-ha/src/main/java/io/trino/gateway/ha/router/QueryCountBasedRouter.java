@@ -243,20 +243,7 @@ public class QueryCountBasedRouter
         stats.runningQueryCount(stats.runningQueryCount() + 1);
     }
 
-    private synchronized Optional<String> getBackendForRoutingGroup(String routingGroup, String user)
-    {
-        Optional<LocalStats> cluster = getClusterToRoute(user, routingGroup);
-        cluster.ifPresent(c -> updateLocalStats(c, user));
-        return cluster.map(c -> c.proxyTo());
-    }
-
-    @Override
-    public String provideDefaultCluster(String user)
-    {
-        return getBackendForRoutingGroup(defaultRoutingGroup, user).orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup));
-    }
-
-    public Optional<ProxyBackendConfiguration> getBackendConfigurationForRoutingGroup(String routingGroup, String user)
+    public synchronized Optional<ProxyBackendConfiguration> getBackendConfigurationForRoutingGroup(String routingGroup, String user)
     {
         Optional<LocalStats> localStats = getClusterToRoute(user, routingGroup);
         localStats.ifPresent(stats -> updateLocalStats(stats, user));
@@ -269,13 +256,6 @@ public class QueryCountBasedRouter
         return getBackendConfigurationForRoutingGroup(routingGroup, user)
                 .orElseGet(() -> getBackendConfigurationForRoutingGroup(defaultRoutingGroup, user)
                         .orElseThrow(() -> new RouterException("did not find any cluster for the default routing group: " + defaultRoutingGroup)));
-    }
-
-    @Override
-    public String provideClusterForRoutingGroup(String routingGroup, String user)
-    {
-        return getBackendForRoutingGroup(routingGroup, user)
-                .orElse(provideDefaultCluster(user));
     }
 
     @Override
