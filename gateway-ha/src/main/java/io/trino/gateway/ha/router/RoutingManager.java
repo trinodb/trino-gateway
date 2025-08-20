@@ -136,11 +136,6 @@ public abstract class RoutingManager
         return backends.get(backendId);
     }
 
-    public String provideDefaultCluster(String user)
-    {
-        return provideDefaultBackendConfiguration().getProxyTo();
-    }
-
     /**
      * Performs routing to a given cluster group. This falls back to a default backend, if no scheduled
      * backend is found.
@@ -155,11 +150,6 @@ public abstract class RoutingManager
         }
         int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
         return backends.get(backendId);
-    }
-
-    public String provideClusterForRoutingGroup(String routingGroup, String user)
-    {
-        return provideBackendConfiguration(routingGroup, user).getProxyTo();
     }
 
     /**
