@@ -50,6 +50,14 @@ export function Dashboard() {
       value: distributionDetail?.offlineBackendCount
     },
     {
+      key: Locale.Dashboard.BackendsHealthy,
+      value: distributionDetail?.healthyBackendCount,
+    },
+    {
+      key: Locale.Dashboard.BackendsUnhealthy,
+      value: distributionDetail?.unhealthyBackendCount
+    },
+    {
       key: (
         <div className={styles.tip}>
           <span className={styles.title}>{Locale.Dashboard.QPH}</span>
