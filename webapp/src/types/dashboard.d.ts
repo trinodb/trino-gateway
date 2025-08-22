@@ -2,6 +2,8 @@ export interface  DistributionDetail {
   totalBackendCount: number;
   offlineBackendCount: number;
   onlineBackendCount: number;
+  healthyBackendCount: number;
+  unhealthyBackendCount: number;
   totalQueryCount: number;
   averageQueryCountMinute: number;
   averageQueryCountSecond: number;

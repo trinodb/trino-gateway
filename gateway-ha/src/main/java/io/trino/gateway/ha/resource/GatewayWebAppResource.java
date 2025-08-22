@@ -16,6 +16,7 @@ package io.trino.gateway.ha.resource;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
@@ -160,6 +161,11 @@ public class GatewayWebAppResource
         Map<String, String> urlToNameMap = allBackends
                 .stream().collect(Collectors.toMap(ProxyBackendConfiguration::getProxyTo, ProxyBackendConfiguration::getName, (o, n) -> n));
         Map<Boolean, List<ProxyBackendConfiguration>> activeMap = allBackends.stream().collect(Collectors.groupingBy(ProxyBackendConfiguration::isActive));
+        Map<Boolean, Integer> statusCounts = allBackends.stream()
+                .map(backendStateManager::getBackendState)
+                .collect(Collectors.partitioningBy(
+                        state -> state.trinoStatus() == TrinoStatus.HEALTHY,
+                        Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
         Integer latestHour = query.latestHour();
         Long ts = System.currentTimeMillis() - (latestHour * 60 * 60 * 1000);
         List<DistributionResponse.LineChart> lineChart = queryHistoryManager.findDistribution(ts);
@@ -179,6 +185,8 @@ public class GatewayWebAppResource
         distributionResponse.setTotalBackendCount(allBackends.size());
         distributionResponse.setOfflineBackendCount(requireNonNullElse(activeMap.get(false), Collections.emptyList()).size());
         distributionResponse.setOnlineBackendCount(requireNonNullElse(activeMap.get(true), Collections.emptyList()).size());
+        distributionResponse.setHealthyBackendCount(statusCounts.getOrDefault(true, 0));
+        distributionResponse.setUnhealthyBackendCount(statusCounts.getOrDefault(false, 0));
         distributionResponse.setLineChart(lineChartMap);
         distributionResponse.setDistributionChart(distributionChart);
         distributionResponse.setTotalQueryCount(totalQueryCount);
