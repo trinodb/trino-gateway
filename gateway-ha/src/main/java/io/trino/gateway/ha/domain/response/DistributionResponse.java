@@ -23,6 +23,8 @@ public class DistributionResponse
     private Integer totalBackendCount;
     private Integer offlineBackendCount;
     private Integer onlineBackendCount;
+    private Integer healthyBackendCount;
+    private Integer unhealthyBackendCount;
 
     /**
      * Total number of queries.
@@ -54,6 +56,28 @@ public class DistributionResponse
      */
     private Map<String, List<LineChart>> lineChart;
     private String startTime;
+
+    @JsonProperty
+    public Integer getHealthyBackendCount()
+    {
+        return healthyBackendCount;
+    }
+
+    public void setHealthyBackendCount(Integer healthyBackendCount)
+    {
+        this.healthyBackendCount = healthyBackendCount;
+    }
+
+    @JsonProperty
+    public Integer getUnhealthyBackendCount()
+    {
+        return unhealthyBackendCount;
+    }
+
+    public void setUnhealthyBackendCount(Integer unhealthyBackendCount)
+    {
+        this.unhealthyBackendCount = unhealthyBackendCount;
+    }
 
     @JsonProperty
     public String getStartTime()

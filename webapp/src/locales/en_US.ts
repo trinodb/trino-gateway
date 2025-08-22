@@ -12,6 +12,8 @@ const en_US = {
     Backends: "Backends",
     BackendsOffline: "Backends offline",
     BackendsOnline: "Backends online",
+    BackendsHealthy: "Backends healthy",
+    BackendsUnhealthy: "Backends unhealthy",
     StartTime: "Started at",
     Summary: "Summary",
     QueryDistribution: "Query distribution in last hour",
