@@ -14,6 +14,9 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.inject.Inject;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DataStoreType;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -38,12 +41,14 @@ public class HaQueryHistoryManager
     private static final int FIRST_PAGE_NO = 1;
 
     private final QueryHistoryDao dao;
-    private final boolean isOracleBackend;
+    private final DataStoreType backend;
 
-    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend)
+    @Inject
+    public HaQueryHistoryManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
+        requireNonNull(configuration, "DataStoreConfiguration is null");
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
-        this.isOracleBackend = isOracleBackend;
+        this.backend = configuration.getDataStoreType();
     }
 
     @Override
@@ -70,10 +75,10 @@ public class HaQueryHistoryManager
     {
         List<QueryHistory> histories;
         if (user.isPresent()) {
-            histories = dao.findRecentQueriesByUserName(user.orElseThrow(), isOracleBackend);
+            histories = dao.findRecentQueriesByUserName(user.orElseThrow(), backend == DataStoreType.ORACLE);
         }
         else {
-            histories = dao.findRecentQueries(isOracleBackend);
+            histories = dao.findRecentQueries(backend == DataStoreType.ORACLE);
         }
         return upcast(histories);
     }
