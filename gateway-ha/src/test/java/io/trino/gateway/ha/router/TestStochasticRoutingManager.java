@@ -38,7 +38,7 @@ final class TestStochasticRoutingManager
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
-        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), connectionManager.getConfiguration());
         haRoutingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
     }
 
