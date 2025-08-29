@@ -20,8 +20,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.gateway.ha.handler.HttpUtils.OAUTH_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_UI_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_INFO_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_NODE_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
+import static java.util.Objects.requireNonNull;
 
 public class HaGatewayConfiguration
 {
@@ -287,6 +296,19 @@ public class HaGatewayConfiguration
         if (!statementPath.startsWith("/")) {
             throw new HaGatewayConfigurationException("Statement paths must be absolute");
         }
+    }
+
+    public boolean isPathWhiteListed(String path)
+    {
+        List<Pattern> extraWhitelistPaths = requireNonNull(this.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
+        return statementPaths.stream().anyMatch(path::startsWith)
+                || path.startsWith(V1_QUERY_PATH)
+                || path.startsWith(TRINO_UI_PATH)
+                || path.startsWith(V1_INFO_PATH)
+                || path.startsWith(V1_NODE_PATH)
+                || path.startsWith(UI_API_STATS_PATH)
+                || path.startsWith(OAUTH_PATH)
+                || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
     }
 
     public static class HaGatewayConfigurationException
