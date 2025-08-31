@@ -289,7 +289,7 @@ public class ProxyRequestHandler
             }
         }
         else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s]", response.body(), response.statusCode());
+            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
