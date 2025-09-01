@@ -19,3 +19,6 @@ ij_java_doc_align_param_comments = false
 
 [*.yml]
 indent_size = 2
+
+[*.tsx]
+indent_size = 2
