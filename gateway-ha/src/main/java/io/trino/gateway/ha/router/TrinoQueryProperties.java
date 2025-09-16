@@ -65,13 +65,18 @@ import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.Table;
 import io.trino.sql.tree.TableFunctionInvocation;
 import io.trino.sql.tree.WithQuery;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MediaType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -142,35 +147,38 @@ public class TrinoQueryProperties
         maxBodySize = -1;
     }
 
-    public TrinoQueryProperties(HttpServletRequest request, boolean isClientsUseV2Format, int maxBodySize)
+    public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize)
     {
-        requireNonNull(request, "request is null");
+        requireNonNull(requestContext, "requestContext is null");
         this.isClientsUseV2Format = isClientsUseV2Format;
         this.maxBodySize = maxBodySize;
 
-        defaultCatalog = Optional.ofNullable(request.getHeader(TRINO_CATALOG_HEADER_NAME));
-        defaultSchema = Optional.ofNullable(request.getHeader(TRINO_SCHEMA_HEADER_NAME));
-        if (request.getMethod().equals(HttpMethod.POST)) {
+        defaultCatalog = Optional.ofNullable(requestContext.getHeaderString(TRINO_CATALOG_HEADER_NAME));
+        defaultSchema = Optional.ofNullable(requestContext.getHeaderString(TRINO_SCHEMA_HEADER_NAME));
+        if (requestContext.getMethod().equals(HttpMethod.POST)) {
             isNewQuerySubmission = true;
-            processRequestBody(request);
+            processRequestBody(requestContext);
         }
     }
 
-    private void processRequestBody(HttpServletRequest request)
+    private void processRequestBody(BufferedReader reader, Map<String, String> preparedStatements)
     {
-        try (BufferedReader reader = request.getReader()) {
+        try (reader) {
             if (reader == null) {
                 log.warn("HTTP request returned null reader");
                 body = "";
                 return;
             }
 
-            Map<String, String> preparedStatements = getPreparedStatements(request);
             SqlParser parser = new SqlParser();
             reader.mark(maxBodySize);
             char[] buffer = new char[maxBodySize];
             int nChars = reader.read(buffer, 0, maxBodySize);
             reader.reset();
+            if (nChars <= 0) {
+                log.warn("query text is empty");
+                return;
+            }
             if (nChars == maxBodySize) {
                 log.warn("Query length greater or equal to requestAnalyzerConfig.maxBodySize detected");
                 return;
@@ -238,11 +246,45 @@ public class TrinoQueryProperties
         }
     }
 
-    private Map<String, String> getPreparedStatements(HttpServletRequest request)
+    private void processRequestBody(ContainerRequestContext requestContext)
+    {
+        if (!requestContext.hasEntity()) {
+            return;
+        }
+
+        MediaType mediaType = requestContext.getMediaType();
+        if (mediaType == null) {
+            return;
+        }
+
+        String charset = mediaType.getParameters().get("charset");
+        if (!StandardCharsets.UTF_8.name().equalsIgnoreCase(charset)) {
+            return;
+        }
+
+        InputStream entityStream = requestContext.getEntityStream();
+        try (InputStreamReader entityReader = new InputStreamReader(entityStream, StandardCharsets.UTF_8);
+                BufferedReader reader = new BufferedReader(entityReader)) {
+            processRequestBody(reader, getPreparedStatements(requestContext));
+        }
+        catch (IOException e) {
+            log.warn("Error extracting request body for rules processing: %s", e.getMessage());
+            errorMessage = Optional.of(e.getMessage());
+        }
+        catch (ParsingException e) {
+            log.info("Could not parse request body as SQL: %s; Message: %s", body, e.getMessage());
+            errorMessage = Optional.of(e.getMessage());
+        }
+        catch (RequestParsingException e) {
+            log.warn(e, "Error parsing request for rules");
+            errorMessage = Optional.of(e.getMessage());
+        }
+    }
+
+    private Map<String, String> getPreparedStatements(Enumeration<String> headers)
             throws RequestParsingException
     {
         ImmutableMap.Builder<String, String> preparedStatementsMapBuilder = ImmutableMap.builder();
-        Enumeration<String> headers = request.getHeaders(TRINO_PREPARED_STATEMENT_HEADER_NAME);
         if (headers == null) {
             return preparedStatementsMapBuilder.build();
         }
@@ -257,6 +299,19 @@ public class TrinoQueryProperties
             }
         }
         return preparedStatementsMapBuilder.build();
+    }
+
+    private Map<String, String> getPreparedStatements(ContainerRequestContext requestContext)
+            throws RequestParsingException
+    {
+        if (requestContext.getHeaders() == null) {
+            return ImmutableMap.of();
+        }
+        List<String> headers = requestContext.getHeaders().get(TRINO_PREPARED_STATEMENT_HEADER_NAME);
+        if (headers == null || headers.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return getPreparedStatements(Collections.enumeration(headers));
     }
 
     private String decodePreparedStatementFromHeader(String headerValue)
