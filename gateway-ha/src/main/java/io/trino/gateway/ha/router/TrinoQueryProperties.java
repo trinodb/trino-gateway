@@ -44,6 +44,7 @@ import io.trino.sql.tree.Execute;
 import io.trino.sql.tree.ExecuteImmediate;
 import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.Identifier;
+import io.trino.sql.tree.Insert;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
@@ -362,6 +363,7 @@ public class TrinoQueryProperties
             case DropCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
             case DropSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case DropTable s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Insert s -> tableBuilder.add(qualifyName(s.getTarget()));
             case Query q -> q.getWith().ifPresent(with -> temporaryTables.addAll(with.getQueries().stream().map(WithQuery::getName).map(Identifier::getValue).map(QualifiedName::of).toList()));
             case RenameMaterializedView s -> {
                 tableBuilder.add(qualifyName(s.getSource()));
@@ -458,7 +460,8 @@ public class TrinoQueryProperties
         if (schemaOptional.isEmpty()) {
             schemaBuilder.add(defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier));
             catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-            catalogSchemaBuilder.add(format("%s.%s", defaultCatalog, defaultSchema));
+            catalogSchemaBuilder.add(format("%s.%s", defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier),
+                    defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier)));
         }
         else {
             QualifiedName schema = schemaOptional.orElseThrow();
@@ -466,12 +469,14 @@ public class TrinoQueryProperties
                 case 1 -> {
                     schemaBuilder.add(schema.getParts().getFirst());
                     catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-                    catalogSchemaBuilder.add(format("%s.%s", defaultCatalog, schema.getParts().getFirst()));
+                    catalogSchemaBuilder.add(format("%s.%s", defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), schema.getParts().getFirst()));
+                    break;
                 }
                 case 2 -> {
                     schemaBuilder.add(schema.getParts().get(1));
                     catalogBuilder.add(schema.getParts().getFirst());
                     catalogSchemaBuilder.add(format("%s.%s", schema.getParts().getFirst(), schema.getParts().getLast()));
+                    break;
                 }
                 default -> log.error("Schema has >2 parts: %s", schema);
             }
@@ -565,7 +570,7 @@ public class TrinoQueryProperties
             parts.add(new Identifier(name.substring(start, name.length() - 1)));
         }
         else {
-            parts.add(new Identifier(name.substring(start, name.length())));
+            parts.add(new Identifier(name.substring(start)));
         }
         return QualifiedName.of(parts);
     }
