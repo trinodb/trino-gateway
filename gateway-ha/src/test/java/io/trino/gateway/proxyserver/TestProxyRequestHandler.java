@@ -81,6 +81,14 @@ final class TestProxyRequestHandler
                             .setBody("{\"starting\": false}");
                 }
 
+                if (request.getPath().equals(healthCheckEndpoint + "?test-compression")) {
+                    // Return the Accept-Encoding header value for compression testing
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setBody(acceptEncoding != null ? acceptEncoding : "null");
+                }
+
                 if (request.getMethod().equals("PUT") && request.getPath().equals(customPutEndpoint)) {
                     return new MockResponse().setResponseCode(200)
                             .setHeader(CONTENT_TYPE, JSON_UTF_8)
@@ -159,5 +167,50 @@ final class TestProxyRequestHandler
         assertThat(queryDetail.getUser()).isEqualTo(username.get());
         assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
         assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
+    }
+
+    @Test
+    void testAcceptEncodingHeaderForwarding()
+            throws Exception
+    {
+        // Test that Accept-Encoding header is properly forwarded to backends
+        String url = "http://localhost:" + routerPort + healthCheckEndpoint + "?test-compression";
+        String expectedAcceptEncoding = "gzip, deflate, br";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .addHeader("Accept-Encoding", expectedAcceptEncoding)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+
+            // The mock backend returns the Accept-Encoding header value in the response body
+            assertThat(response.body().string()).isEqualTo(expectedAcceptEncoding);
+        }
+    }
+
+    @Test
+    void testDefaultAcceptEncodingHeaderForwarding()
+            throws Exception
+    {
+        // Test that requests without explicit Accept-Encoding header work correctly
+        // Note: OkHttp automatically adds "Accept-Encoding: gzip" when none is specified
+        String url = "http://localhost:" + routerPort + healthCheckEndpoint + "?test-compression";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build(); // No explicit Accept-Encoding header
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+
+            // OkHttp automatically adds "Accept-Encoding: gzip" when none is specified
+            assertThat(response.body().string()).isEqualTo("gzip");
+        }
     }
 }
