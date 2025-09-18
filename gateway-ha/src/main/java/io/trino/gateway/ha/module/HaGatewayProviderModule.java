@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -46,6 +47,7 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.HaResourceGroupsManager;
+import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -96,6 +98,7 @@ public class HaGatewayProviderModule
         binder().bind(ResourceGroupsManager.class).toInstance(resourceGroupsManager);
         binder().bind(GatewayBackendManager.class).toInstance(gatewayBackendManager);
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
+        binder().bind(PathFilter.class);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
@@ -277,5 +280,21 @@ public class HaGatewayProviderModule
     public MonitorConfiguration getMonitorConfiguration()
     {
         return configuration.getMonitor();
+    }
+
+    @Provides
+    @Singleton
+    @Named("statementPaths")
+    public List<String> getStatementPaths()
+    {
+        return configuration.getStatementPaths();
+    }
+
+    @Provides
+    @Singleton
+    @Named("extraWhitelistPaths")
+    public List<String> getExtraWhitelistPaths()
+    {
+        return configuration.getExtraWhitelistPaths();
     }
 }
