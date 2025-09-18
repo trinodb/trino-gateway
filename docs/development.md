@@ -71,7 +71,6 @@ Gateway, and can help with pull request reviews and merges.
 * [:fontawesome-brands-github: oneonestar - Star Poon](https://github.com/oneonestar)
 * [:fontawesome-brands-github: vishalya - Vishal Jadhav](https://github.com/vishalya)
 * [:fontawesome-brands-github: wendigo - Mateusz Gajewski](https://github.com/wendigo)
-* [:fontawesome-brands-github: willmostly - Will Morrison](https://github.com/willmostly)
 
 ## Contributor meetings
 
