@@ -25,6 +25,9 @@ import io.trino.gateway.ha.persistence.dao.Selectors;
 import io.trino.gateway.ha.persistence.dao.SelectorsDao;
 import jakarta.annotation.Nullable;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -235,11 +238,18 @@ public class HaResourceGroupsManager
 
     /**
      * Creates exact match source selector for db.
+     * If no updateTime is provided, the current timestamp will be used automatically.
      */
     @Override
     public ExactSelectorsDetail createExactMatchSourceSelector(
             ExactSelectorsDetail exactSelectorDetail)
     {
+        // If updateTime is null or empty, set current timestamp
+        if (exactSelectorDetail.getUpdateTime() == null || exactSelectorDetail.getUpdateTime().trim().isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            exactSelectorDetail.setUpdateTime(LocalDateTime.now(ZoneId.systemDefault()).format(formatter));
+        }
+
         exactMatchSourceSelectorsDao.insert(exactSelectorDetail);
         return exactSelectorDetail;
     }
