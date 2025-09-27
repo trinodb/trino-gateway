@@ -22,40 +22,50 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.scheduler.ClusterScheduler;
 import jakarta.inject.Singleton;
 
-public class ClusterSchedulerModule extends AbstractModule {
-    private static final Logger logger = Logger.get(ClusterSchedulerModule.class);
+import static java.util.Objects.requireNonNull;
+
+public class ClusterSchedulerModule
+        extends AbstractModule
+{
+    private static final Logger log = Logger.get(ClusterSchedulerModule.class);
     private final HaGatewayConfiguration configuration;
 
     // We require all modules to take HaGatewayConfiguration as the only parameter
-    public ClusterSchedulerModule(HaGatewayConfiguration configuration) {
-        this.configuration = configuration;
+    public ClusterSchedulerModule(HaGatewayConfiguration configuration)
+    {
+        this.configuration = requireNonNull(configuration, "configuration is null");
     }
 
     @Override
-    public void configure() {
+    public void configure()
+    {
         // Configuration-based binding is handled in the provider methods
         if (configuration.getScheduleConfiguration() != null
                 && configuration.getScheduleConfiguration().isEnabled()) {
-            logger.info("ClusterScheduler configuration is enabled");
-        } else {
-            logger.info("ClusterScheduler is disabled or not configured");
+            log.info("ClusterScheduler configuration is enabled");
+        }
+        else {
+            log.info("ClusterScheduler is disabled or not configured");
         }
     }
 
     @Provides
     @Singleton
-    public ScheduleConfiguration provideScheduleConfiguration() {
+    public ScheduleConfiguration provideScheduleConfiguration()
+    {
         return configuration.getScheduleConfiguration();
     }
 
     @Provides
     @Singleton
     public ClusterScheduler provideClusterScheduler(
-            GatewayBackendManager backendManager, ScheduleConfiguration scheduleConfiguration) {
+            GatewayBackendManager backendManager,
+            ScheduleConfiguration scheduleConfiguration)
+    {
         if (scheduleConfiguration == null || !scheduleConfiguration.isEnabled()) {
             return null;
         }
-        logger.info("Creating ClusterScheduler instance");
+        log.info("Creating ClusterScheduler instance");
         return new ClusterScheduler(backendManager, scheduleConfiguration);
     }
 }
