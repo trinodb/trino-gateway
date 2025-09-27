@@ -17,29 +17,37 @@ import com.google.inject.Inject;
 import io.trino.gateway.ha.scheduler.ClusterScheduler;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+
 import javax.annotation.Nullable;
 
-public class ClusterSchedulerConfiguration {
+import static java.util.Objects.requireNonNull;
+
+public class ClusterSchedulerConfiguration
+{
     private final ClusterScheduler scheduler;
 
     @Inject
-    public ClusterSchedulerConfiguration(@Nullable ClusterScheduler scheduler) {
+    public ClusterSchedulerConfiguration(@Nullable ClusterScheduler scheduler)
+    {
         this.scheduler = scheduler;
     }
 
     @PostConstruct
-    public void start() {
+    public void start()
+    {
         if (scheduler != null) {
             scheduler.start();
         }
     }
 
     @PreDestroy
-    public void stop() {
+    public void stop()
+    {
         if (scheduler != null) {
             try {
                 scheduler.close();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 // Ignore
             }
         }
