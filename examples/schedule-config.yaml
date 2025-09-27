@@ -1,0 +1,58 @@
+# Example configuration for time-based cluster activation
+# This file shows how to configure cluster schedules for the Trino Gateway
+
+# Main configuration
+server:
+  applicationConnectors:
+    - type: http
+      port: 8080
+  adminConnectors:
+    - type: http
+      port: 8081
+
+# Database configuration
+dataStore:
+  jdbcUrl: jdbc:h2:./gateway-ha/gateway-ha;DB_CLOSE_DELAY=-1;MODE=MYSQL
+  user: sa
+  password: ""
+  driverClass: org.h2.Driver
+
+# Monitor configuration
+monitor:
+  active: true
+  connectionTimeout: 10s
+  refreshInterval: 10s
+  backends: ["trino-1", "trino-2"]
+
+# Backend configurations
+backends:
+  - name: trino-1
+    proxyTo: http://localhost:8080
+    active: true
+    routingGroup: adhoc
+    externalUrl: http://localhost:8080
+  - name: trino-2
+    proxyTo: http://localhost:8081
+    active: true
+    routingGroup: adhoc
+    externalUrl: http://localhost:8081
+
+# Schedule configuration for time-based activation
+scheduleConfiguration:
+  enabled: true
+  checkInterval: 5m  # Check every 5 minutes
+  schedules:
+    - clusterName: trino-1
+      cronExpression: "0 0 9-17 * * ?"  # Active from 9 AM to 5 PM every day
+      activeDuringCron: true  # Active when cron matches
+    - clusterName: trino-2
+      cronExpression: "0 0 17-9 * * ?"  # Active from 5 PM to 9 AM every day
+      activeDuringCron: true  # Active when cron matches
+
+# Authentication configuration (example)
+authentication:
+  type: none
+
+# Authorization configuration (example)
+authorization:
+  type: none
