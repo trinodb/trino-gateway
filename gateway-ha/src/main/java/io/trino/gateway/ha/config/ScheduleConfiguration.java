@@ -17,13 +17,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.airlift.units.Duration;
 
 import java.util.List;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
 public class ScheduleConfiguration
 {
-    private boolean enabled = false;
+    private boolean enabled;
     private Duration checkInterval = new Duration(5, java.util.concurrent.TimeUnit.MINUTES);
     private String timezone = "GMT"; // Default to GMT if not specified
     private List<ClusterSchedule> schedules;
