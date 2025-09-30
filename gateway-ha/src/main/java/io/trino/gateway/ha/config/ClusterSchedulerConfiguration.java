@@ -15,12 +15,9 @@ package io.trino.gateway.ha.config;
 
 import com.google.inject.Inject;
 import io.trino.gateway.ha.scheduler.ClusterScheduler;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-
-import javax.annotation.Nullable;
-
-import static java.util.Objects.requireNonNull;
 
 public class ClusterSchedulerConfiguration
 {
