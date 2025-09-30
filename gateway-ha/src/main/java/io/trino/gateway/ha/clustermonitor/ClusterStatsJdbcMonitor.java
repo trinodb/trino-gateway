@@ -78,8 +78,7 @@ public class ClusterStatsJdbcMonitor
             properties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
         }
         catch (MalformedURLException e) {
-            log.error("could not parse backend url %s ", url);
-            return clusterStats.build(); // TODO Invalid configuration should fail
+            throw new IllegalArgumentException("Invalid backend URL: " + url, e);
         }
 
         try (Connection conn = DriverManager.getConnection(jdbcUrl, properties);
