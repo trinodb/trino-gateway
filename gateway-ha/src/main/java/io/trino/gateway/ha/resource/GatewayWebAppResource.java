@@ -94,8 +94,11 @@ public class GatewayWebAppResource
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
-        this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
+
+        // UI configuration is immutable during application lifetime, no need to copy
+        this.uiConfiguration = configuration.getUiConfiguration();
+
         RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
         isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
         ruleType = routingRules.getRulesType();
