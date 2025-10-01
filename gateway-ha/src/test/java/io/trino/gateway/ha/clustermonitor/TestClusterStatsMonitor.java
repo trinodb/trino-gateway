@@ -47,7 +47,8 @@ final class TestClusterStatsMonitor
     @BeforeAll
     void setUp()
     {
-        trino = new TrinoContainer("trinodb/trino");
+        // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
+        trino = new TrinoContainer("trinodb/trino:476");
         trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
         trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
         trino.start();
