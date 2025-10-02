@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param page page index
  * @param size page size
  * @param user Query histories of specified user. ADMIN role is optional, other roles are mandatory.
- * @param backendUrl Optional, you can query the history based on the backendUrl.
+ * @param externalUrl Optional, you can query the history based on the externalUrl.
  * @param queryId Optional, you can query the query history based on the queryId of Trino.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -30,7 +30,7 @@ public record QueryHistoryRequest(
         @JsonProperty("page") Integer page,
         @JsonProperty("size") Integer size,
         @JsonProperty("user") String user,
-        @JsonProperty("backendUrl") String backendUrl,
+        @JsonProperty("externalUrl") String externalUrl,
         @JsonProperty("queryId") String queryId,
         @JsonProperty("source") String source)
 {

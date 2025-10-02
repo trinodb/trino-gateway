@@ -122,8 +122,8 @@ public class HaQueryHistoryManager
         if (!Strings.isNullOrEmpty(query.user())) {
             condition += " and user_name = '" + query.user() + "'";
         }
-        if (!Strings.isNullOrEmpty(query.backendUrl())) {
-            condition += " and backend_url = '" + query.backendUrl() + "'";
+        if (!Strings.isNullOrEmpty(query.externalUrl())) {
+            condition += " and external_url = '" + query.externalUrl() + "'";
         }
         if (!Strings.isNullOrEmpty(query.queryId())) {
             condition += " and query_id = '" + query.queryId() + "'";
