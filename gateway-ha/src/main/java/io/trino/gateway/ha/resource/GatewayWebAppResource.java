@@ -139,7 +139,7 @@ public class GatewayWebAppResource
                     query.page(),
                     query.size(),
                     securityContext.getUserPrincipal().getName(),
-                    query.backendUrl(),
+                    query.externalUrl(),
                     query.queryId(),
                     query.source()));
         }

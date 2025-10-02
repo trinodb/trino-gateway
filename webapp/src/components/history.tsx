@@ -105,7 +105,7 @@ export function History() {
         <Form labelPosition="left"
           render={() => (
             <>
-              <Form.Select field="backendUrl" label='RoutedTo' style={{ width: 200 }} showClear placeholder={Locale.History.RoutedToTip}>
+              <Form.Select field="externalUrl" label='RoutedTo' style={{ width: 200 }} showClear placeholder={Locale.History.RoutedToTip}>
                 {backendData?.map(b => (
                   <Form.Select.Option key={b.externalUrl} value={b.externalUrl}>
                     <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.externalUrl]}</Tag>
