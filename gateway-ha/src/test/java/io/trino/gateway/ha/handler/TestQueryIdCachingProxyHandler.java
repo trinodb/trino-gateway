@@ -44,7 +44,13 @@ final class TestQueryIdCachingProxyHandler
             throws IOException
     {
         List<String> statementPaths = ImmutableList.of("/v1/statement", "/custom/api/statement");
+        assertThat(extractQueryIdIfPresent("/v1/statement/queued/20200416_160256_03078_6b4yt/ye6c54db413e65c5de0e99612ab1eaabb8611a8aa/1", null, statementPaths))
+                .hasValue("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/v1/statement/scheduled/20200416_160256_03078_6b4yt/ye6c54db413e65c5de0e99612ab1eaabb8611a8aa/1", null, statementPaths))
+                .hasValue("20200416_160256_03078_6b4yt");
         assertThat(extractQueryIdIfPresent("/v1/statement/executing/20200416_160256_03078_6b4yt/ya7e884929c67cdf86207a80e7a77ab2166fa2e7b/1368", null, statementPaths))
+                .hasValue("20200416_160256_03078_6b4yt");
+        assertThat(extractQueryIdIfPresent("/v1/statement/executing/partialCancel/20200416_160256_03078_6b4yt/0/yce0e0e038758e454d22d7270de30395e19a28eb6/1", null, statementPaths))
                 .hasValue("20200416_160256_03078_6b4yt");
         assertThat(extractQueryIdIfPresent("/custom/api/statement/executing/20200416_160256_03078_6b4yt/ya7e884929c67cdf86207a80e7a77ab2166fa2e7b/1368", null, statementPaths))
                 .hasValue("20200416_160256_03078_6b4yt");

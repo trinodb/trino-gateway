@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.handler;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.TrinoQueryProperties;
@@ -24,6 +25,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,6 +54,8 @@ public final class ProxyUtils
      * capitalization.
      */
     private static final Pattern QUERY_ID_PARAM_PATTERN = Pattern.compile(".*(?:%2F|(?i)query_?id(?-i)=|^)(\\d+_\\d+_\\d+_\\w+).*");
+    private static final Set<String> QUERY_STATE_PATH = ImmutableSet.of("queued", "scheduled", "executing");
+    private static final String PARTIAL_CANCEL_PATH = "partialCancel";
 
     private ProxyUtils() {}
 
@@ -100,10 +104,10 @@ public final class ProxyUtils
             path = path.replace(matchingStatementPath.orElse(V1_QUERY_PATH), "");
             String[] tokens = path.split("/");
             if (tokens.length >= 2) {
-                if (tokens[1].equals("queued")
-                        || tokens[1].equals("scheduled")
-                        || tokens[1].equals("executing")
-                        || tokens[1].equals("partialCancel")) {
+                if (tokens.length >= 3 && QUERY_STATE_PATH.contains(tokens[1])) {
+                    if (tokens.length >= 4 && tokens[2].equals(PARTIAL_CANCEL_PATH)) {
+                        return Optional.of(tokens[3]);
+                    }
                     return Optional.of(tokens[2]);
                 }
                 return Optional.of(tokens[1]);
