@@ -45,6 +45,8 @@
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.modernizer.java-version>8</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
+
+        <dep.jetty.version>12.0.25</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
