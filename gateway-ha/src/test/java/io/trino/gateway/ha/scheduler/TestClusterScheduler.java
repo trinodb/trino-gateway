@@ -200,6 +200,29 @@ class TestClusterScheduler
     }
 
     @Test
+    void testSchedulerDoesNotTriggerWhenDisabled()
+    {
+        // Setup test cluster with scheduling disabled
+        when(scheduleConfig.isEnabled()).thenReturn(false);
+        when(scheduleConfig.getTimezone()).thenReturn(TEST_TIMEZONE.toString());
+
+        // Initialize the scheduler with disabled configuration
+        scheduler = new ClusterScheduler(backendManager, scheduleConfig);
+        scheduler.start();
+
+        // Time within the cron schedule (9 AM - 5 PM)
+        ZonedDateTime testTime = ZonedDateTime.of(2025, 9, 29, 10, 0, 0, 0, TEST_TIMEZONE);
+
+        // Execute
+        scheduler.checkAndUpdateClusterStatus(testTime);
+
+        // Verify no actions are taken when scheduler is disabled
+        verify(backendManager, never()).activateBackend(anyString());
+        verify(backendManager, never()).deactivateBackend(anyString());
+        verify(backendManager, never()).getBackendByName(anyString());
+    }
+
+    @Test
     void testSchedulerWithDifferentTimezones()
     {
         // Set up timezone to New York
