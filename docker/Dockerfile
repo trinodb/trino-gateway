@@ -13,18 +13,36 @@
 
 # syntax=docker/dockerfile:1
 ARG TRINO_GATEWAY_BASE_IMAGE
-FROM ${TRINO_GATEWAY_BASE_IMAGE} AS jdk-download
+ARG TRINO_GATEWAY_BUILD_IMAGE
+
+FROM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
 ARG JDK_DOWNLOAD_LINK
 ARG JDK_RELEASE_NAME
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
 
 RUN \
     set -xeuo pipefail && \
-    microdnf install -y tar gzip && \
+    dnf install -y tar gzip && \
     # Install JDK from the provided archive link \
     echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
     mkdir -p "${JAVA_HOME}" && \
     curl -#LfS "${JDK_DOWNLOAD_LINK}" | tar -zx --strip 1 -C "${JAVA_HOME}"
+
+FROM ${TRINO_GATEWAY_BUILD_IMAGE} AS packages
+
+RUN \
+    set -xeuo pipefail && \
+    mkdir -p /tmp/overlay/usr/libexec/ && \
+    touch /tmp/overlay/usr/libexec/grepconf.sh && \
+    chmod +x /tmp/overlay/usr/libexec/grepconf.sh && \
+    dnf update -y && \
+    dnf install --installroot /tmp/overlay --setopt install_weak_deps=false --nodocs -y \
+      less \
+      zlib `#required by java` \
+      curl-minimal grep `# required by health-check` \
+      shadow-utils `# required by useradd` \
+      tar `# required to support kubectl cp` && \
+      rm -rf /tmp/overlay/var/cache/*
 
 FROM ${TRINO_GATEWAY_BASE_IMAGE}
 WORKDIR /usr/lib/trino-gateway
@@ -33,11 +51,10 @@ ARG JDK_RELEASE_NAME
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
 ENV PATH=$PATH:$JAVA_HOME/bin
 COPY --from=jdk-download $JAVA_HOME $JAVA_HOME
+COPY --from=packages /tmp/overlay /
 
 RUN \
     set -xeu && \
-    microdnf update -y && \
-    microdnf install -y tar less shadow-utils && \
     groupadd trino --gid 1000 && \
     useradd trino --uid 1000 --gid 1000 --create-home && \
     mkdir -p /usr/lib/trino-gateway /etc/trino-gateway && \

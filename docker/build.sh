@@ -107,7 +107,8 @@ TAG_PREFIX="trino-gateway:${TRINO_GATEWAY_VERSION}"
 #version file is used by the Helm chart test
 echo "${TRINO_GATEWAY_VERSION}" > "${SOURCE_DIR}"/trino-gateway-version.txt
 
-TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi10/ubi-minimal:latest'}
+TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi10/ubi-micro:latest'}
+TRINO_GATEWAY_BUILD_IMAGE=${TRINO_GATEWAY_BUILD_IMAGE:-'registry.access.redhat.com/ubi10/ubi:latest'}
 
 for arch in "${ARCHITECTURES[@]}"; do
     echo "🫙  Building the image for $arch with Temurin JDK release ${JDK_RELEASE_NAME}"
@@ -118,6 +119,7 @@ for arch in "${ARCHITECTURES[@]}"; do
         --build-arg JDK_RELEASE_NAME="${JDK_RELEASE_NAME}" \
         --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "jdk-${JDK_RELEASE_NAME}" "${arch}")" \
         --build-arg TRINO_GATEWAY_BASE_IMAGE="${TRINO_GATEWAY_BASE_IMAGE}" \
+        --build-arg TRINO_GATEWAY_BUILD_IMAGE="${TRINO_GATEWAY_BUILD_IMAGE}" \
         --platform "linux/$arch" \
         -f Dockerfile \
         -t "${TAG_PREFIX}-$arch"
