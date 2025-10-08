@@ -19,7 +19,6 @@ import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
-import com.google.common.annotations.VisibleForTesting;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.ScheduleConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -44,7 +43,7 @@ public class ClusterScheduler
         implements AutoCloseable
 {
     private static final Logger log = LoggerFactory.getLogger(ClusterScheduler.class);
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final GatewayBackendManager backendManager;
     private final ScheduleConfiguration config;
     private final Map<String, ExecutionTime> executionTimes = new ConcurrentHashMap<>();
@@ -98,31 +97,28 @@ public class ClusterScheduler
                         schedule.isActiveDuringCron());
             }
             catch (Exception e) {
-                log.error("Failed to parse cron expression for cluster {}: {}",
+                log.error("Skipping cluster {} due to invalid cron expression '{}': {}",
                         schedule.getClusterName(),
                         schedule.getCronExpression(),
-                        e);
+                        e.getMessage());
             }
         }
 
         // Schedule the task
-        scheduler.scheduleWithFixedDelay(
-                this::checkAndUpdateClusterStatus,
+        scheduler.scheduleAtFixedRate(
+                () -> checkAndUpdateClusterStatus(ZonedDateTime.now(timezone)),
                 0,
-                (long) config.getCheckInterval().toMillis(),
+                config.getCheckInterval().toMillis(),
                 TimeUnit.MILLISECONDS);
-
         log.info("Started cluster scheduler with check interval: {} (using {} timezone)",
                 config.getCheckInterval(),
                 timezone);
     }
 
-    @VisibleForTesting
-    void checkAndUpdateClusterStatus()
+    public void checkAndUpdateClusterStatus(ZonedDateTime currentTime)
     {
         try {
-            ZonedDateTime now = ZonedDateTime.now(timezone);
-            log.debug("Checking cluster status at: {} ({})", now, timezone);
+            log.debug("Checking cluster status at: {} ({})", currentTime, timezone);
 
             for (Map.Entry<String, ExecutionTime> entry : executionTimes.entrySet()) {
                 String clusterName = entry.getKey();
@@ -139,7 +135,7 @@ public class ClusterScheduler
                 }
 
                 ScheduleConfiguration.ClusterSchedule schedule = scheduleOpt.get();
-                boolean cronMatches = executionTime.isMatch(now);
+                boolean cronMatches = executionTime.isMatch(currentTime);
                 boolean shouldBeActive = cronMatches == schedule.isActiveDuringCron();
 
                 log.info("Cluster: {}, cronMatches: {}, activeDuringCron: {}, shouldBeActive: {}",
