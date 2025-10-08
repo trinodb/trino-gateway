@@ -22,7 +22,7 @@ SOURCE_DIR="${SCRIPT_DIR}/.."
 
 ARCHITECTURES=(amd64 arm64 ppc64le)
 TRINO_GATEWAY_VERSION=
-JDK_VERSION=$(cat "${SOURCE_DIR}/.java-version")
+JDK_RELEASE_NAME=$(cat "${SOURCE_DIR}/.java-version")
 # necessary to allow version parsing from the pom file
 MVNW_VERBOSE=false
 
@@ -39,7 +39,7 @@ while getopts ":a:h:r:j:" o; do
             exit 0
             ;;
         j)
-            JDK_VERSION="${OPTARG}"
+            JDK_RELEASE_NAME="${OPTARG}"
             ;;
         *)
             usage
@@ -61,29 +61,18 @@ function check_environment() {
 }
 
 function temurin_jdk_link() {
-  JDK_VERSION="${1}"
+  JDK_RELEASE_NAME="${1}"
   ARCH="${2}"
-
-  versionsUrl="https://api.adoptium.net/v3/info/release_names?heap_size=normal&image_type=jdk&os=linux&page=0&page_size=20&project=jdk&release_type=ga&semver=false&sort_method=DEFAULT&sort_order=ASC&vendor=eclipse&version=%28${JDK_VERSION}%2C%5D"
-  if ! result=$(curl -fLs "$versionsUrl" -H 'accept: application/json'); then
-    echo >&2 "Failed to fetch release names for JDK version [${JDK_VERSION}, ) from Temurin API : $result"
-    exit 1
-  fi
-
-  if ! RELEASE_NAME=$(echo "$result" | jq -er '.releases[]' | grep "${JDK_VERSION}" | head -n 1); then
-    echo >&2 "Failed to determine release name: ${RELEASE_NAME}"
-    exit 1
-  fi
 
   case "${ARCH}" in
     arm64)
-      echo "https://api.adoptium.net/v3/binary/version/${RELEASE_NAME}/linux/aarch64/jdk/hotspot/normal/eclipse?project=jdk"
+      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/aarch64/jdk/hotspot/normal/eclipse?project=jdk"
     ;;
     amd64)
-      echo "https://api.adoptium.net/v3/binary/version/${RELEASE_NAME}/linux/x64/jdk/hotspot/normal/eclipse?project=jdk"
+      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/x64/jdk/hotspot/normal/eclipse?project=jdk"
     ;;
     ppc64le)
-      echo "https://api.adoptium.net/v3/binary/version/${RELEASE_NAME}/linux/ppc64le/jdk/hotspot/normal/eclipse?project=jdk"
+      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/ppc64le/jdk/hotspot/normal/eclipse?project=jdk"
     ;;
   *)
     echo "${ARCH} is not supported for Docker image"
@@ -121,13 +110,13 @@ echo "${TRINO_GATEWAY_VERSION}" > "${SOURCE_DIR}"/trino-gateway-version.txt
 TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi10/ubi-minimal:latest'}
 
 for arch in "${ARCHITECTURES[@]}"; do
-    echo "🫙  Building the image for $arch with JDK ${JDK_VERSION}"
+    echo "🫙  Building the image for $arch with Temurin JDK release ${JDK_RELEASE_NAME}"
     DOCKER_BUILDKIT=1 \
     docker build \
         "${WORK_DIR}" \
         --pull \
-        --build-arg JDK_VERSION="${JDK_VERSION}" \
-        --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "${JDK_VERSION}" "${arch}")" \
+        --build-arg JDK_RELEASE_NAME="${JDK_RELEASE_NAME}" \
+        --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "jdk-${JDK_RELEASE_NAME}" "${arch}")" \
         --build-arg TRINO_GATEWAY_BASE_IMAGE="${TRINO_GATEWAY_BASE_IMAGE}" \
         --platform "linux/$arch" \
         -f Dockerfile \
