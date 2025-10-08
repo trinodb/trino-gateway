@@ -18,9 +18,13 @@ import io.trino.gateway.ha.scheduler.ClusterScheduler;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClusterSchedulerConfiguration
 {
+    private static final Logger log = LoggerFactory.getLogger(ClusterSchedulerConfiguration.class);
+
     private final ClusterScheduler scheduler;
 
     @Inject
@@ -45,7 +49,7 @@ public class ClusterSchedulerConfiguration
                 scheduler.close();
             }
             catch (Exception e) {
-                // Ignore
+                log.error("Exception occurred while shutting down ClusterScheduler", e);
             }
         }
     }
