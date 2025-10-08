@@ -118,7 +118,7 @@ TAG_PREFIX="trino-gateway:${TRINO_GATEWAY_VERSION}"
 #version file is used by the Helm chart test
 echo "${TRINO_GATEWAY_VERSION}" > "${SOURCE_DIR}"/trino-gateway-version.txt
 
-TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi9/ubi-minimal:latest'}
+TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'registry.access.redhat.com/ubi10/ubi-minimal:latest'}
 
 for arch in "${ARCHITECTURES[@]}"; do
     echo "🫙  Building the image for $arch with JDK ${JDK_VERSION}"
