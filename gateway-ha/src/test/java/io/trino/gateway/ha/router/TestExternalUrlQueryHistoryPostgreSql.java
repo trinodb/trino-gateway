@@ -13,13 +13,13 @@
  */
 package io.trino.gateway.ha.router;
 
-import org.testcontainers.containers.PostgreSQLContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 
 public class TestExternalUrlQueryHistoryPostgreSql
         extends BaseExternalUrlQueryHistoryTest
 {
     public TestExternalUrlQueryHistoryPostgreSql()
     {
-        super(new PostgreSQLContainer<>("postgres:15.5"));
+        super(createPostgreSqlContainer());
     }
 }

@@ -14,7 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
+
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 
 public class TestQueryHistoryManagerPostgresql
         extends BaseTestQueryHistoryManager
@@ -22,7 +23,7 @@ public class TestQueryHistoryManagerPostgresql
     @Override
     protected final JdbcDatabaseContainer<?> startContainer()
     {
-        JdbcDatabaseContainer<?> container = new PostgreSQLContainer<>("postgres:17");
+        JdbcDatabaseContainer<?> container = createPostgreSqlContainer();
         container.start();
         return container;
     }

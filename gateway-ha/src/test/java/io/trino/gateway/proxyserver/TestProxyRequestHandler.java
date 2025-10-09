@@ -43,6 +43,7 @@ import static io.trino.gateway.ha.HaGatewayTestUtils.prepareMockBackend;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -52,7 +53,7 @@ final class TestProxyRequestHandler
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final MockWebServer mockTrinoServer = new MockWebServer();
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
 
     private final int routerPort = 21001 + (int) (Math.random() * 1000);
     private final int customBackendPort = 21000 + (int) (Math.random() * 1000);

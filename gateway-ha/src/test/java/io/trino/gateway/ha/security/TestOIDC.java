@@ -55,6 +55,7 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
@@ -75,13 +76,12 @@ final class TestOIDC
     {
         Network network = Network.newNetwork();
 
-        PostgreSQLContainer<?> databaseContainer = new PostgreSQLContainer<>("postgres:17")
+        PostgreSQLContainer<?> databaseContainer = createPostgreSqlContainer()
                 .withNetwork(network)
                 .withNetworkAliases("hydra-db")
                 .withUsername("hydra")
                 .withPassword("mysecretpassword")
-                .withDatabaseName("hydra")
-                .waitingFor(Wait.forLogMessage(".*ready to accept connections.*", 1));
+                .withDatabaseName("hydra");
         databaseContainer.start();
 
         GenericContainer migrationContainer = new GenericContainer(HYDRA_IMAGE)
@@ -146,7 +146,7 @@ final class TestOIDC
                         "--callbacks", callbackUrl);
         clientCreatingContainer.start();
 
-        PostgreSQLContainer gatewayBackendDatabase = new PostgreSQLContainer("postgres:17");
+        PostgreSQLContainer gatewayBackendDatabase = createPostgreSqlContainer();
         gatewayBackendDatabase.start();
 
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
