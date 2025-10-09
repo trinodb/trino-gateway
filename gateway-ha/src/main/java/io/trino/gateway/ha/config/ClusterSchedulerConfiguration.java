@@ -14,16 +14,15 @@
 package io.trino.gateway.ha.config;
 
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.scheduler.ClusterScheduler;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ClusterSchedulerConfiguration
 {
-    private static final Logger log = LoggerFactory.getLogger(ClusterSchedulerConfiguration.class);
+    private static final Logger log = Logger.get(ClusterSchedulerConfiguration.class);
 
     private final ClusterScheduler scheduler;
 
@@ -49,7 +48,7 @@ public class ClusterSchedulerConfiguration
                 scheduler.close();
             }
             catch (Exception e) {
-                log.error("Exception occurred while shutting down ClusterScheduler", e);
+                log.error(e, "Exception occurred while shutting down ClusterScheduler");
             }
         }
     }

@@ -19,14 +19,13 @@ import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.ScheduleConfiguration;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -42,7 +41,7 @@ import static java.util.Objects.requireNonNull;
 public class ClusterScheduler
         implements AutoCloseable
 {
-    private static final Logger log = LoggerFactory.getLogger(ClusterScheduler.class);
+    private static final Logger log = Logger.get(ClusterScheduler.class);
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final GatewayBackendManager backendManager;
     private final ScheduleConfiguration config;
@@ -68,12 +67,12 @@ public class ClusterScheduler
             }
             else {
                 configuredTimezone = ZoneId.of(timezoneStr);
-                log.info("Using configured timezone: {}", timezoneStr);
+                log.info("Using configured timezone: %s", timezoneStr);
             }
         }
         catch (Exception e) {
             configuredTimezone = ZoneId.of("GMT");
-            log.warn("Invalid timezone '{}' in configuration, falling back to GMT", config.getTimezone(), e);
+            log.warn(e, "Invalid timezone '%s' in configuration, falling back to GMT", config.getTimezone());
         }
         this.timezone = configuredTimezone;
     }
@@ -110,7 +109,7 @@ public class ClusterScheduler
                 0,
                 config.getCheckInterval().toMillis(),
                 TimeUnit.MILLISECONDS);
-        log.info("Started cluster scheduler with check interval: {} (using {} timezone)",
+        log.info("Started cluster scheduler with check interval: %s (using %s timezone)",
                 config.getCheckInterval(),
                 timezone);
     }
@@ -118,7 +117,7 @@ public class ClusterScheduler
     public void checkAndUpdateClusterStatus(ZonedDateTime currentTime)
     {
         try {
-            log.debug("Checking cluster status at: {} ({})", currentTime, timezone);
+            log.debug("Checking cluster status at: %s (%s)", currentTime, timezone);
 
             for (Map.Entry<String, ExecutionTime> entry : executionTimes.entrySet()) {
                 String clusterName = entry.getKey();
@@ -130,7 +129,7 @@ public class ClusterScheduler
                         .findFirst();
 
                 if (scheduleOpt.isEmpty()) {
-                    log.warn("No schedule configuration found for cluster: {}", clusterName);
+                    log.warn("No schedule configuration found for cluster: %s", clusterName);
                     continue;
                 }
 
@@ -138,7 +137,7 @@ public class ClusterScheduler
                 boolean cronMatches = executionTime.isMatch(currentTime);
                 boolean shouldBeActive = cronMatches == schedule.isActiveDuringCron();
 
-                log.info("Cluster: {}, cronMatches: {}, activeDuringCron: {}, shouldBeActive: {}",
+                log.info("Cluster: %s, cronMatches: %s, activeDuringCron: %s, shouldBeActive: %s",
                         clusterName,
                         cronMatches,
                         schedule.isActiveDuringCron(),
@@ -150,7 +149,7 @@ public class ClusterScheduler
                     ProxyBackendConfiguration cluster = clusterOpt.get();
                     boolean currentlyActive = cluster.isActive();
 
-                    log.debug("Cluster: {}, currentlyActive: {}, shouldBeActive: {}",
+                    log.debug("Cluster: %s, currentlyActive: %s, shouldBeActive: %s",
                             clusterName,
                             currentlyActive,
                             shouldBeActive);
@@ -158,30 +157,30 @@ public class ClusterScheduler
                     if (currentlyActive != shouldBeActive) {
                         if (shouldBeActive) {
                             backendManager.activateBackend(clusterName);
-                            log.info("Activated cluster {} based on schedule (cron match: {}, activeDuringCron: {})",
+                            log.info("Activated cluster %s based on schedule (cron match: %s, activeDuringCron: %s)",
                                     clusterName,
                                     cronMatches,
                                     schedule.isActiveDuringCron());
                         }
                         else {
                             backendManager.deactivateBackend(clusterName);
-                            log.info("Deactivated cluster {} based on schedule (cron match: {}, activeDuringCron: {})",
+                            log.info("Deactivated cluster %s based on schedule (cron match: %s, activeDuringCron: %s)",
                                     clusterName,
                                     cronMatches,
                                     schedule.isActiveDuringCron());
                         }
                     }
                     else {
-                        log.debug("Cluster {} status unchanged: active={}", clusterName, currentlyActive);
+                        log.debug("Cluster %s status unchanged: active=%s", clusterName, currentlyActive);
                     }
                 }
                 else {
-                    log.warn("Cluster {} not found in backend manager", clusterName);
+                    log.warn("Cluster %s not found in backend manager", clusterName);
                 }
             }
         }
         catch (Exception e) {
-            log.error("Error in cluster scheduler task", e);
+            log.error(e, "Error in cluster scheduler task");
         }
     }
 
@@ -197,7 +196,7 @@ public class ClusterScheduler
         }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("Interrupted while waiting for scheduler to terminate", e);
+            log.warn(e, "Interrupted while waiting for scheduler to terminate");
         }
     }
 }
