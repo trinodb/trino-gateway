@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -45,7 +46,7 @@ final class TestAuthorization
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
 

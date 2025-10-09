@@ -22,6 +22,7 @@ import org.testcontainers.containers.TrinoContainer;
 
 import java.util.List;
 
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 public final class TrinoGatewayRunner
@@ -43,7 +44,7 @@ public final class TrinoGatewayRunner
         trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();
 
-        PostgreSQLContainer<?> postgres = new PostgreSQLContainer("postgres:17");
+        PostgreSQLContainer<?> postgres = createPostgreSqlContainer();
         postgres.withUsername("trino_gateway_db_admin");
         postgres.withPassword("P0stG&es");
         postgres.withDatabaseName("trino_gateway_db");
