@@ -387,6 +387,20 @@ final class TestGatewayHaMultipleBackend
         throw new IllegalStateException("Trino Gateway health check failed");
     }
 
+    @Test
+    void testClusterStatsJMX()
+            throws Exception
+    {
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/metrics")
+                .get()
+                .build();
+        Response response = httpClient.newCall(request).execute();
+        String body = response.body().string();
+        assertThat(body).contains("trino1_TrinoStatusHealthy");
+        assertThat(body).contains("trino2_TrinoStatusHealthy");
+    }
+
     @AfterAll
     void cleanup()
     {

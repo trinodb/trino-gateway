@@ -16,6 +16,7 @@ package io.trino.gateway.ha.module;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
@@ -82,7 +83,6 @@ public class HaGatewayProviderModule
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
-    private final BackendStateManager backendStateConnectionManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
     private final ResourceGroupsManager resourceGroupsManager;
@@ -96,6 +96,7 @@ public class HaGatewayProviderModule
         binder().bind(ResourceGroupsManager.class).toInstance(resourceGroupsManager);
         binder().bind(GatewayBackendManager.class).toInstance(gatewayBackendManager);
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
+        binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
@@ -108,7 +109,6 @@ public class HaGatewayProviderModule
 
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
-        backendStateConnectionManager = new BackendStateManager();
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
@@ -204,13 +204,6 @@ public class HaGatewayProviderModule
     public AuthorizationManager getAuthorizationManager()
     {
         return this.authorizationManager;
-    }
-
-    @Provides
-    @Singleton
-    public BackendStateManager getBackendStateConnectionManager()
-    {
-        return this.backendStateConnectionManager;
     }
 
     @Provides
