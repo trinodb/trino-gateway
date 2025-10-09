@@ -39,6 +39,7 @@ import static io.airlift.http.client.HttpStatus.OK;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
@@ -48,7 +49,7 @@ final class TestTrinoResource
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
 
     int routerPort = 22000 + (int) (Math.random() * 1000);
     JdbcConnectionManager connectionManager;

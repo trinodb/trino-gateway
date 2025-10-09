@@ -50,6 +50,7 @@ import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -65,7 +66,7 @@ final class TestGatewayHaMultipleBackend
 
     private TrinoContainer adhocTrino;
     private TrinoContainer scheduledTrino;
-    private final PostgreSQLContainer postgresql = new PostgreSQLContainer("postgres:17");
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
 
     public static String oauthInitiatePath = OAuth2GatewayCookie.OAUTH2_PATH;
     public static String oauthCallbackPath = oauthInitiatePath + "/callback";

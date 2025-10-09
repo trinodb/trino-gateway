@@ -34,6 +34,7 @@ import org.testcontainers.containers.TrinoContainer;
 import java.io.File;
 import java.util.List;
 
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -43,7 +44,7 @@ final class TestRoutingAPI
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
-    private final PostgreSQLContainer<?> postgresql = new PostgreSQLContainer<>("postgres:17");
+    private final PostgreSQLContainer<?> postgresql = createPostgreSqlContainer();
     int routerPort = 21001 + (int) (Math.random() * 1000);
     int backendPort;
 
