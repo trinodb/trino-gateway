@@ -23,9 +23,12 @@ authorization:
 presetUsers:
   foo@bar.com:
     privileges: FOO_BAR
+  admin1:
+    password: admin1_password
+    privileges: FOO_BAR
 
 authentication:
-  defaultTypes: ["oauth"]
+  defaultTypes: ["oauth", "form"]
   oauth:
     issuer: http://localhost:4444/
     clientId: trino_client_id
@@ -38,3 +41,7 @@ authentication:
     userIdField: sub
     scopes:
       - openid
+  form:
+    selfSignKeyPair:
+      privateKeyRsa: src/test/resources/auth/test_private_key.pem
+      publicKeyRsa: src/test/resources/auth/test_public_key.pem

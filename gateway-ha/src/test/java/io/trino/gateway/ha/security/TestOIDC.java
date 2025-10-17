@@ -16,8 +16,6 @@ package io.trino.gateway.ha.security;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
@@ -30,135 +28,27 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-
-import java.io.File;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.net.URL;
-import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
+import static io.trino.gateway.ha.HaGatewayTestUtils.createOkHttpClient;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
-import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TestOIDC
 {
-    private static final int TTL_ACCESS_TOKEN_IN_SECONDS = 5;
-    private static final int TTL_REFRESH_TOKEN_IN_SECONDS = 15;
-
-    private static final String HYDRA_IMAGE = "oryd/hydra:v1.11.10";
-    private static final String DSN = "postgres://hydra:mysecretpassword@hydra-db:5432/hydra?sslmode=disable";
     private static final int ROUTER_PORT = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
     void setup()
             throws Exception
     {
-        Network network = Network.newNetwork();
-
-        PostgreSQLContainer<?> databaseContainer = createPostgreSqlContainer()
-                .withNetwork(network)
-                .withNetworkAliases("hydra-db")
-                .withUsername("hydra")
-                .withPassword("mysecretpassword")
-                .withDatabaseName("hydra");
-        databaseContainer.start();
-
-        GenericContainer migrationContainer = new GenericContainer(HYDRA_IMAGE)
-                .withNetwork(network)
-                .withCommand("migrate", "sql", "--yes", DSN)
-                .dependsOn(databaseContainer)
-                .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
-        migrationContainer.start();
-
-        FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
-                .withFixedExposedPort(3000, 3000)
-                .withNetwork(network)
-                .withNetworkAliases("hydra-consent")
-                .withExposedPorts(3000)
-                .withCopyFileToContainer(forClasspathResource("auth/login_and_consent_server.py"), "/")
-                .withCommand("python", "/login_and_consent_server.py")
-                .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
-        hydraConsent.start();
-
-        FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
-                .withFixedExposedPort(4444, 4444)
-                .withFixedExposedPort(4445, 4445)
-                .withNetwork(network)
-                .withNetworkAliases("hydra")
-                .withEnv("LOG_LEVEL", "debug")
-                .withEnv("LOG_LEAK_SENSITIVE_VALUES", "true")
-                .withEnv("OAUTH2_EXPOSE_INTERNAL_ERRORS", "1")
-                .withEnv("GODEBUG", "http2debug=1")
-                .withEnv("DSN", DSN)
-                .withEnv("URLS_SELF_ISSUER", "http://localhost:4444/")
-                .withEnv("URLS_CONSENT", "http://localhost:3000/consent")
-                .withEnv("URLS_LOGIN", "http://localhost:3000/login")
-                .withEnv("STRATEGIES_ACCESS_TOKEN", "jwt")
-                .withEnv("TTL_ACCESS_TOKEN", TTL_ACCESS_TOKEN_IN_SECONDS + "s")
-                .withEnv("TTL_REFRESH_TOKEN", TTL_REFRESH_TOKEN_IN_SECONDS + "s")
-                .withEnv("OAUTH2_ALLOWED_TOP_LEVEL_CLAIMS", "groups")
-                .withCommand("serve", "all", "--dangerous-force-http")
-                .dependsOn(hydraConsent, migrationContainer)
-                .waitingFor(new WaitAllStrategy()
-                        .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
-                        .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
-                .withStartupTimeout(java.time.Duration.ofMinutes(3));
-
-        String clientId = "trino_client_id";
-        String clientSecret = "trino_client_secret";
-        String tokenEndpointAuthMethod = "client_secret_basic";
-        String audience = "trino_client_id";
-        String callbackUrl = format("https://localhost:%s/oidc/callback", ROUTER_PORT);
-        GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
-                .withNetwork(network)
-                .dependsOn(hydra)
-                .withCommand("clients", "create",
-                        "--endpoint", "http://hydra:4445",
-                        "--skip-tls-verify",
-                        "--id", clientId,
-                        "--secret", clientSecret,
-                        "--audience", audience,
-                        "-g", "authorization_code,refresh_token,client_credentials",
-                        "-r", "token,code,id_token",
-                        "--scope", "openid,offline",
-                        "--token-endpoint-auth-method", tokenEndpointAuthMethod,
-                        "--callbacks", callbackUrl);
-        clientCreatingContainer.start();
-
-        PostgreSQLContainer gatewayBackendDatabase = createPostgreSqlContainer();
-        gatewayBackendDatabase.start();
-
-        URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
-        Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
-                .put("REQUEST_ROUTER_PORT", String.valueOf(ROUTER_PORT))
-                .put("LOCALHOST_JKS", Path.of(resource.toURI()).toString())
-                .putAll(buildPostgresVars(gatewayBackendDatabase))
-                .buildOrThrow();
-        File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig("auth/oauth-test-config.yml", additionalVars);
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        HaGatewayTestUtils.setupOidc(ROUTER_PORT, "auth/oauth-test-config.yml", "openid,offline");
     }
 
     @Test
@@ -216,37 +106,6 @@ final class TestOIDC
                 .post(RequestBody.create("", null));
     }
 
-    public static void setupInsecureSsl(OkHttpClient.Builder clientBuilder)
-            throws Exception
-    {
-        X509TrustManager trustAllCerts = new X509TrustManager()
-        {
-            @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType)
-            {
-                throw new UnsupportedOperationException("checkClientTrusted should not be called");
-            }
-
-            @Override
-            public void checkServerTrusted(X509Certificate[] chain, String authType)
-            {
-                // skip validation of server certificate
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers()
-            {
-                return new X509Certificate[0];
-            }
-        };
-
-        SSLContext sslContext = SSLContext.getInstance("SSL");
-        sslContext.init(null, new TrustManager[] {trustAllCerts}, new SecureRandom());
-
-        clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts);
-        clientBuilder.hostnameVerifier((hostname, session) -> true);
-    }
-
     public static class BadCookieJar
             implements CookieJar
     {
@@ -288,19 +147,5 @@ final class TestOIDC
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(body);
         return jsonNode.get("data").asText();
-    }
-
-    private static OkHttpClient createOkHttpClient(Optional<CookieJar> cookieJar)
-            throws Exception
-    {
-        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
-                .followRedirects(true)
-                .cookieJar(cookieJar.orElseGet(() -> {
-                    CookieManager cookieManager = new CookieManager();
-                    cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-                    return new JavaNetCookieJar(cookieManager);
-                }));
-        setupInsecureSsl(httpClientBuilder);
-        return httpClientBuilder.build();
     }
 }

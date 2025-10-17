@@ -36,8 +36,8 @@ for more details.
 
 The authentication would happen on https protocol only. Add the
 `authentication:` section in the config file. The default authentication type is
-set using `defaultType: "form"` Following types of the authentications are
-supported.
+set using `defaultTypes: ["form"]`. The first authentication type in `defaultTypes` is prioritized and then falls back to following ones.
+Following types of the authentications are supported.
 
 ### OAuth/OpenIDConnect
 
@@ -45,7 +45,7 @@ It can be configured as below
 
 ```yaml
 authentication:
-  defaultType: "oauth"
+  defaultTypes: ["oauth"]
   oauth:
     issuer:
     clientId:
@@ -81,6 +81,11 @@ Set the `privilegesField` to retrieve privileges from an OAuth claim.
 ```
 - That also means you need to have a cluster with that routing group.
 - It's ok to replicate an existing Trino cluster record with a different name for that purpose.
+- If you want to have all users who are authenticated via SSO and are not in the `presetUsers` list be able to view the dashboard and query history, you can set `defaultPrivilege` in the config file:
+```yaml
+authorization:
+  defaultPrivilege: "USER"
+```
 
 ### Form/Basic authentication
 
@@ -102,7 +107,7 @@ Also provide a random key pair in RSA format.
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultTypes: ["form"]
   form:
     selfSignKeyPair:
       privateKeyRsa: <private_key_path>
@@ -115,7 +120,7 @@ LDAP requires both random key pair and config path for LDAP
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultTypes: ["form"]
   form:
     ldapConfigPath: <ldap_config_path>
     selfSignKeyPair:

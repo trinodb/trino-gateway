@@ -323,6 +323,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+            <version>3.4.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Test deps -->
         <dependency>
             <groupId>com.h2database</groupId>

@@ -145,28 +145,39 @@ public class HaGatewayProviderModule
     private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config, Authorizer authorizer)
     {
         ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
-        String defaultType = config.getDefaultType();
-        if (oauthManager != null) {
-            authFilters.add(new LbFilter(
-                    new LbAuthenticator(oauthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
+        List<String> authMethods = config.getDefaultTypes();
+        if (authMethods == null || authMethods.isEmpty()) {
+            return new ChainedAuthFilter(authFilters.build());
         }
 
-        if (formAuthManager != null) {
-            authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
+        for (String authMethod : authMethods) {
+            switch (authMethod) {
+                case "oauth" -> {
+                    if (oauthManager != null) {
+                        authFilters.add(new LbFilter(
+                                new LbAuthenticator(oauthManager, authorizationManager),
+                                authorizer,
+                                "Bearer",
+                                new LbUnauthorizedHandler("oauth")));
+                    }
+                }
+                case "form" -> {
+                    if (formAuthManager != null) {
+                        authFilters.add(new LbFilter(
+                                new FormAuthenticator(formAuthManager, authorizationManager),
+                                authorizer,
+                                "Bearer",
+                                new LbUnauthorizedHandler("form")));
 
-            authFilters.add(new BasicAuthFilter(
-                    new ApiAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    new LbUnauthorizedHandler(defaultType)));
+                        authFilters.add(new BasicAuthFilter(
+                                new ApiAuthenticator(formAuthManager, authorizationManager),
+                                authorizer,
+                                new LbUnauthorizedHandler("form")));
+                    }
+                }
+                default -> {}
+            }
         }
-
         return new ChainedAuthFilter(authFilters.build());
     }
 
