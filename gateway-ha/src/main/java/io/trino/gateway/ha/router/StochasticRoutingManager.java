@@ -13,16 +13,18 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.google.common.base.Strings;
 import com.google.inject.Inject;
-import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
 public class StochasticRoutingManager
-        extends RoutingManager
+        extends BaseRoutingManager
 {
-    private static final Logger log = Logger.get(StochasticRoutingManager.class);
-    private final QueryHistoryManager queryHistoryManager;
+    private static final Random RANDOM = new Random();
 
     @Inject
     public StochasticRoutingManager(
@@ -31,18 +33,15 @@ public class StochasticRoutingManager
             RoutingConfiguration routingConfiguration)
     {
         super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
-        this.queryHistoryManager = queryHistoryManager;
     }
 
     @Override
-    protected String findBackendForUnknownQueryId(String queryId)
+    protected Optional<ProxyBackendConfiguration> selectBackend(List<ProxyBackendConfiguration> backends, String user)
     {
-        String backend;
-        backend = queryHistoryManager.getBackendForQueryId(queryId);
-        if (Strings.isNullOrEmpty(backend)) {
-            log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
-            backend = super.findBackendForUnknownQueryId(queryId);
+        if (backends.isEmpty()) {
+            return Optional.empty();
         }
-        return backend;
+        int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
+        return Optional.of(backends.get(backendId));
     }
 }
