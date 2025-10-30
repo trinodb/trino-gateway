@@ -18,6 +18,7 @@ import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestQueryCountBasedRouter
@@ -38,6 +40,8 @@ final class TestQueryCountBasedRouter
 
     static final int LEAST_QUEUED_COUNT = 1;
     static final int SAME_QUERY_COUNT = 5;
+    GatewayBackendManager backendManager;
+    QueryHistoryManager historyManager;
     QueryCountBasedRouter queryCountBasedRouter;
     ImmutableList<ClusterStats> clusters;
     RoutingConfiguration routingConfiguration = new RoutingConfiguration();
@@ -54,7 +58,7 @@ final class TestQueryCountBasedRouter
         ImmutableList.Builder<ClusterStats> clustersBuilder = new ImmutableList.Builder<ClusterStats>();
         // Set Cluster1 stats
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c1");
+            ClusterStats.Builder cluster = ClusterStats.builder("c1-" + routingGroup);
             cluster.proxyTo(BACKEND_URL_1);
             cluster.trinoStatus(TrinoStatus.HEALTHY);
             cluster.routingGroup(routingGroup);
@@ -65,7 +69,7 @@ final class TestQueryCountBasedRouter
         }
         // Set Cluster2 stats
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c2");
+            ClusterStats.Builder cluster = ClusterStats.builder("c2-" + routingGroup);
             cluster.proxyTo(BACKEND_URL_2);
             cluster.trinoStatus(TrinoStatus.HEALTHY);
             cluster.routingGroup(routingGroup);
@@ -80,7 +84,7 @@ final class TestQueryCountBasedRouter
         }
         // Set Cluster3 stats with the least no of queries running
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c3");
+            ClusterStats.Builder cluster = ClusterStats.builder("c3-" + routingGroup);
             cluster.proxyTo(BACKEND_URL_3);
             cluster.trinoStatus(TrinoStatus.HEALTHY);
             cluster.routingGroup(routingGroup);
@@ -95,7 +99,7 @@ final class TestQueryCountBasedRouter
         }
         // cluster - unhealthy one
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy");
+            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy-" + routingGroup);
             cluster.proxyTo("http://c-unhealthy");
             cluster.trinoStatus(TrinoStatus.UNHEALTHY); //This cluster should never show up to route
             cluster.routingGroup(routingGroup);
@@ -107,7 +111,7 @@ final class TestQueryCountBasedRouter
         }
         // cluster - unhealthy one, no stats
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy2");
+            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy2-" + routingGroup);
             cluster.proxyTo("http://c-unhealthy2");
             cluster.trinoStatus(TrinoStatus.UNHEALTHY); //This cluster should never show up to route
 
@@ -115,7 +119,7 @@ final class TestQueryCountBasedRouter
         }
         // cluster - it's messed up - healthy but no stats
         {
-            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy2");
+            ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy3-" + routingGroup);
             cluster.proxyTo("http://c-messed-up");
             //This is a scenrio when, something is really wrong
             //We just get the cluster state as health but no stats
@@ -126,7 +130,7 @@ final class TestQueryCountBasedRouter
         return clustersBuilder.build();
     }
 
-    static ClusterStats getClusterWithNoUserQueueAndMinQueueCount()
+    private ClusterStats getClusterWithNoUserQueueAndMinQueueCount()
     {
         ClusterStats.Builder cluster = ClusterStats.builder("c-Minimal-Queue");
         cluster.proxyTo(BACKEND_URL_4);
@@ -134,10 +138,13 @@ final class TestQueryCountBasedRouter
         cluster.routingGroup("adhoc");
         cluster.runningQueryCount(5);
         cluster.queuedQueryCount(LEAST_QUEUED_COUNT);
-        return cluster.build();
+        ClusterStats clusterStats = cluster.build();
+
+        backendManager.addBackend(createProxyBackendConfiguration(clusterStats));
+        return clusterStats;
     }
 
-    static ClusterStats getClusterWithMinRunningQueries()
+    private ClusterStats getClusterWithMinRunningQueries()
     {
         ClusterStats.Builder cluster = ClusterStats.builder("c-Minimal-Running");
         cluster.proxyTo(BACKEND_URL_5);
@@ -145,21 +152,43 @@ final class TestQueryCountBasedRouter
         cluster.routingGroup("adhoc");
         cluster.runningQueryCount(1);
         cluster.queuedQueryCount(LEAST_QUEUED_COUNT);
-        cluster.userQueuedCount(new HashMap<String, Integer>());
-        return cluster.build();
+        cluster.userQueuedCount(new HashMap<>());
+        ClusterStats clusterStats = cluster.build();
+
+        backendManager.addBackend(createProxyBackendConfiguration(clusterStats));
+        return clusterStats;
+    }
+
+    static ProxyBackendConfiguration createProxyBackendConfiguration(ClusterStats clusterStats)
+    {
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setActive(true);
+        proxyBackend.setRoutingGroup(clusterStats.routingGroup());
+        proxyBackend.setName(clusterStats.clusterId());
+        proxyBackend.setProxyTo(clusterStats.proxyTo());
+        proxyBackend.setExternalUrl(clusterStats.externalUrl());
+        return proxyBackend;
     }
 
     @BeforeEach
     public void init()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
+        populateData();
+        queryCountBasedRouter.updateClusterStats(clusters);
+    }
+
+    private void populateData()
     {
         //Have a adoc and an etl routing groups - 2 sets of clusters
         clusters = new ImmutableList.Builder<ClusterStats>()
                 .addAll(getClusterStatsList("adhoc"))
                 .addAll(getClusterStatsList("etl"))
                 .build();
-
-        queryCountBasedRouter = new QueryCountBasedRouter(null, null, routingConfiguration);
-        queryCountBasedRouter.updateBackEndStats(clusters);
+        clusters.forEach(c -> backendManager.addBackend(createProxyBackendConfiguration(c)));
     }
 
     @Test
@@ -176,8 +205,8 @@ final class TestQueryCountBasedRouter
         //After the above code is run, c3 cluster has 6 queued queries
         //c1, c2 cluster will be with same original number of queued queries i.e. 5 each
         //The next query should go to the c1 cluster, as it would have less number of cluster wide
-        QueryCountBasedRouter.LocalStats c3Stats = queryCountBasedRouter.clusterStats().stream()
-                .filter(c -> c.clusterId().equals("c3") &&
+        QueryCountBasedRouter.LocalStats c3Stats = queryCountBasedRouter.clusterStats().values().stream()
+                .filter(c -> c.clusterId().equals("c3-etl") &&
                         c.routingGroup().equals("etl"))
                 .findAny().orElseThrow();
         assertThat(c3Stats.userQueuedCount().getOrDefault("u1", 0))
@@ -240,7 +269,7 @@ final class TestQueryCountBasedRouter
                 .addAll(clusters)
                 .add(getClusterWithNoUserQueueAndMinQueueCount())
                 .build();
-        queryCountBasedRouter.updateBackEndStats(clusters);
+        queryCountBasedRouter.updateClusterStats(clusters);
 
         ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", "u1");
         String proxyTo = proxyConfig.getProxyTo();
@@ -259,7 +288,7 @@ final class TestQueryCountBasedRouter
                 .add(getClusterWithMinRunningQueries())
                 .build();
 
-        queryCountBasedRouter.updateBackEndStats(clusters);
+        queryCountBasedRouter.updateClusterStats(clusters);
 
         ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", "u1");
         String proxyTo = proxyConfig.getProxyTo();
