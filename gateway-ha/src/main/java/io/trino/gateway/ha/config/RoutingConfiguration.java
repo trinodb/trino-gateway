@@ -15,11 +15,13 @@ package io.trino.gateway.ha.config;
 
 import io.airlift.units.Duration;
 
+import static io.airlift.units.Duration.ZERO;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class RoutingConfiguration
 {
     private Duration asyncTimeout = new Duration(2, MINUTES);
+    private Duration databaseCacheTTL = ZERO;
 
     private boolean addXForwardedHeaders = true;
 
@@ -53,5 +55,15 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
+    }
+
+    public Duration getDatabaseCacheTTL()
+    {
+        return databaseCacheTTL;
+    }
+
+    public void setDatabaseCacheTTL(Duration databaseCacheTTL)
+    {
+        this.databaseCacheTTL = databaseCacheTTL;
     }
 }

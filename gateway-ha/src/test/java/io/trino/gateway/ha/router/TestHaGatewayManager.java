@@ -13,13 +13,15 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import java.util.concurrent.TimeUnit;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,18 +29,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaGatewayManager
 {
-    private HaGatewayManager haGatewayManager;
-
-    @BeforeAll
-    void setUp()
+    @Test
+    void testGatewayManagerWithCache()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
-        haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+        routingConfiguration.setDatabaseCacheTTL(new Duration(5, TimeUnit.SECONDS));
+        testGatewayManager(new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration));
     }
 
     @Test
-    void testGatewayManager()
+    void testGatewayManagerWithoutCache()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        routingConfiguration.setDatabaseCacheTTL(new Duration(0, TimeUnit.SECONDS));
+        testGatewayManager(new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration));
+    }
+
+    void testGatewayManager(HaGatewayManager haGatewayManager)
     {
         ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
         backend.setActive(true);
@@ -101,6 +110,10 @@ final class TestHaGatewayManager
     @Test
     void testRemoveTrailingSlashInUrl()
     {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+
         ProxyBackendConfiguration etl = new ProxyBackendConfiguration();
         etl.setActive(false);
         etl.setRoutingGroup("etl");
