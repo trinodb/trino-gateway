@@ -21,6 +21,7 @@ import io.trino.gateway.ha.persistence.dao.QueryHistory;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import org.jdbi.v3.core.Jdbi;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -144,7 +145,7 @@ public class HaQueryHistoryManager
         List<DistributionResponse.LineChart> resList = new ArrayList<>();
         for (Map<String, Object> model : results) {
             DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
-            long minute = (long) Float.parseFloat(model.get("minute").toString());
+            long minute = new BigDecimal(model.get("minute").toString()).longValue();
             Instant instant = Instant.ofEpochSecond(minute * 60L);
             LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
