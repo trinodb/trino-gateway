@@ -33,18 +33,10 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.gateway.ha.handler.HttpUtils.OAUTH_PATH;
-import static io.trino.gateway.ha.handler.HttpUtils.TRINO_UI_PATH;
-import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
-import static io.trino.gateway.ha.handler.HttpUtils.V1_INFO_PATH;
-import static io.trino.gateway.ha.handler.HttpUtils.V1_NODE_PATH;
-import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static java.util.Objects.requireNonNull;
@@ -56,7 +48,6 @@ public class RoutingTargetHandler
     private final RoutingGroupSelector routingGroupSelector;
     private final String defaultRoutingGroup;
     private final List<String> statementPaths;
-    private final List<Pattern> extraWhitelistPaths;
     private final boolean requestAnalyserClientsUseV2Format;
     private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
@@ -71,7 +62,6 @@ public class RoutingTargetHandler
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        extraWhitelistPaths = requireNonNull(haGatewayConfiguration.getExtraWhitelistPaths()).stream().map(Pattern::compile).collect(toImmutableList());
         requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
         requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
@@ -116,18 +106,6 @@ public class RoutingTargetHandler
         return new RoutingTargetResponse(
                 new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl),
                 modifiedRequest);
-    }
-
-    public boolean isPathWhiteListed(String path)
-    {
-        return statementPaths.stream().anyMatch(path::startsWith)
-                || path.startsWith(V1_QUERY_PATH)
-                || path.startsWith(TRINO_UI_PATH)
-                || path.startsWith(V1_INFO_PATH)
-                || path.startsWith(V1_NODE_PATH)
-                || path.startsWith(UI_API_STATS_PATH)
-                || path.startsWith(OAUTH_PATH)
-                || extraWhitelistPaths.stream().anyMatch(pattern -> pattern.matcher(path).matches());
     }
 
     /**

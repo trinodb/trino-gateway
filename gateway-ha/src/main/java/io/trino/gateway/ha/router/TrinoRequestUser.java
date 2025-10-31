@@ -33,14 +33,14 @@ import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.HttpHeaders;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -62,7 +62,7 @@ public class TrinoRequestUser
 
     private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
 
-    private TrinoRequestUser(HttpServletRequest request, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
+    private TrinoRequestUser(ContainerRequestContext request, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
     {
         this.userInfoCache = requireNonNull(userInfoCache);
         user = extractUser(request, userField);
@@ -106,15 +106,17 @@ public class TrinoRequestUser
         return user.filter(testUser::equals).isPresent();
     }
 
-    private Optional<String> extractUserFromCookies(HttpServletRequest request, String userField)
+    private Optional<String> extractUserFromCookies(ContainerRequestContext requestContext, String userField)
     {
-        if (request.getCookies() == null) {
+        Map<String, jakarta.ws.rs.core.Cookie> cookies = requestContext.getCookies();
+        if (cookies == null || cookies.isEmpty()) {
+            log.debug("cookies are empty");
             return Optional.empty();
         }
-        log.debug("Trying to get user from cookie");
-        Optional<Cookie> uiToken = Arrays.stream(request.getCookies())
-                .filter(cookie -> cookie.getName().equals(TRINO_UI_TOKEN_NAME) || cookie.getName().equals(TRINO_SECURE_UI_TOKEN_NAME))
-                .findAny();
+
+        log.debug("Trying to get user from cookie from ContainerRequestContext");
+        Optional<jakarta.ws.rs.core.Cookie> uiToken = Optional.ofNullable(cookies.get(TRINO_UI_TOKEN_NAME))
+                .or(() -> Optional.ofNullable(cookies.get(TRINO_SECURE_UI_TOKEN_NAME)));
 
         return uiToken.map(t -> {
             try {
@@ -129,20 +131,20 @@ public class TrinoRequestUser
         });
     }
 
-    private Optional<String> extractUser(HttpServletRequest request, String userField)
+    private Optional<String> extractUser(ContainerRequestContext requestContext, String userField)
     {
         String header;
-        header = request.getHeader(TRINO_USER_HEADER_NAME);
+        header = requestContext.getHeaderString(TRINO_USER_HEADER_NAME);
         if (header != null) {
             return Optional.of(header);
         }
 
-        Optional<String> user = extractUserFromAuthorizationHeader(request.getHeader("Authorization"), userField);
+        Optional<String> user = extractUserFromAuthorizationHeader(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), userField);
         if (user.isPresent()) {
             return user;
         }
 
-        return extractUserFromCookies(request, userField);
+        return extractUserFromCookies(requestContext, userField);
     }
 
     private Optional<String> extractUserFromAuthorizationHeader(String header, String userField)
@@ -225,7 +227,7 @@ public class TrinoRequestUser
             }
         }
 
-        public TrinoRequestUser getInstance(HttpServletRequest request)
+        public TrinoRequestUser getInstance(ContainerRequestContext request)
         {
             return new TrinoRequestUser(request, userField, userInfoCache);
         }

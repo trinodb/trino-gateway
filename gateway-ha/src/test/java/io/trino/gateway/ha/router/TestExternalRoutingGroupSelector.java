@@ -26,8 +26,8 @@ import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.ha.router.schema.RoutingGroupExternalBody;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
+import io.trino.gateway.ha.util.QueryRequestMock;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,10 +37,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -49,10 +49,9 @@ import java.util.Optional;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.json.JsonCodec.jsonCodec;
-import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
-import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME;
-import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,7 +88,7 @@ final class TestExternalRoutingGroupSelector
 
     @Test
     void testByRoutingRulesExternalEngine()
-            throws URISyntaxException
+            throws Exception
     {
         RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
         HttpServletRequest mockRequest = prepareMockRequest();
@@ -133,6 +132,7 @@ final class TestExternalRoutingGroupSelector
 
     @Test
     void testFallbackToHeaderOnApiFailure()
+            throws IOException
     {
         // Mock this specific test an HTTP request
         HttpClient httpClient = mock(HttpClient.class);
@@ -374,17 +374,13 @@ final class TestExternalRoutingGroupSelector
 
     private HttpServletRequest prepareMockRequest()
     {
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
-        return mockRequest;
+        return new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
     }
 
     private void setMockHeaders(HttpServletRequest mockRequest)
     {
-        when(mockRequest.getHeader(TRINO_CATALOG_HEADER_NAME)).thenReturn("default");
-        when(mockRequest.getHeader(TRINO_SCHEMA_HEADER_NAME)).thenReturn("test");
-        when(mockRequest.getHeader(USER_HEADER)).thenReturn("user");
-
         List<String> defaultHeaderNames = List.of("Accept-Encoding");
         List<String> defaultAcceptEncodingValues = List.of("gzip", "deflate", "br");
         Enumeration<String> headerNamesEnumeration = Collections.enumeration(defaultHeaderNames);
@@ -400,11 +396,8 @@ final class TestExternalRoutingGroupSelector
         TrinoQueryProperties trinoQueryProperties = null;
         TrinoRequestUser trinoRequestUser = null;
         if (requestAnalyzerConfig.isAnalyzeRequest()) {
-            trinoQueryProperties = new TrinoQueryProperties(
-                    request,
-                    requestAnalyzerConfig.isClientsUseV2Format(),
-                    requestAnalyzerConfig.getMaxBodySize());
-            trinoRequestUser = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig).getInstance(request);
+            trinoQueryProperties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
+            trinoRequestUser = (TrinoRequestUser) request.getAttribute(TRINO_REQUEST_USER);
         }
 
         return new RoutingGroupExternalBody(
