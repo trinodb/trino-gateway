@@ -14,15 +14,13 @@
 package io.trino.gateway.proxyserver;
 
 import com.google.inject.Inject;
-import io.trino.gateway.ha.handler.RoutingTargetHandler;
+import io.trino.gateway.ha.router.PathFilter;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
 
 import java.io.IOException;
 import java.net.URI;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * This pre-matching ContainerRequestFilter catches all requests and forwards
@@ -35,19 +33,19 @@ public class RouterPreMatchContainerRequestFilter
 {
     public static final String ROUTE_TO_BACKEND = "/trino-gateway/internal/route_to_backend";
 
-    private final RoutingTargetHandler routingTargetHandler;
+    private final PathFilter pathFilter;
 
     @Inject
-    public RouterPreMatchContainerRequestFilter(RoutingTargetHandler routingTargetHandler)
+    public RouterPreMatchContainerRequestFilter(PathFilter pathFilter)
     {
-        this.routingTargetHandler = requireNonNull(routingTargetHandler);
+        this.pathFilter = pathFilter;
     }
 
     @Override
     public void filter(ContainerRequestContext request)
             throws IOException
     {
-        if (routingTargetHandler.isPathWhiteListed(request.getUriInfo().getRequestUri().getPath())) {
+        if (pathFilter.isPathWhiteListed(request.getUriInfo().getRequestUri().getPath())) {
             request.setRequestUri(URI.create(ROUTE_TO_BACKEND));
         }
     }

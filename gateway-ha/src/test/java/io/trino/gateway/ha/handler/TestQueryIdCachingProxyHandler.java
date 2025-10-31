@@ -14,27 +14,19 @@
 package io.trino.gateway.ha.handler;
 
 import com.google.common.collect.ImmutableList;
-import jakarta.servlet.ReadListener;
-import jakarta.servlet.ServletInputStream;
+import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.util.QueryRequestMock;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.HttpMethod;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.mockito.Mockito;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestQueryIdCachingProxyHandler
@@ -171,12 +163,6 @@ final class TestQueryIdCachingProxyHandler
                 "system",
                 "runtime"))).hasValue("20200416_160256_03078_6b4yt");
 
-        assertThatThrownBy(() -> extractQueryId(request("""
-                        CALL KILL_QUERY (lower('20200416_160256_03078_6b4yt'), 'If he dies, he dies')
-                        """,
-                "system",
-                "runtime"))).isInstanceOf(IllegalArgumentException.class);
-
         assertThat(extractQueryId(request("CALL notsystem.runtime.kill_query(query_id => '20200416_160256_03078_6b4yt', message => 'If he dies, he dies')"))).isEmpty();
 
         assertThat(extractQueryId(request("CALL runtime.kill_query(query_id => '20200416_160256_03078_6b4yt', message => 'If he dies, he dies')", "notsystem")))
@@ -200,63 +186,35 @@ final class TestQueryIdCachingProxyHandler
     private static HttpServletRequest request(String query, String defaultCatalog)
             throws IOException
     {
-        // Warning - this is not a fully featured mock of the behavior of HttpServlet with respect to headers. For example,
-        // getHeaderNames will return an empty list, and getHeader is not fully case-insensitive. This is only intended to be
-        // a minimal mock for this test.
-        HttpServletRequest request = request(query);
-        when(request.getHeader("X-Trino-Catalog")).thenReturn(defaultCatalog);
-        when(request.getHeader("X-trino-catalog")).thenReturn(defaultCatalog);
-        return request;
+        RequestAnalyzerConfig config = new RequestAnalyzerConfig();
+        config.setAnalyzeRequest(true);
+        return new QueryRequestMock().query(query)
+                .httpHeader("X-Trino-Catalog", defaultCatalog)
+                .requestAnalyzerConfig(config)
+                .getHttpServletRequest();
     }
 
     private static HttpServletRequest request(String query, String defaultCatalog, String defaultSchema)
             throws IOException
     {
-        HttpServletRequest request = request(query);
-        when(request.getHeader("X-Trino-Catalog")).thenReturn(defaultCatalog);
-        when(request.getHeader("X-trino-catalog")).thenReturn(defaultCatalog);
-        when(request.getHeader("X-Trino-Schema")).thenReturn(defaultSchema);
-        when(request.getHeader("X-trino-schema")).thenReturn(defaultSchema);
-        return request;
+        RequestAnalyzerConfig config = new RequestAnalyzerConfig();
+        config.setAnalyzeRequest(true);
+        return new QueryRequestMock().query(query)
+                .httpHeader("X-Trino-Catalog", defaultCatalog)
+                .httpHeader("X-trino-catalog", defaultCatalog)
+                .httpHeader("X-Trino-Schema", defaultSchema)
+                .httpHeader("X-trino-schema", defaultSchema)
+                .requestAnalyzerConfig(config)
+                .getHttpServletRequest();
     }
 
     private static HttpServletRequest request(String query)
             throws IOException
     {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(query.getBytes(UTF_8));
-        when(request.getMethod()).thenReturn(HttpMethod.POST);
-        when(request.getInputStream()).thenReturn(new ServletInputStream()
-        {
-            @Override
-            public boolean isFinished()
-            {
-                return byteArrayInputStream.available() > 0;
-            }
-
-            @Override
-            public boolean isReady()
-            {
-                return true;
-            }
-
-            @Override
-            public void setReadListener(ReadListener readListener)
-            {}
-
-            @Override
-            public int read()
-                    throws IOException
-            {
-                return byteArrayInputStream.read();
-            }
-        });
-
-        when(request.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
-
-        when(request.getQueryString()).thenReturn("");
-
-        return request;
+        RequestAnalyzerConfig config = new RequestAnalyzerConfig();
+        config.setAnalyzeRequest(true);
+        return new QueryRequestMock().query(query)
+                .requestAnalyzerConfig(config)
+                .getHttpServletRequest();
     }
 }

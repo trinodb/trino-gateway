@@ -16,9 +16,12 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.util.QueryRequestMock;
 import io.trino.sql.tree.QualifiedName;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -31,16 +34,15 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -104,11 +106,11 @@ final class TestRoutingGroupSelector
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
 
-        HttpServletRequest mockRequest = prepareMockRequest();
-
-        when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader(TRINO_SOURCE_HEADER, "airflow")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
-
         assertThat(routingGroup).isEqualTo("etl");
     }
 
@@ -122,8 +124,11 @@ final class TestRoutingGroupSelector
                         requestAnalyzerConfig);
 
         String encodedUsernamePassword = Base64.getEncoder().encodeToString("will:supersecret".getBytes(UTF_8));
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getHeader("Authorization")).thenReturn("Basic " + encodedUsernamePassword);
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader("Authorization", "Basic " + encodedUsernamePassword)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         assertThat(routingGroup).isEqualTo("will-group");
@@ -139,12 +144,12 @@ final class TestRoutingGroupSelector
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
         String query = "SELECT x.*, y.*, z.* FROM catx.schemx.tblx x, schemy.tbly y, tblz z";
-        Reader reader = new StringReader(query);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat_default");
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem_\\\"default");
+
+        HttpServletRequest mockRequest = new QueryRequestMock().query(query)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, "cat_default")
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, "schem_\\\"default")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         assertThat(routingGroup).isEqualTo("tbl-group");
@@ -160,14 +165,14 @@ final class TestRoutingGroupSelector
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
         String query = "SELECT x.*, y.* FROM catx.nondefault.tblx x, caty.default.tbly y";
-        Reader reader = new StringReader(query);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("catx");
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("default");
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
+        HttpServletRequest mockRequest = new QueryRequestMock().query(query)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, "catx")
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, "default")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("catalog-schema-group");
     }
 
@@ -179,12 +184,14 @@ final class TestRoutingGroupSelector
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
-        HttpServletRequest mockRequest = prepareMockRequest();
 
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("other_catalog");
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("other_schema");
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, "other_catalog")
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, "other_schema")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
-
         assertThat(routingGroup).isEqualTo("defaults-group");
     }
 
@@ -198,12 +205,12 @@ final class TestRoutingGroupSelector
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
         String query = "INSERT INTO foo SELECT 1";
-        Reader reader = new StringReader(query);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .query(query)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("type-group");
     }
 
@@ -216,10 +223,13 @@ final class TestRoutingGroupSelector
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader("CREATE TABLE cat.schem.foo (c1 int)")));
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+        String query = "CREATE TABLE cat.schem.foo (c1 int)";
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .query(query)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("resource-group-type-group");
     }
 
@@ -234,12 +244,11 @@ final class TestRoutingGroupSelector
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
         String body = "{\"preparedStatements\" : {\"statement1\":\"INSERT INTO foo SELECT 1\"}, \"query\": \"EXECUTE statement1\"}";
-        Reader reader = new StringReader(body);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+        HttpServletRequest mockRequest = new QueryRequestMock().query(body)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("type-group");
     }
 
@@ -255,17 +264,46 @@ final class TestRoutingGroupSelector
                         "src/test/resources/rules/routing_rules_trino_query_properties.yml",
                         oneHourRefreshPeriod,
                         requestAnalyzerConfig);
-        Reader reader = new StringReader(body);
-        BufferedReader bufferedReader = new BufferedReader(reader);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME)).thenReturn(encodedStatements);
-        when(mockRequest.getHeaders(TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME)).thenReturn(Collections.enumeration(Arrays.asList(encodedStatements.split(","))));
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn("cat");
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn("schem");
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addAll(TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME, Arrays.asList(encodedStatements.split(",")));
+
+        HttpServletRequest mockRequest = new QueryRequestMock().query(body).httpHeaders(headers)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, "cat")
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, "schem")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("statement-header-group");
+    }
+
+    @Test
+    void testTrinoQueryPropertiesParsingError()
+            throws IOException
+    {
+        RoutingGroupSelector routingGroupSelector =
+                RoutingGroupSelector.byRoutingRulesEngine(
+                        "src/test/resources/rules/routing_rules_trino_query_properties.yml",
+                        oneHourRefreshPeriod,
+                        requestAnalyzerConfig);
+
+        // Invalid SQL that will cause a ParsingException
+        String invalidQuery = "SELECT * FROM table WHERE column = ";
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .query(invalidQuery)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
+        // When parsing fails, the query should route to the default "no-match" group
+        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+        assertThat(routingGroup).isEqualTo("no-match");
+
+        // Verify that the TrinoQueryProperties indicates a parsing failure
+        TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) mockRequest.getAttribute(TRINO_QUERY_PROPERTIES);
+        assertThat(trinoQueryProperties).isNotNull();
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getErrorMessage()).isPresent();
     }
 
     @ParameterizedTest
@@ -275,13 +313,13 @@ final class TestRoutingGroupSelector
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
 
-        HttpServletRequest mockRequest = prepareMockRequest();
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader(TRINO_SOURCE_HEADER, "airflow")
+                .httpHeader(TRINO_CLIENT_TAGS_HEADER, "email=test@example.com,label=special")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
-        when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
-                "email=test@example.com,label=special");
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
-
         assertThat(routingGroup).isEqualTo("etl-special");
     }
 
@@ -292,11 +330,13 @@ final class TestRoutingGroupSelector
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(rulesConfigPath, oneHourRefreshPeriod, requestAnalyzerConfig);
 
-        HttpServletRequest mockRequest = prepareMockRequest();
         // even though special label is present, query is not from airflow.
         // should return no match
-        when(mockRequest.getHeader(TRINO_CLIENT_TAGS_HEADER)).thenReturn(
-                "email=test@example.com,label=special");
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader(TRINO_CLIENT_TAGS_HEADER, "email=test@example.com,label=special")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         assertThat(routingGroup).isNull();
@@ -322,11 +362,12 @@ final class TestRoutingGroupSelector
         RoutingGroupSelector routingGroupSelector =
                 RoutingGroupSelector.byRoutingRulesEngine(file.getPath(), refreshPeriod, requestAnalyzerConfig);
 
-        HttpServletRequest mockRequest = prepareMockRequest();
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .httpHeader(TRINO_SOURCE_HEADER, "airflow")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
-        when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
-
         assertThat(routingGroup).isEqualTo("etl");
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
@@ -339,10 +380,12 @@ final class TestRoutingGroupSelector
                             + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
         }
         Thread.sleep(2 * refreshPeriod.toMillis());
+
         when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
         routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
 
         assertThat(routingGroup).isEqualTo("etl2");
+
         file.deleteOnExit();
     }
 
@@ -449,16 +492,13 @@ final class TestRoutingGroupSelector
     void testTrinoQueryPropertiesTableExtraction(String query, Set<String> catalogs, Set<String> schemas, Set<QualifiedName> tables)
             throws IOException
     {
-        BufferedReader bufferedReader = new BufferedReader(new StringReader(query));
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
-        when(mockRequest.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
+        HttpServletRequest mockRequest = new QueryRequestMock().query(query)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, DEFAULT_CATALOG)
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, DEFAULT_SCHEMA)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
-                mockRequest,
-                requestAnalyzerConfig.isClientsUseV2Format(),
-                requestAnalyzerConfig.getMaxBodySize());
+        TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) mockRequest.getAttribute(TRINO_QUERY_PROPERTIES);
 
         assertThat(trinoQueryProperties.getTables()).isEqualTo(tables);
         assertThat(trinoQueryProperties.getSchemas()).isEqualTo(schemas);
@@ -474,27 +514,26 @@ final class TestRoutingGroupSelector
                 uno as (SELECT c1 FROM dos)
                 SELECT c1 FROM uno, dos
                 """;
-        HttpServletRequest mockRequestWithDefaults = prepareMockRequest();
-        when(mockRequestWithDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
-        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME)).thenReturn(DEFAULT_CATALOG);
-        when(mockRequestWithDefaults.getHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME)).thenReturn(DEFAULT_SCHEMA);
 
-        TrinoQueryProperties trinoQueryPropertiesWithDefaults = new TrinoQueryProperties(
-                mockRequestWithDefaults,
-                requestAnalyzerConfig.isClientsUseV2Format(),
-                requestAnalyzerConfig.getMaxBodySize());
+        HttpServletRequest mockRequestNoDefaults  = new QueryRequestMock().query(query)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, DEFAULT_CATALOG)
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, DEFAULT_SCHEMA)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
+        TrinoQueryProperties trinoQueryPropertiesWithDefaults = getTrinoQueryProps(mockRequestNoDefaults);
         Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
         assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
-
-        HttpServletRequest mockRequestNoDefaults = prepareMockRequest();
         when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
 
-        TrinoQueryProperties trinoQueryPropertiesNoDefaults = new TrinoQueryProperties(
-                mockRequestNoDefaults,
-                requestAnalyzerConfig.isClientsUseV2Format(),
-                requestAnalyzerConfig.getMaxBodySize());
+        TrinoQueryProperties trinoQueryPropertiesNoDefaults = (TrinoQueryProperties) mockRequestNoDefaults.getAttribute(TRINO_QUERY_PROPERTIES);
         Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();
         assertThat(tablesNoDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
+    }
+
+    private TrinoQueryProperties getTrinoQueryProps(HttpServletRequest request)
+    {
+        return (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
     }
 
     private HttpServletRequest prepareMockRequest()
@@ -508,13 +547,13 @@ final class TestRoutingGroupSelector
     void testLongQuery()
             throws IOException
     {
-        BufferedReader bufferedReader = Files.newBufferedReader(Path.of("src/test/resources/wide_select.sql"), UTF_8);
-        HttpServletRequest mockRequest = prepareMockRequest();
-        when(mockRequest.getReader()).thenReturn(bufferedReader);
-        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
-                mockRequest,
-                requestAnalyzerConfig.isClientsUseV2Format(),
-                requestAnalyzerConfig.getMaxBodySize());
+        String query = Files.readString(Path.of("src/test/resources/wide_select.sql"), UTF_8);
+
+        HttpServletRequest mockRequest  = new QueryRequestMock().query(query)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+
+        TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) mockRequest.getAttribute(TRINO_QUERY_PROPERTIES);
         assertThat(trinoQueryProperties.tablesContains("kat.schem.widetable")).isTrue();
     }
 }

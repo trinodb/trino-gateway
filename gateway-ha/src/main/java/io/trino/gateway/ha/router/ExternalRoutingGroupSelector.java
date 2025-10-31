@@ -46,6 +46,8 @@ import static io.airlift.http.client.JsonBodyGenerator.jsonBodyGenerator;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
 
@@ -58,7 +60,6 @@ public class ExternalRoutingGroupSelector
     private final boolean propagateErrors;
     private final HttpClient httpClient;
     private final RequestAnalyzerConfig requestAnalyzerConfig;
-    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
     private static final JsonCodec<RoutingGroupExternalBody> ROUTING_GROUP_EXTERNAL_BODY_JSON_CODEC = jsonCodec(RoutingGroupExternalBody.class);
     private static final JsonResponseHandler<ExternalRouterResponse> ROUTING_GROUP_EXTERNAL_RESPONSE_JSON_RESPONSE_HANDLER =
             createJsonResponseHandler(jsonCodec(ExternalRouterResponse.class));
@@ -74,7 +75,6 @@ public class ExternalRoutingGroupSelector
         propagateErrors = rulesExternalConfiguration.isPropagateErrors();
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
-        trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
         try {
             this.uri = new URI(requireNonNull(rulesExternalConfiguration.getUrlPath(),
                     "Invalid URL provided, using routing group header as default."));
@@ -143,8 +143,8 @@ public class ExternalRoutingGroupSelector
         TrinoQueryProperties trinoQueryProperties = null;
         TrinoRequestUser trinoRequestUser = null;
         if (requestAnalyzerConfig.isAnalyzeRequest()) {
-            trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyzerConfig.isClientsUseV2Format(), requestAnalyzerConfig.getMaxBodySize());
-            trinoRequestUser = trinoRequestUserProvider.getInstance(request);
+            trinoQueryProperties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
+            trinoRequestUser = (TrinoRequestUser) request.getAttribute(TRINO_REQUEST_USER);
         }
 
         return new RoutingGroupExternalBody(

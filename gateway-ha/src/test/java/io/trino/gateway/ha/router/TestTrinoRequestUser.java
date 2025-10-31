@@ -17,6 +17,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.util.QueryRequestMock;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 
@@ -26,12 +27,11 @@ import java.util.Date;
 import java.util.Optional;
 
 import static com.auth0.jwt.algorithms.Algorithm.HMAC256;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static jakarta.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 final class TestTrinoRequestUser
 {
@@ -74,11 +74,14 @@ final class TestTrinoRequestUser
                 .withExpiresAt(Date.from(expiryTime))
                 .sign(algorithm);
 
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        when(mockRequest.getHeader(USER_HEADER)).thenReturn(null);
-        when(mockRequest.getHeader(AUTHORIZATION)).thenReturn("Bearer " + token);
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Bearer " + token)
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
 
-        TrinoRequestUser trinoRequestUser = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig).getInstance(mockRequest);
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
 
         assertThat(trinoRequestUser.getUser()).hasValue(claimUserValue);
     }
@@ -90,13 +93,15 @@ final class TestTrinoRequestUser
         String password = "don't care";
         String credentials = username + ":" + password;
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes(UTF_8));
-
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        when(mockRequest.getHeader(USER_HEADER)).thenReturn(null);
-        when(mockRequest.getHeader(AUTHORIZATION)).thenReturn("Basic " + encodedCredentials);
-
         RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
-        TrinoRequestUser trinoRequestUser = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig).getInstance(mockRequest);
+
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic " + encodedCredentials)
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
 
         assertThat(trinoRequestUser.getUser()).hasValue(username);
     }

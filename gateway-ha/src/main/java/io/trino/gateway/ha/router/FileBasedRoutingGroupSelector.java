@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.sort;
 
@@ -46,16 +48,10 @@ public class FileBasedRoutingGroupSelector
 
     private final Supplier<List<RoutingRule>> rules;
     private final boolean analyzeRequest;
-    private final boolean clientsUseV2Format;
-    private final int maxBodySize;
-    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
 
     public FileBasedRoutingGroupSelector(String rulesPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         analyzeRequest = requestAnalyzerConfig.isAnalyzeRequest();
-        clientsUseV2Format = requestAnalyzerConfig.isClientsUseV2Format();
-        maxBodySize = requestAnalyzerConfig.getMaxBodySize();
-        trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig);
 
         rules = memoizeWithExpiration(() -> readRulesFromPath(Path.of(rulesPath)), rulesRefreshPeriod.toJavaTime());
     }
@@ -68,12 +64,9 @@ public class FileBasedRoutingGroupSelector
 
         Map<String, Object> data;
         if (analyzeRequest) {
-            TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(
-                    request,
-                    clientsUseV2Format,
-                    maxBodySize);
-            TrinoRequestUser trinoRequestUser = trinoRequestUserProvider.getInstance(request);
-            data = ImmutableMap.of("request", request, "trinoQueryProperties", trinoQueryProperties, "trinoRequestUser", trinoRequestUser);
+            TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
+            TrinoRequestUser trinoRequestUser = (TrinoRequestUser) request.getAttribute(TRINO_REQUEST_USER);
+            data = ImmutableMap.of("request", request, TRINO_QUERY_PROPERTIES, trinoQueryProperties, TRINO_REQUEST_USER, trinoRequestUser);
         }
         else {
             data = ImmutableMap.of("request", request);

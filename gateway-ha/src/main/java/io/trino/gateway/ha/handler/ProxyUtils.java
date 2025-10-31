@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_UI_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -78,7 +79,7 @@ public final class ProxyUtils
             throw new RuntimeException("Error reading request body", e);
         }
         if (!isNullOrEmpty(queryText) && queryText.toLowerCase(ENGLISH).contains("kill_query")) {
-            TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(request, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+            TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
             return trinoQueryProperties.getQueryId();
         }
         return Optional.empty();
