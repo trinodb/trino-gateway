@@ -33,9 +33,7 @@ export function History() {
         const mapping: Record<string, string> = {};
         for (let index = 0; index < data.length; index++) {
           const backend = data[index] as BackendData;
-          mapping[backend.name] = backend.proxyTo;
           mapping[backend.proxyTo] = backend.name;
-          mapping[backend.externalUrl] = backend.name;
         }
         setBackendMapping(mapping);
       }).catch(() => { });
@@ -108,7 +106,7 @@ export function History() {
               <Form.Select field="externalUrl" label='RoutedTo' style={{ width: 200 }} showClear placeholder={Locale.History.RoutedToTip}>
                 {backendData?.map(b => (
                   <Form.Select.Option key={b.externalUrl} value={b.externalUrl}>
-                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{backendMapping[b.externalUrl]}</Tag>
+                    <Tag color={'blue'} style={{ marginRight: '5px' }}>{b.name}</Tag>
                     <Text>{b.externalUrl}</Text>
                   </Form.Select.Option>
                 ))}
