@@ -25,6 +25,8 @@ public class HttpUtils
     public static final String TRINO_UI_PATH = "/ui";
     public static final String OAUTH_PATH = "/oauth2";
     public static final String USER_HEADER = "X-Trino-User";
+    public static final String TRINO_REQUEST_USER = "trinoRequestUser";
+    public static final String TRINO_QUERY_PROPERTIES = "trinoQueryProperties";
 
     private HttpUtils() {}
 }

@@ -63,6 +63,7 @@ import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
@@ -87,7 +88,6 @@ public class ProxyRequestHandler
     private final boolean addXForwardedHeaders;
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
-    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
     private final ProxyResponseConfiguration proxyResponseConfiguration;
 
     @Inject
@@ -100,7 +100,6 @@ public class ProxyRequestHandler
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
-        trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(haGatewayConfiguration.getRequestAnalyzerConfig());
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
@@ -189,7 +188,7 @@ public class ProxyRequestHandler
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
-            Optional<String> username = trinoRequestUserProvider.getInstance(servletRequest).getUser();
+            Optional<String> username = ((TrinoRequestUser) servletRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
             future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());

@@ -47,6 +47,7 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.HaResourceGroupsManager;
+import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -88,6 +89,7 @@ public class HaGatewayProviderModule
     private final ResourceGroupsManager resourceGroupsManager;
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
+    private final PathFilter pathFilter;
 
     @Override
     protected void configure()
@@ -97,11 +99,13 @@ public class HaGatewayProviderModule
         binder().bind(GatewayBackendManager.class).toInstance(gatewayBackendManager);
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
+        binder().bind(PathFilter.class).toInstance(pathFilter);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
+        pathFilter = new PathFilter(configuration.getStatementPaths(), configuration.getExtraWhitelistPaths());
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
