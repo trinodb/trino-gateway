@@ -13,8 +13,13 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.airlift.log.Logger;
+import io.airlift.stats.CounterStat;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
@@ -24,35 +29,92 @@ import org.jdbi.v3.core.Jdbi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 public class HaGatewayManager
         implements GatewayBackendManager
 {
     private static final Logger log = Logger.get(HaGatewayManager.class);
+    private static final Object ALL_BACKEND_CACHE_KEY = new Object();
 
     private final GatewayBackendDao dao;
     private final String defaultRoutingGroup;
+    private final boolean cacheEnabled;
+    private final LoadingCache<Object, List<GatewayBackend>> backendCache;
+
+    private final CounterStat backendLookupSuccesses = new CounterStat();
+    private final CounterStat backendLookupFailures = new CounterStat();
 
     public HaGatewayManager(Jdbi jdbi, RoutingConfiguration routingConfiguration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
+        if (!routingConfiguration.getDatabaseCacheTTL().isZero()) {
+            cacheEnabled = true;
+            backendCache = CacheBuilder
+                    .newBuilder()
+                    .initialCapacity(1)
+                    .refreshAfterWrite(routingConfiguration.getDatabaseCacheTTL().toJavaTime())
+                    .build(CacheLoader.asyncReloading(
+                            CacheLoader.from(this::fetchAllBackends),
+                            MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor())));
+            // Load the data once during initialization. This ensures a fail-fast behavior in case of database misconfiguration.
+            backendCache.getUnchecked(ALL_BACKEND_CACHE_KEY);
+        }
+        else {
+            cacheEnabled = false;
+            backendCache = null;
+        }
+    }
+
+    private List<GatewayBackend> fetchAllBackends()
+    {
+        try {
+            List<GatewayBackend> backends = dao.findAll();
+            backendLookupSuccesses.update(1);
+            return backends;
+        }
+        catch (Exception e) {
+            backendLookupFailures.update(1);
+            log.warn(e, "Failed to fetch backends");
+            throw e;
+        }
+    }
+
+    private void invalidateBackendCache()
+    {
+        if (cacheEnabled) {
+            backendCache.invalidateAll();
+        }
+    }
+
+    private List<GatewayBackend> getOrFetchAllBackends()
+    {
+        if (cacheEnabled) {
+            return backendCache.getUnchecked(ALL_BACKEND_CACHE_KEY);
+        }
+        else {
+            return fetchAllBackends();
+        }
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllBackends()
     {
-        List<GatewayBackend> proxyBackendList = dao.findAll();
+        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends();
         return upcast(proxyBackendList);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllActiveBackends()
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackend();
+        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+                .filter(GatewayBackend::active)
+                .collect(toImmutableList());
         return upcast(proxyBackendList);
     }
 
@@ -71,14 +133,19 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getActiveBackends(String routingGroup)
     {
-        List<GatewayBackend> proxyBackendList = dao.findActiveBackendByRoutingGroup(routingGroup);
+        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+                .filter(GatewayBackend::active)
+                .filter(backend -> backend.routingGroup().equals(routingGroup))
+                .collect(toImmutableList());
         return upcast(proxyBackendList);
     }
 
     @Override
     public Optional<ProxyBackendConfiguration> getBackendByName(String name)
     {
-        List<GatewayBackend> proxyBackendList = dao.findByName(name);
+        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+                .filter(backend -> backend.name().equals(name))
+                .collect(toImmutableList());
         return upcast(proxyBackendList).stream().findAny();
     }
 
@@ -102,6 +169,7 @@ public class HaGatewayManager
         boolean previousStatus = model.active();
         changeActiveStatus.run();
         logActivationStatusChange(clusterName, newStatus, previousStatus);
+        invalidateBackendCache();
     }
 
     private static void logActivationStatusChange(String clusterName, boolean newStatus, boolean previousStatus)
@@ -117,6 +185,7 @@ public class HaGatewayManager
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+        invalidateBackendCache();
         return backend;
     }
 
@@ -133,12 +202,14 @@ public class HaGatewayManager
             dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
             logActivationStatusChange(backend.getName(), backend.isActive(), model.active());
         }
+        invalidateBackendCache();
         return backend;
     }
 
     public void deleteBackend(String name)
     {
         dao.deleteByName(name);
+        invalidateBackendCache();
     }
 
     private static List<ProxyBackendConfiguration> upcast(List<GatewayBackend> gatewayBackendList)

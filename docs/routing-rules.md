@@ -10,7 +10,18 @@ defaults to the `adhoc` group.
 ```yaml
 routing:
     defaultRoutingGroup: "test-group"
+    # Optional: cache backend metadata to reduce database look-ups
+    databaseCacheTTL: "5m"
 ```
+
+Set `databaseCacheTTL` to a non-zero [Airlift duration](https://airlift.github.io/airlift/units/) value to enable in-memory caching of backend
+metadata retrieved from the gateway database. Trino Gateway caches the list of
+backend clusters for the specified time and refreshes it asynchronously. Use
+this setting to reduce database load and improve routing performance.
+
+A value of `0s` (the default) disables the cache and queries the database on
+every request.
+
 
 The routing rules engine feature enables you to either write custom logic to
 route requests based on the request info such as any of the [request
