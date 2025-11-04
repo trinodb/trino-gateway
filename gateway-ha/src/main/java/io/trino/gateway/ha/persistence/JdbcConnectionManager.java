@@ -20,6 +20,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
@@ -154,6 +155,7 @@ public class JdbcConnectionManager
         });
     }
 
+    @PreDestroy
     public void close()
     {
         for (Map.Entry<String, HikariDataSource> e : pools.entrySet()) {
