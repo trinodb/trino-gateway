@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.base.Splitter;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -54,13 +55,10 @@ public class TrinoRequestUser
     public static final String TRINO_USER_HEADER_NAME = "X-Trino-User";
     public static final String TRINO_UI_TOKEN_NAME = "Trino-UI-Token";
     public static final String TRINO_SECURE_UI_TOKEN_NAME = "__Secure-Trino-ID-Token";
-
+    private static final Logger log = Logger.get(TrinoRequestUser.class);
+    private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
     private Optional<String> user = Optional.empty();
     private Optional<UserInfo> userInfo = Optional.empty();
-
-    private static final Logger log = Logger.get(TrinoRequestUser.class);
-
-    private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
 
     private TrinoRequestUser(ContainerRequestContext request, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
     {
@@ -155,11 +153,11 @@ public class TrinoRequestUser
 
         if (header.contains("Basic")) {
             try {
-                return Optional.of(new String(Base64.getDecoder().decode(header.split(" ")[1]), StandardCharsets.UTF_8).split(":")[0]);
+                return Optional.of(Splitter.on(':').splitToStream(new String(Base64.getDecoder().decode(Splitter.on(' ').splitToStream(header).skip(1).findFirst().get()), StandardCharsets.UTF_8)).findFirst().get());
             }
             catch (IllegalArgumentException e) {
                 log.error(e, "Authorization: Basic header contains invalid base64");
-                log.debug("Invalid header value: " + header.split(" ")[1]);
+                log.debug("Invalid header value: " + Splitter.on(' ').splitToStream(header).skip(1).findFirst().get());
                 return Optional.empty();
             }
         }

@@ -70,6 +70,59 @@ final class TestOIDC
     private static final String DSN = "postgres://hydra:mysecretpassword@hydra-db:5432/hydra?sslmode=disable";
     private static final int ROUTER_PORT = 21001 + (int) (Math.random() * 1000);
 
+    public static void setupInsecureSsl(OkHttpClient.Builder clientBuilder)
+            throws Exception
+    {
+        X509TrustManager trustAllCerts = new X509TrustManager()
+        {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType)
+            {
+                throw new UnsupportedOperationException("checkClientTrusted should not be called");
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType)
+            {
+                // skip validation of server certificate
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers()
+            {
+                return new X509Certificate[0];
+            }
+        };
+
+        SSLContext sslContext = SSLContext.getInstance("SSL");
+        sslContext.init(null, new TrustManager[] {trustAllCerts}, new SecureRandom());
+
+        clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts);
+        clientBuilder.hostnameVerifier((hostname, session) -> true);
+    }
+
+    private static String extractRedirectURL(String body)
+            throws JsonProcessingException
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(body);
+        return jsonNode.get("data").asText();
+    }
+
+    private static OkHttpClient createOkHttpClient(Optional<CookieJar> cookieJar)
+            throws Exception
+    {
+        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
+                .followRedirects(true)
+                .cookieJar(cookieJar.orElseGet(() -> {
+                    CookieManager cookieManager = new CookieManager();
+                    cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+                    return new JavaNetCookieJar(cookieManager);
+                }));
+        setupInsecureSsl(httpClientBuilder);
+        return httpClientBuilder.build();
+    }
+
     @BeforeAll
     void setup()
             throws Exception
@@ -91,6 +144,7 @@ final class TestOIDC
                 .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
         migrationContainer.start();
 
+        @SuppressWarnings("deprecation")
         FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
                 .withFixedExposedPort(3000, 3000)
                 .withNetwork(network)
@@ -101,6 +155,7 @@ final class TestOIDC
                 .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
         hydraConsent.start();
 
+        @SuppressWarnings("deprecation")
         FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
                 .withFixedExposedPort(4444, 4444)
                 .withFixedExposedPort(4445, 4445)
@@ -124,13 +179,14 @@ final class TestOIDC
                         .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
                         .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
                 .withStartupTimeout(java.time.Duration.ofMinutes(3));
+        hydra.start();
 
         String clientId = "trino_client_id";
         String clientSecret = "trino_client_secret";
         String tokenEndpointAuthMethod = "client_secret_basic";
         String audience = "trino_client_id";
         String callbackUrl = format("https://localhost:%s/oidc/callback", ROUTER_PORT);
-        GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
+        GenericContainer<?> clientCreatingContainer = new GenericContainer<>(HYDRA_IMAGE)
                 .withNetwork(network)
                 .dependsOn(hydra)
                 .withCommand("clients", "create",
@@ -146,7 +202,7 @@ final class TestOIDC
                         "--callbacks", callbackUrl);
         clientCreatingContainer.start();
 
-        PostgreSQLContainer gatewayBackendDatabase = createPostgreSqlContainer();
+        PostgreSQLContainer<?> gatewayBackendDatabase = createPostgreSqlContainer();
         gatewayBackendDatabase.start();
 
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
@@ -216,41 +272,10 @@ final class TestOIDC
                 .post(RequestBody.create("", null));
     }
 
-    public static void setupInsecureSsl(OkHttpClient.Builder clientBuilder)
-            throws Exception
-    {
-        X509TrustManager trustAllCerts = new X509TrustManager()
-        {
-            @Override
-            public void checkClientTrusted(X509Certificate[] chain, String authType)
-            {
-                throw new UnsupportedOperationException("checkClientTrusted should not be called");
-            }
-
-            @Override
-            public void checkServerTrusted(X509Certificate[] chain, String authType)
-            {
-                // skip validation of server certificate
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers()
-            {
-                return new X509Certificate[0];
-            }
-        };
-
-        SSLContext sslContext = SSLContext.getInstance("SSL");
-        sslContext.init(null, new TrustManager[] {trustAllCerts}, new SecureRandom());
-
-        clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts);
-        clientBuilder.hostnameVerifier((hostname, session) -> true);
-    }
-
     public static class BadCookieJar
             implements CookieJar
     {
-        private JavaNetCookieJar cookieJar;
+        private final JavaNetCookieJar cookieJar;
 
         public BadCookieJar()
         {
@@ -280,27 +305,5 @@ final class TestOIDC
                 return cookieJar.loadForRequest(url);
             }
         }
-    }
-
-    private static String extractRedirectURL(String body)
-            throws JsonProcessingException
-    {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode jsonNode = objectMapper.readTree(body);
-        return jsonNode.get("data").asText();
-    }
-
-    private static OkHttpClient createOkHttpClient(Optional<CookieJar> cookieJar)
-            throws Exception
-    {
-        OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder()
-                .followRedirects(true)
-                .cookieJar(cookieJar.orElseGet(() -> {
-                    CookieManager cookieManager = new CookieManager();
-                    cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-                    return new JavaNetCookieJar(cookieManager);
-                }));
-        setupInsecureSsl(httpClientBuilder);
-        return httpClientBuilder.build();
     }
 }

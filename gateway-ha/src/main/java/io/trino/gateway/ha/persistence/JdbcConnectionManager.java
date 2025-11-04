@@ -104,7 +104,8 @@ public class JdbcConnectionManager
 
     private void startCleanUps()
     {
-        executorService.scheduleWithFixedDelay(
+        @SuppressWarnings("unused")
+        var unused = executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
                     long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());

@@ -195,8 +195,8 @@ public final class StatementUtils
 
     public static String getResourceGroupQueryType(Statement statement)
     {
-        if (statement instanceof ExplainAnalyze) {
-            return getResourceGroupQueryType(((ExplainAnalyze) statement).getStatement());
+        if (statement instanceof ExplainAnalyze explainAnalyze) {
+            return getResourceGroupQueryType(explainAnalyze.getStatement());
         }
         StatementTypeInfo<? extends Statement> statementTypeInfo = STATEMENT_QUERY_TYPES.get(statement.getClass());
         if (statementTypeInfo != null) {
