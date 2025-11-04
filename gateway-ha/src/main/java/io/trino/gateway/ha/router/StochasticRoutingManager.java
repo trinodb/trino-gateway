@@ -19,13 +19,11 @@ import io.trino.gateway.ha.config.RoutingConfiguration;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class StochasticRoutingManager
         extends BaseRoutingManager
 {
-    private static final Random RANDOM = new Random();
-
     @Inject
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager,
@@ -41,7 +39,7 @@ public class StochasticRoutingManager
         if (backends.isEmpty()) {
             return Optional.empty();
         }
-        int backendId = Math.abs(RANDOM.nextInt()) % backends.size();
+        int backendId = ThreadLocalRandom.current().nextInt(backends.size());
         return Optional.of(backends.get(backendId));
     }
 }

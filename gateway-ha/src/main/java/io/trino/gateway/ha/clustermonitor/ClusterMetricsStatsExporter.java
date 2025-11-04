@@ -61,7 +61,8 @@ public class ClusterMetricsStatsExporter
     public void start()
     {
         log.debug("Running periodic metric refresh with interval of %s", refreshInterval);
-        scheduledExecutor.scheduleAtFixedRate(() -> {
+        @SuppressWarnings("unused")
+        var unused = scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 updateClustersMetricRegistry();
             }

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -300,13 +301,13 @@ public class TrinoQueryProperties
             return preparedStatementsMapBuilder.build();
         }
         while (headers.hasMoreElements()) {
-            String[] preparedStatementsArray = headers.nextElement().split(",");
+            Iterable<String> preparedStatementsArray = Splitter.on(',').split(headers.nextElement());
             for (String preparedStatement : preparedStatementsArray) {
-                String[] nameValue = preparedStatement.split("=");
-                if (nameValue.length != 2) {
+                List<String> nameValue = Splitter.on('=').splitToList(preparedStatement);
+                if (nameValue.size() != 2) {
                     throw new RequestParsingException(format("preparedStatement must be formatted as name=value, but is %s", preparedStatement));
                 }
-                preparedStatementsMapBuilder.put(URLDecoder.decode(nameValue[0], UTF_8), URLDecoder.decode(decodePreparedStatementFromHeader(nameValue[1]), UTF_8));
+                preparedStatementsMapBuilder.put(URLDecoder.decode(nameValue.get(0), UTF_8), URLDecoder.decode(decodePreparedStatementFromHeader(nameValue.get(1)), UTF_8));
             }
         }
         return preparedStatementsMapBuilder.build();

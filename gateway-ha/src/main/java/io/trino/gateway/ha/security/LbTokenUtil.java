@@ -47,7 +47,8 @@ public final class LbTokenUtil
 
             audiences.ifPresent(auds -> verification.withAnyOfAudience(auds.toArray(new String[0])));
 
-            verification.build().verify(idToken);
+            // Add clock skew tolerance for containerized environments
+            verification.acceptLeeway(10).build().verify(idToken);
         }
         catch (Exception exc) {
             log.error(exc, "Could not validate token.");

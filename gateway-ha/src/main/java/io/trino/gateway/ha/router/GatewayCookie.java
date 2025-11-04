@@ -152,7 +152,7 @@ public class GatewayCookie
     public int compareTo(GatewayCookie o)
     {
         int priorityDelta = unsignedGatewayCookie.getPriority() - o.getPriority();
-        return priorityDelta != 0 ? priorityDelta : (int) (unsignedGatewayCookie.getTs() - o.getTs());
+        return priorityDelta != 0 ? priorityDelta : unsignedGatewayCookie.getTs().compareTo(o.getTs());
     }
 
     public Cookie toCookie()

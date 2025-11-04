@@ -116,6 +116,13 @@ public class QueryRequestMock
             {
                 return byteArrayInputStream.read();
             }
+
+            @Override
+            public int read(byte[] b, int off, int len)
+                    throws IOException
+            {
+                return byteArrayInputStream.read(b, off, len);
+            }
         });
 
         when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
