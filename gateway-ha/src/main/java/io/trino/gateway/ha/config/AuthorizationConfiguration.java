@@ -19,13 +19,15 @@ public class AuthorizationConfiguration
     private String user;
     private String api;
     private String ldapConfigPath;
+    private String defaultPrivilege;
 
-    public AuthorizationConfiguration(String admin, String user, String api, String ldapConfigPath)
+    public AuthorizationConfiguration(String admin, String user, String api, String ldapConfigPath, String defaultPrivilege)
     {
         this.admin = admin;
         this.user = user;
         this.api = api;
         this.ldapConfigPath = ldapConfigPath;
+        this.defaultPrivilege = defaultPrivilege;
     }
 
     public AuthorizationConfiguration() {}
@@ -68,5 +70,15 @@ public class AuthorizationConfiguration
     public void setLdapConfigPath(String ldapConfigPath)
     {
         this.ldapConfigPath = ldapConfigPath;
+    }
+
+    public String getDefaultPrivilege()
+    {
+        return this.defaultPrivilege;
+    }
+
+    public void setDefaultPrivilege(String defaultPrivilege)
+    {
+        this.defaultPrivilege = defaultPrivilege;
     }
 }

@@ -10,11 +10,13 @@ export function Login() {
   const access = useAccessStore();
   const [formApi, setFormApi] = useState<FormApi<any>>();
   const [loginBo, setLoginBo] = useState<Record<string, any>>({});
-  const [loginType, setLoginType] = useState<'form' | 'oauth' | 'none'>();
+  const [loginType, setLoginType] = useState<string>();
 
   useEffect(() => {
     loginTypeApi().then(data => {
-      setLoginType(data);
+      if (data && data.length > 0) {
+        setLoginType(data[0]);
+      }
     }).catch(() => { });
   }, [])
 
