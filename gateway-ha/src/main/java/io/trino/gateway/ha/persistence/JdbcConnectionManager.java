@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
@@ -24,6 +26,8 @@ import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +42,8 @@ public class JdbcConnectionManager
     private final DataStoreConfiguration configuration;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
+
+    private final Map<String, HikariDataSource> pools = new ConcurrentHashMap<>();
 
     public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
@@ -59,7 +65,18 @@ public class JdbcConnectionManager
             return jdbi;
         }
 
-        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword())
+        Integer maxPoolSize = configuration.getMaxPoolSize();
+        if (maxPoolSize != null && maxPoolSize > 0) {
+            HikariDataSource ds = getOrCreateDataSource(routingGroupDatabase, maxPoolSize);
+            return Jdbi.create(ds)
+                    .installPlugin(new SqlObjectPlugin())
+                    .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
+        }
+
+        return Jdbi.create(
+                        buildJdbcUrl(routingGroupDatabase),
+                        configuration.getUser(),
+                        configuration.getPassword())
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
@@ -107,11 +124,51 @@ public class JdbcConnectionManager
         executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
-                    long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
+                    long created = System.currentTimeMillis()
+                            - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
                     jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
                 120,
                 TimeUnit.MINUTES);
+    }
+
+    private HikariDataSource getOrCreateDataSource(String routingGroupDatabase, int maxPoolSize)
+    {
+        return pools.compute(routingGroupDatabase, (key, existing) -> {
+            if (existing != null && !existing.isClosed()) {
+                return existing;
+            }
+
+            HikariConfig cfg = new HikariConfig();
+            cfg.setJdbcUrl(buildJdbcUrl(key));
+            cfg.setUsername(configuration.getUser());
+            cfg.setPassword(configuration.getPassword());
+            if (configuration.getDriver() != null) {
+                cfg.setDriverClassName(configuration.getDriver());
+            }
+            cfg.setMaximumPoolSize(maxPoolSize);
+            cfg.setPoolName("gateway-ha-" + key);
+
+            return new HikariDataSource(cfg);
+        });
+    }
+
+    public void close()
+    {
+        for (Map.Entry<String, HikariDataSource> e : pools.entrySet()) {
+            HikariDataSource ds = e.getValue();
+            if (ds != null && !ds.isClosed()) {
+                try {
+                    ds.close();
+                }
+                catch (RuntimeException ex) {
+                    log.warn(ex, "Failed to close datasource for key: %s", e.getKey());
+                }
+            }
+        }
+        pools.clear();
+
+        executorService.shutdownNow();
     }
 }
