@@ -23,3 +23,7 @@ export async function loginTypeApi(): Promise<any> {
 export async function getUIConfiguration(): Promise<any> {
     return api.get('/webapp/getUIConfiguration')
 }
+
+export async function serverInfoApi(): Promise<any> {
+    return api.post('/serverInfo', {})
+}

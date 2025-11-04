@@ -30,7 +30,7 @@ public final class SessionCookie
                 .path("/")
                 .domain("")
                 .comment("")
-                .maxAge(60 * 60 * 24)
+                .maxAge(60 * 15) // 15 minutes session timeout
                 .secure(true)
                 .build();
     }
