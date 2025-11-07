@@ -1,5 +1,51 @@
 # Release notes
 
+## 2026
+
+### Trino Gateway 17 (31 Jan 2026) { id="17" }
+
+Artifacts:
+
+* [JAR file gateway-ha-17-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/17/gateway-ha-17-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:17`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.17.0`
+
+Changes:
+
+**General**
+
+* Use UBI10 micro as the base Docker image.
+  ([#779](https://github.com/trinodb/trino-gateway/pull/779))
+* Expose Trino cluster state via JMX.
+  ([#782](https://github.com/trinodb/trino-gateway/pull/782))
+* Check health status for all clusters regardless of activation status.
+  ([#809](https://github.com/trinodb/trino-gateway/pull/809))
+* [:warning: Breaking change:](#breaking) Require Java 25 to run Trino Gateway
+  and use it in the container image.
+  ([#802](https://github.com/trinodb/trino-gateway/pull/802))
+* Remove defunct email notifier.
+  ([#843](https://github.com/trinodb/trino-gateway/pull/843))
+* Fix `partialCancel` statement path redirection.
+  ([#776](https://github.com/trinodb/trino-gateway/pull/776))
+* Fix issues with large HTTP headers by setting `max-request-header-size` and
+  `max-response-header-size` parameters for HTTP client connections.
+  ([#571](https://github.com/trinodb/trino-gateway/issues/571))
+
+**UI**
+
+* Display a truncated query text in the query history list.
+  ([#806](https://github.com/trinodb/trino-gateway/pull/806))
+* Use and require Node.js v24.
+  ([#813](https://github.com/trinodb/trino-gateway/pull/813))
+* Fix incorrect display of zero queries in the query distribution chart.
+  ([#788](https://github.com/trinodb/trino-gateway/pull/788))
+
+More details and a list of all merged pull requests are [available in the
+milestone 17 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A17+is%3Aclosed).
+
 ## 2025
 
 ### Trino Gateway 16 (17 Sep 2025) { id="16" }
@@ -17,7 +63,7 @@ Changes:
 
 **General**
 
-* [:warning: Breaking change:](#breaking) Require JDK 24 to run Trino Gateway
+* [:warning: Breaking change:](#breaking) Require Java 24 to run Trino Gateway
   and use it in the container image.
   ([#727](https://github.com/trinodb/trino-gateway/pull/727))
 * Update database testing and therefore support to PostgreSQL version 17.
@@ -64,6 +110,9 @@ Changes:
   page restrictions are configured.
   ([#664](https://github.com/trinodb/trino-gateway/pull/664))
 
+More details and a list of all merged pull requests are [available in the
+milestone 16 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A16+is%3Aclosed).
+
 ### Trino Gateway 15 (12 Mar 2025) { id="15" }
 
 Artifacts:
@@ -93,6 +142,9 @@ Changes:
 * Fix query errors when adhoc routing group has no healthy backends.
   ([#630](https://github.com/trinodb/trino-gateway/pull/630)) and
   ([#641](https://github.com/trinodb/trino-gateway/issues/641))
+
+More details and a list of all merged pull requests are [available in the
+milestone 15 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A15+is%3Aclosed).
 
 ### Trino Gateway 14 (14 Feb 2025) { id="14" }
 
@@ -141,6 +193,9 @@ Changes:
 * Fix visibility of chart legend text when changing the theme of the user
   interface. ([#585](https://github.com/trinodb/trino-gateway/issues/585))
 
+More details and a list of all merged pull requests are [available in the
+milestone 14 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A14+is%3Aclosed).
+
 ### Trino Gateway 13 (3 Dec 2024) { id="13" }
 
 Artifacts:
@@ -160,6 +215,10 @@ Changes:
   ([#551](https://github.com/trinodb/trino-gateway/pull/551))
 * Log out inactive users from the UI automatically.
   ([#544](https://github.com/trinodb/trino-gateway/pull/544))
+
+More details and a list of all merged pull requests are [available in the
+milestone 13 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A13+is%3Aclosed).
+
 
 ## 2024
 
