@@ -124,7 +124,7 @@ public class HaGatewayProviderModule
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
-        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"), configuration.getWriteBuffer());
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
