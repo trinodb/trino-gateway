@@ -50,8 +50,8 @@ import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
-import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.RoutingSelector;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.BasicAuthFilter;
@@ -212,27 +212,27 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public RoutingGroupSelector getRoutingGroupSelector(@ForRouter HttpClient httpClient)
+    public RoutingSelector getRoutingSelector(@ForRouter HttpClient httpClient)
     {
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
             try {
                 return switch (routingRulesConfig.getRulesType()) {
-                    case FILE -> RoutingGroupSelector.byRoutingRulesEngine(
+                    case FILE -> RoutingSelector.byRoutingRulesEngine(
                             routingRulesConfig.getRulesConfigPath(),
                             routingRulesConfig.getRulesRefreshPeriod(),
                             configuration.getRequestAnalyzerConfig());
                     case EXTERNAL -> {
                         RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
-                        yield RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
+                        yield RoutingSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
                     }
                 };
             }
             catch (Exception e) {
-                return RoutingGroupSelector.byRoutingGroupHeader();
+                return RoutingSelector.byRoutingGroupHeader();
             }
         }
-        return RoutingGroupSelector.byRoutingGroupHeader();
+        return RoutingSelector.byRoutingGroupHeader();
     }
 
     @Provides

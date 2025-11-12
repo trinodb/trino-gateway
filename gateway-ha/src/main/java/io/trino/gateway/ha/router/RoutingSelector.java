@@ -21,44 +21,44 @@ import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * RoutingGroupSelector provides a way to match an HTTP request to a Gateway routing group.
+ * RoutingSelector provides a way to match an HTTP request to a Gateway routing group.
  */
-public interface RoutingGroupSelector
+public interface RoutingSelector
 {
     String ROUTING_GROUP_HEADER = "X-Trino-Routing-Group";
 
     /**
-     * Routing group selector that relies on the X-Trino-Routing-Group
+     * Routing selector that relies on the X-Trino-Routing-Group
      * header to determine the right routing group.
      */
-    static RoutingGroupSelector byRoutingGroupHeader()
+    static RoutingSelector byRoutingGroupHeader()
     {
-        return request -> new RoutingSelectorResponse(request.getHeader(ROUTING_GROUP_HEADER));
+        return request -> new RoutingSelectorResponse(request.getHeader(ROUTING_GROUP_HEADER), null);
     }
 
     /**
-     * Routing group selector that uses routing engine rules
-     * to determine the right routing group.
+     * Routing selector that uses routing engine rules
+     * to determine the right routing group or cluster.
      */
-    static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
+    static RoutingSelector byRoutingRulesEngine(String rulesConfigPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new FileBasedRoutingGroupSelector(rulesConfigPath, rulesRefreshPeriod, requestAnalyzerConfig);
+        return new FileBasedRoutingSelector(rulesConfigPath, rulesRefreshPeriod, requestAnalyzerConfig);
     }
 
     /**
-     * Routing group selector that uses RESTful API
+     * Routing selector that uses RESTful API
      * to determine the right routing group.
      */
-    static RoutingGroupSelector byRoutingExternal(
+    static RoutingSelector byRoutingExternal(
             HttpClient httpClient,
             RulesExternalConfiguration rulesExternalConfiguration,
             RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new ExternalRoutingGroupSelector(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+        return new ExternalRoutingSelector(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
     }
 
     /**
-     * Given an HTTP request find a routing group to direct the request to. If a routing group cannot
+     * Given an HTTP request find a routing destination to direct the request to. If a routing group or cluster cannot
      * be determined return null.
      */
     RoutingSelectorResponse findRoutingDestination(HttpServletRequest request);

@@ -61,7 +61,7 @@ public class HaQueryHistoryManager
                 queryDetail.getUser(),
                 queryDetail.getSource(),
                 queryDetail.getCaptureTime(),
-                queryDetail.getRoutingGroup(),
+                queryDetail.getRoutingDecision(),
                 queryDetail.getExternalUrl());
     }
 
@@ -89,7 +89,7 @@ public class HaQueryHistoryManager
             queryDetail.setBackendUrl(dao.backendUrl());
             queryDetail.setUser(dao.userName());
             queryDetail.setSource(dao.source());
-            queryDetail.setRoutingGroup(dao.routingGroup());
+            queryDetail.setRoutingDecision(dao.routingDecision());
             queryDetail.setExternalUrl(dao.externalUrl());
             queryDetails.add(queryDetail);
         }
@@ -103,9 +103,9 @@ public class HaQueryHistoryManager
     }
 
     @Override
-    public String getRoutingGroupForQueryId(String queryId)
+    public String getRoutingDecisionForQueryId(String queryId)
     {
-        return dao.findRoutingGroupByQueryId(queryId);
+        return dao.findRoutingDecisionByQueryId(queryId);
     }
 
     @Override

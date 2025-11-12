@@ -93,9 +93,9 @@ export function History() {
       </Typography.Text>
     );
 
-  const routingGroupRender = (_: string, record: HistoryDetail) => {
+  const routingDecisionRender = (_: string, record: HistoryDetail) => {
     return (
-        <Text>{record.routingGroup}</Text>
+        <Text>{record.routingDecision}</Text>
     )
   }
 
@@ -133,24 +133,25 @@ export function History() {
           onPageChange: list,
         }}>
           <Column title="QueryId" dataIndex="queryId" key="queryId" render={linkQueryRender} />
-          <Column title="RoutingGroup" dataIndex="routingGroup" key="routingGroup"
+          <Column title="RoutingDecision" dataIndex="routingDecision" key="routingDecision"
             sorter={(a, b) => {
               if (!a || !b) return 0;
-              return a.routingGroup.localeCompare(b.routingGroup);
+              return a.routingDecision.localeCompare(b.routingDecision);
             }}
             filters={
-                [...new Set(backendData?.map(b => b.routingGroup))]
-                        .map(routingGroup => {
-                            return {
-                                text: routingGroup,
-                                value: routingGroup
-                            }
-                        })}
+              [...new Set((historyData?.rows || []).map(r => r.routingDecision).filter(Boolean))]
+                      .map(decision => {
+                        return {
+                          text: decision,
+                          value: decision
+                        }
+                      })
+            }
             onFilter={(value, record) => {
                 if (!record) return false;
-                return value === record.routingGroup
+                return value === record.routingDecision
             }}
-            render={routingGroupRender} />
+            render={routingDecisionRender} />
           <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />

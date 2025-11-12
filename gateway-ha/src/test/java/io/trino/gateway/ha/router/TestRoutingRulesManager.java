@@ -49,14 +49,14 @@ final class TestRoutingRulesManager
                         "airflow",
                         "if query from airflow, route to etl group",
                         null,
-                        List.of("result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"etl\")"),
+                        List.of("result.put(FileBasedRoutingSelector.RESULTS_ROUTING_GROUP_KEY, \"etl\")"),
                         "request.getHeader(\"X-Trino-Source\") == \"airflow\" && (request.getHeader(\"X-Trino-Client-Tags\") == null || request.getHeader(\"X-Trino-Client-Tags\").isEmpty())"));
         assertThat(result.get(1)).isEqualTo(
                 new RoutingRule(
                         "airflow special",
                         "if query from airflow with special label, route to etl-special group",
                         null,
-                        List.of("result.put(FileBasedRoutingGroupSelector.RESULTS_ROUTING_GROUP_KEY, \"etl-special\")"),
+                        List.of("result.put(FileBasedRoutingSelector.RESULTS_ROUTING_GROUP_KEY, \"etl-special\")"),
                         "request.getHeader(\"X-Trino-Source\") == \"airflow\" && request.getHeader(\"X-Trino-Client-Tags\") contains \"label=special\""));
     }
 

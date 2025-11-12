@@ -4,7 +4,7 @@ serverConfig:
 
 routingRules:
   rulesEngineEnabled: False
-  # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
+  # rulesConfigPath: "gateway-ha/src/main/resources/rules/routing_rules.yml"
 
 dataStore:
   jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db

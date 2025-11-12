@@ -21,15 +21,16 @@ import java.util.Map;
 
 /**
  * Response from the external routing service that includes:
- * - routingGroup: The target routing group for the request (optional)
+ * - routingDecision: The target routing group for the request (optional)
  * - errors: Any errors that occurred during routing
  * - externalHeaders: Headers that can be set in the request
  */
 public record ExternalRouterResponse(
         @Nullable String routingGroup,
+        @Nullable String routingCluster,
         List<String> errors,
         @Nullable Map<String, String> externalHeaders)
-        implements RoutingGroupResponse
+        implements RoutingResponse
 {
     public ExternalRouterResponse {
         externalHeaders = externalHeaders == null ? ImmutableMap.of() : ImmutableMap.copyOf(externalHeaders);
