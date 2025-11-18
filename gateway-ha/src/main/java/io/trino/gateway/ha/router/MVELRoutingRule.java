@@ -88,7 +88,7 @@ public class MVELRoutingRule
         parserContext.addImport(String.class);
         parserContext.addImport(StringBuffer.class);
         parserContext.addImport(StringBuilder.class);
-        parserContext.addImport(FileBasedRoutingGroupSelector.class);
+        parserContext.addImport(FileBasedRoutingSelector.class);
     }
 
     @Override

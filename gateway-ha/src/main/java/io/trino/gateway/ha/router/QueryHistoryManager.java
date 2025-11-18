@@ -32,7 +32,7 @@ public interface QueryHistoryManager
 
     String getBackendForQueryId(String queryId);
 
-    String getRoutingGroupForQueryId(String queryId);
+    String getRoutingDecisionForQueryId(String queryId);
 
     String getExternalUrlForQueryId(String queryId);
 
@@ -49,7 +49,7 @@ public interface QueryHistoryManager
         private String source;
         private String backendUrl;
         private long captureTime;
-        private String routingGroup;
+        private String routingDecision;
         private String externalUrl;
 
         public QueryDetail() {}
@@ -132,14 +132,14 @@ public interface QueryHistoryManager
         }
 
         @JsonProperty
-        public String getRoutingGroup()
+        public String getRoutingDecision()
         {
-            return routingGroup;
+            return routingDecision;
         }
 
-        public void setRoutingGroup(String routingGroup)
+        public void setRoutingDecision(String routingDecision)
         {
-            this.routingGroup = routingGroup;
+            this.routingDecision = routingDecision;
         }
 
         @JsonProperty
@@ -169,14 +169,14 @@ public interface QueryHistoryManager
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
                     Objects.equals(backendUrl, that.backendUrl) &&
-                    Objects.equals(routingGroup, that.routingGroup) &&
+                    Objects.equals(routingDecision, that.routingDecision) &&
                     Objects.equals(externalUrl, that.externalUrl);
         }
 
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup, externalUrl);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingDecision, externalUrl);
         }
 
         @Override
@@ -189,7 +189,7 @@ public interface QueryHistoryManager
                     .add("source", source)
                     .add("backendUrl", backendUrl)
                     .add("captureTime", captureTime)
-                    .add("routingGroup", routingGroup)
+                    .add("routingDecision", routingDecision)
                     .add("externalUrl", externalUrl)
                     .toString();
         }
