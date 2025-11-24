@@ -17,6 +17,8 @@ import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestStochasticRoutingManager
@@ -50,12 +53,12 @@ final class TestStochasticRoutingManager
         String backend;
         for (int i = 0; i < numBackends; i++) {
             backend = groupName + i;
-            ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
-            proxyBackend.setActive(true);
-            proxyBackend.setRoutingGroup(groupName);
-            proxyBackend.setName(backend);
-            proxyBackend.setProxyTo(backend + ".trino.example.com");
-            proxyBackend.setExternalUrl("trino.example.com");
+            ProxyBackendConfiguration proxyBackend = createBackend(
+                    backend,
+                    groupName,
+                    true,
+                    backend + ".trino.example.com",
+                    "trino.example.com");
             backendManager.addBackend(proxyBackend);
             //set backend as healthy to start with
             haRoutingManager.updateBackEndHealth(backend, TrinoStatus.HEALTHY);
@@ -69,7 +72,57 @@ final class TestStochasticRoutingManager
             haRoutingManager.updateBackEndHealth(backend, TrinoStatus.UNHEALTHY);
         }
 
-        assertThat(haRoutingManager.provideBackendConfiguration(groupName, "").getProxyTo())
+        assertThat(haRoutingManager.provideBackendConfiguration(groupName, "", false).getProxyTo())
                 .isEqualTo("test_group0.trino.example.com");
+    }
+
+    @Test
+    void testEnforceIsolationException()
+    {
+        ProxyBackendConfiguration inactiveBackend = createBackend(
+                "inactive-backend",
+                "inactive-group",
+                false,
+                "inactive.trino.example.com",
+                "https://inactive.example");
+        backendManager.addBackend(inactiveBackend);
+
+        assertNotFoundForIsolation("inactive-group");
+
+        ProxyBackendConfiguration unhealthyBackend = createBackend(
+                "unhealthy-backend",
+                "unhealthy-group",
+                true,
+                "unhealthy.trino.example.com",
+                "https://unhealthy.example");
+        backendManager.addBackend(unhealthyBackend);
+        haRoutingManager.updateBackEndHealth(unhealthyBackend.getName(), TrinoStatus.UNHEALTHY);
+
+        assertNotFoundForIsolation("unhealthy-group");
+
+        assertNotFoundForIsolation("missing-group");
+    }
+
+    private void assertNotFoundForIsolation(String routingGroup)
+    {
+        assertThatThrownBy(() -> haRoutingManager.provideBackendConfiguration(routingGroup, "user", true))
+                .isInstanceOfSatisfying(WebApplicationException.class, exception ->
+                        assertThat(exception.getResponse().getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode()));
+    }
+
+    private static ProxyBackendConfiguration createBackend(
+            String name,
+            String routingGroup,
+            boolean active,
+            String proxyTo,
+            String externalUrl)
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName(name);
+        backend.setRoutingGroup(routingGroup);
+        backend.setActive(active);
+        backend.setProxyTo(proxyTo);
+        backend.setExternalUrl(externalUrl);
+        return backend;
     }
 }

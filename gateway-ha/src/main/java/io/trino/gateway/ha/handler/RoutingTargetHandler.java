@@ -95,7 +95,7 @@ public class RoutingTargetHandler
         String routingGroup = !isNullOrEmpty(routingDestination.routingGroup())
                 ? routingDestination.routingGroup()
                 : defaultRoutingGroup;
-        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
+        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user, routingDestination.enforceIsolation());
         String clusterHost = backendConfiguration.getProxyTo();
         String externalUrl = backendConfiguration.getExternalUrl();
         // Apply headers from RoutingDestination if there are any

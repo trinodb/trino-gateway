@@ -27,6 +27,8 @@ import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PreDestroy;
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -41,6 +43,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -99,15 +103,21 @@ public abstract class BaseRoutingManager
     }
 
     /**
-     * Performs routing to a given cluster group. This falls back to a default backend, if no scheduled
-     * backend is found.
+     * Performs routing to a given cluster group. This falls back to a default backend if the target group
+     * has no suitable backend unless {@code enforceIsolation} is true, in which case a 404 is returned.
      */
     @Override
-    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
+    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean enforceIsolation)
     {
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
+        if (backends.isEmpty() && enforceIsolation) {
+            throw new WebApplicationException(
+                             Response.status(NOT_FOUND)
+                            .entity(String.format("No healthy backends available for routing group '%s' under enforced isolation for user '%s'", routingGroup, user))
+                            .build());
+        }
         return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
     }
 

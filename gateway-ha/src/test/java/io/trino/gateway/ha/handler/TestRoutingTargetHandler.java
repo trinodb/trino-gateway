@@ -43,6 +43,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -108,7 +109,7 @@ class TestRoutingTargetHandler
         config = provideGatewayConfiguration();
         httpClient = Mockito.mock(HttpClient.class);
         routingManager = Mockito.mock(RoutingManager.class);
-        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(new ProxyBackendConfiguration());
+        when(routingManager.provideBackendConfiguration(any(), any(), anyBoolean())).thenReturn(new ProxyBackendConfiguration());
         request = prepareMockRequest();
 
         // Initialize the handler with the configuration
@@ -128,7 +129,8 @@ class TestRoutingTargetHandler
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 Collections.emptyList(),
-                modifiedHeaders);
+                modifiedHeaders,
+                false);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -152,7 +154,8 @@ class TestRoutingTargetHandler
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 Collections.emptyList(),
-                modifiedHeaders);
+                modifiedHeaders,
+                false);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -173,7 +176,8 @@ class TestRoutingTargetHandler
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 Collections.emptyList(),
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                false);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -195,7 +199,8 @@ class TestRoutingTargetHandler
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 Collections.emptyList(),
-                modifiedHeaders);
+                modifiedHeaders,
+                false);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -218,7 +223,8 @@ class TestRoutingTargetHandler
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "",
                 Collections.emptyList(),
-                modifiedHeaders);
+                modifiedHeaders,
+                false);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         // Execute
@@ -233,7 +239,7 @@ class TestRoutingTargetHandler
     @Test
     void testResponsePropertiesNull()
     {
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, null, ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, null, ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         RoutingTargetResponse result = handler.resolveRouting(request);
@@ -245,7 +251,7 @@ class TestRoutingTargetHandler
     void testResponseGroupSetResponseErrorsNull()
     {
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group", null, ImmutableMap.of());
+                "test-group", null, ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         RoutingTargetResponse result = handler.resolveRouting(request);
@@ -256,7 +262,7 @@ class TestRoutingTargetHandler
     @Test
     void testPropagateErrorsFalseResponseGroupNullResponseErrorsSet()
     {
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         RoutingTargetResponse result = handler.resolveRouting(request);
@@ -267,7 +273,7 @@ class TestRoutingTargetHandler
     @Test
     void testPropagateErrorsFalseResponseGroupAndErrorsSet()
     {
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         RoutingTargetResponse result = handler.resolveRouting(request);
@@ -281,7 +287,7 @@ class TestRoutingTargetHandler
         RoutingTargetHandler handler = createHandlerWithPropagateErrorsTrue();
 
         config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(null, List.of("some-error"), ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
         assertThatThrownBy(() -> handler.resolveRouting(request))
@@ -293,7 +299,7 @@ class TestRoutingTargetHandler
     {
         RoutingTargetHandler handler = createHandlerWithPropagateErrorsTrue();
 
-        ExternalRouterResponse response = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of());
+        ExternalRouterResponse response = new ExternalRouterResponse("test-group", List.of("some-error"), ImmutableMap.of(), null);
         when(httpClient.execute(any(), any())).thenReturn(response);
 
         assertThatThrownBy(() -> handler.resolveRouting(request))

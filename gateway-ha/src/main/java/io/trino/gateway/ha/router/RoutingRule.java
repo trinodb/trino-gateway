@@ -23,4 +23,6 @@ public interface RoutingRule
     void evaluateAction(Map<String, String> result, Map<String, Object> data, Map<String, Object> state);
 
     Integer getPriority();
+
+    boolean isEnforceIsolation();
 }

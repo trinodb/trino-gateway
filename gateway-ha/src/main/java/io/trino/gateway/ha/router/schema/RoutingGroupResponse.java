@@ -31,4 +31,6 @@ public interface RoutingGroupResponse
     @Nullable String routingGroup();
 
     Map<String, String> externalHeaders();
+
+    Boolean enforceIsolation();
 }
