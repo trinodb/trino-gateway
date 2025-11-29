@@ -2,6 +2,32 @@
 
 ## 2025
 
+### Trino Gateway 17 (xx Nov 2025) { id="17" }
+
+Artifacts:
+
+* [JAR file gateway-ha-17-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/17/gateway-ha-17-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:17`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.17.0`
+
+Changes:
+
+**General**
+
+* Use UBI10 micro as the base Docker image.
+  ([#779](https://github.com/trinodb/trino-gateway/pull/779))
+* Expose Trino cluster state via JMX.
+  ([#782](https://github.com/trinodb/trino-gateway/pull/782))
+* Fix `partialCancel` statement path redirection.
+  ([#776](https://github.com/trinodb/trino-gateway/pull/776))
+
+**UI**
+
+* TBD
+
 ### Trino Gateway 16 (17 Sep 2025) { id="16" }
 
 Artifacts:
