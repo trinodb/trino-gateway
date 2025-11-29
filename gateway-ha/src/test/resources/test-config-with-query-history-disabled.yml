@@ -16,7 +16,7 @@ monitor:
   taskDelay: 1s
 
 routing:
-  queryHistoryEnabled: true
+  queryHistoryEnabled: false
 
 extraWhitelistPaths:
   - '/v1/custom.*'
