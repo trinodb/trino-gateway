@@ -25,7 +25,7 @@
         <dep.flyway.version>11.8.2</dep.flyway.version>
         <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.18.0</dep.mockito.version>
-        <dep.okhttp3.version>5.3.0</dep.okhttp3.version>
+        <dep.okhttp3.version>5.3.2</dep.okhttp3.version>
         <dep.trino.version>474</dep.trino.version>
     </properties>
 
