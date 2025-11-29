@@ -46,7 +46,7 @@
         <air.modernizer.java-version>8</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
 
-        <dep.jetty.version>12.1.3</dep.jetty.version>
+        <dep.jetty.version>12.1.4</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
