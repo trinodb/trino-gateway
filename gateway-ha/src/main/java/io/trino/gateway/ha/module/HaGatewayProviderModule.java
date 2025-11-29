@@ -90,6 +90,7 @@ public class HaGatewayProviderModule
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
     private final PathFilter pathFilter;
+    private final JdbcConnectionManager connectionManager;
 
     @Override
     protected void configure()
@@ -100,6 +101,7 @@ public class HaGatewayProviderModule
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
         binder().bind(PathFilter.class).toInstance(pathFilter);
+        binder().bind(JdbcConnectionManager.class).toInstance(connectionManager);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
@@ -121,8 +123,8 @@ public class HaGatewayProviderModule
         oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
 
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
-        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
+        this.connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
+        resourceGroupsManager = new HaResourceGroupsManager(this.connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
     }
