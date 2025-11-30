@@ -25,7 +25,7 @@ presetUsers:
     privileges: BAR_BAZ
 
 authentication:
-  defaultType: "form"
+  defaultTypes: ["form"]
   form:
     selfSignKeyPair:
       privateKeyRsa: src/test/resources/auth/test_private_key.pem

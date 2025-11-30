@@ -13,29 +13,31 @@
  */
 package io.trino.gateway.ha.config;
 
+import java.util.List;
+
 public class AuthenticationConfiguration
 {
-    private String defaultType;
+    private List<String> defaultTypes;
     private OAuthConfiguration oauth;
     private FormAuthConfiguration form;
 
-    public AuthenticationConfiguration(String defaultType, OAuthConfiguration oauth, FormAuthConfiguration form)
+    public AuthenticationConfiguration(List<String> defaultTypes, OAuthConfiguration oauth, FormAuthConfiguration form)
     {
-        this.defaultType = defaultType;
+        this.defaultTypes = defaultTypes;
         this.oauth = oauth;
         this.form = form;
     }
 
     public AuthenticationConfiguration() {}
 
-    public String getDefaultType()
+    public List<String> getDefaultTypes()
     {
-        return this.defaultType;
+        return this.defaultTypes;
     }
 
-    public void setDefaultType(String defaultType)
+    public void setDefaultTypes(List<String> defaultTypes)
     {
-        this.defaultType = defaultType;
+        this.defaultTypes = defaultTypes;
     }
 
     public OAuthConfiguration getOauth()
