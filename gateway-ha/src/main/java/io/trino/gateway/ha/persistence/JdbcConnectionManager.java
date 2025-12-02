@@ -125,8 +125,7 @@ public class JdbcConnectionManager
         executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
-                    long created = System.currentTimeMillis()
-                            - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
+                    long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
                     jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
