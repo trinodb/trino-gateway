@@ -112,7 +112,7 @@ public abstract class BaseRoutingManager
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        if (backends.isEmpty() && strictRouting) {
+        if (strictRouting && backends.isEmpty()) {
             throw new WebApplicationException(
                              Response.status(NOT_FOUND)
                             .entity(String.format("No healthy backends available for routing group '%s' under strict routing for user '%s'", routingGroup, user))
