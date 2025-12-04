@@ -107,7 +107,7 @@ public abstract class BaseRoutingManager
      * has no suitable backend unless {@code strictRouting} is true, in which case a 404 is returned.
      */
     @Override
-    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean strictRouting)
+    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, boolean strictRouting)
     {
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
