@@ -115,7 +115,7 @@ public abstract class BaseRoutingManager
         if (backends.isEmpty() && strictRouting) {
             throw new WebApplicationException(
                              Response.status(NOT_FOUND)
-                            .entity(String.format("No healthy backends available for routing group '%s' under enforced isolation for user '%s'", routingGroup, user))
+                            .entity(String.format("No healthy backends available for routing group '%s' under strict routing for user '%s'", routingGroup, user))
                             .build());
         }
         return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
