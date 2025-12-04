@@ -128,7 +128,7 @@ public class ExternalRoutingGroupSelector
                     log.info("External routing service modified headers to: %s", filteredHeaders);
                 }
             }
-            return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders, response.enforceIsolation());
+            return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders, response.strictRouting());
         }
         catch (Exception e) {
             throwIfInstanceOf(e, WebApplicationException.class);

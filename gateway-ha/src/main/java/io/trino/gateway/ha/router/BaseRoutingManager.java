@@ -104,15 +104,15 @@ public abstract class BaseRoutingManager
 
     /**
      * Performs routing to a given cluster group. This falls back to a default backend if the target group
-     * has no suitable backend unless {@code enforceIsolation} is true, in which case a 404 is returned.
+     * has no suitable backend unless {@code strictRouting} is true, in which case a 404 is returned.
      */
     @Override
-    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean enforceIsolation)
+    public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean strictRouting)
     {
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        if (backends.isEmpty() && enforceIsolation) {
+        if (backends.isEmpty() && strictRouting) {
             throw new WebApplicationException(
                              Response.status(NOT_FOUND)
                             .entity(String.format("No healthy backends available for routing group '%s' under enforced isolation for user '%s'", routingGroup, user))

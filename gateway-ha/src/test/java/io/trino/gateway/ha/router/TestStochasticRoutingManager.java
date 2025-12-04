@@ -77,7 +77,7 @@ final class TestStochasticRoutingManager
     }
 
     @Test
-    void testEnforceIsolationException()
+    void testStrictRoutingException()
     {
         ProxyBackendConfiguration inactiveBackend = createBackend(
                 "inactive-backend",

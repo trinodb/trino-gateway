@@ -2,7 +2,7 @@
 name: "airflow"
 description: "if query from airflow, route to etl group"
 priority: 0
-enforceIsolation: false
+strictRouting: false
 actions:
 - "result.put(\"routingGroup\", \"etl\")"
 condition: "request.getHeader(\"X-Trino-Source\") == \"airflow\""
@@ -10,7 +10,7 @@ condition: "request.getHeader(\"X-Trino-Source\") == \"airflow\""
 name: "airflow special"
 description: "if query from airflow with special label, route to etl-special group"
 priority: 1
-enforceIsolation: false
+strictRouting: false
 actions:
 - "result.put(\"routingGroup\", \"etl-special\")"
 condition: "request.getHeader(\"X-Trino-Source\") == \"airflow\" && request.getHeader(\"\

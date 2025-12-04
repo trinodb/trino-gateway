@@ -32,5 +32,5 @@ public interface RoutingGroupResponse
 
     Map<String, String> externalHeaders();
 
-    Boolean enforceIsolation();
+    Boolean strictRouting();
 }

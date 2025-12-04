@@ -37,7 +37,7 @@ public class MVELRoutingRule
     String name;
     String description;
     Integer priority;
-    boolean enforceIsolation;
+    boolean strictRouting;
     Serializable condition;
     List<Serializable> actions;
     ParserContext parserContext = new ParserContext();
@@ -47,7 +47,7 @@ public class MVELRoutingRule
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,
             @JsonProperty("priority") Integer priority,
-            @JsonProperty("enforceIsolation") Boolean enforceIsolation,
+            @JsonProperty("strictRouting") Boolean strictRouting,
             @JsonProperty("condition") Serializable condition,
             @JsonProperty("actions") List<Serializable> actions)
     {
@@ -56,7 +56,7 @@ public class MVELRoutingRule
         this.name = requireNonNull(name, "name is null");
         this.description = requireNonNullElse(description, "");
         this.priority = requireNonNullElse(priority, 0);
-        this.enforceIsolation = requireNonNullElse(enforceIsolation, false);
+        this.strictRouting = requireNonNullElse(strictRouting, false);
         this.condition = requireNonNull(
                 condition instanceof String stringCondition ? compileExpression(stringCondition, parserContext) : condition,
                 "condition is null");
@@ -101,9 +101,9 @@ public class MVELRoutingRule
     }
 
     @Override
-    public boolean isEnforceIsolation()
+    public boolean isStrictRouting()
     {
-        return enforceIsolation;
+        return strictRouting;
     }
 
     @Override
@@ -141,7 +141,7 @@ public class MVELRoutingRule
                 .add("name", name)
                 .add("description", description)
                 .add("priority", priority)
-                .add("enforceIsolation", enforceIsolation)
+                .add("strictRouting", strictRouting)
                 .add("condition", decompile(condition))
                 .add("actions", String.join(",", actions.stream().map(DebugTools::decompile).toList()))
                 .add("parserContext", parserContext)

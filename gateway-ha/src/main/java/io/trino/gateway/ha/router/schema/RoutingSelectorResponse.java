@@ -22,10 +22,10 @@ import java.util.Map;
  * Response from the routing service that includes:
  * - routingGroup: The target routing group for the request (Optional)
  * - externalHeaders: Headers that can be set in the request (Currently can only be set in ExternalRoutingGroupSelector)
- * - enforceIsolation: If true, the handler must not fall back to default when target group has no available backend;
+ * - strictRouting: If true, the handler must not fall back to default when target group has no available backend;
  *   instead, a 4xx should be returned.
  */
-public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders, Boolean enforceIsolation)
+public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders, Boolean strictRouting)
         implements RoutingGroupResponse
 {
     public RoutingSelectorResponse {

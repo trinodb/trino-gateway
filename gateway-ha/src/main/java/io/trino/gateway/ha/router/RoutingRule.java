@@ -24,5 +24,5 @@ public interface RoutingRule
 
     Integer getPriority();
 
-    boolean isEnforceIsolation();
+    boolean isStrictRouting();
 }

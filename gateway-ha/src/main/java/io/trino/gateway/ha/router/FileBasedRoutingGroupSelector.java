@@ -73,15 +73,15 @@ public class FileBasedRoutingGroupSelector
             data = ImmutableMap.of("request", request);
         }
 
-        boolean enforceIsolation = false;
+        boolean strictRouting = false;
         for (RoutingRule rule : requireNonNull(rules.get())) {
             if (rule.evaluateCondition(data, state)) {
                 log.debug("%s evaluated to true on request: %s", rule, request);
                 rule.evaluateAction(result, data, state);
-                enforceIsolation = rule.isEnforceIsolation();
+                strictRouting = rule.isStrictRouting();
             }
         }
-        return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY), ImmutableMap.of(), enforceIsolation);
+        return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY), ImmutableMap.of(), strictRouting);
     }
 
     public List<RoutingRule> readRulesFromPath(Path rulesPath)

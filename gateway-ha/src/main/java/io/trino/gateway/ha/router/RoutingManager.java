@@ -81,8 +81,8 @@ public interface RoutingManager
      *
      * @param routingGroup the routing group to use for backend selection
      * @param user the user requesting the backend
-     * @param enforceIsolation whether to enforce isolation
+     * @param strictRouting whether to enforce isolation
      * @return the backend configuration for the selected cluster
      */
-    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean enforceIsolation);
+    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, Boolean strictRouting);
 }
