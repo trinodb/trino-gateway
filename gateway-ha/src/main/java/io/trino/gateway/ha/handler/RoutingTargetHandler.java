@@ -91,11 +91,14 @@ public class RoutingTargetHandler
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
 
-        // This falls back on default routing group backend if there is no cluster found for the routing group.
+        // When no cluster is found:
+        //   - If strictRouting is false, fall back to the default routing group backend.
+        //   - If strictRouting is true, return a 404 response.
         String routingGroup = !isNullOrEmpty(routingDestination.routingGroup())
                 ? routingDestination.routingGroup()
                 : defaultRoutingGroup;
-        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user, routingDestination.strictRouting());
+        boolean strictRouting = Optional.ofNullable(routingDestination.strictRouting()).orElse(false);
+        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user, strictRouting);
         String clusterHost = backendConfiguration.getProxyTo();
         String externalUrl = backendConfiguration.getExternalUrl();
         // Apply headers from RoutingDestination if there are any
