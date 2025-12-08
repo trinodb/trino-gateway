@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Locale from "../locales";
 import styles from './dashboard.module.scss';
 import * as echarts from "echarts";
-import { Card, Col, Descriptions, Row, Tooltip } from "@douyinfe/semi-ui";
+import { Card, Col, Descriptions, Form, Row, Tooltip } from "@douyinfe/semi-ui";
 import { distributionApi } from "../api/webapp/dashboard";
 import { DistributionDetail, DistributionChartData, LineChartData } from "../types/dashboard";
 import { getCSSVar } from "../utils/utils";
@@ -10,12 +10,14 @@ import { IconHelpCircle } from "@douyinfe/semi-icons";
 import { useNavigate } from "react-router-dom";
 import { hasPagePermission, routersMapper } from "../router";
 import { useAccessStore } from "../store";
-import { formatZonedDateTime } from "../utils/time";
+import { formatZonedDateTime, formatZonedTimestamp, getTimeDisplayZoneOptions } from "../utils/time";
 
 export function Dashboard() {
   const access = useAccessStore();
   const navigate = useNavigate();
   const [distributionDetail, setDistributionDetail] = useState<DistributionDetail>();
+  const [timeZone, setTimeZone] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const timeZones: string[] = getTimeDisplayZoneOptions();
 
   useEffect(() => {
     distributionApi({})
@@ -27,7 +29,7 @@ export function Dashboard() {
   const data = [
     {
       key: Locale.Dashboard.StartTime,
-      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime)
+      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime, timeZone)
     },
     {
       key: Locale.Dashboard.Backends,
@@ -98,12 +100,32 @@ export function Dashboard() {
     },
   ];
 
+  const timeZoneRender = () => {
+    return (
+      <Form<{ timeZone: string }>
+        initValues={{ timeZone }}
+        onValueChange={(values) => { setTimeZone(values.timeZone); }}
+        defaultValue={timeZone}
+        render={() => (
+          <>
+            <Form.Select field="timeZone" label={Locale.Dashboard.TimeZone} style={{ width: 200 }} initValue={timeZone} placeholder={timeZone} filter>
+              {timeZones.map((tz) => (
+                <Form.Select.Option key={tz} value={tz}>{tz}</Form.Select.Option>
+              ))}
+            </Form.Select>
+          </>
+          )}
+        >
+      </Form>
+    )
+  };
+
   return (
     <>
       <div style={{ width: '100%' }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <Card title={Locale.Dashboard.Summary} bordered={false} className={styles.card}>
+            <Card title={Locale.Dashboard.Summary} bordered={false} className={styles.card} headerExtraContent={timeZoneRender()}>
               <Descriptions data={data} row size="large" className={styles.description} />
             </Card>
           </Col>
@@ -111,7 +133,7 @@ export function Dashboard() {
         <Row gutter={[16, 16]}>
           <Col span={16}>
             <Card title={Locale.Dashboard.QueryDistribution} bordered={false} className={styles.card}>
-              <LineChart data={distributionDetail?.lineChart || {}} />
+              <LineChart data={distributionDetail?.lineChart || {}} timeZone={timeZone} />
             </Card>
           </Col>
           <Col span={8}>
@@ -143,36 +165,37 @@ function updateLegendColor() {
 }
 
 function LineChart(props: {
-  data: Record<string, LineChartData[]>
+  data: Record<string, LineChartData[]>,
+  timeZone: string
 }) {
   const chartRef = useRef(null);
   const legendColor = updateLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
-    let minMinute = 2400;
-    let maxMinute = 0;
-    Object.keys(props.data).forEach(d => {
-      const lineChartDatas = props.data[d]
-      const lineChartDataTemp = lineChartDatas.map(lineChartData => parseInt(lineChartData.minute.replace(":", "")))
-      const minMinuteTemp = Math.min(...lineChartDataTemp);
-      const maxMinuteTemp = Math.max(...lineChartDataTemp);
-      if (minMinuteTemp < minMinute) {
-        minMinute = minMinuteTemp;
-      }
-      if (maxMinuteTemp > maxMinute) {
-        maxMinute = maxMinuteTemp;
-      }
-    });
-    const minuteStrings: string[] = [];
-    for (let i = minMinute; i <= maxMinute; i++) {
-      if ((i % 100) >= 60) {
-        continue;
-      }
-      const hour = Math.floor(i / 100).toString().padStart(2, "0");
-      const minute = (i % 100).toString().padStart(2, "0");
-      minuteStrings.push(`${hour}:${minute}`);
+
+    const displayData: Record<string, LineChartData[]> = Object.fromEntries(
+            Object.entries(props.data).map(([name, series]) => [
+              name,
+              series.map((item) => ({
+                ...item,
+              })),
+            ])
+    );
+
+    const timestamps = Object.values(displayData).flat().map(d => Number(d.timestamp));
+    let minTimestamp = Math.min(...timestamps);
+    let maxTimestamp = Math.max(...timestamps);
+    const xAxisTimeLabels: number[] = [];
+    const MINUTE = 60 * 1000;
+
+    minTimestamp = Math.floor(minTimestamp / MINUTE) * MINUTE;
+    maxTimestamp = Math.floor(maxTimestamp / MINUTE) * MINUTE;
+
+    for (let t = minTimestamp; t <= maxTimestamp; t += MINUTE) {
+      xAxisTimeLabels.push(t);
     }
+
     const option = {
       legend: {
         textStyle: {
@@ -181,7 +204,7 @@ function LineChart(props: {
       },
       xAxis: {
         type: 'category',
-        data: minuteStrings
+        data: xAxisTimeLabels.map(ts => formatZonedTimestamp(ts, props.timeZone))
       },
       yAxis: {
         type: 'value',
@@ -191,13 +214,15 @@ function LineChart(props: {
         trigger: 'axis'
       },
       series: Object.keys(props.data).map(d => {
-        const lineChartDatas = props.data[d].reduce((obj, item) => {
-          obj[item.minute] = item.queryCount;
-          return obj;
-        }, {} as Record<string, any>);
+        const data = displayData[d];
+        const count = new Map<number, number>();
+        for (const dataPoint of data) {
+          const xValueHHMM = Math.floor(Number(dataPoint.timestamp) / MINUTE) * MINUTE;
+          count.set(xValueHHMM, dataPoint.queryCount);
+        }
         return {
           name: d,
-          data: minuteStrings.map(m => lineChartDatas[m] || 0),
+          data: xAxisTimeLabels.map(timeStamp => count.get(timeStamp) || 0),
           type: 'line',
           smooth: true
         }
@@ -206,7 +231,7 @@ function LineChart(props: {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     chartInstance.setOption(option);
-  }, [props.data, legendColor]);
+  }, [props.data, props.timeZone, legendColor]);
 
   return (
     <div style={{ textAlign: "center" }}>

@@ -201,7 +201,7 @@ final class TestObjectSerializable
             throws JsonProcessingException
     {
         DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
-        lineChart.setMinute("11:22");
+        lineChart.setTimestamp("1711974896630");
         lineChart.setBackendUrl("example.com");
         lineChart.setName("name1");
         lineChart.setQueryCount(6L);
@@ -230,7 +230,7 @@ final class TestObjectSerializable
                         "distributionChart",
                         "lineChart",
                         "startTime",
-                        "minute",       // LineChart
+                        "timestamp",       // LineChart
                         "backendUrl",
                         "queryCount",
                         "\"name\":\"name1\"",

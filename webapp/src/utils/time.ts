@@ -1,4 +1,5 @@
 import moment from "moment";
+import {getTimeZones} from "@vvo/tzdb";
 
 export const formatTime = (
   time: number,
@@ -44,7 +45,21 @@ export const formatTimestamp = (timestamp: number): string => {
   return formatDateComponents(date);
 }
 
-export const formatZonedDateTime = (zonedDateTime: string): string => {
-  const date = new Date(zonedDateTime);
-  return formatDateComponents(date);
+export const formatZonedTimestamp = (timestamp: number, timezone: string): string => {
+    const date = new Date(timestamp);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone, hour12: false, hour: '2-digit', minute: '2-digit',
+    });
+    return formatter.format(date);
 }
+
+export const formatZonedDateTime = (zonedDateTime: string, timeZone: string): string => {
+    const date = new Date(zonedDateTime);
+    const zonedDate  = new Date(date.toLocaleString("en-US", { timeZone }));
+    return formatDateComponents(zonedDate);
+}
+
+export const getTimeDisplayZoneOptions = (): string[] => {
+    const timeZones = getTimeZones({ includeUtc: true });
+    return timeZones.map(tz => tz.name).sort();
+};
