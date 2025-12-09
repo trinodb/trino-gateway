@@ -175,12 +175,12 @@ function LineChart(props: {
     const chartInstance = echarts.init(chartRef.current);
 
     const displayData: Record<string, LineChartData[]> = Object.fromEntries(
-            Object.entries(props.data).map(([name, series]) => [
-              name,
-              series.map((item) => ({
-                ...item,
-              })),
-            ])
+      Object.entries(props.data).map(([name, series]) => [
+        name,
+        series.map((item) => ({
+          ...item,
+        })),
+      ])
     );
 
     const timestamps = Object.values(displayData).flat().map(d => Number(d.timestamp));
@@ -213,7 +213,7 @@ function LineChart(props: {
       tooltip: {
         trigger: 'axis'
       },
-      series: Object.keys(props.data).map(d => {
+      series: Object.keys(displayData).map(d => {
         const data = displayData[d];
         const count = new Map<number, number>();
         for (const dataPoint of data) {
