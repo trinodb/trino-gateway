@@ -19,6 +19,7 @@ public class BackendStateConfiguration
     private String password = "";
     private Boolean ssl = false;
     private boolean xForwardedProtoHeader;
+    private boolean monitorMtlsEnabled;
 
     public BackendStateConfiguration() {}
 
@@ -60,5 +61,15 @@ public class BackendStateConfiguration
     public void setXForwardedProtoHeader(boolean xForwardedProtoHeader)
     {
         this.xForwardedProtoHeader = xForwardedProtoHeader;
+    }
+
+    public boolean isMonitorMtlsEnabled()
+    {
+        return monitorMtlsEnabled;
+    }
+
+    public void setMonitorMtlsEnabled(boolean monitorMtlsEnabled)
+    {
+        this.monitorMtlsEnabled = monitorMtlsEnabled;
     }
 }

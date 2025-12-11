@@ -106,6 +106,10 @@ public class HaGatewayProviderModule
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
         pathFilter = new PathFilter(configuration.getStatementPaths(), configuration.getExtraWhitelistPaths());
+        // Enforce required TLS properties for the named HttpClient "monitor" when mTLS is enabled for monitors
+        if (configuration.getBackendState() != null && configuration.getBackendState().isMonitorMtlsEnabled()) {
+            validateMonitorMtlsConfig(configuration.getServerConfig());
+        }
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
@@ -125,6 +129,28 @@ public class HaGatewayProviderModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+    }
+
+    private static void validateMonitorMtlsConfig(Map<String, String> serverConfig)
+    {
+        String[] requiredKeys = new String[] {
+                "monitor.http-client.key-store-path",
+                "monitor.http-client.key-store-password",
+                "monitor.http-client.trust-store-path",
+                "monitor.http-client.trust-store-password"
+        };
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        for (String key : requiredKeys) {
+            String value = serverConfig.get(key);
+            if (value == null || value.isBlank()) {
+                missing.add(key);
+            }
+        }
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "backendState.monitorMtlsEnabled=true requires monitor HttpClient TLS configuration. Missing: "
+                            + String.join(", ", missing));
+        }
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)

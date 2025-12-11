@@ -47,6 +47,7 @@ public class ClusterStatsJmxMonitor
     private final String username;
     private final String password;
     private final boolean xForwardedProtoHeader;
+    private final boolean monitorMtlsEnabled;
 
     public ClusterStatsJmxMonitor(HttpClient client, BackendStateConfiguration backendStateConfiguration)
     {
@@ -54,6 +55,7 @@ public class ClusterStatsJmxMonitor
         this.username = backendStateConfiguration.getUsername();
         this.password = backendStateConfiguration.getPassword();
         this.xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
+        this.monitorMtlsEnabled = backendStateConfiguration.isMonitorMtlsEnabled();
     }
 
     private static void updateClusterStatsFromDiscoveryNodeManagerResponse(JmxResponse response, ClusterStats.Builder clusterStats)
@@ -132,8 +134,10 @@ public class ClusterStatsJmxMonitor
                 .setUri(uriBuilderFrom(URI.create(jmxUrl))
                         .appendPath(JMX_PATH)
                         .appendPath(mbeanName)
-                        .build())
-                .addHeader("X-Trino-User", username);
+                        .build());
+        if (!monitorMtlsEnabled) {
+            requestBuilder.addHeader("X-Trino-User", username);
+        }
         if (xForwardedProtoHeader) {
             requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
         }
@@ -141,7 +145,7 @@ public class ClusterStatsJmxMonitor
 
         boolean isHttps = preparedRequest.getUri().getScheme().equalsIgnoreCase("https");
 
-        if (isHttps) {
+        if (isHttps && !monitorMtlsEnabled) {
             HttpRequestFilter filter = new BasicAuthRequestFilter(username, password);
             preparedRequest = filter.filterRequest(preparedRequest);
         }

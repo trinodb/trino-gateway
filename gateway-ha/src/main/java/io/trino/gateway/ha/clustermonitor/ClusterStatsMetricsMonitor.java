@@ -53,6 +53,7 @@ public class ClusterStatsMetricsMonitor
     private final int retries;
     private final MetricsResponseHandler metricsResponseHandler;
     private final Header identityHeader;
+    private final boolean monitorMtlsEnabled;
     private final String metricsEndpoint;
     private final String runningQueriesMetricName;
     private final String queuedQueriesMetricName;
@@ -65,12 +66,18 @@ public class ClusterStatsMetricsMonitor
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         retries = monitorConfiguration.getRetries();
-        if (!isNullOrEmpty(backendStateConfiguration.getPassword())) {
-            identityHeader = new Header("Authorization",
-                    new BasicCredentials(backendStateConfiguration.getUsername(), backendStateConfiguration.getPassword()).getBasicAuthHeader());
+        monitorMtlsEnabled = backendStateConfiguration.isMonitorMtlsEnabled();
+        if (!monitorMtlsEnabled) {
+            if (!isNullOrEmpty(backendStateConfiguration.getPassword())) {
+                identityHeader = new Header("Authorization",
+                        new BasicCredentials(backendStateConfiguration.getUsername(), backendStateConfiguration.getPassword()).getBasicAuthHeader());
+            }
+            else {
+                identityHeader = new Header("X-Trino-User", backendStateConfiguration.getUsername());
+            }
         }
         else {
-            identityHeader = new Header("X-Trino-User", backendStateConfiguration.getUsername());
+            identityHeader = null;
         }
         metricsEndpoint = monitorConfiguration.getMetricsEndpoint();
         runningQueriesMetricName = monitorConfiguration.getRunningQueriesMetricName();
@@ -139,8 +146,10 @@ public class ClusterStatsMetricsMonitor
 
         Request.Builder requestBuilder = prepareGet()
                 .setUri(uri.build())
-                .addHeader(identityHeader.name, identityHeader.value)
                 .addHeader("Content-Type", "application/openmetrics-text; version=1.0.0; charset=utf-8");
+        if (identityHeader != null) {
+            requestBuilder.addHeader(identityHeader.name, identityHeader.value);
+        }
         if (xForwardedProtoHeader) {
             requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
         }
