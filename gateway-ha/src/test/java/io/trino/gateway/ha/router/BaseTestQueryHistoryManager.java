@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -32,7 +31,6 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -165,7 +163,8 @@ abstract class BaseTestQueryHistoryManager
         Jdbi mockJdbi = mock(Jdbi.class);
         when(mockJdbi.onDemand(QueryHistoryDao.class)).thenReturn(delegate);
 
-        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration(true, 10000, new Duration(2, TimeUnit.SECONDS));
+        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration();
+        writeBufferConfig.setEnabled(true);
         HaQueryHistoryManager manager = new HaQueryHistoryManager(mockJdbi, container.getJdbcUrl().startsWith("jdbc:oracle"), writeBufferConfig);
         // First call buffers (no throw), then stop() flushes once and succeeds
         QueryHistoryManager.QueryDetail queryDetail = createQueryDetail();
@@ -190,7 +189,8 @@ abstract class BaseTestQueryHistoryManager
 
         Jdbi mockJdbi = mock(Jdbi.class);
         when(mockJdbi.onDemand(QueryHistoryDao.class)).thenReturn(delegate);
-        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration(true, 10000, new Duration(2, TimeUnit.SECONDS));
+        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration();
+        writeBufferConfig.setEnabled(true);
         HaQueryHistoryManager manager = new HaQueryHistoryManager(mockJdbi, container.getJdbcUrl().startsWith("jdbc:oracle"), writeBufferConfig);
 
         QueryHistoryManager.QueryDetail queryDetail = createQueryDetail();

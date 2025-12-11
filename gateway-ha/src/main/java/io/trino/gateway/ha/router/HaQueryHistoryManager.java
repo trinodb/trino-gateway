@@ -57,7 +57,7 @@ public class HaQueryHistoryManager
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
         this.isOracleBackend = isOracleBackend;
-        if (writeBufferConfig != null && writeBufferConfig.isEnabled()) {
+        if (writeBufferConfig.isEnabled()) {
             this.writeBuffer = new WriteBuffer<>(writeBufferConfig.getMaxCapacity());
             this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "query-history-write-buffer");

@@ -23,15 +23,6 @@ public class WriteBufferConfiguration
     private int maxCapacity = 10000;
     private Duration flushInterval = new Duration(2, TimeUnit.SECONDS);
 
-    public WriteBufferConfiguration() {}
-
-    public WriteBufferConfiguration(boolean enabled, int maxCapacity, Duration flushInterval)
-    {
-        this.enabled = enabled;
-        this.maxCapacity = maxCapacity;
-        this.flushInterval = flushInterval;
-    }
-
     public boolean isEnabled()
     {
         return enabled;
@@ -49,6 +40,9 @@ public class WriteBufferConfiguration
 
     public void setMaxCapacity(int maxCapacity)
     {
+        if (maxCapacity <= 0) {
+            throw new IllegalArgumentException("maxCapacity must be positive");
+        }
         this.maxCapacity = maxCapacity;
     }
 
@@ -59,6 +53,9 @@ public class WriteBufferConfiguration
 
     public void setFlushInterval(Duration flushInterval)
     {
+        if (flushInterval.toMillis() <= 0) {
+            throw new IllegalArgumentException("flushInterval must be positive");
+        }
         this.flushInterval = flushInterval;
     }
 }

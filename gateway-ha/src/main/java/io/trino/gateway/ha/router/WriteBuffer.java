@@ -29,9 +29,11 @@ public final class WriteBuffer<T>
     /** Buffer an item for later flush. Drops the oldest if full. */
     public void buffer(T item)
     {
-        if (!deque.offerLast(item)) {
-            deque.pollFirst();
-            deque.offerLast(item);
+        synchronized (this) {
+            if (!deque.offerLast(item)) {
+                deque.pollFirst();
+                deque.offerLast(item);
+            }
         }
     }
 
@@ -46,15 +48,16 @@ public final class WriteBuffer<T>
     public int flushAll(Consumer<T> flusher)
     {
         int flushed = 0;
-        for (T next; (next = deque.pollFirst()) != null; ) {
+        for (T next; (next = deque.peekFirst()) != null; ) {
             try {
                 flusher.accept(next);
-                flushed++;
             }
             catch (RuntimeException e) {
-                deque.offerFirst(next);
                 break; // stop after first failure
             }
+            // Only remove after a successful flush
+            deque.pollFirst();
+            flushed++;
         }
         return flushed;
     }
