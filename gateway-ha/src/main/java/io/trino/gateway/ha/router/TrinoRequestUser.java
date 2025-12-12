@@ -22,9 +22,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Request;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
@@ -42,7 +41,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
@@ -198,7 +196,7 @@ public class TrinoRequestUser
                 userInfo = Optional.of(userInfoCache.orElseThrow().get(token));
                 return Optional.of(userInfo.orElseThrow().getSubject().toString());
             }
-            catch (ExecutionException e) {
+            catch (RuntimeException e) {
                 log.error(e, "Could not get userInfo");
             }
         }
@@ -216,10 +214,10 @@ public class TrinoRequestUser
             userField = config.getTokenUserField();
             if (config.getOauthTokenInfoUrl() != null) {
                 oauthUserInfoUrl = Optional.of(URI.create(config.getOauthTokenInfoUrl()));
-                userInfoCache = Optional.of(CacheBuilder.newBuilder()
+                userInfoCache = Optional.of(Caffeine.newBuilder()
                         .maximumSize(10000)
                         .expireAfterAccess(10, TimeUnit.MINUTES)
-                        .build(CacheLoader.from(this::getUserInfo)));
+                        .build(this::getUserInfo));
             }
             else {
                 oauthUserInfoUrl = Optional.empty();
