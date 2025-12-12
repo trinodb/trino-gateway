@@ -70,6 +70,7 @@ import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +82,11 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayProviderModule
         extends AbstractModule
 {
+    private static final String MONITOR_HTTP_CLIENT_KEY_STORE_PATH = "monitor.http-client.key-store-path";
+    private static final String MONITOR_HTTP_CLIENT_KEY_STORE_PASSWORD = "monitor.http-client.key-store-password";
+    private static final String MONITOR_HTTP_CLIENT_TRUST_STORE_PATH = "monitor.http-client.trust-store-path";
+    private static final String MONITOR_HTTP_CLIENT_TRUST_STORE_PASSWORD = "monitor.http-client.trust-store-password";
+
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
@@ -134,12 +140,12 @@ public class HaGatewayProviderModule
     private static void validateMonitorMtlsConfig(Map<String, String> serverConfig)
     {
         String[] requiredKeys = new String[] {
-                "monitor.http-client.key-store-path",
-                "monitor.http-client.key-store-password",
-                "monitor.http-client.trust-store-path",
-                "monitor.http-client.trust-store-password"
+                MONITOR_HTTP_CLIENT_KEY_STORE_PATH,
+                MONITOR_HTTP_CLIENT_KEY_STORE_PASSWORD,
+                MONITOR_HTTP_CLIENT_TRUST_STORE_PATH,
+                MONITOR_HTTP_CLIENT_TRUST_STORE_PASSWORD
         };
-        java.util.List<String> missing = new java.util.ArrayList<>();
+        List<String> missing = new ArrayList<>();
         for (String key : requiredKeys) {
             String value = serverConfig.get(key);
             if (value == null || value.isBlank()) {
