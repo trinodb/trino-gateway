@@ -557,3 +557,19 @@ a username and password using `backendState` as with the `JDBC` option.
 #### NOOP
 
 This option disables health checks.
+
+### Best-effort routing when all backends are unhealthy
+
+By default, routing only selects from backends that are both active and reported as HEALTHY
+by the gateway's health checks. In environments where health checks can be temporarily flaky,
+this can lead to "no available backend" errors even though queries would fail either way.
+
+You can enable an optional best-effort routing mode to avoid failing immediately when all
+active backends are marked equally UNHEALTHY. In this mode, if there are no healthy active backends,
+the router will select among active backends anyway.
+
+```yaml
+routing:
+  bestEffortRouting: true
+```
+

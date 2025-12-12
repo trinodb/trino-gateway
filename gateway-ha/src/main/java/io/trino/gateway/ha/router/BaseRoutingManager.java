@@ -54,6 +54,7 @@ public abstract class BaseRoutingManager
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
+    private final boolean bestEffortRouting;
     private final QueryHistoryManager queryHistoryManager;
     private final LoadingCache<String, String> queryIdBackendCache;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
@@ -63,6 +64,7 @@ public abstract class BaseRoutingManager
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
+        this.bestEffortRouting = routingConfiguration.isBestEffortRouting();
         this.queryHistoryManager = queryHistoryManager;
         this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
         this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
@@ -92,10 +94,16 @@ public abstract class BaseRoutingManager
      */
     public ProxyBackendConfiguration provideDefaultBackendConfiguration(String user)
     {
-        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveDefaultBackends().stream()
+        List<ProxyBackendConfiguration> activeDefaults = gatewayBackendManager.getActiveDefaultBackends();
+        List<ProxyBackendConfiguration> healthyDefaults = activeDefaults.stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        return selectBackend(backends, user).orElseThrow(() -> new IllegalStateException("Number of active backends found zero"));
+        // If no healthy defaults, optionally route among all active defaults when enabled
+        List<ProxyBackendConfiguration> candidates = !healthyDefaults.isEmpty()
+                ? healthyDefaults
+                : (bestEffortRouting ? activeDefaults : healthyDefaults);
+        return selectBackend(candidates, user)
+                .orElseThrow(() -> new IllegalStateException("Number of active backends found zero"));
     }
 
     /**
@@ -105,10 +113,15 @@ public abstract class BaseRoutingManager
     @Override
     public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
     {
-        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
+        List<ProxyBackendConfiguration> activeBackends = gatewayBackendManager.getActiveBackends(routingGroup);
+        List<ProxyBackendConfiguration> healthyBackends = activeBackends.stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
+        // If no healthy backends in group, optionally route among all active backends when enabled
+        List<ProxyBackendConfiguration> candidates = !healthyBackends.isEmpty()
+                ? healthyBackends
+                : (bestEffortRouting ? activeBackends : healthyBackends);
+        return selectBackend(candidates, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
     }
 
     /**

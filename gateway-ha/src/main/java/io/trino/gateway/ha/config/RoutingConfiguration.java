@@ -25,6 +25,10 @@ public class RoutingConfiguration
 
     private String defaultRoutingGroup = "adhoc";
 
+    // When true, if all active backends are unhealthy, route among active backends anyway (best-effort).
+    // Default is false for backward compatibility (strict: healthy-only).
+    private boolean bestEffortRouting;
+
     public Duration getAsyncTimeout()
     {
         return asyncTimeout;
@@ -53,5 +57,15 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
+    }
+
+    public boolean isBestEffortRouting()
+    {
+        return bestEffortRouting;
+    }
+
+    public void setBestEffortRouting(boolean bestEffortRouting)
+    {
+        this.bestEffortRouting = bestEffortRouting;
     }
 }
