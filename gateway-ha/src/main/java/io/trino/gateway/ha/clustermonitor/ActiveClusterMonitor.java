@@ -64,11 +64,11 @@ public class ActiveClusterMonitor
         log.info("Running cluster monitor with connection task delay of %s", taskDelay);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                log.info("Getting stats for all active clusters");
-                List<ProxyBackendConfiguration> activeClusters =
-                        gatewayBackendManager.getAllActiveBackends();
+                log.info("Getting stats for all clusters");
+                List<ProxyBackendConfiguration> allClusters =
+                        gatewayBackendManager.getAllBackends();
                 List<Future<ClusterStats>> futures = new ArrayList<>();
-                for (ProxyBackendConfiguration backend : activeClusters) {
+                for (ProxyBackendConfiguration backend : allClusters) {
                     Future<ClusterStats> call = executorService.submit(() -> clusterStatsMonitor.monitor(backend));
                     futures.add(call);
                 }
