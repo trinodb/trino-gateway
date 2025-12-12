@@ -558,3 +558,32 @@ a username and password using `backendState` as with the `JDBC` option.
 #### NOOP
 
 This option disables health checks.
+
+### Enable mTLS for monitor HttpClient (JMX and METRICS)
+
+For JMX and Metrics monitors, you can enable mutual TLS (mTLS) for the monitor HttpClient.
+When enabled, the monitors authenticate to backends with a client certificate and ignore any
+configured `backendState.username` and `backendState.password`.
+
+Enable it with a toggle in `backendState` and provide TLS material for the named `monitor` HttpClient
+under `serverConfig`:
+
+```yaml
+backendState:
+  monitorMtlsEnabled: true
+
+serverConfig:
+  monitor.http-client.key-store-path: /path/to/keystore
+  monitor.http-client.key-store-password: keystore_password
+  monitor.http-client.trust-store-path: /path/to/truststore
+  monitor.http-client.trust-store-password: changeit
+```
+
+Notes:
+
+- The `monitor` client is bound via Airlift's `httpClientBinder`, so properties must use the
+  `monitor.http-client.*` prefix.
+- With `monitorMtlsEnabled: true`:
+    - JMX and Metrics monitors do not send `Authorization` or `X-Trino-User` headers and do not apply Basic Auth.
+    - Authentication relies solely on the configured client certificate.
+- The gateway validates these TLS properties on startup when mTLS is enabled and fails fast if any are missing.
