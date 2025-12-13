@@ -14,13 +14,19 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.inject.Inject;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.dao.QueryHistory;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import jakarta.annotation.PreDestroy;
+import org.jdbi.v3.core.ConnectionException;
 import org.jdbi.v3.core.Jdbi;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -29,6 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,14 +45,35 @@ public class HaQueryHistoryManager
         implements QueryHistoryManager
 {
     private static final int FIRST_PAGE_NO = 1;
+    private static final Logger log = Logger.get(HaQueryHistoryManager.class);
 
     private final QueryHistoryDao dao;
     private final boolean isOracleBackend;
+    private final WriteBuffer<QueryDetail> writeBuffer;
+    private final ScheduledExecutorService scheduledExecutor;
 
-    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend)
+    @Inject
+    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend, WriteBufferConfiguration writeBufferConfig)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
         this.isOracleBackend = isOracleBackend;
+        if (writeBufferConfig.isEnabled()) {
+            this.writeBuffer = new WriteBuffer<>(writeBufferConfig.getMaxCapacity());
+            this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "query-history-write-buffer");
+                t.setDaemon(true);
+                return t;
+            });
+            scheduledExecutor.scheduleWithFixedDelay(
+                    this::flushBufferedWrites,
+                    writeBufferConfig.getFlushInterval().toMillis(),
+                    writeBufferConfig.getFlushInterval().toMillis(),
+                    TimeUnit.MILLISECONDS);
+        }
+        else {
+            this.writeBuffer = null;
+            this.scheduledExecutor = null;
+        }
     }
 
     @Override
@@ -54,15 +84,27 @@ public class HaQueryHistoryManager
             return;
         }
 
-        dao.insertHistory(
-                queryDetail.getQueryId(),
-                queryDetail.getQueryText(),
-                queryDetail.getBackendUrl(),
-                queryDetail.getUser(),
-                queryDetail.getSource(),
-                queryDetail.getCaptureTime(),
-                queryDetail.getRoutingGroup(),
-                queryDetail.getExternalUrl());
+        try {
+            dao.insertHistory(
+                    queryDetail.getQueryId(),
+                    queryDetail.getQueryText(),
+                    queryDetail.getBackendUrl(),
+                    queryDetail.getUser(),
+                    queryDetail.getSource(),
+                    queryDetail.getCaptureTime(),
+                    queryDetail.getRoutingGroup(),
+                    queryDetail.getExternalUrl());
+        }
+        catch (RuntimeException e) {
+            if (isConnectionIssue(e) && writeBuffer != null) {
+                writeBuffer.buffer(queryDetail);
+                log.warn(e, "DB unavailable; buffered query_history entry. queryId=%s, bufferSize=%s",
+                        queryDetail.getQueryId(), writeBuffer.size());
+            }
+            else {
+                throw e;
+            }
+        }
     }
 
     @Override
@@ -165,5 +207,67 @@ public class HaQueryHistoryManager
             pageSize = 0;
         }
         return (pageNo - FIRST_PAGE_NO) * pageSize;
+    }
+
+    private static boolean isConnectionIssue(Throwable t)
+    {
+        // SQL State codes starting with "08" indicate connection exceptions per ANSI/ISO SQL standard.
+        // See: https://en.wikipedia.org/wiki/SQLSTATE
+        // Examples: 08000 (connection exception), 08001 (cannot establish connection),
+        //           08003 (connection does not exist), 08006 (connection failure), etc.
+        for (Throwable cur = t; cur != null; cur = cur.getCause()) {
+            if (cur instanceof ConnectionException) {
+                return true;
+            }
+            if (cur instanceof SQLException sql) {
+                String sqlState = sql.getSQLState();
+                if (sqlState != null && sqlState.startsWith("08")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void flushBufferedWrites()
+    {
+        if (writeBuffer == null) {
+            return;
+        }
+        int before = writeBuffer.size();
+        int flushed = writeBuffer.flushAll(r -> {
+            dao.insertHistory(
+                    r.getQueryId(),
+                    r.getQueryText(),
+                    r.getBackendUrl(),
+                    r.getUser(),
+                    r.getSource(),
+                    r.getCaptureTime(),
+                    r.getRoutingGroup(),
+                    r.getExternalUrl());
+        });
+        if (flushed > 0) {
+            log.info("Flushed %s buffered query_history entries", flushed);
+        }
+        else if (before > 0 && writeBuffer.size() == before) {
+            log.warn("Failed to flush buffered query_history entries; will retry. bufferSize=%s", before);
+        }
+    }
+
+    @PreDestroy
+    public void stop()
+    {
+        if (scheduledExecutor == null) {
+            return;
+        }
+        try {
+            flushBufferedWrites();
+        }
+        catch (RuntimeException t) {
+            log.warn(t, "Error while flushing buffered query_history entries during shutdown");
+        }
+        finally {
+            scheduledExecutor.shutdownNow();
+        }
     }
 }

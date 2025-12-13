@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.AfterAll;
@@ -49,7 +50,8 @@ abstract class BaseExternalUrlQueryHistoryTest
                 true);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"));
+        WriteBufferConfiguration writeBufferConfiguration = new WriteBufferConfiguration();
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"), writeBufferConfiguration);
     }
 
     @AfterAll
