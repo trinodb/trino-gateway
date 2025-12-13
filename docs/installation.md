@@ -560,16 +560,20 @@ This option disables health checks.
 
 ### Best-effort routing when all backends are unhealthy
 
-By default, routing only selects from backends that are both active and reported as HEALTHY
-by the gateway's health checks. In environments where health checks can be temporarily flaky,
-this can lead to "no available backend" errors even though queries would fail either way.
+By default, routing only selects backends that are both ACTIVE and HEALTHY.
+However, in environments where health checks may occasionally be flaky,
+this behavior can result in “Number of active backends found zero” errors—even when
+viable clusters technically exist.
 
-You can enable an optional best-effort routing mode to avoid failing immediately when all
-active backends are marked equally UNHEALTHY. In this mode, if there are no healthy active backends,
-the router will select among active backends anyway.
+In reality, if a cluster is truly unhealthy, the query will fail regardless of whether
+the gateway routes to it or not. To prevent unnecessary immediate failures, you can enable
+best-effort routing.
+
+When best-effort mode is enabled, if all active backends in the routing group are marked
+UNHEALTHY, the router will still choose among them as a last resort, rather than failing
+the routing decision outright.
 
 ```yaml
 routing:
   bestEffortRouting: true
 ```
-

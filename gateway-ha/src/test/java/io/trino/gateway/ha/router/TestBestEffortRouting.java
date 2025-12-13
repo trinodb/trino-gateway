@@ -21,12 +21,11 @@ import org.junit.jupiter.api.Test;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 final class TestBestEffortRouting
 {
     @Test
-    void testBestEffortRoutingEnabled_SelectsActiveWhenAllUnhealthyInGroup()
+    void testBestEffortRoutingEnabledAllUnhealthy()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
@@ -47,24 +46,31 @@ final class TestBestEffortRouting
     }
 
     @Test
-    void testBestEffortRoutingDisabled_throwsWhenAllUnhealthyAndNoActiveDefault()
+    void testFallsBackWhenAllUnhealthyInGroup()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
-        routingConfiguration.setBestEffortRouting(false);
+        routingConfiguration.setBestEffortRouting(true);
+        routingConfiguration.setDefaultRoutingGroup("adhoc");
         GatewayBackendManager backendMgr = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
         RoutingManager rm = new StochasticRoutingManager(backendMgr, new HaQueryHistoryManager(connectionManager.getJdbi(), false), routingConfiguration);
 
-        String group = "strict-group";
-        addActiveBackend(backendMgr, group, "trino-1");
-        addActiveBackend(backendMgr, group, "trino-2");
+        // Non-default group with all unhealthy
+        String vipGroup = "vip";
+        addActiveBackend(backendMgr, vipGroup, "vip-1");
+        addActiveBackend(backendMgr, vipGroup, "vip-2");
+        rm.updateBackEndHealth("vip-1", TrinoStatus.UNHEALTHY);
+        rm.updateBackEndHealth("vip-2", TrinoStatus.UNHEALTHY);
 
-        rm.updateBackEndHealth("trino-1", TrinoStatus.UNHEALTHY);
-        rm.updateBackEndHealth("trino-2", TrinoStatus.UNHEALTHY);
+        // Default group with one healthy and one unhealthy
+        addActiveBackend(backendMgr, "adhoc", "adhoc-1");
+        addActiveBackend(backendMgr, "adhoc", "adhoc-2");
+        rm.updateBackEndHealth("adhoc-1", TrinoStatus.HEALTHY);
+        rm.updateBackEndHealth("adhoc-2", TrinoStatus.UNHEALTHY);
 
-        assertThatThrownBy(() -> rm.provideBackendConfiguration(group, "user"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No active backends available for default routing group");
+        ProxyBackendConfiguration selected = rm.provideBackendConfiguration(vipGroup, "user");
+        assertThat(selected.getRoutingGroup()).isEqualTo("adhoc");
+        assertThat(selected.getName()).isEqualTo("adhoc-1");
     }
 
     private static void addActiveBackend(GatewayBackendManager mgr, String group, String name)

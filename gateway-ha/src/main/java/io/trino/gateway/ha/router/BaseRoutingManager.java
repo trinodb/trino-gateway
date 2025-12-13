@@ -113,15 +113,10 @@ public abstract class BaseRoutingManager
     @Override
     public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
     {
-        List<ProxyBackendConfiguration> activeBackends = gatewayBackendManager.getActiveBackends(routingGroup);
-        List<ProxyBackendConfiguration> healthyBackends = activeBackends.stream()
+        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        // If no healthy backends in group, optionally route among all active backends when enabled
-        List<ProxyBackendConfiguration> candidates = !healthyBackends.isEmpty()
-                ? healthyBackends
-                : (bestEffortRouting ? activeBackends : healthyBackends);
-        return selectBackend(candidates, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
+        return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
     }
 
     /**
