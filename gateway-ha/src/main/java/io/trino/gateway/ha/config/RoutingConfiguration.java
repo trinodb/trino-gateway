@@ -25,8 +25,6 @@ public class RoutingConfiguration
 
     private String defaultRoutingGroup = "adhoc";
 
-    private boolean queryHistoryEnabled = true;
-
     public Duration getAsyncTimeout()
     {
         return asyncTimeout;
@@ -55,15 +53,5 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
-    }
-
-    public boolean isQueryHistoryEnabled()
-    {
-        return queryHistoryEnabled;
-    }
-
-    public void setQueryHistoryEnabled(boolean queryHistoryEnabled)
-    {
-        this.queryHistoryEnabled = queryHistoryEnabled;
     }
 }

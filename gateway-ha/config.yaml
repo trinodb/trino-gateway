@@ -6,17 +6,14 @@ routingRules:
   rulesEngineEnabled: False
   # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
 
-routing:
-  # Enable or disable query history recording to database (default: true)
-  queryHistoryEnabled: true
-
-
 dataStore:
   jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db
   user: trino_gateway_db_admin
   password: P0stG&es
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
+  # Enable or disable query history recording to database (default: true)
+  queryHistoryEnabled: true
 
 clusterStatsConfiguration:
   monitorType: INFO_API

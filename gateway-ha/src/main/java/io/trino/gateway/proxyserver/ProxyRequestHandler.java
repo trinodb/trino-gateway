@@ -107,7 +107,7 @@ public class ProxyRequestHandler
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
         proxyResponseConfiguration = haGatewayConfiguration.getProxyResponseConfiguration();
-        this.queryHistoryEnabled = haGatewayConfiguration.getRouting().isQueryHistoryEnabled();
+        this.queryHistoryEnabled = haGatewayConfiguration.getDataStore().isQueryHistoryEnabled();
     }
 
     @PreDestroy
@@ -283,6 +283,7 @@ public class ProxyRequestHandler
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
                 routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
+                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {

@@ -8,15 +8,13 @@ dataStore:
   user: ${ENV:POSTGRESQL_USER}
   password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
+  queryHistoryEnabled: false
 
 clusterStatsConfiguration:
   monitorType: INFO_API
 
 monitor:
   taskDelay: 1s
-
-routing:
-  queryHistoryEnabled: false
 
 extraWhitelistPaths:
   - '/v1/custom.*'

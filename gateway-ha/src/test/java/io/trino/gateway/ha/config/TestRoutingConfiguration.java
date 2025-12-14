@@ -28,20 +28,6 @@ class TestRoutingConfiguration
         assertThat(routingConfiguration.getAsyncTimeout()).isEqualTo(new Duration(2, MINUTES));
         assertThat(routingConfiguration.isAddXForwardedHeaders()).isTrue();
         assertThat(routingConfiguration.getDefaultRoutingGroup()).isEqualTo("adhoc");
-        assertThat(routingConfiguration.isQueryHistoryEnabled()).isTrue();
-    }
-
-    @Test
-    void testQueryHistoryEnabledSetter()
-    {
-        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
-        assertThat(routingConfiguration.isQueryHistoryEnabled()).isTrue();
-
-        routingConfiguration.setQueryHistoryEnabled(false);
-        assertThat(routingConfiguration.isQueryHistoryEnabled()).isFalse();
-
-        routingConfiguration.setQueryHistoryEnabled(true);
-        assertThat(routingConfiguration.isQueryHistoryEnabled()).isTrue();
     }
 
     @Test
@@ -58,8 +44,5 @@ class TestRoutingConfiguration
 
         routingConfiguration.setDefaultRoutingGroup("batch");
         assertThat(routingConfiguration.getDefaultRoutingGroup()).isEqualTo("batch");
-
-        routingConfiguration.setQueryHistoryEnabled(false);
-        assertThat(routingConfiguration.isQueryHistoryEnabled()).isFalse();
     }
 }
