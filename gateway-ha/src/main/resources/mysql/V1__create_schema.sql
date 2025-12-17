@@ -76,3 +76,19 @@ CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     PRIMARY KEY (environment, source(128), query_type),
     UNIQUE (source(128), environment, query_type(128), resource_group_id)
 );
+
+CREATE TABLE IF NOT EXISTS gateway_audit_logs (
+    audit_id BIGINT NOT NULL AUTO_INCREMENT,
+    user_name VARCHAR(256) NOT NULL,
+    ip_address VARCHAR(45),
+    backend_name VARCHAR(256) NOT NULL,
+    operation VARCHAR(32) NOT NULL CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE')),
+    context VARCHAR(256) NOT NULL,
+    success BOOLEAN NOT NULL,
+    user_comment VARCHAR(1024),
+    change_time DATETIME NOT NULL,
+
+    PRIMARY KEY(audit_id)
+);
+CREATE INDEX gateway_audit_logs_change_time_idx ON gateway_audit_logs(change_time);
+CREATE INDEX gateway_audit_logs_user_name_idx ON gateway_audit_logs(user_name);
