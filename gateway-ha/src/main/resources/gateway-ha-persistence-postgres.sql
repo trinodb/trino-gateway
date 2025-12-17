@@ -76,3 +76,20 @@ CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     PRIMARY KEY (environment, source, query_type),
     UNIQUE (source, environment, query_type, resource_group_id)
 );
+
+CREATE TYPE operation_type AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE');
+CREATE TABLE IF NOT EXISTS gateway_audit_logs (
+    audit_id BIGSERIAL,
+    user_name VARCHAR(256) NOT NULL,
+    ip_address INET,
+    backend_name VARCHAR(256) NOT NULL,
+    operation operation_type NOT NULL,
+    context VARCHAR(256) NOT NULL,
+    success BOOLEAN NOT NULL,
+    user_comment VARCHAR(1024),
+    change_time TIMESTAMP NOT NULL,
+
+    PRIMARY KEY(audit_id)
+);
+CREATE INDEX IF NOT EXISTS gateway_audit_logs_change_time_idx ON gateway_audit_logs(change_time);
+CREATE INDEX IF NOT EXISTS gateway_audit_logs_user_name_idx ON gateway_audit_logs(user_name);

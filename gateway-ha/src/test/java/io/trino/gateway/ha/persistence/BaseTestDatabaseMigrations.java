@@ -127,7 +127,7 @@ public abstract class BaseTestDatabaseMigrations
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
         String sql = format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", schema);
-        verifyResultSetCount(sql, 7);
+        verifyResultSetCount(sql, 8);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
         jdbiHandle.execute(propertiesTable);
