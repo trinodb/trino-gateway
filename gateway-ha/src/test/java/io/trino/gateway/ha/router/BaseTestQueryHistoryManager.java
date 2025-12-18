@@ -24,11 +24,11 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.router.HaQueryHistoryManager.parseTimeStamp;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -121,14 +121,14 @@ abstract class BaseTestQueryHistoryManager
         // This ensures odd-minute values remain precision when converted from different formats.
         long expectedMinuteBucket = 30338641;
 
-        // postgres: minute -> {Double@9333} 3.0338641E7
+        // postgres minute format -> "3.0338641E7"
         String postgresTimestamp = "3.0338641E7";
-        long parsedPostgresMinute = new BigDecimal(postgresTimestamp).longValue();
+        long parsedPostgresMinute = parseTimeStamp(postgresTimestamp);
         assertThat(parsedPostgresMinute).isEqualTo(expectedMinuteBucket);
 
-        // mysql: minute -> {BigDecimal@9775} "30338641"
+        // mysql minute format -> "30338641"
         String mysqlTimestamp = "30338641";
-        long parsedMysqlMinute = new BigDecimal(mysqlTimestamp).longValue();
+        long parsedMysqlMinute = parseTimeStamp(mysqlTimestamp);
         assertThat(parsedMysqlMinute).isEqualTo(expectedMinuteBucket);
     }
 }
