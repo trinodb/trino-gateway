@@ -220,18 +220,18 @@ public class DistributionResponse
 
     public static class LineChart
     {
-        private String timestamp;
+        private Long timestamp;
         private String backendUrl;
         private Long queryCount;
         private String name;
 
         @JsonProperty
-        public String getTimestamp()
+        public Long getTimestamp()
         {
             return timestamp;
         }
 
-        public void setTimestamp(String timestamp)
+        public void setTimestamp(Long timestamp)
         {
             this.timestamp = timestamp;
         }

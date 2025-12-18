@@ -144,7 +144,7 @@ public class HaQueryHistoryManager
             long minute = (long) Float.parseFloat(model.get("minute").toString());
             Instant instant = Instant.ofEpochSecond(minute * 60L);
             long epochMillis = instant.toEpochMilli();
-            lineChart.setTimestamp(String.valueOf(epochMillis));
+            lineChart.setTimestamp(epochMillis);
             lineChart.setQueryCount(Long.parseLong(model.get("query_count").toString()));
             lineChart.setBackendUrl(model.get("backend_url").toString());
             resList.add(lineChart);

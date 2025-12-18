@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Locale from "../locales";
 import styles from './dashboard.module.scss';
 import * as echarts from "echarts";
-import { Card, Col, Descriptions, Form, Row, Tooltip } from "@douyinfe/semi-ui";
+import { Card, Col, Descriptions, Row, Tooltip } from "@douyinfe/semi-ui";
 import { distributionApi } from "../api/webapp/dashboard";
 import { DistributionDetail, DistributionChartData, LineChartData } from "../types/dashboard";
 import { getCSSVar } from "../utils/utils";
@@ -10,14 +10,14 @@ import { IconHelpCircle } from "@douyinfe/semi-icons";
 import { useNavigate } from "react-router-dom";
 import { hasPagePermission, routersMapper } from "../router";
 import { useAccessStore } from "../store";
-import { formatZonedDateTime, formatZonedTimestamp, getTimeDisplayZoneOptions } from "../utils/time";
+import { formatZonedDateTime, formatZonedTimestamp } from "../utils/time";
+import { TimezoneContext } from "./TimezoneContext";
 
 export function Dashboard() {
   const access = useAccessStore();
   const navigate = useNavigate();
+  const timezone = useContext(TimezoneContext).timezone;
   const [distributionDetail, setDistributionDetail] = useState<DistributionDetail>();
-  const [timeZone, setTimeZone] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const timeZones: string[] = getTimeDisplayZoneOptions();
 
   useEffect(() => {
     distributionApi({})
@@ -29,7 +29,7 @@ export function Dashboard() {
   const data = [
     {
       key: Locale.Dashboard.StartTime,
-      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime, timeZone)
+      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime, timezone)
     },
     {
       key: Locale.Dashboard.Backends,
@@ -41,7 +41,6 @@ export function Dashboard() {
           }
         }}>{distributionDetail?.totalBackendCount}</span>
         : <span>{distributionDetail?.totalBackendCount}</span>
-
     },
     {
       key: Locale.Dashboard.BackendsOnline,
@@ -100,32 +99,12 @@ export function Dashboard() {
     },
   ];
 
-  const timeZoneRender = () => {
-    return (
-      <Form<{ timeZone: string }>
-        initValues={{ timeZone }}
-        onValueChange={(values) => { setTimeZone(values.timeZone); }}
-        defaultValue={timeZone}
-        render={() => (
-          <>
-            <Form.Select field="timeZone" label={Locale.Dashboard.TimeZone} style={{ width: 200 }} initValue={timeZone} placeholder={timeZone} filter>
-              {timeZones.map((tz) => (
-                <Form.Select.Option key={tz} value={tz}>{tz}</Form.Select.Option>
-              ))}
-            </Form.Select>
-          </>
-          )}
-        >
-      </Form>
-    )
-  };
-
   return (
     <>
       <div style={{ width: '100%' }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
-            <Card title={Locale.Dashboard.Summary} bordered={false} className={styles.card} headerExtraContent={timeZoneRender()}>
+            <Card title={Locale.Dashboard.Summary} bordered={false} className={styles.card}>
               <Descriptions data={data} row size="large" className={styles.description} />
             </Card>
           </Col>
@@ -133,7 +112,7 @@ export function Dashboard() {
         <Row gutter={[16, 16]}>
           <Col span={16}>
             <Card title={Locale.Dashboard.QueryDistribution} bordered={false} className={styles.card}>
-              <LineChart data={distributionDetail?.lineChart || {}} timeZone={timeZone} />
+              <LineChart data={distributionDetail?.lineChart || {}} timeZone={timezone} />
             </Card>
           </Col>
           <Col span={8}>

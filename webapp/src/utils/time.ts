@@ -40,9 +40,10 @@ const formatDateComponents = (date: Date): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-export const formatTimestamp = (timestamp: number): string => {
+export const formatTimestamp = (timestamp: number, timezone: string): string => {
   const date = new Date(timestamp);
-  return formatDateComponents(date);
+  const zonedDate = new Date(date.toLocaleString("en-US", { timeZone: timezone }));
+  return formatDateComponents(zonedDate);
 }
 
 export const formatZonedTimestamp = (timestamp: number, timezone: string): string => {
