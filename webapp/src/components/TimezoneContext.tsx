@@ -1,5 +1,5 @@
-import { createContext, useContext, useMemo, useState } from "react";
-import { Form } from "@douyinfe/semi-ui";
+import { createContext, useCallback, useContext, useState } from "react";
+import { Typography, Select } from "@douyinfe/semi-ui";
 import Locale from "../locales";
 import {getTimeDisplayZoneOptions} from "../utils/time";
 
@@ -9,10 +9,9 @@ export const TimezoneContext = createContext<{
 }>({ timezone: 'UTC', changeTimezone: () => {} });
 
 export function TimezoneProvider({ children }: { children: React.ReactNode }) {
-  const [timezone, setTimezone] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const changeTimezone = (newTZ: string) => { setTimezone(newTZ) };
-  const value = useMemo(() => ({ timezone, changeTimezone }), [timezone, changeTimezone]);
-
+  const [timezone, setTimezone] = useState<string>(() => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC');
+  const changeTimezone = useCallback((newTZ: string) => { setTimezone(newTZ) }, []);
+  const value = ({ timezone, changeTimezone });
   return (
     <TimezoneContext.Provider value={value}>
       {children}
@@ -22,21 +21,17 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
 
 export function TimezoneDropdown() {
   const { timezone, changeTimezone } = useContext(TimezoneContext);
-  const timeZones: string[] = getTimeDisplayZoneOptions();
-
+  const timeZones = getTimeDisplayZoneOptions();
   return (
-    <Form<{ timezone: string }>
-      initValues={{ timezone }}
-      onValueChange={(value) => { changeTimezone(value.timezone); }}
-      defaultValue={timezone}
-      render={() => (
-        <>
-          <Form.Select field="timezone" label={Locale.Dashboard.TimeZone} labelPosition="left" style={{ width: 200 }} initValue={timezone} placeholder={timezone} filter>
-            {timeZones.map((tz) => (<Form.Select.Option key={tz} value={tz}>{tz}</Form.Select.Option>))}
-          </Form.Select>
-        </>
-      )}
+    <>
+      <Typography.Text strong>{Locale.Dashboard.TimeZone}</Typography.Text>
+      <Select
+        style={{ width: 200 }}
+        value={timezone}
+        filter
+        onChange={(v) => changeTimezone(String(v))}
       >
-    </Form>
-  )
+        {timeZones.map((tz) => (<Select.Option key={tz} value={tz}>{tz}</Select.Option>))}</Select>
+    </>
+  );
 }

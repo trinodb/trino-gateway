@@ -169,7 +169,7 @@ function LineChart(props: {
     const MINUTE = 60 * 1000;
 
     minTimestamp = Math.floor(minTimestamp / MINUTE) * MINUTE;
-    maxTimestamp = Math.floor(maxTimestamp / MINUTE) * MINUTE;
+    maxTimestamp = Math.ceil(maxTimestamp / MINUTE) * MINUTE;
 
     for (let t = minTimestamp; t <= maxTimestamp; t += MINUTE) {
       xAxisTimeLabels.push(t);
