@@ -220,20 +220,20 @@ public class DistributionResponse
 
     public static class LineChart
     {
-        private Long timestamp;
+        private Long epochMillis;
         private String backendUrl;
         private Long queryCount;
         private String name;
 
         @JsonProperty
-        public Long getTimestamp()
+        public Long getEpochMillis()
         {
-            return timestamp;
+            return epochMillis;
         }
 
-        public void setTimestamp(Long timestamp)
+        public void setEpochMillis(Long epochMillis)
         {
-            this.timestamp = timestamp;
+            this.epochMillis = epochMillis;
         }
 
         @JsonProperty
