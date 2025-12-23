@@ -90,5 +90,3 @@ CREATE TABLE IF NOT EXISTS gateway_audit_logs (
 
     PRIMARY KEY(audit_id)
 );
-CREATE INDEX gateway_audit_logs_change_time_idx ON gateway_audit_logs(change_time);
-CREATE INDEX gateway_audit_logs_user_name_idx ON gateway_audit_logs(user_name);
