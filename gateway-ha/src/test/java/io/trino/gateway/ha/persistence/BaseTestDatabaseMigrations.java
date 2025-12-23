@@ -107,6 +107,7 @@ public abstract class BaseTestDatabaseMigrations
         verifyResultSetCount("SELECT name FROM resource_groups", 0);
         verifyResultSetCount("SELECT user_regex FROM selectors", 0);
         verifyResultSetCount("SELECT environment FROM exact_match_source_selectors", 0);
+        verifyResultSetCount("SELECT audit_id FROM gateway_audit_logs", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
@@ -124,6 +125,7 @@ public abstract class BaseTestDatabaseMigrations
         String resourceGroupsTable = "DROP TABLE IF EXISTS resource_groups";
         String selectorsTable = "DROP TABLE IF EXISTS selectors";
         String exactMatchTable = "DROP TABLE IF EXISTS exact_match_source_selectors";
+        String gatewayAuditLogsTable = "DROP TABLE IF EXISTS gateway_audit_logs";
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
         String sql = format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", schema);
@@ -134,6 +136,7 @@ public abstract class BaseTestDatabaseMigrations
         jdbiHandle.execute(selectorsTable);
         jdbiHandle.execute(resourceGroupsTable);
         jdbiHandle.execute(exactMatchTable);
+        jdbiHandle.execute(gatewayAuditLogsTable);
         jdbiHandle.execute(flywayHistoryTable);
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
