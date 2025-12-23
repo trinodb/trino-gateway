@@ -60,6 +60,8 @@ import io.trino.gateway.ha.security.LbAuthenticator;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFilter;
 import io.trino.gateway.ha.security.LbFormAuthManager;
+import io.trino.gateway.ha.security.LbJwtAuthenticator;
+import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbUnauthorizedHandler;
 import io.trino.gateway.ha.security.NoopAuthorizer;
@@ -83,6 +85,7 @@ public class HaGatewayProviderModule
 {
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
+    private final LbJwtManager jwtManager;
     private final AuthorizationManager authorizationManager;
     private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
@@ -110,6 +113,7 @@ public class HaGatewayProviderModule
 
         oauthManager = getOAuthManager(configuration);
         formAuthManager = getFormAuthManager(configuration);
+        jwtManager = getJwtManager(configuration);
 
         authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
         resourceSecurityDynamicFeature = getAuthFilter(configuration);
@@ -146,6 +150,15 @@ public class HaGatewayProviderModule
         return null;
     }
 
+    private LbJwtManager getJwtManager(HaGatewayConfiguration configuration)
+    {
+        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
+        if (authenticationConfiguration != null && authenticationConfiguration.getJwt() != null) {
+            return new LbJwtManager(authenticationConfiguration.getJwt(), configuration.getPagePermissions());
+        }
+        return null;
+    }
+
     private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config, Authorizer authorizer)
     {
         ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
@@ -168,6 +181,14 @@ public class HaGatewayProviderModule
             authFilters.add(new BasicAuthFilter(
                     new ApiAuthenticator(formAuthManager, authorizationManager),
                     authorizer,
+                    new LbUnauthorizedHandler(defaultType)));
+        }
+
+        if (jwtManager != null) {
+            authFilters.add(new LbFilter(
+                    new LbJwtAuthenticator(jwtManager, authorizationManager),
+                    authorizer,
+                    "Bearer",
                     new LbUnauthorizedHandler(defaultType)));
         }
 
@@ -201,6 +222,13 @@ public class HaGatewayProviderModule
     public LbFormAuthManager getFormAuthentication()
     {
         return this.formAuthManager;
+    }
+
+    @Provides
+    @Singleton
+    public LbJwtManager getJwtAuthentication()
+    {
+        return this.jwtManager;
     }
 
     @Provides
