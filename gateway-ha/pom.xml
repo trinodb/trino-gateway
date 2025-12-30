@@ -552,7 +552,7 @@
                             <goal>install-node-and-pnpm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v20.17.0</nodeVersion>
+                            <nodeVersion>v24.12.0</nodeVersion>
                             <pnpmVersion>9.14.2</pnpmVersion>
                         </configuration>
                     </execution>
