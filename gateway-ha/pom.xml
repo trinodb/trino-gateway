@@ -553,7 +553,7 @@
                         </goals>
                         <configuration>
                             <nodeVersion>v24.12.0</nodeVersion>
-                            <pnpmVersion>9.14.2</pnpmVersion>
+                            <pnpmVersion>10.27.0</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
