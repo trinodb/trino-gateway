@@ -77,20 +77,14 @@ CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     UNIQUE (source, environment, query_type, resource_group_id)
 );
 
-DO $$
-    BEGIN
-        CREATE TYPE operation_type AS ENUM ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE');
-    EXCEPTION
-        WHEN duplicate_object THEN NULL;
-    END $$;
 CREATE TABLE IF NOT EXISTS gateway_audit_logs (
     audit_id BIGSERIAL,
     user_name VARCHAR(256) NOT NULL,
-    ip_address INET,
+    ip_address VARCHAR(45),
     backend_name VARCHAR(256) NOT NULL,
-    operation operation_type NOT NULL,
+    operation VARCHAR(256) NOT NULL,
     context VARCHAR(256) NOT NULL,
-    success BOOLEAN NOT NULL,
+    success SMALLINT NOT NULL CHECK (success IN (0, 1)),
     user_comment VARCHAR(1024),
     change_time TIMESTAMP NOT NULL,
 
