@@ -13,7 +13,10 @@
  */
 package io.trino.gateway.ha.persistence.dao;
 
+import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
+
+import java.sql.Timestamp;
 
 public interface AuditLogDao
 {
@@ -21,6 +24,12 @@ public interface AuditLogDao
             INSERT INTO gateway_audit_logs (user_name, ip_address, backend_name, operation, context, success, user_comment, change_time)
             VALUES (:user_name, :ip_address, :backend_name, :operation, :context, :success, :user_comment, :change_time)
             """)
-    void create(String user_name, String ip_address, String backend_name, String operation,
-            String context, boolean success, String user_comment, String change_time);
+    void log(@Bind("user_name") String user_name,
+            @Bind("ip_address") String ip_address,
+            @Bind("backend_name") String backend_name,
+            @Bind("operation") String operation,
+            @Bind("context") String context,
+            @Bind("success") int success,
+            @Bind("user_comment") String user_comment,
+            @Bind("change_time") Timestamp change_time);
 }

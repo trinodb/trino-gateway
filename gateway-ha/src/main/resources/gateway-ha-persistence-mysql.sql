@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS gateway_audit_logs (
     context VARCHAR(256) NOT NULL,
     success BOOLEAN NOT NULL,
     user_comment VARCHAR(1024),
-    change_time DATETIME NOT NULL,
+    change_time TIMESTAMP NOT NULL,
 
     PRIMARY KEY(audit_id)
 );
