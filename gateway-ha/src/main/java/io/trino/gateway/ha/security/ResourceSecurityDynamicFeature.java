@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.security;
 
+import com.google.inject.Inject;
 import jakarta.annotation.Priority;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -29,6 +30,7 @@ public class ResourceSecurityDynamicFeature
 {
     private final ContainerRequestFilter filter;
 
+    @Inject
     public ResourceSecurityDynamicFeature(ContainerRequestFilter filter)
     {
         this.filter = requireNonNull(filter);

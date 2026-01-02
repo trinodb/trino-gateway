@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestQueryCountBasedRouter
@@ -173,9 +175,10 @@ final class TestQueryCountBasedRouter
     @BeforeEach
     public void init()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
-        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
         populateData();
         queryCountBasedRouter.updateClusterStats(clusters);
