@@ -1,6 +1,9 @@
 serverConfig:
   node.environment: test
   http-server.http.port: 8080
+  tracing.enabled: true
+  otel.exporter.endpoint: http://localhost:4318/v1/traces
+  otel.exporter.protocol: http/protobuf
 
 routingRules:
   rulesEngineEnabled: False
