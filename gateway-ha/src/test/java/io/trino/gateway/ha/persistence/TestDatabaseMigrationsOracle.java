@@ -51,7 +51,7 @@ final class TestDatabaseMigrationsOracle
         List<String> tables = ImmutableList.of("gateway_backend", "query_history", "resource_groups_global_properties", "selectors", "resource_groups", "exact_match_source_selectors", "\"flyway_schema_history\"");
         Handle jdbiHandle = jdbi.open();
         String sql = format("SELECT 1 FROM all_tables WHERE owner = '%s'", schema);
-        verifyResultSetCount(sql, 7);
+        verifyResultSetCount(sql, 8);
         tables.forEach(table -> jdbiHandle.execute("DROP TABLE " + table));
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
