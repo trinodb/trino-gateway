@@ -16,6 +16,7 @@ package io.trino.gateway.ha.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -56,10 +57,12 @@ public class LoginResource
 
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
+    private final HaGatewayConfiguration haGatewayConfiguration;
 
     @Inject
-    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
+    public LoginResource(HaGatewayConfiguration haGatewayConfiguration, @Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
     {
+        this.haGatewayConfiguration = haGatewayConfiguration;
         this.oauthManager = oauthManager;
         this.formAuthManager = formAuthManager;
     }
@@ -173,16 +176,13 @@ public class LoginResource
     @Produces(MediaType.APPLICATION_JSON)
     public Response loginType()
     {
-        String loginType;
-        if (formAuthManager != null) {
-            loginType = "form";
-        }
-        else if (oauthManager != null) {
-            loginType = "oauth";
+        List<String> loginTypes;
+        if (haGatewayConfiguration.getAuthentication() != null) {
+            loginTypes = haGatewayConfiguration.getAuthentication().getDefaultTypes();
         }
         else {
-            loginType = "none";
+            loginTypes = List.of("none");
         }
-        return Response.ok(Result.ok("Ok", loginType)).build();
+        return Response.ok(Result.ok("Ok", loginTypes)).build();
     }
 }
