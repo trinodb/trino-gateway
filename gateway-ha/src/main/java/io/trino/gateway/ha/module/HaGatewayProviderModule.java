@@ -40,6 +40,7 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
@@ -121,10 +122,10 @@ public class HaGatewayProviderModule
         oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
 
         Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore(), new DefaultJdbcPropertiesProvider());
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
-        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore());
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)

@@ -15,6 +15,7 @@ package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.DefaultJdbcPropertiesProvider;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import okhttp3.MediaType;
@@ -67,7 +68,7 @@ final class TestTrinoResource
         // Setup resource group manager
         DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);
         Jdbi jdbi = Jdbi.create(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword());
-        connectionManager = new JdbcConnectionManager(jdbi, db);
+        connectionManager = new JdbcConnectionManager(jdbi, db, new DefaultJdbcPropertiesProvider());
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 
         // Start Trino Gateway so migrations are run to create tables before inserting test data
