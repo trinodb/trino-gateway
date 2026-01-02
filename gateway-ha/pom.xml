@@ -331,6 +331,13 @@
 
         <!-- Test deps -->
         <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-api</artifactId>
+            <version>3.4.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>1.4.192</version>
