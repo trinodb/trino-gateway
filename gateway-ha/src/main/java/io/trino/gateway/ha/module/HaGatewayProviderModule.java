@@ -70,6 +70,7 @@ import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -81,6 +82,11 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayProviderModule
         extends AbstractModule
 {
+    private static final String MONITOR_HTTP_CLIENT_KEY_STORE_PATH = "monitor.http-client.key-store-path";
+    private static final String MONITOR_HTTP_CLIENT_KEY_STORE_PASSWORD = "monitor.http-client.key-store-password";
+    private static final String MONITOR_HTTP_CLIENT_TRUST_STORE_PATH = "monitor.http-client.trust-store-path";
+    private static final String MONITOR_HTTP_CLIENT_TRUST_STORE_PASSWORD = "monitor.http-client.trust-store-password";
+
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
@@ -106,6 +112,10 @@ public class HaGatewayProviderModule
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
         pathFilter = new PathFilter(configuration.getStatementPaths(), configuration.getExtraWhitelistPaths());
+        // Enforce required TLS properties for the named HttpClient "monitor" when mTLS is enabled for monitors
+        if (configuration.getBackendState() != null && configuration.getBackendState().isMonitorMtlsEnabled()) {
+            validateMonitorMtlsConfig(configuration.getServerConfig());
+        }
         Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
 
         oauthManager = getOAuthManager(configuration);
@@ -125,6 +135,28 @@ public class HaGatewayProviderModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
+    }
+
+    private static void validateMonitorMtlsConfig(Map<String, String> serverConfig)
+    {
+        String[] requiredKeys = new String[] {
+                MONITOR_HTTP_CLIENT_KEY_STORE_PATH,
+                MONITOR_HTTP_CLIENT_KEY_STORE_PASSWORD,
+                MONITOR_HTTP_CLIENT_TRUST_STORE_PATH,
+                MONITOR_HTTP_CLIENT_TRUST_STORE_PASSWORD
+        };
+        List<String> missing = new ArrayList<>();
+        for (String key : requiredKeys) {
+            String value = serverConfig.get(key);
+            if (value == null || value.isBlank()) {
+                missing.add(key);
+            }
+        }
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "backendState.monitorMtlsEnabled=true requires monitor HttpClient TLS configuration. Missing: "
+                            + String.join(", ", missing));
+        }
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
