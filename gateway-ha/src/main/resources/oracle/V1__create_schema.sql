@@ -67,3 +67,16 @@ CREATE TABLE exact_match_source_selectors(
     PRIMARY KEY (environment, source, resource_group_id),
     UNIQUE (source, environment, query_type, resource_group_id)
 );
+
+CREATE TABLE gateway_audit_logs (
+    audit_id NUMBER GENERATED ALWAYS as IDENTITY(START with 1 INCREMENT by 1),
+    user_name VARCHAR(256) NOT NULL,
+    ip_address VARCHAR2(45),
+    backend_name VARCHAR(256) NOT NULL,
+    operation VARCHAR(256) NOT NULL,
+    context VARCHAR(256) NOT NULL,
+    success NUMBER(1) NOT NULL CHECK (success IN (0,1)),
+    user_comment VARCHAR(1024),
+    change_time TIMESTAMP NOT NULL,
+    PRIMARY KEY(audit_id)
+);
