@@ -48,7 +48,7 @@ final class TestQueryUserInfoParser
         requestAnalyzerConfig.setAnalyzeRequest(true);
         config.setRequestAnalyzerConfig(requestAnalyzerConfig);
 
-        PathFilter pathFilter = new PathFilter(config.getStatementPaths(), config.getExtraWhitelistPaths());
+        PathFilter pathFilter = new PathFilter(config);
 
         filter = new QueryUserInfoParser(config, pathFilter);
     }

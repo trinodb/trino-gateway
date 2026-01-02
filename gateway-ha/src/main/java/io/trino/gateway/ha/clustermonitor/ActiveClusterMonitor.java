@@ -24,6 +24,7 @@ import jakarta.annotation.PreDestroy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -37,7 +38,7 @@ public class ActiveClusterMonitor
     private static final Logger log = Logger.get(ActiveClusterMonitor.class);
 
     private volatile boolean isInitialized;
-    private final List<TrinoClusterStatsObserver> clusterStatsObservers;
+    private final Set<TrinoClusterStatsObserver> clusterStatsObservers;
     private final GatewayBackendManager gatewayBackendManager;
 
     private final Duration taskDelay;
@@ -47,7 +48,7 @@ public class ActiveClusterMonitor
 
     @Inject
     public ActiveClusterMonitor(
-            List<TrinoClusterStatsObserver> clusterStatsObservers,
+            Set<TrinoClusterStatsObserver> clusterStatsObservers,
             GatewayBackendManager gatewayBackendManager,
             MonitorConfiguration monitorConfiguration,
             ClusterStatsMonitor clusterStatsMonitor)

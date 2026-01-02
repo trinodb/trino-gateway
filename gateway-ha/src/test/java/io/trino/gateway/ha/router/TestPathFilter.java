@@ -193,8 +193,7 @@ class TestPathFilter
     void testDefaultHaConfigurationForPaths()
     {
         HaGatewayConfiguration configuration = new HaGatewayConfiguration();
-        PathFilter filter = new PathFilter(configuration.getStatementPaths(),
-                configuration.getExtraWhitelistPaths());
+        PathFilter filter = new PathFilter(configuration);
 
         assertThat(filter.isPathWhiteListed(V1_STATEMENT_PATH)).isTrue();
         assertThat(filter.isPathWhiteListed(V1_STATEMENT_PATH + "/executing")).isTrue();

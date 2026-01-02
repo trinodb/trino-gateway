@@ -18,10 +18,11 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterMetricsStatsExporter;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
@@ -126,7 +127,8 @@ public class BaseApp
     {
         binder.bind(HaGatewayConfiguration.class).toInstance(configuration);
         binder.bind(RoutingConfiguration.class).toInstance(configuration.getRouting());
-        binder.bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
+        binder.bind(DataStoreConfiguration.class).toInstance(configuration.getDataStore());
+        binder.bind(MonitorConfiguration.class).toInstance(configuration.getMonitor());
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);

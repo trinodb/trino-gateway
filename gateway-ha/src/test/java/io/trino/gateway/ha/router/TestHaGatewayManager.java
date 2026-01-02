@@ -22,6 +22,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -32,7 +33,7 @@ final class TestHaGatewayManager
     @BeforeAll
     void setUp()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
     }

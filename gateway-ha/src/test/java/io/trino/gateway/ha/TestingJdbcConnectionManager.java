@@ -14,9 +14,9 @@
 package io.trino.gateway.ha;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -25,20 +25,18 @@ public final class TestingJdbcConnectionManager
 {
     private TestingJdbcConnectionManager() {}
 
-    public static JdbcConnectionManager createTestingJdbcConnectionManager()
+    public static DataStoreConfiguration dataStoreConfig()
     {
         File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
         tempH2DbDir.deleteOnExit();
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        return new JdbcConnectionManager(jdbi, db);
+        return new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
     }
 
-    public static JdbcConnectionManager createTestingJdbcConnectionManager(JdbcDatabaseContainer<?> container, DataStoreConfiguration config)
+    public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)
     {
-        Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
+        Jdbi jdbi = HaGatewayProviderModule.createJdbi(config);
         return new JdbcConnectionManager(jdbi, config);
     }
 }

@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.inject.Inject;
 import io.trino.gateway.ha.router.RoutingManager;
 
 public class HealthCheckObserver
@@ -20,6 +21,7 @@ public class HealthCheckObserver
 {
     private final RoutingManager routingManager;
 
+    @Inject
     public HealthCheckObserver(RoutingManager routingManager)
     {
         this.routingManager = routingManager;

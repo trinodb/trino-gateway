@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectors;
 import io.trino.gateway.ha.persistence.dao.ExactMatchSourceSelectorsDao;
@@ -36,6 +37,7 @@ public class HaResourceGroupsManager
     private final JdbcConnectionManager connectionManager;
     private final ExactMatchSourceSelectorsDao exactMatchSourceSelectorsDao;
 
+    @Inject
     public HaResourceGroupsManager(JdbcConnectionManager connectionManager)
     {
         this.connectionManager = connectionManager;

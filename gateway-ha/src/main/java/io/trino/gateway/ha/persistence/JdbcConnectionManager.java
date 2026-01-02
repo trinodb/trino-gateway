@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
@@ -39,11 +40,10 @@ public class JdbcConnectionManager
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
 
+    @Inject
     public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
-        this.jdbi = requireNonNull(jdbi, "jdbi is null")
-                .installPlugin(new SqlObjectPlugin())
-                .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
+        this.jdbi = requireNonNull(jdbi, "jdbi is null");
         this.configuration = configuration;
         startCleanUps();
     }

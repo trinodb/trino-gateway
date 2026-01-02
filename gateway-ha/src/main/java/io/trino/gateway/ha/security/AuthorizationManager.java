@@ -13,7 +13,9 @@
  */
 package io.trino.gateway.ha.security;
 
+import com.google.inject.Inject;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
 
@@ -25,12 +27,13 @@ public class AuthorizationManager
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
 
-    public AuthorizationManager(AuthorizationConfiguration configuration,
-            Map<String, UserConfiguration> presetUsers)
+    @Inject
+    public AuthorizationManager(HaGatewayConfiguration config)
     {
-        this.presetUsers = presetUsers;
-        if (configuration != null && configuration.getLdapConfigPath() != null) {
-            lbLdapClient = new LbLdapClient(LdapConfiguration.load(configuration.getLdapConfigPath()));
+        AuthorizationConfiguration authorizationConfig = config.getAuthorization();
+        this.presetUsers = config.getPresetUsers();
+        if (authorizationConfig != null && authorizationConfig.getLdapConfigPath() != null) {
+            lbLdapClient = new LbLdapClient(LdapConfiguration.load(authorizationConfig.getLdapConfigPath()));
         }
         else {
             lbLdapClient = null;

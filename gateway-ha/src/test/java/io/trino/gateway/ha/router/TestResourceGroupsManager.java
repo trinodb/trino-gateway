@@ -24,6 +24,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.List;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ExactSelectorsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
@@ -40,7 +41,7 @@ public class TestResourceGroupsManager
     @BeforeAll
     void setUp()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 
