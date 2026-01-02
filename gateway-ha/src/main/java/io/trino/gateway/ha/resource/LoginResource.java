@@ -19,6 +19,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
+import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbPrincipal;
 import io.trino.gateway.ha.security.OidcCookie;
@@ -34,6 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -56,12 +58,14 @@ public class LoginResource
 
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
+    private final LbJwtManager jwtManager;
 
     @Inject
-    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
+    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager, @Nullable LbJwtManager jwtManager)
     {
         this.oauthManager = oauthManager;
         this.formAuthManager = formAuthManager;
+        this.jwtManager = jwtManager;
     }
 
     @GET
@@ -174,7 +178,11 @@ public class LoginResource
     public Response loginType()
     {
         String loginType;
-        if (formAuthManager != null) {
+        // Check for JWT authentication first (highest priority)
+        if (jwtManager != null) {
+            loginType = "jwt";
+        }
+        else if (formAuthManager != null) {
             loginType = "form";
         }
         else if (oauthManager != null) {
@@ -184,5 +192,19 @@ public class LoginResource
             loginType = "none";
         }
         return Response.ok(Result.ok("Ok", loginType)).build();
+    }
+
+    @POST
+    @Path("token")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response token(@Context HttpHeaders headers)
+    {
+        String authHeaderVal = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+        String bearerToken = null;
+        if (authHeaderVal != null && authHeaderVal.startsWith("Bearer ")) {
+            bearerToken = authHeaderVal.substring("Bearer ".length());
+        }
+        return Response.ok(Result.ok("Ok", bearerToken)).build();
     }
 }
