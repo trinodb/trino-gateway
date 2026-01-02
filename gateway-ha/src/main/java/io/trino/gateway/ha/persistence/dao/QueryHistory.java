@@ -25,7 +25,7 @@ public record QueryHistory(
         @ColumnName("user_name") @Nullable String userName,
         @ColumnName("source") @Nullable String source,
         @ColumnName("created") long created,
-        @ColumnName("routing_group") String routingGroup,
+        @ColumnName("routing_decision") String routingDecision,
         @ColumnName("external_url") String externalUrl)
 {
     public QueryHistory
