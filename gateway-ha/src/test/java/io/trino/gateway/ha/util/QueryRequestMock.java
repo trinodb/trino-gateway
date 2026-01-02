@@ -143,7 +143,7 @@ public class QueryRequestMock
         HaGatewayConfiguration config = new HaGatewayConfiguration();
         config.setRequestAnalyzerConfig(requestAnalyzerConfig);
 
-        PathFilter pathFilter = new PathFilter(config.getStatementPaths(), config.getExtraWhitelistPaths());
+        PathFilter pathFilter = new PathFilter(config);
 
         QueryUserInfoParser userInfoParser = new QueryUserInfoParser(config, pathFilter);
         try {

@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.inject.Inject;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -41,10 +43,11 @@ public class HaQueryHistoryManager
     private final QueryHistoryDao dao;
     private final boolean isOracleBackend;
 
-    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend)
+    @Inject
+    public HaQueryHistoryManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
-        this.isOracleBackend = isOracleBackend;
+        this.isOracleBackend = configuration.getJdbcUrl().startsWith("jdbc:oracle");
     }
 
     @Override
