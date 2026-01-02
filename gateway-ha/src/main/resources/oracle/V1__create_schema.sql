@@ -73,9 +73,9 @@ CREATE TABLE gateway_audit_logs (
     user_name VARCHAR(256) NOT NULL,
     ip_address VARCHAR2(45),
     backend_name VARCHAR(256) NOT NULL,
-    operation VARCHAR2(32) NOT NULL CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE')),
+    operation VARCHAR(256) NOT NULL,
     context VARCHAR(256) NOT NULL,
-    success NUMBER(1) NOT NULL,
+    success NUMBER(1) NOT NULL CHECK (success IN (0,1)),
     user_comment VARCHAR(1024),
     change_time TIMESTAMP NOT NULL,
     PRIMARY KEY(audit_id)
