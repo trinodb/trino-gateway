@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS gateway_audit_logs (
     user_name VARCHAR(256) NOT NULL,
     ip_address VARCHAR(45),
     backend_name VARCHAR(256) NOT NULL,
-    operation VARCHAR(32) NOT NULL CHECK (operation IN ('CREATE', 'UPDATE', 'DELETE', 'ACTIVATE', 'DEACTIVATE')),
+    operation VARCHAR(256) NOT NULL,
     context VARCHAR(256) NOT NULL,
     success BOOLEAN NOT NULL,
     user_comment VARCHAR(1024),
