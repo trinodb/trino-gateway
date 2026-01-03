@@ -2,6 +2,38 @@
 
 ## 2025
 
+### Trino Gateway 17 (xx Nov 2025) { id="17" }
+
+Artifacts:
+
+* [JAR file gateway-ha-17-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/17/gateway-ha-17-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:17`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/17.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.17.0`
+
+Changes:
+
+**General**
+
+* Use UBI10 micro as the base Docker image.
+  ([#779](https://github.com/trinodb/trino-gateway/pull/779))
+* Expose Trino cluster state via JMX.
+  ([#782](https://github.com/trinodb/trino-gateway/pull/782))
+* [:warning: Breaking change:](#breaking) Require Java 25 to run Trino Gateway
+  and use it in the container image.
+  ([#802](https://github.com/trinodb/trino-gateway/pull/802))
+* Fix `partialCancel` statement path redirection.
+  ([#776](https://github.com/trinodb/trino-gateway/pull/776))
+* Fix issues with large HTTP headers by setting `max-request-header-size` and
+  `max-response-header-size` parameters for HTTP client connections.
+  ([#571](https://github.com/trinodb/trino-gateway/issues/571))
+
+**UI**
+
+* TBD
+
 ### Trino Gateway 16 (17 Sep 2025) { id="16" }
 
 Artifacts:
@@ -17,7 +49,7 @@ Changes:
 
 **General**
 
-* [:warning: Breaking change:](#breaking) Require JDK 24 to run Trino Gateway
+* [:warning: Breaking change:](#breaking) Require Java 24 to run Trino Gateway
   and use it in the container image.
   ([#727](https://github.com/trinodb/trino-gateway/pull/727))
 * Update database testing and therefore support to PostgreSQL version 17.
