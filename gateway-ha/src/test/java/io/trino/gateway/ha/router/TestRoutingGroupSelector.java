@@ -350,12 +350,13 @@ final class TestRoutingGroupSelector
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
-                    "---\n"
-                            + "name: \"airflow1\"\n"
-                            + "description: \"original rule\"\n"
-                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                            + "actions:\n"
-                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
+                    """
+                            ---
+                            name: "airflow1"
+                            description: "original rule"
+                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                            actions:
+                              - "result.put(\\"routingGroup\\", \\"etl\\")\"""");
         }
 
         Duration refreshPeriod = new Duration(1, MILLISECONDS);
@@ -372,12 +373,13 @@ final class TestRoutingGroupSelector
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
-                    "---\n"
-                            + "name: \"airflow2\"\n"
-                            + "description: \"updated rule\"\n"
-                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                            + "actions:\n"
-                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
+                    """
+                            ---
+                            name: "airflow2"
+                            description: "updated rule"
+                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                            actions:
+                              - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
         }
         Thread.sleep(2 * refreshPeriod.toMillis());
 
