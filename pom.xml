@@ -122,6 +122,7 @@
                             -Xep:MissingOverride:ERROR \
                             -Xep:StatementSwitchToExpressionSwitch:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
+                            -Xep:StringConcatToTextBlock:ERROR \
                             -Xep:TraditionalSwitchExpression:ERROR \
                             -Xep:TypeParameterUnusedInFormals:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
