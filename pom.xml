@@ -115,6 +115,7 @@
                             -Xep:CatchAndPrintStackTrace:ERROR \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
+                            -Xep:EffectivelyPrivate:ERROR \
                             -Xep:EmptyCatch:ERROR \
                             -Xep:EqualsGetClass:OFF \
                             -Xep:InvalidThrows:ERROR \
