@@ -78,13 +78,13 @@ public class LbKeyProvider
 
     RSAPrivateKey getRsaPrivateKey()
     {
-        return (this.privateKey instanceof RSAPrivateKey)
-                ? (RSAPrivateKey) this.privateKey : null;
+        return (this.privateKey instanceof RSAPrivateKey rsaPrivateKey)
+                ? rsaPrivateKey : null;
     }
 
     RSAPublicKey getRsaPublicKey()
     {
-        return (this.publicKey instanceof RSAPublicKey)
-                ? (RSAPublicKey) this.publicKey : null;
+        return (this.publicKey instanceof RSAPublicKey rsaPublicKey)
+                ? rsaPublicKey : null;
     }
 }
