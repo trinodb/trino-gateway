@@ -70,7 +70,7 @@ import static java.util.Objects.requireNonNullElse;
 @Path("/webapp")
 public class GatewayWebAppResource
 {
-    private static final LocalDateTime START_TIME = LocalDateTime.now(ZoneId.systemDefault());
+    private final LocalDateTime startTime = LocalDateTime.now(ZoneId.systemDefault());
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
@@ -167,7 +167,7 @@ public class GatewayWebAppResource
                         state -> state.trinoStatus() == TrinoStatus.HEALTHY,
                         Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
         Integer latestHour = query.latestHour();
-        Long ts = System.currentTimeMillis() - (latestHour * 60 * 60 * 1000);
+        Long ts = System.currentTimeMillis() - (latestHour * 60 * 60 * 1000L);
         List<DistributionResponse.LineChart> lineChart = queryHistoryManager.findDistribution(ts);
         lineChart.forEach(qh -> qh.setName(urlToNameMap.get(qh.getBackendUrl())));
         Map<String, List<DistributionResponse.LineChart>> lineChartMap = lineChart.stream().collect(Collectors.groupingBy(DistributionResponse.LineChart::getName));
@@ -192,7 +192,7 @@ public class GatewayWebAppResource
         distributionResponse.setTotalQueryCount(totalQueryCount);
         distributionResponse.setAverageQueryCountSecond(totalQueryCount / (latestHour * 60d * 60d));
         distributionResponse.setAverageQueryCountMinute(totalQueryCount / (latestHour * 60d));
-        ZonedDateTime zonedLocalTime = START_TIME.atZone(ZoneId.systemDefault());
+        ZonedDateTime zonedLocalTime = startTime.atZone(ZoneId.systemDefault());
         ZonedDateTime utcTime = zonedLocalTime.withZoneSameInstant(ZoneOffset.UTC);
         distributionResponse.setStartTime(utcTime.format(formatter));
         return Response.ok(Result.ok(distributionResponse)).build();

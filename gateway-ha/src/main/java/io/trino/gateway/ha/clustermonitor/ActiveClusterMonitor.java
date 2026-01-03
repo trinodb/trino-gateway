@@ -63,7 +63,8 @@ public class ActiveClusterMonitor
     public void start()
     {
         log.info("Running cluster monitor with connection task delay of %s", taskDelay);
-        scheduledExecutor.scheduleAtFixedRate(() -> {
+        @SuppressWarnings("unused")
+        var unused = scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 log.info("Getting stats for all clusters");
                 List<ProxyBackendConfiguration> allClusters =

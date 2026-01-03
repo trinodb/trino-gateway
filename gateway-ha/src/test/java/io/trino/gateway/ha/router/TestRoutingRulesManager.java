@@ -128,7 +128,8 @@ final class TestRoutingRulesManager
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        executorService.submit(() ->
+        @SuppressWarnings("unused")
+        var unused1 = executorService.submit(() ->
         {
             try {
                 routingRulesManager.updateRoutingRule(routingRule1);
@@ -138,7 +139,8 @@ final class TestRoutingRulesManager
             }
         });
 
-        executorService.submit(() ->
+        @SuppressWarnings("unused")
+        var unused2 = executorService.submit(() ->
         {
             try {
                 routingRulesManager.updateRoutingRule(routingRule2);

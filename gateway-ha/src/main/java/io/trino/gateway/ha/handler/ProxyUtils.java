@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.handler;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import io.airlift.log.Logger;
@@ -103,15 +104,15 @@ public final class ProxyUtils
         }
         if (matchingStatementPath.isPresent() || path.startsWith(V1_QUERY_PATH)) {
             path = path.replace(matchingStatementPath.orElse(V1_QUERY_PATH), "");
-            String[] tokens = path.split("/");
-            if (tokens.length >= 2) {
-                if (tokens.length >= 3 && QUERY_STATE_PATH.contains(tokens[1])) {
-                    if (tokens.length >= 4 && tokens[2].equals(PARTIAL_CANCEL_PATH)) {
-                        return Optional.of(tokens[3]);
+            List<String> tokens = Splitter.on('/').splitToList(path);
+            if (tokens.size() >= 2) {
+                if (tokens.size() >= 3 && QUERY_STATE_PATH.contains(tokens.get(1))) {
+                    if (tokens.size() >= 4 && tokens.get(2).equals(PARTIAL_CANCEL_PATH)) {
+                        return Optional.of(tokens.get(3));
                     }
-                    return Optional.of(tokens[2]);
+                    return Optional.of(tokens.get(2));
                 }
-                return Optional.of(tokens[1]);
+                return Optional.of(tokens.get(1));
             }
         }
         else if (path.startsWith(TRINO_UI_PATH)) {

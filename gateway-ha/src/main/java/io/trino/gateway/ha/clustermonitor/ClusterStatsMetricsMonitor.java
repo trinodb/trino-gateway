@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.http.client.HttpClient;
@@ -190,7 +191,7 @@ public class ClusterStatsMetricsMonitor
                 String responseBody = new String(response.getInputStream().readAllBytes(), UTF_8);
                 Map<String, String> metrics = Arrays.stream(responseBody.split("\n"))
                         .filter(line -> !line.startsWith("#"))
-                        .collect(toImmutableMap(s -> s.split(" ")[0], s -> s.split(" ")[1]));
+                        .collect(toImmutableMap(s -> Splitter.on(' ').splitToList(s).get(0), s -> Splitter.on(' ').splitToList(s).get(1)));
                 if (!metrics.keySet().containsAll(requiredKeys)) {
                     throw new UnexpectedResponseException(
                             format("Request is missing required keys: \n%s\nin response: '%s'", String.join("\n", requiredKeys), responseBody),
