@@ -12,6 +12,8 @@ dataStore:
   password: P0stG&es
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
+  # Enable or disable query history recording to database (default: true)
+  queryHistoryEnabled: true
 
 clusterStatsConfiguration:
   monitorType: INFO_API

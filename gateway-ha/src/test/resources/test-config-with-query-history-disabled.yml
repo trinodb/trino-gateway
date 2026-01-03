@@ -8,7 +8,7 @@ dataStore:
   user: ${ENV:POSTGRESQL_USER}
   password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
-  queryHistoryEnabled: true
+  queryHistoryEnabled: false
 
 clusterStatsConfiguration:
   monitorType: INFO_API
