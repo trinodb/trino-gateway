@@ -27,62 +27,68 @@ final class TestDatabaseMigrationsMySql
     @Override
     protected void createGatewaySchema()
     {
-        String gatewayBackendTable = "CREATE TABLE gateway_backend (\n" +
-                "     name VARCHAR(256) PRIMARY KEY,\n" +
-                "     routing_group VARCHAR (256),\n" +
-                "     backend_url VARCHAR (256),\n" +
-                "     external_url VARCHAR (256),\n" +
-                "     active BOOLEAN\n" +
-                ");";
-        String queryHistoryTable = "CREATE TABLE query_history (\n" +
-                "     query_id VARCHAR(256) PRIMARY KEY,\n" +
-                "     query_text VARCHAR (256),\n" +
-                "     created bigint,\n" +
-                "     backend_url VARCHAR (256),\n" +
-                "     user_name VARCHAR(256),\n" +
-                "     source VARCHAR(256)\n" +
-                ");";
-        String propertiesTable = "CREATE TABLE resource_groups_global_properties (\n" +
-                "    name VARCHAR(128) NOT NULL PRIMARY KEY,\n" +
-                "    value VARCHAR(512) NULL,\n" +
-                "    CHECK (name in ('cpu_quota_period', 'a_name', 'a_value'))\n" +
-                ");";
-        String resourceGroupsTable = "CREATE TABLE resource_groups (\n" +
-                "    resource_group_id BIGINT NOT NULL AUTO_INCREMENT,\n" +
-                "    name VARCHAR(250) NOT NULL,\n" +
-                "    soft_memory_limit VARCHAR(128) NOT NULL,\n" +
-                "    max_queued INT NOT NULL,\n" +
-                "    soft_concurrency_limit INT NULL,\n" +
-                "    hard_concurrency_limit INT NOT NULL,\n" +
-                "    scheduling_policy VARCHAR(128) NULL,\n" +
-                "    scheduling_weight INT NULL,\n" +
-                "    jmx_export BOOLEAN NULL,\n" +
-                "    soft_cpu_limit VARCHAR(128) NULL,\n" +
-                "    hard_cpu_limit VARCHAR(128) NULL,\n" +
-                "    parent BIGINT NULL,\n" +
-                "    environment VARCHAR(128) NULL,\n" +
-                "    PRIMARY KEY (resource_group_id),\n" +
-                "    FOREIGN KEY (parent) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE\n" +
-                ");";
-        String selectorsTable = "CREATE TABLE selectors (\n" +
-                "     resource_group_id BIGINT NOT NULL,\n" +
-                "     priority BIGINT NOT NULL,\n" +
-                "     user_regex VARCHAR(512),\n" +
-                "     source_regex VARCHAR(512),\n" +
-                "     query_type VARCHAR(512),\n" +
-                "     client_tags VARCHAR(512),\n" +
-                "     selector_resource_estimate VARCHAR(1024),\n" +
-                "     FOREIGN KEY (resource_group_id) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE\n" +
-                ");";
-        String exactMatchSourceSelectorsTable = "CREATE TABLE exact_match_source_selectors (\n" +
-                "    resource_group_id VARCHAR(256) NOT NULL,\n" +
-                "    update_time DATETIME NOT NULL,\n" +
-                "    source VARCHAR(512) NOT NULL,\n" +
-                "    environment VARCHAR(128),\n" +
-                "    query_type VARCHAR(512),\n" +
-                "    PRIMARY KEY (environment, source(128), query_type),\n" +
-                "    UNIQUE (source(128), environment, query_type(128), resource_group_id)\n" +
-                ");";
+        String gatewayBackendTable = """
+                CREATE TABLE gateway_backend (
+                     name VARCHAR(256) PRIMARY KEY,
+                     routing_group VARCHAR (256),
+                     backend_url VARCHAR (256),
+                     external_url VARCHAR (256),
+                     active BOOLEAN
+                );""";
+        String queryHistoryTable = """
+                CREATE TABLE query_history (
+                     query_id VARCHAR(256) PRIMARY KEY,
+                     query_text VARCHAR (256),
+                     created bigint,
+                     backend_url VARCHAR (256),
+                     user_name VARCHAR(256),
+                     source VARCHAR(256)
+                );""";
+        String propertiesTable = """
+                CREATE TABLE resource_groups_global_properties (
+                    name VARCHAR(128) NOT NULL PRIMARY KEY,
+                    value VARCHAR(512) NULL,
+                    CHECK (name in ('cpu_quota_period', 'a_name', 'a_value'))
+                );""";
+        String resourceGroupsTable = """
+                CREATE TABLE resource_groups (
+                    resource_group_id BIGINT NOT NULL AUTO_INCREMENT,
+                    name VARCHAR(250) NOT NULL,
+                    soft_memory_limit VARCHAR(128) NOT NULL,
+                    max_queued INT NOT NULL,
+                    soft_concurrency_limit INT NULL,
+                    hard_concurrency_limit INT NOT NULL,
+                    scheduling_policy VARCHAR(128) NULL,
+                    scheduling_weight INT NULL,
+                    jmx_export BOOLEAN NULL,
+                    soft_cpu_limit VARCHAR(128) NULL,
+                    hard_cpu_limit VARCHAR(128) NULL,
+                    parent BIGINT NULL,
+                    environment VARCHAR(128) NULL,
+                    PRIMARY KEY (resource_group_id),
+                    FOREIGN KEY (parent) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE
+                );""";
+        String selectorsTable = """
+                CREATE TABLE selectors (
+                     resource_group_id BIGINT NOT NULL,
+                     priority BIGINT NOT NULL,
+                     user_regex VARCHAR(512),
+                     source_regex VARCHAR(512),
+                     query_type VARCHAR(512),
+                     client_tags VARCHAR(512),
+                     selector_resource_estimate VARCHAR(1024),
+                     FOREIGN KEY (resource_group_id) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE
+                );""";
+        String exactMatchSourceSelectorsTable = """
+                CREATE TABLE exact_match_source_selectors (
+                    resource_group_id VARCHAR(256) NOT NULL,
+                    update_time DATETIME NOT NULL,
+                    source VARCHAR(512) NOT NULL,
+                    environment VARCHAR(128),
+                    query_type VARCHAR(512),
+                    PRIMARY KEY (environment, source(128), query_type),
+                    UNIQUE (source(128), environment, query_type(128), resource_group_id)
+                );""";
         Handle jdbiHandle = jdbi.open();
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
