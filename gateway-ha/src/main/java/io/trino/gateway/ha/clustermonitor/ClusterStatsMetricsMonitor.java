@@ -170,7 +170,7 @@ public class ClusterStatsMetricsMonitor
     {
         private final ImmutableSet<String> requiredKeys;
 
-        public MetricsResponseHandler(Set<String> requiredKeys)
+        private MetricsResponseHandler(Set<String> requiredKeys)
         {
             this.requiredKeys = ImmutableSet.copyOf(requiredKeys);
         }

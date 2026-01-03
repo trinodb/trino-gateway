@@ -223,12 +223,12 @@ public final class StatementUtils
             this.queryType = requireNonNull(queryType, "queryType is null");
         }
 
-        public Class<T> getStatementType()
+        private Class<T> getStatementType()
         {
             return statementType;
         }
 
-        public QueryType getQueryType()
+        private QueryType getQueryType()
         {
             return queryType;
         }
