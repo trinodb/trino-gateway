@@ -112,6 +112,7 @@
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>--should-stop=ifError=FLOW</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:BooleanLiteral:ERROR \
                             -Xep:CatchAndPrintStackTrace:ERROR \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
