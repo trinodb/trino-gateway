@@ -470,13 +470,11 @@ public class TrinoQueryProperties
                     schemaBuilder.add(schema.getParts().getFirst());
                     catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
                     catalogSchemaBuilder.add(format("%s.%s", defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), schema.getParts().getFirst()));
-                    break;
                 }
                 case 2 -> {
                     schemaBuilder.add(schema.getParts().get(1));
                     catalogBuilder.add(schema.getParts().getFirst());
                     catalogSchemaBuilder.add(format("%s.%s", schema.getParts().getFirst(), schema.getParts().getLast()));
-                    break;
                 }
                 default -> log.error("Schema has >2 parts: %s", schema);
             }
