@@ -42,10 +42,7 @@ import io.trino.gateway.ha.router.StochasticRoutingManager;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import io.trino.gateway.ha.security.QueryMetadataParser;
 import io.trino.gateway.ha.security.QueryUserInfoParser;
-import io.trino.gateway.proxyserver.ForProxy;
-import io.trino.gateway.proxyserver.ProxyRequestHandler;
-import io.trino.gateway.proxyserver.RouteToBackendResource;
-import io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter;
+import io.trino.gateway.proxyserver.ProxyServerModule;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.lang.reflect.Constructor;
@@ -189,12 +186,9 @@ public class BaseApp
 
     private static void registerProxyResources(Binder binder)
     {
-        jaxrsBinder(binder).bind(RouteToBackendResource.class);
-        jaxrsBinder(binder).bind(RouterPreMatchContainerRequestFilter.class);
+        binder.install(new ProxyServerModule());
         jaxrsBinder(binder).bind(QueryUserInfoParser.class);
         jaxrsBinder(binder).bind(QueryMetadataParser.class);
-        jaxrsBinder(binder).bind(ProxyRequestHandler.class);
-        httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
         httpClientBinder(binder).bindHttpClient("monitor", ForMonitor.class);
         httpClientBinder(binder).bindHttpClient("router", ForRouter.class);
     }
