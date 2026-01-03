@@ -81,7 +81,7 @@ public class TestResourceGroupsManager
         assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
         assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(20);
         assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(200);
-        assertThat(resourceGroups.get(0).getJmxExport()).isEqualTo(Boolean.TRUE);
+        assertThat(resourceGroups.get(0).getJmxExport()).isTrue();
         assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("80%");
     }
 
@@ -129,21 +129,21 @@ public class TestResourceGroupsManager
         assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
         assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(50);
         assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(50);
-        assertThat(resourceGroups.get(0).getJmxExport()).isEqualTo(Boolean.FALSE);
+        assertThat(resourceGroups.get(0).getJmxExport()).isFalse();
         assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("20%");
 
         assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(2L);
         assertThat(resourceGroups.get(1).getName()).isEqualTo("user");
         assertThat(resourceGroups.get(1).getHardConcurrencyLimit()).isEqualTo(10);
         assertThat(resourceGroups.get(1).getMaxQueued()).isEqualTo(100);
-        assertThat(resourceGroups.get(1).getJmxExport()).isEqualTo(Boolean.TRUE);
+        assertThat(resourceGroups.get(1).getJmxExport()).isTrue();
         assertThat(resourceGroups.get(1).getSoftMemoryLimit()).isEqualTo("50%");
 
         assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(3L);
         assertThat(resourceGroups.get(2).getName()).isEqualTo("localization-eng");
         assertThat(resourceGroups.get(2).getHardConcurrencyLimit()).isEqualTo(50);
         assertThat(resourceGroups.get(2).getMaxQueued()).isEqualTo(70);
-        assertThat(resourceGroups.get(2).getJmxExport()).isEqualTo(Boolean.TRUE);
+        assertThat(resourceGroups.get(2).getJmxExport()).isTrue();
         assertThat(resourceGroups.get(2).getSoftMemoryLimit()).isEqualTo("20%");
         assertThat(resourceGroups.get(2).getSoftConcurrencyLimit()).isEqualTo(Integer.valueOf(20));
     }
