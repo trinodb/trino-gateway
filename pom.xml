@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>330</version>
+        <version>335</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -45,8 +45,6 @@
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.modernizer.java-version>8</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
-
-        <dep.jetty.version>12.1.4</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -54,7 +52,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>381</version>
+                <version>390</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
