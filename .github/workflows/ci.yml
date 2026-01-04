@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install required Java distribution
         uses: actions/setup-java@v5
         with:
