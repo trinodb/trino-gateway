@@ -61,16 +61,14 @@ import io.trino.sql.tree.ResetSessionAuthorization;
 import io.trino.sql.tree.Revoke;
 import io.trino.sql.tree.RevokeRoles;
 import io.trino.sql.tree.Rollback;
+import io.trino.sql.tree.SetAuthorizationStatement;
 import io.trino.sql.tree.SetColumnType;
 import io.trino.sql.tree.SetPath;
 import io.trino.sql.tree.SetProperties;
 import io.trino.sql.tree.SetRole;
-import io.trino.sql.tree.SetSchemaAuthorization;
 import io.trino.sql.tree.SetSession;
 import io.trino.sql.tree.SetSessionAuthorization;
-import io.trino.sql.tree.SetTableAuthorization;
 import io.trino.sql.tree.SetTimeZone;
-import io.trino.sql.tree.SetViewAuthorization;
 import io.trino.sql.tree.ShowCatalogs;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
@@ -181,13 +179,11 @@ public final class StatementUtils
             .add(basicStatement(DropNotNullConstraint.class, DATA_DEFINITION))
             .add(basicStatement(SetPath.class, DATA_DEFINITION))
             .add(basicStatement(SetRole.class, DATA_DEFINITION))
-            .add(basicStatement(SetSchemaAuthorization.class, DATA_DEFINITION))
+            .add(basicStatement(SetAuthorizationStatement.class, DATA_DEFINITION))
             .add(basicStatement(SetSession.class, DATA_DEFINITION))
             .add(basicStatement(SetSessionAuthorization.class, DATA_DEFINITION))
             .add(basicStatement(SetProperties.class, DATA_DEFINITION))
-            .add(basicStatement(SetTableAuthorization.class, DATA_DEFINITION))
             .add(basicStatement(SetTimeZone.class, DATA_DEFINITION))
-            .add(basicStatement(SetViewAuthorization.class, DATA_DEFINITION))
             .add(basicStatement(StartTransaction.class, DATA_DEFINITION))
             .add(basicStatement(Use.class, DATA_DEFINITION))
             .build().stream()
