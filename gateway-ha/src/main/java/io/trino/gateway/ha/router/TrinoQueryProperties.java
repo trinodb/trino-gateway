@@ -53,10 +53,8 @@ import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
 import io.trino.sql.tree.RenameTable;
 import io.trino.sql.tree.RenameView;
+import io.trino.sql.tree.SetAuthorizationStatement;
 import io.trino.sql.tree.SetProperties;
-import io.trino.sql.tree.SetSchemaAuthorization;
-import io.trino.sql.tree.SetTableAuthorization;
-import io.trino.sql.tree.SetViewAuthorization;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
 import io.trino.sql.tree.ShowSchemas;
@@ -420,9 +418,14 @@ public class TrinoQueryProperties
             }
             case ShowSchemas s -> catalogBuilder.add(s.getCatalog().map(Identifier::getValue).or(() -> defaultCatalog).orElseThrow(this::unsetDefaultExceptionSupplier));
             case ShowTables s -> setCatalogAndSchemaNameFromSchemaQualifiedName(s.getSchema(), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
-            case SetSchemaAuthorization s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
-            case SetTableAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
-            case SetViewAuthorization s -> tableBuilder.add(qualifyName(s.getSource()));
+            case SetAuthorizationStatement setAuthorization -> {
+                if (setAuthorization.getOwnedEntityKind().equals("SCHEMA")) {
+                    setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(setAuthorization.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+                }
+                else {
+                    tableBuilder.add(qualifyName(setAuthorization.getSource()));
+                }
+            }
             case Table s -> {
                 // ignore temporary tables as they can have various table parts
                 if (!temporaryTables.contains(s.getName())) {
