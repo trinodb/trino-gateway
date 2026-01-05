@@ -44,7 +44,7 @@ final class TestSpecificDbResourceGroupsManager
         specificDb = "h2db-" + System.currentTimeMillis();
         File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), specificDb).toFile();
         tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath();
+        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath() + ";NON_KEYWORDS=NAME,VALUE";
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
                 "sa", "org.h2.Driver", 4, false);
