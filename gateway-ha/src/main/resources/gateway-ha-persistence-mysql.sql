@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS resource_groups_global_properties (
 
 CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     resource_group_id VARCHAR(256) NOT NULL,
-    update_time DATETIME NOT NULL,
+    update_time TIMESTAMP NOT NULL,
 
     -- Selector fields which must exactly match a query
     source VARCHAR(512) NOT NULL,
