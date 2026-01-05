@@ -80,7 +80,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getActiveBackends("adhoc")).isEmpty();
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
-                .containsExactly("adhoc", "etl");
+                .containsExactly("etl", "adhoc");
 
         // Delete a backend
         haGatewayManager.deleteBackend("adhoc1");
