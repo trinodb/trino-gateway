@@ -72,7 +72,7 @@ public class HaGatewayTestUtils
 
     public static void seedRequiredData(String h2DbFilePath)
     {
-        String jdbcUrl = "jdbc:h2:" + h2DbFilePath;
+        String jdbcUrl = "jdbc:h2:" + h2DbFilePath + ";NON_KEYWORDS=NAME,VALUE";
         Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
         try (Handle handle = jdbi.open()) {
             handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
