@@ -26,7 +26,6 @@ import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 public class HaGatewayConfiguration
 {
     private Map<String, String> serverConfig = new HashMap<>();
-    private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
     private RoutingConfiguration routing = new RoutingConfiguration();
@@ -64,16 +63,6 @@ public class HaGatewayConfiguration
     public void setServerConfig(Map<String, String> serverConfig)
     {
         this.serverConfig = serverConfig;
-    }
-
-    public NotifierConfiguration getNotifier()
-    {
-        return this.notifier;
-    }
-
-    public void setNotifier(NotifierConfiguration notifier)
-    {
-        this.notifier = notifier;
     }
 
     public DataStoreConfiguration getDataStore()
