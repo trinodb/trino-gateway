@@ -290,7 +290,7 @@ public class TestResourceGroupsManager
         }
         catch (Exception ex) {
             assertThat(ex.getCause())
-                    .isInstanceOf(org.h2.jdbc.JdbcSQLException.class)
+                    .isInstanceOf(org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException.class)
                     .hasMessageStartingWith("Check constraint violation:");
         }
     }
@@ -330,7 +330,7 @@ public class TestResourceGroupsManager
         }
         catch (Exception ex) {
             assertThat(ex.getCause())
-                    .isInstanceOf(org.h2.jdbc.JdbcSQLException.class)
+                    .isInstanceOf(org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException.class)
                     .hasMessageStartingWith("Check constraint violation:");
         }
     }
