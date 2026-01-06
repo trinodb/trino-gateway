@@ -19,7 +19,7 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
-import io.trino.gateway.ha.AuditLogger;
+import io.trino.gateway.ha.DatabaseAuditLogger;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
@@ -91,7 +91,7 @@ public class HaGatewayProviderModule
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
     private final PathFilter pathFilter;
-    private final AuditLogger auditLogger;
+    private final DatabaseAuditLogger dbAuditLogger;
 
     @Override
     protected void configure()
@@ -102,7 +102,7 @@ public class HaGatewayProviderModule
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
         binder().bind(PathFilter.class).toInstance(pathFilter);
-        binder().bind(AuditLogger.class).toInstance(auditLogger);
+        binder().bind(DatabaseAuditLogger.class).toInstance(dbAuditLogger);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
@@ -128,7 +128,7 @@ public class HaGatewayProviderModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
-        auditLogger = new AuditLogger(jdbi);
+        dbAuditLogger = new DatabaseAuditLogger(jdbi);
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
