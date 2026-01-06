@@ -13,15 +13,18 @@
  */
 package io.trino.gateway.ha;
 
-import static java.util.Objects.requireNonNullElse;
+import io.airlift.log.Logger;
 
-public interface AuditLogger
+public class LogAuditLogger
+        implements AuditLogger
 {
-    void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment);
+    private static final Logger log = Logger.get(LogAuditLogger.class);
 
-    static String sanitizeComment(String comment)
+    @Override
+    public void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment)
     {
-        String c = requireNonNullElse(comment, "");
-        return c.replaceAll("\\s+", " ").trim();
+        String comment = AuditLogger.sanitizeComment(userComment);
+        log.info("GW_AUDIT_LOG: user=%s, ipAddress=%s, backend=%s, action=%s, context=%s, success=%s, userComment=%s",
+                user, ip, backendName, action, context, success, comment);
     }
 }

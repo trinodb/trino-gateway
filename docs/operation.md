@@ -81,3 +81,8 @@ taking a long time for garbage collection.
 completed initialization and is ready to serve requests. This means the initial
 connection to the database and the first round of health check on Trino clusters
 are completed. Otherwise, status code 503 is returned.
+
+## Audit logging
+Trino Gateway provides the AuditLogger interface for recording admin backend update events 
+to different pluggable outputs/sinks. Currently, there's implementations for logs.info and to 
+a database table.
