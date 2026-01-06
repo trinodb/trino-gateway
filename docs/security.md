@@ -123,6 +123,59 @@ authentication:
       publicKeyRsa: <public_key_path>
 ```
 
+### JWT authentication
+
+JWT (JSON Web Token) authentication enables access to Trino Gateway
+without interactive login. This is useful for integration with external identity providers.
+
+JWT authentication supports three key sources:
+
+- **RSA public key file**: A PEM-encoded RSA public key file
+- **HMAC secret file**: A file containing the HMAC secret
+- **JWKS URL**: A URL to a JSON Web Key Set (for dynamic key retrieval)
+
+```yaml
+authentication:
+  defaultType: "jwt" # Using JWT authentication
+  jwt:
+    # Key file can be:
+    # - Path to RSA public key PEM file
+    # - Path to HMAC secret file
+    # - JWKS URL (e.g., https://idp.example.com/.well-known/jwks.json)
+    keyFile: "/etc/trino-gateway/jwt-public-key.pem"
+
+    # Required issuer - tokens must have this issuer claim
+    requiredIssuer: "https://idp.example.com"
+
+    # Required audience - tokens must have this audience claim
+    requiredAudience: "trino-gateway"
+
+    # JWT claim field containing the principal/username (default: "sub")
+    principalField: "sub"
+
+    # User mapping (optional) - transform the principal to a different username
+    # Use either userMappingPattern OR userMappingFile, not both
+    userMappingPattern: "(.*)@example\\.com"  # Extracts username before @
+    # userMappingFile: "/etc/trino-gateway/user-mapping.json"
+```
+
+**Example with JWKS URL:**
+
+```yaml
+authentication:
+  jwt:
+    keyFile: "https://login.microsoftonline.com/tenant-id/discovery/v2.0/keys"
+    requiredIssuer: "https://login.microsoftonline.com/tenant-id/v2.0"
+    requiredAudience: "api://trino-gateway"
+    principalField: "preferred_username"
+    userMappingPattern: "(.*)@company\\.com"
+```
+
+When using JWT authentication, clients include the token in the Authorization header:
+
+```
+Authorization: Bearer <jwt-token>
+```
 
 ## Authorization
 
@@ -171,6 +224,160 @@ The LDAP config file should have the following contents:
   poolMinIdle: 0
   poolTestOnBorrow: true
 ```
+
+## User mapping
+
+User mapping transforms the authenticated user identity before it is used for
+authorization decisions. This is useful for:
+
+- Extracting usernames from email addresses (e.g., `john.doe@company.com` → `john.doe`)
+- Normalizing usernames to a specific case
+- Denying access to specific users or patterns
+- Mapping external identity provider names to internal usernames
+
+### How user mapping works
+
+1. **Input**: The principal extracted from the authentication source
+   - For JWT: The value of the claim specified by `principalField` (default: `sub`)
+   - For OAuth: The value of `userIdField` claim
+   - For Form/LDAP: The authenticated username
+
+2. **Transformation**: The principal is matched against user mapping rules
+   - Rules are evaluated in order until a match is found
+   - Each rule contains a regex pattern and optional transformation
+   - If no rule matches, authentication fails
+
+3. **Output**: The mapped username used for authorization
+   - The mapped user is checked against the authorization manager
+   - Privileges (admin, user, api) are determined based on the mapped identity
+
+### Configuration options
+
+User mapping can be configured in two ways:
+
+**Simple pattern (inline regex):**
+
+```yaml
+authentication:
+  jwt:
+    keyFile: "/etc/trino-gateway/jwt-public-key.pem"
+    principalField: "email"
+    userMappingPattern: "(.*)@company\\.com"
+```
+
+This pattern extracts the first capture group as the username. For example,
+`alice@company.com` becomes `alice`.
+
+**Rules file (advanced):**
+
+```yaml
+authentication:
+  jwt:
+    keyFile: "/etc/trino-gateway/jwt-public-key.pem"
+    principalField: "sub"
+    userMappingFile: "/etc/trino-gateway/user-mapping.json"
+```
+
+### User mapping rules file format
+
+The rules file is a JSON file with an array of rules:
+
+```json
+{
+  "rules": [
+    {
+      "pattern": "(.*)@banned-domain\\.com",
+      "allow": false
+    },
+    {
+      "pattern": "admin@company\\.com",
+      "user": "super-admin"
+    },
+    {
+      "pattern": "(.*)@company\\.com",
+      "user": "$1",
+      "case": "LOWER"
+    },
+    {
+      "pattern": "(.*)",
+      "user": "$1"
+    }
+  ]
+}
+```
+
+**Rule properties:**
+
+| Property  | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `pattern` | Yes      | -       | Regex pattern to match against the principal |
+| `user`    | No       | `$1`    | Replacement string (supports regex capture groups) |
+| `allow`   | No       | `true`  | Set to `false` to deny matching principals |
+| `case`    | No       | `KEEP`  | Case transformation: `KEEP`, `LOWER`, or `UPPER` |
+
+**How rules are evaluated:**
+
+1. Rules are evaluated in order from first to last
+2. The first matching rule determines the result
+3. If `allow` is `false`, authentication fails with "Principal is not allowed"
+4. If `allow` is `true` (default), the `user` replacement is applied
+5. Capture groups from the pattern can be referenced in `user` (e.g., `$1`, `$2`)
+6. If no rule matches, authentication fails
+
+### User mapping examples
+
+**Example 1: Strip email domain**
+
+Pattern: `(.*)@.*`
+
+| Input | Output |
+|-------|--------|
+| `alice@company.com` | `alice` |
+| `bob@external.org` | `bob` |
+
+**Example 2: Allow only specific domain and lowercase**
+
+Rules file:
+```json
+{
+  "rules": [
+    {
+      "pattern": "(.*)@company\\.com",
+      "user": "$1",
+      "case": "LOWER"
+    }
+  ]
+}
+```
+
+| Input | Output |
+|-------|--------|
+| `Alice@company.com` | `alice` |
+| `Bob@COMPANY.COM` | No match (domain is case-sensitive) |
+| `carol@external.com` | No match (authentication fails) |
+
+**Example 3: Deny specific users**
+
+Rules file:
+```json
+{
+  "rules": [
+    {
+      "pattern": "service-account-blocked",
+      "allow": false
+    },
+    {
+      "pattern": "(.*)",
+      "user": "$1"
+    }
+  ]
+}
+```
+
+| Input | Output |
+|-------|--------|
+| `service-account-blocked` | Denied |
+| `alice` | `alice` |
 
 ## Web page permissions
 
