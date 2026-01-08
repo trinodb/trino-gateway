@@ -27,6 +27,7 @@
         <dep.mockito.version>5.21.0</dep.mockito.version>
         <dep.okhttp3.version>5.3.2</dep.okhttp3.version>
         <dep.trino.version>474</dep.trino.version>
+        <dep.caffeine.version>3.2.3</dep.caffeine.version>
     </properties>
 
     <dependencyManagement>
@@ -72,6 +73,12 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${dep.caffeine.version}</version>
         </dependency>
 
         <dependency>
