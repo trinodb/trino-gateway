@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>335</version>
+        <version>340</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -52,7 +52,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>390</version>
+                <version>392</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
