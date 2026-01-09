@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import styles from './history.module.scss';
 import Locale from "../locales";
 import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight } from "@douyinfe/semi-ui";
@@ -9,10 +9,12 @@ import { formatTimestamp } from "../utils/time";
 import { backendsApi } from "../api/webapp/cluster";
 import { Role, useAccessStore } from "../store";
 import { BackendData } from "../types/cluster";
+import { TimezoneContext } from "./TimezoneContext";
 
 export function History() {
   const { Text } = Typography;
   const access = useAccessStore();
+  const timezone = useContext(TimezoneContext).timezone;
   const [backendData, setBackendData] = useState<BackendData[]>();
   const [historyData, setHistoryData] = useState<HistoryData>();
   const [backendMapping, setBackendMapping] = useState<Record<string, string>>({});
@@ -74,7 +76,7 @@ export function History() {
 
   const timeRender = (text: number) => {
     return (
-      <Text>{formatTimestamp(text)}</Text>
+      <Text>{formatTimestamp(text, timezone)}</Text>
     );
   }
 
