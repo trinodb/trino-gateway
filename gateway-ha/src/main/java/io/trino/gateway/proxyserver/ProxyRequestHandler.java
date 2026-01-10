@@ -89,6 +89,7 @@ public class ProxyRequestHandler
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final ProxyResponseConfiguration proxyResponseConfiguration;
+    private final boolean queryHistoryEnabled;
 
     @Inject
     public ProxyRequestHandler(
@@ -106,6 +107,7 @@ public class ProxyRequestHandler
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
         proxyResponseConfiguration = haGatewayConfiguration.getProxyResponseConfiguration();
+        this.queryHistoryEnabled = haGatewayConfiguration.getDataStore().isQueryHistoryEnabled();
     }
 
     @PreDestroy
@@ -281,6 +283,7 @@ public class ProxyRequestHandler
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
                 routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
+                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
@@ -292,7 +295,9 @@ public class ProxyRequestHandler
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
-        queryHistoryManager.submitQueryDetail(queryDetail);
+        if (queryHistoryEnabled) {
+            queryHistoryManager.submitQueryDetail(queryDetail);
+        }
         return response;
     }
 
