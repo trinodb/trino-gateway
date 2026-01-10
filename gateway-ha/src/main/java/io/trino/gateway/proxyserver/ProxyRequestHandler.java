@@ -166,8 +166,7 @@ public class ProxyRequestHandler
         for (String name : list(servletRequest.getHeaderNames())) {
             for (String value : list(servletRequest.getHeaders(name))) {
                 // TODO: decide what should and shouldn't be forwarded
-                if (!name.equalsIgnoreCase("Accept-Encoding")
-                        && !name.equalsIgnoreCase("Host")
+                if (!name.equalsIgnoreCase("Host")
                         && (addXForwardedHeaders || !name.startsWith("X-Forwarded"))) {
                     requestBuilder.addHeader(name, value);
                 }
@@ -269,7 +268,8 @@ public class ProxyRequestHandler
     private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username,
             RoutingDestination routingDestination)
     {
-        log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
+        String body = response.decompressedBody();
+        log.debug("For Request [%s] got Response [%s]", request.getUri(), body);
 
         QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
@@ -277,18 +277,18 @@ public class ProxyRequestHandler
 
         if (response.statusCode() == OK.getStatusCode()) {
             try {
-                HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
+                HashMap<String, String> results = OBJECT_MAPPER.readValue(body, HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
                 routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
+                log.error("Failed to get QueryId from response [%s] , Status code [%s]", body, response.statusCode());
             }
         }
         else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
+            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", body, response.statusCode(), username.orElse(null));
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
