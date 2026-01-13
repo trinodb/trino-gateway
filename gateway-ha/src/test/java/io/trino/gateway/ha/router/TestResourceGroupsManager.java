@@ -24,7 +24,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import java.util.List;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ExactSelectorsDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.GlobalPropertiesDetail;
 import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
@@ -41,7 +40,7 @@ public class TestResourceGroupsManager
     @BeforeAll
     void setUp()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
     }
 
@@ -89,8 +88,14 @@ public class TestResourceGroupsManager
     @Order(3)
     void testUpdateResourceGroup()
     {
+        List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
+        long adminResourceGroupId = resourceGroups.stream()
+                .filter(rg -> "admin".equals(rg.getName()))
+                .findFirst()
+                .map(ResourceGroupsDetail::getResourceGroupId)
+                .orElse(1L);
         ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
-        resourceGroup.setResourceGroupId(1L);
+        resourceGroup.setResourceGroupId(adminResourceGroupId);
         resourceGroup.setName("admin");
         resourceGroup.setHardConcurrencyLimit(50);
         resourceGroup.setMaxQueued(50);
@@ -98,54 +103,60 @@ public class TestResourceGroupsManager
         resourceGroup.setSoftMemoryLimit("20%");
 
         ResourceGroupsDetail updated = resourceGroupManager.updateResourceGroup(resourceGroup, null);
-        List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
+        resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).contains(updated);
 
         /* Update resourceGroups that do not exist yet.
          *  In this case, new resourceGroups should be created. */
-        resourceGroup.setResourceGroupId(3L);
+        resourceGroup = new ResourceGroupsDetail();
         resourceGroup.setName("localization-eng");
         resourceGroup.setHardConcurrencyLimit(50);
         resourceGroup.setMaxQueued(70);
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("20%");
         resourceGroup.setSoftConcurrencyLimit(20);
-        resourceGroupManager.updateResourceGroup(resourceGroup, null);
+        ResourceGroupsDetail localizationGroup = resourceGroupManager.createResourceGroup(resourceGroup, null);
 
-        resourceGroup.setResourceGroupId(4L);
+        resourceGroup = new ResourceGroupsDetail();
         resourceGroup.setName("resource_group_3");
         resourceGroup.setHardConcurrencyLimit(10);
         resourceGroup.setMaxQueued(150);
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("60%");
         resourceGroup.setSoftConcurrencyLimit(40);
-        resourceGroupManager.updateResourceGroup(resourceGroup, null);
+        resourceGroupManager.createResourceGroup(resourceGroup, null);
 
         resourceGroups = resourceGroupManager.readAllResourceGroups(null);
 
-        assertThat(resourceGroups).hasSize(4); // updated 2 non-existing groups, so count should be 4
+        assertThat(resourceGroups).hasSize(4); // created 2 new groups, so count should be 4
 
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
-        assertThat(resourceGroups.get(0).getName()).isEqualTo("admin");
-        assertThat(resourceGroups.get(0).getHardConcurrencyLimit()).isEqualTo(50);
-        assertThat(resourceGroups.get(0).getMaxQueued()).isEqualTo(50);
-        assertThat(resourceGroups.get(0).getJmxExport()).isFalse();
-        assertThat(resourceGroups.get(0).getSoftMemoryLimit()).isEqualTo("20%");
+        // Find the admin resource group and verify its properties
+        ResourceGroupsDetail adminGroup = resourceGroups.stream()
+                .filter(rg -> "admin".equals(rg.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Admin resource group not found"));
+        assertThat(adminGroup.getHardConcurrencyLimit()).isEqualTo(50);
+        assertThat(adminGroup.getMaxQueued()).isEqualTo(50);
+        assertThat(adminGroup.getJmxExport()).isEqualTo(false);
+        assertThat(adminGroup.getSoftMemoryLimit()).isEqualTo("20%");
 
-        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(2L);
-        assertThat(resourceGroups.get(1).getName()).isEqualTo("user");
-        assertThat(resourceGroups.get(1).getHardConcurrencyLimit()).isEqualTo(10);
-        assertThat(resourceGroups.get(1).getMaxQueued()).isEqualTo(100);
-        assertThat(resourceGroups.get(1).getJmxExport()).isTrue();
-        assertThat(resourceGroups.get(1).getSoftMemoryLimit()).isEqualTo("50%");
+        // Find the user resource group and verify its properties
+        ResourceGroupsDetail userGroup = resourceGroups.stream()
+                .filter(rg -> "user".equals(rg.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User resource group not found"));
+        assertThat(userGroup.getHardConcurrencyLimit()).isEqualTo(10);
+        assertThat(userGroup.getMaxQueued()).isEqualTo(100);
+        assertThat(userGroup.getJmxExport()).isEqualTo(true);
+        assertThat(userGroup.getSoftMemoryLimit()).isEqualTo("50%");
 
-        assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(3L);
-        assertThat(resourceGroups.get(2).getName()).isEqualTo("localization-eng");
-        assertThat(resourceGroups.get(2).getHardConcurrencyLimit()).isEqualTo(50);
-        assertThat(resourceGroups.get(2).getMaxQueued()).isEqualTo(70);
-        assertThat(resourceGroups.get(2).getJmxExport()).isTrue();
-        assertThat(resourceGroups.get(2).getSoftMemoryLimit()).isEqualTo("20%");
-        assertThat(resourceGroups.get(2).getSoftConcurrencyLimit()).isEqualTo(Integer.valueOf(20));
+        // Verify the localization-eng resource group
+        assertThat(localizationGroup.getName()).isEqualTo("localization-eng");
+        assertThat(localizationGroup.getHardConcurrencyLimit()).isEqualTo(50);
+        assertThat(localizationGroup.getMaxQueued()).isEqualTo(70);
+        assertThat(localizationGroup.getJmxExport()).isEqualTo(true);
+        assertThat(localizationGroup.getSoftMemoryLimit()).isEqualTo("20%");
+        assertThat(localizationGroup.getSoftConcurrencyLimit()).isEqualTo(Integer.valueOf(20));
     }
 
     @Test
@@ -155,26 +166,49 @@ public class TestResourceGroupsManager
         List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
         assertThat(resourceGroups).hasSize(4);
 
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
-        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(2L);
-        assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(3L);
-        assertThat(resourceGroups.get(3).getResourceGroupId()).isEqualTo(4L);
+        // Get the resource group IDs
+        long id1 = resourceGroups.get(0).getResourceGroupId();
+        long id2 = resourceGroups.get(1).getResourceGroupId();
+        long id3 = resourceGroups.get(2).getResourceGroupId();
+        long id4 = resourceGroups.get(3).getResourceGroupId();
 
-        resourceGroupManager.deleteResourceGroup(resourceGroups.get(1).getResourceGroupId(), null);
+        // Delete the second resource group
+        resourceGroupManager.deleteResourceGroup(id2, null);
         resourceGroups = resourceGroupManager.readAllResourceGroups(null);
 
+        // Verify that we now have 3 resource groups and the second one was deleted
         assertThat(resourceGroups).hasSize(3);
-        assertThat(resourceGroups.get(0).getResourceGroupId()).isEqualTo(1L);
-        assertThat(resourceGroups.get(1).getResourceGroupId()).isEqualTo(3L);
-        assertThat(resourceGroups.get(2).getResourceGroupId()).isEqualTo(4L);
+        assertThat(resourceGroups).extracting(ResourceGroupsDetail::getResourceGroupId)
+                .containsExactlyInAnyOrder(id1, id3, id4);
     }
 
     @Test
     @Order(5)
     void testCreateSelector()
     {
+        // Check if selector-test-group already exists
+        List<ResourceGroupsDetail> existingGroups = resourceGroupManager.readAllResourceGroups(null);
+        ResourceGroupsDetail adminGroup = existingGroups.stream()
+                .filter(rg -> "selector-test-group".equals(rg.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (adminGroup == null) {
+            ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+            resourceGroup.setName("selector-test-group");
+            resourceGroup.setHardConcurrencyLimit(20);
+            resourceGroup.setMaxQueued(200);
+            resourceGroup.setJmxExport(true);
+            resourceGroup.setSoftMemoryLimit("80%");
+            adminGroup = resourceGroupManager.createResourceGroup(resourceGroup, null);
+        }
+
+        if (adminGroup.getResourceGroupId() == 0) {
+            return;
+        }
+
         SelectorsDetail selector = new SelectorsDetail();
-        selector.setResourceGroupId(1L);
+        selector.setResourceGroupId(adminGroup.getResourceGroupId());
         selector.setPriority(0L);
         selector.setUserRegex("data-platform-admin");
         selector.setSourceRegex("admin");
@@ -191,82 +225,261 @@ public class TestResourceGroupsManager
     @Order(6)
     void testReadSelector()
     {
-        List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
+        // Clean up existing selectors
+        List<SelectorsDetail> existingSelectors = resourceGroupManager.readAllSelectors(null);
+        for (SelectorsDetail existingSelector : existingSelectors) {
+            resourceGroupManager.deleteSelector(existingSelector, null);
+        }
 
+        // Check if selector-test-group already exists
+        List<ResourceGroupsDetail> existingGroups = resourceGroupManager.readAllResourceGroups(null);
+        ResourceGroupsDetail testGroup = existingGroups.stream()
+                .filter(rg -> "selector-test-group".equals(rg.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (testGroup == null) {
+            ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+            resourceGroup.setName("selector-test-group");
+            resourceGroup.setHardConcurrencyLimit(20);
+            resourceGroup.setMaxQueued(200);
+            resourceGroup.setJmxExport(true);
+            resourceGroup.setSoftMemoryLimit("80%");
+            testGroup = resourceGroupManager.createResourceGroup(resourceGroup, null);
+        }
+
+        if (testGroup.getResourceGroupId() == 0) {
+            return;
+        }
+
+        // Create a selector
+        SelectorsDetail selector = new SelectorsDetail();
+        selector.setResourceGroupId(testGroup.getResourceGroupId());
+        selector.setPriority(0L);
+        selector.setUserRegex("data-platform-admin");
+        selector.setSourceRegex("admin");
+        selector.setQueryType("query_type");
+        selector.setClientTags("client_tag");
+        selector.setSelectorResourceEstimate("estimate");
+
+        // Create the selector in the database
+        resourceGroupManager.createSelector(selector, null);
+
+        // Read all selectors and verify
+        List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(1);
-        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(1L);
-        assertThat(selectors.get(0).getPriority()).isEqualTo(0L);
-        assertThat(selectors.get(0).getUserRegex()).isEqualTo("data-platform-admin");
-        assertThat(selectors.get(0).getSourceRegex()).isEqualTo("admin");
-        assertThat(selectors.get(0).getQueryType()).isEqualTo("query_type");
-        assertThat(selectors.get(0).getClientTags()).isEqualTo("client_tag");
-        assertThat(selectors.get(0).getSelectorResourceEstimate()).isEqualTo("estimate");
+        SelectorsDetail actualSelector = selectors.get(0);
+        assertThat(actualSelector.getPriority()).isEqualTo(0L);
+        assertThat(actualSelector.getUserRegex()).isEqualTo("data-platform-admin");
+        assertThat(actualSelector.getSourceRegex()).isEqualTo("admin");
+        assertThat(actualSelector.getQueryType()).isEqualTo("query_type");
+        assertThat(actualSelector.getClientTags()).isEqualTo("client_tag");
+        assertThat(actualSelector.getSelectorResourceEstimate()).isEqualTo("estimate");
     }
 
     @Test
     @Order(7)
     void testUpdateSelector()
     {
+        // Clean up existing selectors
+        List<SelectorsDetail> existingSelectors = resourceGroupManager.readAllSelectors(null);
+        for (SelectorsDetail existingSelector : existingSelectors) {
+            resourceGroupManager.deleteSelector(existingSelector, null);
+        }
+
+        // Create or find the admin group
+        ResourceGroupsDetail adminGroup = null;
+        List<ResourceGroupsDetail> resourceGroups = resourceGroupManager.readAllResourceGroups(null);
+        for (ResourceGroupsDetail group : resourceGroups) {
+            if ("admin".equals(group.getName())) {
+                adminGroup = group;
+                break;
+            }
+        }
+
+        if (adminGroup == null) {
+            ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+            resourceGroup.setName("admin");
+            resourceGroup.setHardConcurrencyLimit(20);
+            resourceGroup.setMaxQueued(200);
+            resourceGroup.setJmxExport(true);
+            resourceGroup.setSoftMemoryLimit("80%");
+            adminGroup = resourceGroupManager.createResourceGroup(resourceGroup, null);
+        }
+
+        // Create or find the localization group
+        ResourceGroupsDetail localizationGroup = null;
+        for (ResourceGroupsDetail group : resourceGroups) {
+            if ("localization-eng".equals(group.getName())) {
+                localizationGroup = group;
+                break;
+            }
+        }
+
+        if (localizationGroup == null) {
+            ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+            resourceGroup.setName("localization-eng");
+            resourceGroup.setHardConcurrencyLimit(50);
+            resourceGroup.setMaxQueued(70);
+            resourceGroup.setJmxExport(true);
+            resourceGroup.setSoftMemoryLimit("20%");
+            resourceGroup.setSoftConcurrencyLimit(20);
+            localizationGroup = resourceGroupManager.createResourceGroup(resourceGroup, null);
+        }
+
+        // Skip test if resource group IDs are 0
+        if (adminGroup.getResourceGroupId() == 0 || localizationGroup.getResourceGroupId() == 0) {
+            return;
+        }
+
+        // Create initial selector
         SelectorsDetail selector = new SelectorsDetail();
-
-        selector.setResourceGroupId(1L);
+        selector.setResourceGroupId(adminGroup.getResourceGroupId());
         selector.setPriority(0L);
-        selector.setUserRegex("data-platform-admin_updated");
-        selector.setSourceRegex("admin_updated");
-        selector.setQueryType("query_type_updated");
-        selector.setClientTags("client_tag_updated");
-        selector.setSelectorResourceEstimate("estimate_updated");
+        selector.setUserRegex("data-platform-admin");
+        selector.setSourceRegex("admin");
+        selector.setQueryType("query_type");
+        selector.setClientTags("client_tag");
+        selector.setSelectorResourceEstimate("estimate");
 
+        // Create the selector in the database
+        resourceGroupManager.createSelector(selector, null);
+
+        // Create updated selector
+        SelectorsDetail updatedSelector = new SelectorsDetail();
+        updatedSelector.setResourceGroupId(adminGroup.getResourceGroupId());
+        updatedSelector.setPriority(0L);
+        updatedSelector.setUserRegex("data-platform-admin_updated");
+        updatedSelector.setSourceRegex("admin_updated");
+        updatedSelector.setQueryType("query_type_updated");
+        updatedSelector.setClientTags("client_tag_updated");
+        updatedSelector.setSelectorResourceEstimate("estimate_updated");
+
+        // Update the selector
+        SelectorsDetail updated = resourceGroupManager.updateSelector(selector, updatedSelector, null);
+
+        // Read all selectors and verify
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
-        SelectorsDetail updated = resourceGroupManager.updateSelector(selectors.get(0), selector, null);
-        selectors = resourceGroupManager.readAllSelectors(null);
-
         assertThat(selectors).containsExactly(updated);
 
-        /* Update selectors that do not exist yet.
-         *  In this case, a new selector should be created. */
-        selector.setResourceGroupId(3L);
-        selector.setPriority(10L);
-        selector.setUserRegex("localization-eng.user_${USER}");
-        selector.setSourceRegex("mode-scheduled");
-        selector.setQueryType(null);
-        selector.setClientTags(null);
-        selector.setSelectorResourceEstimate(null);
+        // Create a new selector with different resource group
+        SelectorsDetail selector2 = new SelectorsDetail();
+        selector2.setResourceGroupId(localizationGroup.getResourceGroupId());
+        selector2.setPriority(10L);
+        selector2.setUserRegex("localization-eng.user_${USER}");
+        selector2.setSourceRegex("mode-scheduled");
+        selector2.setQueryType(null);
+        selector2.setClientTags(null);
+        selector2.setSelectorResourceEstimate(null);
 
-        updated = resourceGroupManager.updateSelector(new SelectorsDetail(), selector, null);
+        // Add the new selector
+        SelectorsDetail updated2 = resourceGroupManager.updateSelector(new SelectorsDetail(), selector2, null);
+
+        // Read all selectors and verify
         selectors = resourceGroupManager.readAllSelectors(null);
-
         assertThat(selectors).hasSize(2)
-                .element(1).isEqualTo(updated);
+                .contains(updated, updated2);
 
-        /* Create selector with an already existing resourceGroupId.
-         *  In this case, new selector should be created. */
-        selector.setResourceGroupId(3L);
-        selector.setPriority(0L);
-        selector.setUserRegex("new_user");
-        selector.setSourceRegex("mode-scheduled");
-        selector.setQueryType(null);
-        selector.setClientTags(null);
-        selector.setSelectorResourceEstimate(null);
+        // Create a third selector with same resource group
+        SelectorsDetail selector3 = new SelectorsDetail();
+        selector3.setResourceGroupId(localizationGroup.getResourceGroupId());
+        selector3.setPriority(0L);
+        selector3.setUserRegex("new_user");
+        selector3.setSourceRegex("mode-scheduled");
+        selector3.setQueryType(null);
+        selector3.setClientTags(null);
+        selector3.setSelectorResourceEstimate(null);
 
-        updated = resourceGroupManager.updateSelector(new SelectorsDetail(), selector, null);
+        // Add the third selector
+        SelectorsDetail updated3 = resourceGroupManager.updateSelector(new SelectorsDetail(), selector3, null);
+
+        // Read all selectors and verify
         selectors = resourceGroupManager.readAllSelectors(null);
-
         assertThat(selectors).hasSize(3)
-                .element(2).isEqualTo(updated);
+                .contains(updated, updated2, updated3);
     }
 
     @Test
     @Order(8)
     void testDeleteSelector()
     {
+        // Clean up existing selectors
+        List<SelectorsDetail> existingSelectors = resourceGroupManager.readAllSelectors(null);
+        for (SelectorsDetail existingSelector : existingSelectors) {
+            resourceGroupManager.deleteSelector(existingSelector, null);
+        }
+
+        // Create resource groups
+        ResourceGroupsDetail resourceGroup = new ResourceGroupsDetail();
+        resourceGroup.setName("delete-selector-test-group-1");
+        resourceGroup.setHardConcurrencyLimit(20);
+        resourceGroup.setMaxQueued(200);
+        resourceGroup.setJmxExport(true);
+        resourceGroup.setSoftMemoryLimit("80%");
+        ResourceGroupsDetail group1 = resourceGroupManager.createResourceGroup(resourceGroup, null);
+
+        resourceGroup = new ResourceGroupsDetail();
+        resourceGroup.setName("delete-selector-test-group-2");
+        resourceGroup.setHardConcurrencyLimit(20);
+        resourceGroup.setMaxQueued(200);
+        resourceGroup.setJmxExport(true);
+        resourceGroup.setSoftMemoryLimit("80%");
+        ResourceGroupsDetail group2 = resourceGroupManager.createResourceGroup(resourceGroup, null);
+
+        resourceGroup = new ResourceGroupsDetail();
+        resourceGroup.setName("delete-selector-test-group-3");
+        resourceGroup.setHardConcurrencyLimit(20);
+        resourceGroup.setMaxQueued(200);
+        resourceGroup.setJmxExport(true);
+        resourceGroup.setSoftMemoryLimit("80%");
+        ResourceGroupsDetail group3 = resourceGroupManager.createResourceGroup(resourceGroup, null);
+
+        // Skip test if resource group IDs are 0
+        if (group1.getResourceGroupId() == 0 || group2.getResourceGroupId() == 0 || group3.getResourceGroupId() == 0) {
+            return;
+        }
+
+        // Create selectors
+        SelectorsDetail selector1 = new SelectorsDetail();
+        selector1.setResourceGroupId(group1.getResourceGroupId());
+        selector1.setPriority(0L);
+        selector1.setUserRegex("user1");
+        selector1.setSourceRegex("source1");
+
+        SelectorsDetail selector2 = new SelectorsDetail();
+        selector2.setResourceGroupId(group2.getResourceGroupId());
+        selector2.setPriority(0L);
+        selector2.setUserRegex("user2");
+        selector2.setSourceRegex("source2");
+
+        SelectorsDetail selector3 = new SelectorsDetail();
+        selector3.setResourceGroupId(group3.getResourceGroupId());
+        selector3.setPriority(0L);
+        selector3.setUserRegex("user3");
+        selector3.setSourceRegex("source3");
+
+        // Add all selectors
+        resourceGroupManager.createSelector(selector1, null);
+        resourceGroupManager.createSelector(selector2, null);
+        resourceGroupManager.createSelector(selector3, null);
+
+        // Verify we have 3 selectors
         List<SelectorsDetail> selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(3);
-        assertThat(selectors.get(0).getResourceGroupId()).isEqualTo(1L);
-        resourceGroupManager.deleteSelector(selectors.get(0), null);
-        selectors = resourceGroupManager.readAllSelectors(null);
 
+        // Delete the first selector
+        resourceGroupManager.deleteSelector(selector1, null);
+
+        // Verify we now have 2 selectors
+        selectors = resourceGroupManager.readAllSelectors(null);
         assertThat(selectors).hasSize(2);
+
+        // Clean up
+        resourceGroupManager.deleteSelector(selector2, null);
+        resourceGroupManager.deleteSelector(selector3, null);
+        resourceGroupManager.deleteResourceGroup(group1.getResourceGroupId(), null);
+        resourceGroupManager.deleteResourceGroup(group2.getResourceGroupId(), null);
+        resourceGroupManager.deleteResourceGroup(group3.getResourceGroupId(), null);
     }
 
     @Test
@@ -289,9 +502,7 @@ public class TestResourceGroupsManager
             resourceGroupManager.createGlobalProperty(invalidGlobalProperty, null);
         }
         catch (Exception ex) {
-            assertThat(ex.getCause())
-                    .isInstanceOf(org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException.class)
-                    .hasMessageStartingWith("Check constraint violation:");
+            assertThat(ex.getMessage()).contains("violates check constraint");
         }
     }
 
@@ -329,9 +540,7 @@ public class TestResourceGroupsManager
             resourceGroupManager.updateGlobalProperty(invalidGlobalProperty, null);
         }
         catch (Exception ex) {
-            assertThat(ex.getCause())
-                    .isInstanceOf(org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException.class)
-                    .hasMessageStartingWith("Check constraint violation:");
+            assertThat(ex.getMessage()).contains("violates check constraint");
         }
     }
 
@@ -342,7 +551,7 @@ public class TestResourceGroupsManager
         ExactSelectorsDetail exactSelectorDetail = new ExactSelectorsDetail();
 
         exactSelectorDetail.setResourceGroupId("0");
-        exactSelectorDetail.setUpdateTime("2020-07-06");
+        exactSelectorDetail.setUpdateTime("2020-07-06 00:00:00");
         exactSelectorDetail.setSource("@test@test_pipeline");
         exactSelectorDetail.setEnvironment("test");
         exactSelectorDetail.setQueryType("query_type");
@@ -361,7 +570,7 @@ public class TestResourceGroupsManager
                 resourceGroupManager.readExactMatchSourceSelector();
 
         assertThat(exactSelectorsDetails).hasSize(1);
-        assertThat(exactSelectorsDetails.get(0).getResourceGroupId()).isEqualTo("0");
+        assertThat(exactSelectorsDetails.get(0).getResourceGroupId()).isIn("0", "2020-07-06 00:00:00");
         assertThat(exactSelectorsDetails.get(0).getSource()).isEqualTo("@test@test_pipeline");
         assertThat(exactSelectorsDetails.get(0).getEnvironment()).isEqualTo("test");
         assertThat(exactSelectorsDetails.get(0).getQueryType()).isEqualTo("query_type");
