@@ -10,9 +10,9 @@ routingRules:
   # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
 
 dataStore:
-  jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db
-  user: trino_gateway_db_admin
-  password: P0stG&es
+  jdbcUrl: jdbc:postgresql://${ENV:DB_HOSTNAME:localhost}:${ENV:DB_PORT:5432}/${ENV:DB_NAME:trino_gateway_db}
+  user: ${ENV:DB_USER:trino_gateway_db_admin}
+  password: ${ENV:DB_PASSWORD:P0stG&es}
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
 

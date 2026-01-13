@@ -50,6 +50,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class HaGatewayTestUtils
 {
@@ -69,12 +70,11 @@ public class HaGatewayTestUtils
                 .setResponseCode(200));
     }
 
-    public static void seedRequiredData(String h2DbFilePath)
+    public static void seedRequiredData(PostgreSQLContainer<?> container)
     {
-        String jdbcUrl = "jdbc:h2:" + h2DbFilePath + ";NON_KEYWORDS=NAME,VALUE";
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
         try (Handle handle = jdbi.open()) {
-            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-postgres.sql"))
                     .execute();
         }
     }
@@ -166,7 +166,16 @@ public class HaGatewayTestUtils
 
     public static OracleContainer getOracleContainer()
     {
-        return new OracleContainer("gvenzl/oracle-free:23.9-slim");
+        // gvenzl/oracle-xe:18.4.0-slim is x86 only, and tests using this image will most likely timeout if
+        // run on other CPU architectures. This test should run in three circumstances:
+        // * in CI, defined by the presence of GitHub environment variables
+        // * if the CPU architecture is x86_64
+        // * if they are explicitly enabled by setting TG_RUN_ORACLE_TESTS=true in the test environment
+        // reference: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+        assumeTrue("true".equals(System.getenv("GITHUB_ACTIONS"))
+                || "x86_64".equalsIgnoreCase(System.getProperty("os.arch"))
+                || "true".equals(System.getenv("TG_RUN_ORACLE_TESTS")));
+        return new OracleContainer("gvenzl/oracle-xe:18.4.0-slim");
     }
 
     private static void verifyTrinoStatus(int port, String name)
