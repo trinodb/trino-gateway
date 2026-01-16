@@ -19,7 +19,7 @@ export interface  DistributionChartData {
 }
 
 export interface  LineChartData {
-  minute: string;
+  timestamp: number;
   backendUrl: string;
   queryCount: number;
   name: string;
