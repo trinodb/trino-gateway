@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
 import Cookies from 'js-cookie';
+import { SessionManager } from './utils/session';
 
 function App() {
   return (
@@ -40,6 +41,18 @@ function Screen() {
       access.updateToken(token);
       Cookies.remove('token');
     }
+    // Initialize session management
+    const sessionManager = SessionManager.getInstance();
+    sessionManager.setSessionExpiredCallback(() => {
+        access.logout();
+    });
+
+    // Check token validity on app start
+    access.checkTokenValidity().catch(console.error);
+
+    return () => {
+        sessionManager.clearTimeout();
+      };
   }, [])
   return (
     <>
