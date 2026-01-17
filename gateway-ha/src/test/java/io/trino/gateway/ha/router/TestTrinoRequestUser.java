@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Optional;
 
 import static com.auth0.jwt.algorithms.Algorithm.HMAC256;
@@ -71,7 +70,7 @@ final class TestTrinoRequestUser
         String token = JWT.create()
                 .withIssuer("gateway")
                 .withClaim(claimUserName, claimUserValue)
-                .withExpiresAt(Date.from(expiryTime))
+                .withExpiresAt(expiryTime)
                 .sign(algorithm);
 
         HttpServletRequest mockRequest = new QueryRequestMock()
