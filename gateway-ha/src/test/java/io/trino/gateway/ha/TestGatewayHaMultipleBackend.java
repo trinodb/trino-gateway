@@ -37,6 +37,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,10 +85,10 @@ final class TestGatewayHaMultipleBackend
     void setup()
             throws Exception
     {
-        adhocTrino = new TrinoContainer("trinodb/trino");
+        adhocTrino = new TrinoContainer(DockerImageName.parse("trinodb/trino"));
         adhocTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         adhocTrino.start();
-        scheduledTrino = new TrinoContainer("trinodb/trino");
+        scheduledTrino = new TrinoContainer(DockerImageName.parse("trinodb/trino"));
         scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         scheduledTrino.start();
         postgresql.start();

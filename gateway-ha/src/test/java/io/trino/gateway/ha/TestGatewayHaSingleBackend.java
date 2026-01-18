@@ -30,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.util.List;
@@ -49,7 +50,7 @@ final class TestGatewayHaSingleBackend
     void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino");
+        trino = new TrinoContainer(DockerImageName.parse("trinodb/trino"));
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
 

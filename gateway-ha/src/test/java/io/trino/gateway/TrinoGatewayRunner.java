@@ -19,6 +19,7 @@ import io.trino.gateway.ha.HaGatewayLauncher;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 
@@ -35,11 +36,11 @@ public final class TrinoGatewayRunner
         Logging.initialize();
         Logger log = Logger.get(TrinoGatewayRunner.class);
 
-        TrinoContainer trino1 = new TrinoContainer("trinodb/trino:466");
+        TrinoContainer trino1 = new TrinoContainer(DockerImageName.parse("trinodb/trino:466"));
         trino1.setPortBindings(List.of("8081:8080"));
         trino1.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino1.start();
-        TrinoContainer trino2 = new TrinoContainer("trinodb/trino:466");
+        TrinoContainer trino2 = new TrinoContainer(DockerImageName.parse("trinodb/trino:466"));
         trino2.setPortBindings(List.of("8082:8080"));
         trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();

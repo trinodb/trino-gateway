@@ -14,12 +14,13 @@
 package io.trino.gateway.ha.router;
 
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class TestExternalUrlQueryHistoryMySql
         extends BaseExternalUrlQueryHistoryTest
 {
     public TestExternalUrlQueryHistoryMySql()
     {
-        super(new MySQLContainer<>("mysql:8.0.36"));
+        super(new MySQLContainer<>(DockerImageName.parse("mysql:8.0.36")));
     }
 }

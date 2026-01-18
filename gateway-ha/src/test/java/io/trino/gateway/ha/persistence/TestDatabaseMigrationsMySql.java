@@ -15,13 +15,14 @@ package io.trino.gateway.ha.persistence;
 
 import org.jdbi.v3.core.Handle;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 final class TestDatabaseMigrationsMySql
         extends BaseTestDatabaseMigrations
 {
     public TestDatabaseMigrationsMySql()
     {
-        super(new MySQLContainer<>("mysql:8.0.36"), "test");
+        super(new MySQLContainer<>(DockerImageName.parse("mysql:8.0.36")), "test");
     }
 
     @Override

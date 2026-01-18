@@ -17,6 +17,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 
@@ -27,7 +28,7 @@ public final class TestcontainersUtils
     public static PostgreSQLContainer<?> createPostgreSqlContainer()
     {
         //noinspection resource
-        return new PostgreSQLContainer<>("postgres:17")
+        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:17"))
                 .waitingFor(new WaitAllStrategy()
                         .withStrategy(Wait.forListeningPort())
                         .withStrategy(new LogMessageWaitStrategy()

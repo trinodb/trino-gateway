@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.util.List;
@@ -52,7 +53,7 @@ final class TestRoutingAPI
     void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino");
+        trino = new TrinoContainer(DockerImageName.parse("trinodb/trino"));
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
 

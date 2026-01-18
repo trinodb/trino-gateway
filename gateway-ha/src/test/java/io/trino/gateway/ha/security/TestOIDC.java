@@ -37,6 +37,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -84,14 +85,14 @@ final class TestOIDC
                 .withDatabaseName("hydra");
         databaseContainer.start();
 
-        GenericContainer migrationContainer = new GenericContainer(HYDRA_IMAGE)
+        GenericContainer migrationContainer = new GenericContainer(DockerImageName.parse(HYDRA_IMAGE))
                 .withNetwork(network)
                 .withCommand("migrate", "sql", "--yes", DSN)
                 .dependsOn(databaseContainer)
                 .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
         migrationContainer.start();
 
-        FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
+        FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>(DockerImageName.parse("python:3.10.1-alpine"))
                 .withFixedExposedPort(3000, 3000)
                 .withNetwork(network)
                 .withNetworkAliases("hydra-consent")
@@ -101,7 +102,7 @@ final class TestOIDC
                 .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
         hydraConsent.start();
 
-        FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
+        FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(DockerImageName.parse(HYDRA_IMAGE))
                 .withFixedExposedPort(4444, 4444)
                 .withFixedExposedPort(4445, 4445)
                 .withNetwork(network)
@@ -130,7 +131,7 @@ final class TestOIDC
         String tokenEndpointAuthMethod = "client_secret_basic";
         String audience = "trino_client_id";
         String callbackUrl = format("https://localhost:%s/oidc/callback", ROUTER_PORT);
-        GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
+        GenericContainer clientCreatingContainer = new GenericContainer(DockerImageName.parse(HYDRA_IMAGE))
                 .withNetwork(network)
                 .dependsOn(hydra)
                 .withCommand("clients", "create",

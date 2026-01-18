@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -48,7 +49,7 @@ final class TestClusterStatsMonitor
     void setUp()
     {
         // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
-        trino = new TrinoContainer("trinodb/trino:476");
+        trino = new TrinoContainer(DockerImageName.parse("trinodb/trino:476"));
         trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
         trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
         trino.start();

@@ -16,6 +16,7 @@ package io.trino.gateway;
 import io.airlift.units.DataSize;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class OpenTracingCollector
 
     public OpenTracingCollector()
     {
-        container = new GenericContainer<>("jaegertracing/all-in-one:latest");
+        container = new GenericContainer<>(DockerImageName.parse("jaegertracing/all-in-one:latest"));
         container.setPortBindings(List.of("%1$s:%1$s".formatted(COLLECTOR_PORT), "%1$s:%1$s".formatted(HTTP_PORT)));
         container.addEnv("COLLECTOR_OTLP_ENABLED", "true");
         container.addEnv("SPAN_STORAGE_TYPE", "badger"); // KV that stores spans to the disk
