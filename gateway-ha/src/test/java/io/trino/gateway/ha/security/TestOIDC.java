@@ -30,7 +30,6 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -91,19 +90,17 @@ final class TestOIDC
                 .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
         migrationContainer.start();
 
-        FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
-                .withFixedExposedPort(3000, 3000)
+        GenericContainer<?> hydraConsent = new GenericContainer<>("python:3.10.1-alpine")
                 .withNetwork(network)
                 .withNetworkAliases("hydra-consent")
                 .withExposedPorts(3000)
                 .withCopyFileToContainer(forClasspathResource("auth/login_and_consent_server.py"), "/")
                 .withCommand("python", "/login_and_consent_server.py")
                 .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
+        hydraConsent.setPortBindings(List.of("3000:3000"));
         hydraConsent.start();
 
-        FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
-                .withFixedExposedPort(4444, 4444)
-                .withFixedExposedPort(4445, 4445)
+        GenericContainer<?> hydra = new GenericContainer<>(HYDRA_IMAGE)
                 .withNetwork(network)
                 .withNetworkAliases("hydra")
                 .withEnv("LOG_LEVEL", "debug")
@@ -124,6 +121,8 @@ final class TestOIDC
                         .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
                         .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
                 .withStartupTimeout(java.time.Duration.ofMinutes(3));
+        hydra.setPortBindings(List.of("4444:4444", "4445:4445"));
+        hydra.start();
 
         String clientId = "trino_client_id";
         String clientSecret = "trino_client_secret";
