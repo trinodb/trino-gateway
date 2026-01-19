@@ -13,10 +13,10 @@
  */
 package io.trino.gateway.ha.util;
 
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.time.Duration;
 
@@ -24,10 +24,10 @@ public final class TestcontainersUtils
 {
     private TestcontainersUtils() {}
 
-    public static PostgreSQLContainer<?> createPostgreSqlContainer()
+    public static PostgreSQLContainer createPostgreSqlContainer()
     {
         //noinspection resource
-        return new PostgreSQLContainer<>("postgres:17")
+        return new PostgreSQLContainer("postgres:17")
                 .waitingFor(new WaitAllStrategy()
                         .withStrategy(Wait.forListeningPort())
                         .withStrategy(new LogMessageWaitStrategy()
