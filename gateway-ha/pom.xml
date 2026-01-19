@@ -23,7 +23,6 @@
 
         <!-- dependency versions -->
         <dep.flyway.version>11.20.1</dep.flyway.version>
-        <dep.jeasy.version>4.1.0</dep.jeasy.version>
         <dep.mockito.version>5.21.0</dep.mockito.version>
         <dep.okhttp3.version>5.3.2</dep.okhttp3.version>
         <dep.trino.version>479</dep.trino.version>
