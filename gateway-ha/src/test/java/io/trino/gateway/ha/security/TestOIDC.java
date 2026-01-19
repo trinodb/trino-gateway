@@ -33,10 +33,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -76,7 +76,7 @@ final class TestOIDC
     {
         Network network = Network.newNetwork();
 
-        PostgreSQLContainer<?> databaseContainer = createPostgreSqlContainer()
+        PostgreSQLContainer databaseContainer = createPostgreSqlContainer()
                 .withNetwork(network)
                 .withNetworkAliases("hydra-db")
                 .withUsername("hydra")

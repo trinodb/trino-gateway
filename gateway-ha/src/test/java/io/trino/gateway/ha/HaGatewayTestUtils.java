@@ -28,8 +28,8 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.oracle.OracleContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -110,7 +110,7 @@ public class HaGatewayTestUtils
         return target;
     }
 
-    public static Map<String, String> buildPostgresVars(PostgreSQLContainer<?> postgresql)
+    public static Map<String, String> buildPostgresVars(PostgreSQLContainer postgresql)
     {
         return ImmutableMap.<String, String>builder()
                 .put("POSTGRESQL_JDBC_URL", postgresql.getJdbcUrl())
