@@ -37,7 +37,7 @@ public class DatabaseAuditLogger
     public void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment)
     {
         try {
-            dao.log(user, ip, backendName, action.toString(), context.toString(), success ? 1 : 0,
+            dao.log(user, ip, backendName, action.toString(), context.toString(), success,
                     AuditLogger.sanitizeComment(userComment), Timestamp.from(Instant.now()));
         }
         catch (Exception e) {
