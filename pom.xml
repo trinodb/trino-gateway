@@ -43,7 +43,7 @@
         <air.java.version>25.0.0</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
-        <air.modernizer.java-version>8</air.modernizer.java-version>
+        <air.modernizer.java-version>25</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
     </properties>
 
@@ -101,6 +101,17 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.gaul</groupId>
+                <artifactId>modernizer-maven-plugin</artifactId>
+                <configuration>
+                    <exclusions>
+                        <!-- Modernizer emits false-positive warnings even when presence is guaranteed -->
+                        <exclusion>java/util/Optional.get:()Ljava/lang/Object;</exclusion>
+                    </exclusions>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
