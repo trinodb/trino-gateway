@@ -11,12 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha;
+package io.trino.gateway.ha.audit;
 
-public enum AuditAction {
-    CREATE,
-    UPDATE,
-    DELETE,
-    ACTIVATE,
-    DEACTIVATE
+public enum AuditContext {
+    TRINO_GW_UI,
+    TRINO_GW_API
 }

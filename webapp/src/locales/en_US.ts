@@ -70,6 +70,8 @@ const en_US = {
     DeleteTitle: "Are you sure you want to delete?",
     DeleteContent: "Once deleted, it cannot be recovered",
     Query: "Query",
+    SwitchActiveTitle: "Are you sure you want to deactivate?",
+    SwitchInActiveTitle: "Are you sure you want to activate?",
   },
   Cluster: {
       Create: "Cluster created successfully",
