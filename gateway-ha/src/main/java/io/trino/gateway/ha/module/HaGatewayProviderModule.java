@@ -19,7 +19,10 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import io.airlift.http.client.HttpClient;
-import io.trino.gateway.ha.DatabaseAuditLogger;
+import io.trino.gateway.ha.audit.AuditLogger;
+import io.trino.gateway.ha.audit.CompositeAuditLogger;
+import io.trino.gateway.ha.audit.DatabaseAuditLogger;
+import io.trino.gateway.ha.audit.LogAuditLogger;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
@@ -73,6 +76,7 @@ import org.jdbi.v3.core.Jdbi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
@@ -91,7 +95,7 @@ public class HaGatewayProviderModule
     private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
     private final PathFilter pathFilter;
-    private final DatabaseAuditLogger dbAuditLogger;
+    private final CompositeAuditLogger compositeAuditLogger;
 
     @Override
     protected void configure()
@@ -102,7 +106,7 @@ public class HaGatewayProviderModule
         binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
         binder().bind(PathFilter.class).toInstance(pathFilter);
-        binder().bind(DatabaseAuditLogger.class).toInstance(dbAuditLogger);
+        binder().bind(AuditLogger.class).toInstance(compositeAuditLogger);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
@@ -128,7 +132,10 @@ public class HaGatewayProviderModule
         resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
         gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
         queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
-        dbAuditLogger = new DatabaseAuditLogger(jdbi);
+
+        LogAuditLogger logAuditLogger = new LogAuditLogger();
+        DatabaseAuditLogger dbAuditLogger = new DatabaseAuditLogger(jdbi);
+        compositeAuditLogger = new CompositeAuditLogger(Set.of(logAuditLogger, dbAuditLogger));
     }
 
     private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)

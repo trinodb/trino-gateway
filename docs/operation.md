@@ -16,6 +16,7 @@ Existing cluster information can also be modified using the edit button.
 
 ![trino.gateway.io/entity](./assets/trinogateway_cluster_page.png)
 
+**Note:** When adding or modifying a backend through the UI, a comment is required. Please provide a meaningful comment describing the reason for the change.
 
 ## Graceful shutdown
 

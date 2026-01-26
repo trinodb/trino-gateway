@@ -11,9 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha;
+package io.trino.gateway.ha.audit;
 
-public enum AuditContext {
-    TRINO_GW_UI,
-    TRINO_GW_API,
+import static java.util.Objects.requireNonNullElse;
+
+public interface AuditLogger
+{
+    void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment);
+
+    static String sanitizeComment(String comment)
+    {
+        String c = requireNonNullElse(comment, "");
+        return c.replaceAll("\\s+", " ").trim();
+    }
 }
