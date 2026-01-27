@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
 public class MultiReadHttpServletRequest
@@ -87,6 +87,6 @@ public class MultiReadHttpServletRequest
     public BufferedReader getReader()
             throws IOException
     {
-        return new BufferedReader(new StringReader(new String(content, StandardCharsets.UTF_8)));
+        return new BufferedReader(Reader.of(new String(content, StandardCharsets.UTF_8)));
     }
 }
