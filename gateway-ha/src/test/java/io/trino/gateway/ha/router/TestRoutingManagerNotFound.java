@@ -35,8 +35,9 @@ final class TestRoutingManagerNotFound
 
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
         QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
+        DistributedCache distributedCache = new NoopDistributedCache();
 
-        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
+        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, distributedCache);
     }
 
     @Test

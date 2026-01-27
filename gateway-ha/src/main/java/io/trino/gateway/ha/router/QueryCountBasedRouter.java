@@ -157,9 +157,10 @@ public class QueryCountBasedRouter
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
-            RoutingConfiguration routingConfiguration)
+            RoutingConfiguration routingConfiguration,
+            DistributedCache distributedCache)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache);
         clusterStats = new ConcurrentHashMap<>();
     }
 
