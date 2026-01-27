@@ -58,8 +58,8 @@ monitor:
 
 ## Monitoring <a name="monitoring"></a>
 
-Trino Gateway provides a metrics endpoint that uses the OpenMetrics format at 
-`/metrics`. Use it to monitor Trino Gateway instances with Prometheus and 
+Trino Gateway provides a metrics endpoint that uses the OpenMetrics format at
+`/metrics`. Use it to monitor Trino Gateway instances with Prometheus and
 other compatible systems with the following Prometheus configuration:
 
 ```yaml
@@ -69,6 +69,20 @@ scrape_configs:
     - targets:
         - gateway1.example.com:8080
 ```
+
+### Multi-instance deployments
+
+When running multiple Trino Gateway instances, enable the Valkey distributed
+cache to share query metadata across instances. This ensures consistent query
+routing regardless of which gateway instance receives the request.
+
+Monitor the distributed cache performance by checking:
+- Cache hit rate (target: 85-95%)
+- Cache errors (should be near 0)
+- Valkey server connectivity and memory usage
+
+See [Valkey distributed cache configuration](valkey-configuration.md) for
+setup instructions and monitoring details.
 
 ## Trino Gateway health endpoints
 

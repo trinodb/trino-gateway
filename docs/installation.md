@@ -161,6 +161,32 @@ For additional configurations, use the `log.*` properties from the
 [Trino logging properties documentation](https://trino.io/docs/current/admin/properties-logging.html) and specify
 the properties in `serverConfig`.
 
+### Configure distributed cache (optional)
+
+For multi-instance deployments, Trino Gateway supports distributed caching
+using Valkey (or Redis) to share query metadata across gateway instances.
+This improves query routing and enables horizontal scaling.
+
+For single gateway deployments, distributed caching is not needed - the
+local cache is sufficient.
+
+```yaml
+valkeyConfiguration:
+  enabled: true
+  host: valkey.internal.prod
+  port: 6379
+  password: ${ENV:VALKEY_PASSWORD}
+  cacheTtlSeconds: 1800  # Cache TTL (default: 1800 = 30 minutes)
+```
+
+**Optional parameters**: You can customize `cacheTtlSeconds` based on your query duration:
+- Short queries (< 5 min): 600 seconds (10 minutes)
+- Default queries: 1800 seconds (30 minutes)
+- Long-running queries: 3600 seconds (1 hour)
+
+See [Valkey distributed cache configuration](valkey-configuration.md) for
+detailed configuration options, deployment scenarios, and performance tuning.
+
 ### Proxying additional paths
 
 By default, Trino Gateway only proxies requests to paths starting with

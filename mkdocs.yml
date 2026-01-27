@@ -92,6 +92,7 @@ nav:
       - Routing logic: routing-logic.md
       - Gateway API: gateway-api.md
       - Resource groups API: resource-groups-api.md
+      - Valkey distributed cache: valkey-configuration.md
       - Code architecture: design.md
       - Migration to Airlift: migration-to-airlift.md
   - Contribute:

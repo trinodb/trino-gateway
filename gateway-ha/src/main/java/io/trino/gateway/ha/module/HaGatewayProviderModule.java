@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.module;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
@@ -37,12 +38,15 @@ import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.DistributedCache;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -52,6 +56,8 @@ import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
+import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.ValkeyDistributedCache;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -64,6 +70,8 @@ import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+
+import java.util.List;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
@@ -197,5 +205,49 @@ public class HaGatewayProviderModule
             case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
+    }
+
+    @Provides
+    @Singleton
+    public List<TrinoClusterStatsObserver> getClusterStatsObservers(
+            RoutingManager mgr,
+            BackendStateManager backendStateManager)
+    {
+        return ImmutableList.<TrinoClusterStatsObserver>builder()
+                .add(new HealthCheckObserver(mgr))
+                .add(new ClusterStatsObserver(backendStateManager))
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    public MonitorConfiguration getMonitorConfiguration()
+    {
+        return configuration.getMonitor();
+    }
+
+    @Provides
+    @Singleton
+    public ValkeyConfiguration getValkeyConfiguration()
+    {
+        return configuration.getValkeyConfiguration();
+    }
+
+    @Provides
+    @Singleton
+    public DistributedCache getDistributedCache()
+    {
+        ValkeyConfiguration valkeyConfig = configuration.getValkeyConfiguration();
+        return new ValkeyDistributedCache(
+                valkeyConfig.getHost(),
+                valkeyConfig.getPort(),
+                valkeyConfig.getPassword(),
+                valkeyConfig.getDatabase(),
+                valkeyConfig.isEnabled(),
+                valkeyConfig.getMaxTotal(),
+                valkeyConfig.getMaxIdle(),
+                valkeyConfig.getMinIdle(),
+                valkeyConfig.getTimeoutMs(),
+                valkeyConfig.getHealthCheckIntervalMs());
     }
 }

@@ -19,6 +19,7 @@ import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -179,7 +180,9 @@ final class TestQueryCountBasedRouter
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
-        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
+        DistributedCache distributedCache = new NoopDistributedCache();
+        ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
+        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration, distributedCache, valkeyConfiguration);
         populateData();
         queryCountBasedRouter.updateClusterStats(clusters);
     }

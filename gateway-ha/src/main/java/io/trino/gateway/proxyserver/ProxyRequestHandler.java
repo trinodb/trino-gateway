@@ -187,12 +187,22 @@ public class ProxyRequestHandler
 
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
+        log.info("PATH DEBUG: Request URI: %s, Path: %s, Method: %s", request.getUri(), request.getUri().getPath(), request.getMethod());
+        log.info("PATH DEBUG: Statement paths: %s", statementPaths);
+        boolean pathMatches = statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith);
+        boolean isPost = request.getMethod().equals(HttpMethod.POST);
+        log.info("PATH DEBUG: Path matches: %s, Is POST: %s, Condition result: %s", pathMatches, isPost, pathMatches && isPost);
+
         if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
+            log.info("PATH DEBUG: Condition passed! Will call recordBackendForQueryId");
             Optional<String> username = ((TrinoRequestUser) servletRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
             future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
             }
+        }
+        else {
+            log.info("PATH DEBUG: Condition failed! Will NOT call recordBackendForQueryId");
         }
 
         setupAsyncResponse(
@@ -275,16 +285,19 @@ public class ProxyRequestHandler
 
         log.debug("Extracting proxy destination : [%s] for request : [%s]", queryDetail.getBackendUrl(), request.getUri());
 
+        log.info("CACHE DEBUG: Response status code: %s, Request URI: %s", response.statusCode(), request.getUri());
         if (response.statusCode() == OK.getStatusCode()) {
+            log.info("CACHE DEBUG: Processing 200 OK response, response body length: %d", response.body().length());
             try {
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
-                queryDetail.setQueryId(results.get("id"));
+                String queryId = results.get("id");
+                log.info("CACHE DEBUG: Extracted queryId from response: %s", queryId);
+                queryDetail.setQueryId(queryId);
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
                 routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
-                log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
+                log.warn("Failed to parse query response for caching: %s", e.getMessage());
             }
         }
         else {
