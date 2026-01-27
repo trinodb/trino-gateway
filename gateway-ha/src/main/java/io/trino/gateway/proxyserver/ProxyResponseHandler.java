@@ -22,9 +22,12 @@ import io.airlift.units.DataSize;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public class ProxyResponseHandler
@@ -47,7 +50,9 @@ public class ProxyResponseHandler
     public ProxyResponse handle(Request request, Response response)
     {
         try {
-            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), new String(response.getInputStream().readNBytes((int) responseSize.toBytes()), StandardCharsets.UTF_8));
+            // Store raw bytes to preserve compression
+            byte[] responseBodyBytes = response.getInputStream().readNBytes((int) responseSize.toBytes());
+            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), responseBodyBytes);
         }
         catch (IOException e) {
             throw new ProxyException("Failed reading response from remote Trino server", e);
@@ -57,11 +62,36 @@ public class ProxyResponseHandler
     public record ProxyResponse(
             int statusCode,
             ListMultimap<HeaderName, String> headers,
-            String body)
+            byte[] body)
     {
         public ProxyResponse
         {
             requireNonNull(headers, "headers is null");
+            requireNonNull(body, "body is null");
+        }
+
+        /**
+         * Get the response body as a decompressed string for JSON parsing and logging.
+         * Only call this when you need to parse the content, not when passing through
+         * to clients.
+         */
+        public String decompressedBody()
+        {
+            // Check if the response is gzip-compressed
+            String contentEncoding = headers.get(HeaderName.of("Content-Encoding")).stream().findFirst().orElse(null);
+
+            if ("gzip".equalsIgnoreCase(contentEncoding)) {
+                try (InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(body))) {
+                    return new String(inputStream.readAllBytes(), UTF_8);
+                }
+                catch (IOException e) {
+                    // If decompression fails, return the body as UTF-8 string
+                    return new String(body, UTF_8);
+                }
+            }
+
+            // Not compressed, convert bytes to string
+            return new String(body, UTF_8);
         }
     }
 }
