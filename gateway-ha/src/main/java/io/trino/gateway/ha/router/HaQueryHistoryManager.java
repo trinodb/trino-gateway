@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.base.Strings;
+import com.google.inject.Inject;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
@@ -21,6 +23,7 @@ import io.trino.gateway.ha.persistence.dao.QueryHistory;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import org.jdbi.v3.core.Jdbi;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -40,10 +43,11 @@ public class HaQueryHistoryManager
     private final QueryHistoryDao dao;
     private final boolean isOracleBackend;
 
-    public HaQueryHistoryManager(Jdbi jdbi, boolean isOracleBackend)
+    @Inject
+    public HaQueryHistoryManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
-        this.isOracleBackend = isOracleBackend;
+        this.isOracleBackend = configuration.getJdbcUrl().startsWith("jdbc:oracle");
     }
 
     @Override
@@ -144,7 +148,7 @@ public class HaQueryHistoryManager
         List<DistributionResponse.LineChart> resList = new ArrayList<>();
         for (Map<String, Object> model : results) {
             DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
-            long minute = (long) Float.parseFloat(model.get("minute").toString());
+            long minute = new BigDecimal(model.get("minute").toString()).longValue();
             Instant instant = Instant.ofEpochSecond(minute * 60L);
             LocalDateTime dateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");

@@ -132,7 +132,7 @@ final class TestRoutingManagerExternalUrlCache
     private static class TestRoutingManager
             extends StochasticRoutingManager
     {
-        public TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
+        private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
                                   RoutingConfiguration routingConfiguration)
         {
             super(gatewayBackendManager, queryHistoryManager, routingConfiguration, new NoopDistributedCache(), new ValkeyConfiguration());

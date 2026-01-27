@@ -15,6 +15,7 @@ package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import okhttp3.MediaType;
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
 import java.util.Arrays;
@@ -66,7 +67,7 @@ final class TestTrinoResource
 
         // Setup resource group manager
         DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);
-        Jdbi jdbi = Jdbi.create(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword());
+        Jdbi jdbi = HaGatewayProviderModule.createJdbi(db);
         connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);
 

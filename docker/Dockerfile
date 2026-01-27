@@ -15,7 +15,7 @@
 ARG TRINO_GATEWAY_BASE_IMAGE
 ARG TRINO_GATEWAY_BUILD_IMAGE
 
-FROM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
+FROM --platform=$BUILDPLATFORM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
 ARG JDK_DOWNLOAD_LINK
 ARG JDK_RELEASE_NAME
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
@@ -26,7 +26,9 @@ RUN \
     # Install JDK from the provided archive link \
     echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
     mkdir -p "${JAVA_HOME}" && \
-    curl -#LfS "${JDK_DOWNLOAD_LINK}" | tar -zx --strip 1 -C "${JAVA_HOME}"
+    curl -#LfS --retry 8 "${JDK_DOWNLOAD_LINK}" -o /jdktarfile && \
+    tar -zxf /jdktarfile --strip 1 -C "${JAVA_HOME}" && \
+    echo "Done"
 
 FROM ${TRINO_GATEWAY_BUILD_IMAGE} AS packages
 

@@ -21,7 +21,7 @@ Consider the following requirements for your Trino Gateway installation.
 
 ### Java
 
-Trino Gateway requires a Java 24 runtime. Older versions of Java can not be
+Trino Gateway requires a Java 25 runtime. Older versions of Java can not be
 used. Newer versions might work but are not tested.
 
 Verify the Java version on your system with `java -version`.
@@ -401,8 +401,7 @@ it is marked as UNHEALTHY, and the Trino Gateway stops routing requests to it.
 It is important to distinguish TrinoStatus from the active/inactive
 state of a backend. The active/inactive state indicates whether a backend is
 manually turned on or off, whereas TrinoStatus is programmatically determined
-by the health check process. Health checks are only performed on backends
-that are marked as active.
+by the health check process.
 
 See [TrinoStatus](routing-rules.md#trinostatus) for more details on 
 what each Trino status means.

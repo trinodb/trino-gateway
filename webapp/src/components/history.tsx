@@ -87,9 +87,10 @@ export function History() {
       <Typography.Text
          link={{ onClick: () => handleShowModal(text) }}
          underline
-         style={{ cursor: "pointer" }}
+         style={{ cursor: "pointer", width: "300px"}}
+         ellipsis={{ showTooltip: true }}
       >
-         View Query
+         {text}
       </Typography.Text>
     );
 

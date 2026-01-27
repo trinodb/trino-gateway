@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>277</version>
+        <version>345</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -39,14 +39,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.targetJdk>24</project.build.targetJdk>
-        <air.java.version>24.0.2</air.java.version>
+        <project.build.targetJdk>25</project.build.targetJdk>
+        <air.java.version>25.0.0</air.java.version>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
-        <air.modernizer.java-version>8</air.modernizer.java-version>
+        <air.modernizer.java-version>25</air.modernizer.java-version>
         <air.release.preparation-goals>clean verify -DskipTests</air.release.preparation-goals>
-
-        <dep.jetty.version>12.0.25</dep.jetty.version>
     </properties>
 
     <dependencyManagement>
@@ -54,7 +52,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>339</version>
+                <version>395</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -62,7 +60,7 @@
             <dependency>
                 <groupId>org.jdbi</groupId>
                 <artifactId>jdbi3-bom</artifactId>
-                <version>3.49.4</version>
+                <version>3.51.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -70,7 +68,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.21.0</version>
+                <version>2.0.3</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -84,25 +82,36 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.18.0</version>
+                <version>3.20.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>2.2.4</version>
+                <version>2.2.5</version>
             </dependency>
 
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
-                <version>3.1.10</version>
+                <version>4.0.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.gaul</groupId>
+                <artifactId>modernizer-maven-plugin</artifactId>
+                <configuration>
+                    <exclusions>
+                        <!-- Modernizer emits false-positive warnings even when presence is guaranteed -->
+                        <exclusion>java/util/Optional.get:()Ljava/lang/Object;</exclusion>
+                    </exclusions>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -112,18 +121,23 @@
                         <arg>-XDcompilePolicy=simple</arg>
                         <arg>--should-stop=ifError=FLOW</arg>
                         <arg>-Xplugin:ErrorProne \
+                            -Xep:BooleanLiteral:ERROR \
                             -Xep:CatchAndPrintStackTrace:ERROR \
                             -Xep:ClassCanBeStatic:ERROR \
                             -Xep:DefaultCharset:ERROR \
+                            -Xep:EffectivelyPrivate:ERROR \
                             -Xep:EmptyCatch:ERROR \
                             -Xep:EqualsGetClass:OFF \
                             -Xep:InvalidThrows:ERROR \
                             -Xep:JavaTimeDefaultTimeZone:ERROR \
                             -Xep:MissingOverride:ERROR \
+                            -Xep:PatternMatchingInstanceof:ERROR \
                             -Xep:StatementSwitchToExpressionSwitch:ERROR \
                             -Xep:StringCaseLocaleUsage:ERROR \
+                            -Xep:StringConcatToTextBlock:ERROR \
                             -Xep:TraditionalSwitchExpression:ERROR \
                             -Xep:TypeParameterUnusedInFormals:ERROR \
+                            -Xep:UnnecessaryBreakInSwitch:ERROR \
                             -Xep:UnnecessaryParentheses:ERROR \
                             -Xep:UnusedMethod:ERROR \
                             -Xep:UnusedVariable:ERROR</arg>
