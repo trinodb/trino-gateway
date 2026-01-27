@@ -35,7 +35,7 @@ final class TestRoutingManagerNotFound
         routingConfiguration.setDefaultRoutingGroup("default");
 
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
-        QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
         DistributedCache distributedCache = new NoopDistributedCache();
         ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
 

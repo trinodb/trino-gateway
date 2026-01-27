@@ -179,7 +179,7 @@ final class TestQueryCountBasedRouter
         DataStoreConfiguration dataStoreConfig = dataStoreConfig();
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
-        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
         DistributedCache distributedCache = new NoopDistributedCache();
         ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration, distributedCache, valkeyConfiguration);
