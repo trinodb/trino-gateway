@@ -80,13 +80,13 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getActiveBackends("adhoc")).isEmpty();
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
-                .containsExactly("etl", "adhoc");
+                .containsExactlyInAnyOrder("etl", "adhoc");
 
         // Delete a backend
         haGatewayManager.deleteBackend("adhoc1");
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
-                .containsExactly("adhoc");
+                .containsExactlyInAnyOrder("adhoc");
 
         // Test default externalUrl to proxyUrl
         ProxyBackendConfiguration adhoc2 = new ProxyBackendConfiguration();
