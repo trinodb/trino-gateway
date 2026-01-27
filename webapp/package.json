@@ -14,6 +14,7 @@
     "@douyinfe/semi-icons-lab": "^2.62.0",
     "@douyinfe/semi-illustrations": "^2.62.0",
     "@douyinfe/semi-ui": "^2.62.0",
+    "@vvo/tzdb": "^6.198.0",
     "echarts": "^5.4.3",
     "js-cookie": "^3.0.5",
     "moment": "^2.29.4",
