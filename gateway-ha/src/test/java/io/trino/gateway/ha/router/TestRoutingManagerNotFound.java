@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +33,10 @@ final class TestRoutingManagerNotFound
 
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
         QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false);
+        DistributedCache distributedCache = new NoopDistributedCache();
+        ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
 
-        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
+        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, distributedCache, valkeyConfiguration);
     }
 
     @Test

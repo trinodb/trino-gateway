@@ -40,8 +40,10 @@ import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProv
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.DistributedCache;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -52,6 +54,7 @@ import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.ValkeyDistributedCache;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.BasicAuthFilter;
@@ -274,5 +277,30 @@ public class HaGatewayProviderModule
     public MonitorConfiguration getMonitorConfiguration()
     {
         return configuration.getMonitor();
+    }
+
+    @Provides
+    @Singleton
+    public ValkeyConfiguration getValkeyConfiguration()
+    {
+        return configuration.getValkeyConfiguration();
+    }
+
+    @Provides
+    @Singleton
+    public DistributedCache getDistributedCache()
+    {
+        ValkeyConfiguration valkeyConfig = configuration.getValkeyConfiguration();
+        return new ValkeyDistributedCache(
+                valkeyConfig.getHost(),
+                valkeyConfig.getPort(),
+                valkeyConfig.getPassword(),
+                valkeyConfig.getDatabase(),
+                valkeyConfig.isEnabled(),
+                valkeyConfig.getMaxTotal(),
+                valkeyConfig.getMaxIdle(),
+                valkeyConfig.getMinIdle(),
+                valkeyConfig.getTimeoutMs(),
+                valkeyConfig.getHealthCheckIntervalMs());
     }
 }

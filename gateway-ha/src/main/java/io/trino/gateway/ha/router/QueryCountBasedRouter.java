@@ -21,6 +21,7 @@ import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 
 import java.util.HashMap;
 import java.util.List;
@@ -157,9 +158,11 @@ public class QueryCountBasedRouter
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
-            RoutingConfiguration routingConfiguration)
+            RoutingConfiguration routingConfiguration,
+            DistributedCache distributedCache,
+            ValkeyConfiguration valkeyConfiguration)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache, valkeyConfiguration);
         clusterStats = new ConcurrentHashMap<>();
     }
 
