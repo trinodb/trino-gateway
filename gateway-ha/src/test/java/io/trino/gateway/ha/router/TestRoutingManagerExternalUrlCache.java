@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -134,7 +135,7 @@ final class TestRoutingManagerExternalUrlCache
         public TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
                                   RoutingConfiguration routingConfiguration)
         {
-            super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, new NoopDistributedCache(), new ValkeyConfiguration());
         }
 
         @Override

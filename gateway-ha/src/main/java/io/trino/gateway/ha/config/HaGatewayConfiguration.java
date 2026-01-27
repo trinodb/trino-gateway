@@ -48,6 +48,8 @@ public class HaGatewayConfiguration
 
     private UIConfiguration uiConfiguration = new UIConfiguration();
 
+    private ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
+
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -276,6 +278,16 @@ public class HaGatewayConfiguration
     public void setProxyResponseConfiguration(ProxyResponseConfiguration proxyResponseConfiguration)
     {
         this.proxyResponseConfiguration = proxyResponseConfiguration;
+    }
+
+    public ValkeyConfiguration getValkeyConfiguration()
+    {
+        return valkeyConfiguration;
+    }
+
+    public void setValkeyConfiguration(ValkeyConfiguration valkeyConfiguration)
+    {
+        this.valkeyConfiguration = valkeyConfiguration;
     }
 
     private void validateStatementPath(String statementPath, List<String> statementPaths)

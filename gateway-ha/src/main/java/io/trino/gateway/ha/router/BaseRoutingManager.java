@@ -24,6 +24,7 @@ import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PreDestroy;
 import jakarta.ws.rs.HttpMethod;
@@ -50,20 +51,54 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
+
+    /**
+     * Cache key format: trino:query:backend:{queryId}
+     * Stores the backend URL for each query.
+     * TTL: Configurable (default 30 minutes).
+     * Scope: Shared across all gateway instances via Valkey.
+     */
+    private static final String CACHE_KEY_PREFIX_BACKEND = "trino:query:backend:";
+
+    /**
+     * Cache key format: trino:query:routinggroup:{queryId}
+     * Stores the routing group for each query.
+     * TTL: Configurable (default 30 minutes).
+     * Scope: Shared across all gateway instances via Valkey.
+     */
+    private static final String CACHE_KEY_PREFIX_ROUTING_GROUP = "trino:query:routinggroup:";
+
+    /**
+     * Cache key format: trino:query:externalurl:{queryId}
+     * Stores the external URL for each query (lazy-loaded on first access).
+     * TTL: Configurable (default 30 minutes).
+     * Scope: Shared across all gateway instances via Valkey.
+     */
+    private static final String CACHE_KEY_PREFIX_EXTERNAL_URL = "trino:query:externalurl:";
+
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
     private final QueryHistoryManager queryHistoryManager;
+    private final DistributedCache distributedCache;
+    private final long cacheTtlSeconds;
     private final LoadingCache<String, String> queryIdBackendCache;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
     private final LoadingCache<String, String> queryIdExternalUrlCache;
 
-    public BaseRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, RoutingConfiguration routingConfiguration)
+    public BaseRoutingManager(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager,
+            RoutingConfiguration routingConfiguration,
+            DistributedCache distributedCache,
+            ValkeyConfiguration valkeyConfiguration)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.queryHistoryManager = queryHistoryManager;
+        this.distributedCache = distributedCache;
+        this.cacheTtlSeconds = valkeyConfiguration.getCacheTtlSeconds();
         this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
         this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
         this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
@@ -78,13 +113,29 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
+        // L1: Guava cache
         queryIdBackendCache.put(queryId, backend);
+        // L2: Valkey distributed cache (write-through)
+        try {
+            distributedCache.set(CACHE_KEY_PREFIX_BACKEND + queryId, backend, cacheTtlSeconds);
+        }
+        catch (Exception e) {
+            log.warn(e, "Failed to write backend mapping to Valkey for queryId: %s", queryId);
+        }
     }
 
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
+        // L1: Guava cache
         queryIdRoutingGroupCache.put(queryId, routingGroup);
+        // L2: Valkey distributed cache (write-through)
+        try {
+            distributedCache.set(CACHE_KEY_PREFIX_ROUTING_GROUP + queryId, routingGroup, cacheTtlSeconds);
+        }
+        catch (Exception e) {
+            log.warn(e, "Failed to write routing group mapping to Valkey for queryId: %s", queryId);
+        }
     }
 
     /**
@@ -179,18 +230,51 @@ public abstract class BaseRoutingManager
     @VisibleForTesting
     void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
+        // L1: Guava cache
         queryIdExternalUrlCache.put(queryId, externalUrl);
+        // L2: Valkey distributed cache (write-through)
+        try {
+            distributedCache.set(CACHE_KEY_PREFIX_EXTERNAL_URL + queryId, externalUrl, cacheTtlSeconds);
+        }
+        catch (Exception e) {
+            log.debug(e, "Failed to write external URL mapping to Valkey for queryId: %s", queryId);
+        }
     }
 
     @VisibleForTesting
     String findBackendForUnknownQueryId(String queryId)
     {
-        String backend;
-        backend = queryHistoryManager.getBackendForQueryId(queryId);
-        if (Strings.isNullOrEmpty(backend)) {
-            log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
-            backend = searchAllBackendForQuery(queryId);
+        String backend = null;
+
+        // L2: Check Valkey distributed cache
+        try {
+            Optional<String> valkeyResult = distributedCache.get(CACHE_KEY_PREFIX_BACKEND + queryId);
+            if (valkeyResult.isPresent()) {
+                backend = valkeyResult.get();
+                log.debug("Found backend mapping in Valkey for queryId: %s", queryId);
+                return backend;
+            }
         }
+        catch (Exception e) {
+            log.debug(e, "Failed to read from Valkey for queryId: %s, falling through to database", queryId);
+        }
+
+        // L3: Check database
+        backend = queryHistoryManager.getBackendForQueryId(queryId);
+        if (!Strings.isNullOrEmpty(backend)) {
+            // Populate Valkey cache for next time (write-back)
+            try {
+                distributedCache.set(CACHE_KEY_PREFIX_BACKEND + queryId, backend, cacheTtlSeconds);
+            }
+            catch (Exception e) {
+                log.debug(e, "Failed to write backend mapping to Valkey for queryId: %s", queryId);
+            }
+            return backend;
+        }
+
+        // L4: HTTP search across all backends
+        log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
+        backend = searchAllBackendForQuery(queryId);
         return backend;
     }
 
@@ -245,7 +329,26 @@ public abstract class BaseRoutingManager
      */
     private String findRoutingGroupForUnknownQueryId(String queryId)
     {
-        String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        String routingGroup = null;
+
+        // L2: Check Valkey distributed cache
+        try {
+            Optional<String> valkeyResult = distributedCache.get(CACHE_KEY_PREFIX_ROUTING_GROUP + queryId);
+            if (valkeyResult.isPresent()) {
+                routingGroup = valkeyResult.get();
+                log.debug("Found routing group mapping in Valkey for queryId: %s", queryId);
+                // Still populate L1 Guava cache
+                queryIdRoutingGroupCache.put(queryId, routingGroup);
+                return routingGroup;
+            }
+        }
+        catch (Exception e) {
+            log.debug(e, "Failed to read routing group from Valkey for queryId: %s, falling through to database", queryId);
+        }
+
+        // L3: Check database
+        routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        // setRoutingGroupForQueryId will populate both L1 and L2
         setRoutingGroupForQueryId(queryId, routingGroup);
         return routingGroup;
     }
@@ -255,7 +358,26 @@ public abstract class BaseRoutingManager
      */
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
-        String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
+        String externalUrl = null;
+
+        // L2: Check Valkey distributed cache
+        try {
+            Optional<String> valkeyResult = distributedCache.get(CACHE_KEY_PREFIX_EXTERNAL_URL + queryId);
+            if (valkeyResult.isPresent()) {
+                externalUrl = valkeyResult.get();
+                log.debug("Found external URL mapping in Valkey for queryId: %s", queryId);
+                // Still populate L1 Guava cache
+                queryIdExternalUrlCache.put(queryId, externalUrl);
+                return externalUrl;
+            }
+        }
+        catch (Exception e) {
+            log.debug(e, "Failed to read external URL from Valkey for queryId: %s, falling through to database", queryId);
+        }
+
+        // L3: Check database
+        externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
+        // setExternalUrlForQueryId will populate both L1 and L2
         setExternalUrlForQueryId(queryId, externalUrl);
         return externalUrl;
     }

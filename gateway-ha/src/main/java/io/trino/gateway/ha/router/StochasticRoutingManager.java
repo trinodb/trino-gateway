@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,9 +31,11 @@ public class StochasticRoutingManager
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
-            RoutingConfiguration routingConfiguration)
+            RoutingConfiguration routingConfiguration,
+            DistributedCache distributedCache,
+            ValkeyConfiguration valkeyConfiguration)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache, valkeyConfiguration);
     }
 
     @Override
