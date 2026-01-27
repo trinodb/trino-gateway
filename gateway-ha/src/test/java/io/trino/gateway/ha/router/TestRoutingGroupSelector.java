@@ -34,7 +34,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -526,7 +526,7 @@ final class TestRoutingGroupSelector
         TrinoQueryProperties trinoQueryPropertiesWithDefaults = getTrinoQueryProps(mockRequestNoDefaults);
         Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
         assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
-        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(Reader.of(query)));
 
         TrinoQueryProperties trinoQueryPropertiesNoDefaults = (TrinoQueryProperties) mockRequestNoDefaults.getAttribute(TRINO_QUERY_PROPERTIES);
         Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();

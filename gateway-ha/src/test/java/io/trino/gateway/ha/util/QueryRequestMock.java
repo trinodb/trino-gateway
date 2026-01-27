@@ -37,7 +37,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -118,7 +118,7 @@ public class QueryRequestMock
             }
         });
 
-        when(mockRequest.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequest.getReader()).thenReturn(new BufferedReader(Reader.of(query)));
         when(mockRequest.getQueryString()).thenReturn("");
         return this;
     }
