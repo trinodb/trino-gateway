@@ -163,9 +163,36 @@ Find more information in the [routing rules documentation](routing-rules.md).
 To configure the logging level for various classes, specify the path to the 
 `log.properties` file by setting `log.levels-file` in `serverConfig`.
 
-For additional configurations, use the `log.*` properties from the 
+For additional configurations, use the `log.*` properties from the
 [Trino logging properties documentation](https://trino.io/docs/current/admin/properties-logging.html) and specify
 the properties in `serverConfig`.
+
+### Configure distributed cache (optional)
+
+For multi-instance deployments, Trino Gateway supports distributed caching
+using Valkey (or Redis) to share query metadata across gateway instances.
+This improves query routing and enables horizontal scaling.
+
+For single gateway deployments, distributed caching is not needed - the
+local cache is sufficient.
+
+```yaml
+valkeyConfiguration:
+  enabled: true
+  host: valkey.internal.prod
+  port: 6379
+  password: ${ENV:VALKEY_PASSWORD}
+  cacheTtlSeconds: 1800  # Cache TTL (default: 1800 = 30 minutes)
+```
+
+Optional parameters: You can customize `cacheTtlSeconds` based on your query duration:
+
+- Short queries (< 5 min): 600 seconds (10 minutes)
+- Default queries: 1800 seconds (30 minutes)
+- Long-running queries: 3600 seconds (1 hour)
+
+See Valkey distributed cache configuration for detailed configuration options,
+deployment scenarios, and performance tuning.
 
 ### Proxying additional paths
 

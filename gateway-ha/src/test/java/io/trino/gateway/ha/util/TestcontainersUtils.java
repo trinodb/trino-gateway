@@ -13,10 +13,12 @@
  */
 package io.trino.gateway.ha.util;
 
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 
@@ -34,5 +36,14 @@ public final class TestcontainersUtils
                                 .withRegEx(".*database system is ready to accept connections.*\\s")
                                 .withTimes(2)
                                 .withStartupTimeout(Duration.ofMinutes(1))));
+    }
+
+    public static GenericContainer createValkeyContainer()
+    {
+        //noinspection resource
+        return new GenericContainer(DockerImageName.parse("valkey/valkey:latest"))
+                .withExposedPorts(6379)
+                .waitingFor(Wait.forListeningPort()
+                        .withStartupTimeout(Duration.ofSeconds(30)));
     }
 }

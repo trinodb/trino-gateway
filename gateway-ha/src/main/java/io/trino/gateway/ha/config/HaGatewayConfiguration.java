@@ -46,6 +46,8 @@ public class HaGatewayConfiguration
     private UIConfiguration uiConfiguration = new UIConfiguration();
     private DatabaseCacheConfiguration databaseCache = new DatabaseCacheConfiguration();
 
+    private ValkeyConfiguration valkeyConfiguration = new ValkeyConfiguration();
+
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -212,6 +214,16 @@ public class HaGatewayConfiguration
     public void setUiConfiguration(UIConfiguration uiConfiguration)
     {
         this.uiConfiguration = uiConfiguration;
+    }
+
+    public ValkeyConfiguration getValkeyConfiguration()
+    {
+        return valkeyConfiguration;
+    }
+
+    public void setValkeyConfiguration(ValkeyConfiguration valkeyConfiguration)
+    {
+        this.valkeyConfiguration = valkeyConfiguration;
     }
 
     public List<String> getModules()

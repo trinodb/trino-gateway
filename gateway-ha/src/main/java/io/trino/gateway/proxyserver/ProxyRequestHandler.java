@@ -27,6 +27,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.BaseRoutingManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -294,6 +295,16 @@ public class ProxyRequestHandler
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
         queryHistoryManager.submitQueryDetail(queryDetail);
+
+        // Also update distributed cache if enabled
+        if (routingManager instanceof BaseRoutingManager baseRoutingManager && queryDetail.getQueryId() != null) {
+            baseRoutingManager.updateQueryIdCache(
+                    queryDetail.getQueryId(),
+                    queryDetail.getBackendUrl(),
+                    queryDetail.getRoutingGroup(),
+                    queryDetail.getExternalUrl());
+        }
+
         return response;
     }
 

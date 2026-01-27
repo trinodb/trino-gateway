@@ -43,7 +43,8 @@ final class TestStochasticRoutingManager
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
-        haRoutingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
+        DistributedCache distributedCache = new NoopDistributedCache();
+        haRoutingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, distributedCache);
     }
 
     @Test

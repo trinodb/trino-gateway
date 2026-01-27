@@ -1,0 +1,427 @@
+Jan 28, 2026 12:31:08 AM io.airlift.log.Logger info
+INFO: Performing migrations...
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Database: jdbc:postgresql://localhost:5432/trino_gateway_db (PostgreSQL 15.15)
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Schema history table "public"."flyway_schema_history" does not exist yet
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Successfully validated 4 migrations (execution time 00:00.009s)
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: All configured schemas are empty; baseline operation skipped. A baseline or migration script with a lower version than the baseline version may execute if available. Check the Schemas parameter if this is not intended.
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Creating Schema History table "public"."flyway_schema_history" ...
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Current version of schema "public": << Empty Schema >>
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Migrating schema "public" to version "1 - create schema"
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Migrating schema "public" to version "2 - add routingGroup to query history"
+Jan 28, 2026 12:31:08 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Migrating schema "public" to version "3 - add externalUrl to query history"
+Jan 28, 2026 12:31:09 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Migrating schema "public" to version "4 - update query text column type"
+Jan 28, 2026 12:31:09 AM org.flywaydb.core.internal.logging.slf4j.Slf4jLog info
+INFO: Successfully applied 4 migrations to schema "public", now at version v4 (execution time 00:00.024s)
+Jan 28, 2026 12:31:09 AM io.airlift.log.Logger info
+INFO: Performed 4 migrations
+Jan 28, 2026 12:31:09 AM io.airlift.log.Logger info
+INFO: No modules to load.
+[90m2026-01-28T00:31:09.032+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.airlift.log.Logging[0m	[37mLogging to stderr[0m
+[90m2026-01-28T00:31:09.077+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.hibernate.validator.internal.util.Version[0m	[37mHV000001: Hibernate Validator 9.1.0.Final[0m
+[90m2026-01-28T00:31:09.122+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mInitializing logging[0m
+[90m2026-01-28T00:31:09.133+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.airlift.log.Logging[0m	[37mDisabling stderr output[0m
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/Users/hpopuri/Nrprojects/trino-gateway-open/gateway-ha/target/gateway-ha-17-SNAPSHOT-jar-with-dependencies.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[90m2026-01-28T00:31:09.293+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.baseapp.BaseApp[0m	[37mNo managed apps found[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mPROPERTY                                                 DEFAULT                                                                    RUNTIME                                                                    DESCRIPTION[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.https.automatic-shared-secret        [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.use-blocking-connect                 false                                                                      false[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.connect-timeout                      5.00s                                                                      5.00s[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.destination-idle-timeout             1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http2.enabled                        false                                                                      false                                                                      Enable the HTTP/2 transport[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http2.session-receive-window-size    16MB                                                                       16MB                                                                       Initial size of session's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http2.stream-receive-window-size     16MB                                                                       16MB                                                                       Initial size of stream's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http2.input-buffer-size              8kB                                                                        8kB                                                                        Size of the buffer used to read from the network for HTTP/2[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http-proxy                           ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http-proxy.password                  [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http-proxy.user                      ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.https.excluded-cipher                [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  Setting this config property overwrites Jetty's default excluded cipher suites[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.https.included-cipher                []                                                                         [][0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.idle-timeout                         1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.key-store-password                   [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.key-store-path                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.buffer-size                      1MB                                                                        1MB[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.compression.enabled              true                                                                       true[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.enabled                          false                                                                      false[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.flush-interval                   10.00s                                                                     10.00s[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.max-history                      15                                                                         15[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.max-size                         1GB                                                                        1GB[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.path                             var/log/                                                                   var/log/                                                                   The name of the log file will be prefixed with the name of the HTTP client (<client_name>-http-client.log)[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.log.queue-size                       10000                                                                      10000[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-connections-per-server           20                                                                         20[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-direct-memory                    ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-heap-memory                      ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-request-header-size              8kB                                                                        8kB[0m
+[90m2026-01-28T00:31:09.335+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-requests-queued-per-destination  1024                                                                       1024[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-response-content-length          16MB                                                                       16MB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-response-header-size             16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.max-threads                          200                                                                        200[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.min-threads                          8                                                                          8[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.record-request-complete              true                                                                       true[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.request-buffer-size                  4kB                                                                        4kB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.request-timeout                      5.00m                                                                      5.00m[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.response-buffer-size                 16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.http-proxy.secure                    false                                                                      false[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.secure-random-algorithm              ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.selector-count                       2                                                                          2[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.socks-proxy                          ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.tcp-keep-alive-idle-time             ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.timeout-concurrency                  1                                                                          1                                                                          Number of concurrent locks for timeout[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.timeout-threads                      1                                                                          1                                                                          Total number of timeout threads[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.trust-store-password                 [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.trust-store-path                     ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mmonitor.http-client.https.hostname-verification          true                                                                       true                                                                       Verify that server hostname matches the server certificate[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.https.automatic-shared-secret         [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.use-blocking-connect                  false                                                                      false[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.connect-timeout                       5.00s                                                                      5.00s[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.destination-idle-timeout              1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http2.enabled                         false                                                                      false                                                                      Enable the HTTP/2 transport[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http2.session-receive-window-size     16MB                                                                       16MB                                                                       Initial size of session's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http2.stream-receive-window-size      16MB                                                                       16MB                                                                       Initial size of stream's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http2.input-buffer-size               8kB                                                                        8kB                                                                        Size of the buffer used to read from the network for HTTP/2[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http-proxy                            ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http-proxy.password                   [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http-proxy.user                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.https.excluded-cipher                 [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  Setting this config property overwrites Jetty's default excluded cipher suites[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.https.included-cipher                 []                                                                         [][0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.idle-timeout                          1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.key-store-password                    [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.key-store-path                        ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.buffer-size                       1MB                                                                        1MB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.compression.enabled               true                                                                       true[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.enabled                           false                                                                      false[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.flush-interval                    10.00s                                                                     10.00s[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.max-history                       15                                                                         15[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.max-size                          1GB                                                                        1GB[0m
+[90m2026-01-28T00:31:09.336+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.path                              var/log/                                                                   var/log/                                                                   The name of the log file will be prefixed with the name of the HTTP client (<client_name>-http-client.log)[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.log.queue-size                        10000                                                                      10000[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-connections-per-server            20                                                                         20[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-direct-memory                     ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-heap-memory                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-request-header-size               8kB                                                                        8kB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-requests-queued-per-destination   1024                                                                       1024[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-response-content-length           16MB                                                                       16MB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-response-header-size              16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.max-threads                           200                                                                        200[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.min-threads                           8                                                                          8[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.record-request-complete               true                                                                       true[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.request-buffer-size                   4kB                                                                        4kB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.request-timeout                       5.00m                                                                      5.00m[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.response-buffer-size                  16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.http-proxy.secure                     false                                                                      false[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.secure-random-algorithm               ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.selector-count                        2                                                                          2[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.socks-proxy                           ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.tcp-keep-alive-idle-time              ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.timeout-concurrency                   1                                                                          1                                                                          Number of concurrent locks for timeout[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.timeout-threads                       1                                                                          1                                                                          Total number of timeout threads[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.trust-store-password                  [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.trust-store-path                      ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mrouter.http-client.https.hostname-verification           true                                                                       true                                                                       Verify that server hostname matches the server certificate[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.https.automatic-shared-secret          [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.use-blocking-connect                   false                                                                      false[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.connect-timeout                        5.00s                                                                      5.00s[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.destination-idle-timeout               1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http2.enabled                          false                                                                      false                                                                      Enable the HTTP/2 transport[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http2.session-receive-window-size      16MB                                                                       16MB                                                                       Initial size of session's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http2.stream-receive-window-size       16MB                                                                       16MB                                                                       Initial size of stream's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http2.input-buffer-size                8kB                                                                        8kB                                                                        Size of the buffer used to read from the network for HTTP/2[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http-proxy                             ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http-proxy.password                    [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http-proxy.user                        ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.https.excluded-cipher                  [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  [^.*_(MD5|SHA|SHA1)$, ^TLS_RSA_.*$, ^SSL_.*$, ^.*_NULL_.*$, ^.*_anon_.*$]  Setting this config property overwrites Jetty's default excluded cipher suites[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.https.included-cipher                  []                                                                         [][0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.idle-timeout                           1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.key-store-password                     [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.key-store-path                         ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.buffer-size                        1MB                                                                        1MB[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.compression.enabled                true                                                                       true[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.enabled                            false                                                                      false[0m
+[90m2026-01-28T00:31:09.337+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.flush-interval                     10.00s                                                                     10.00s[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.max-history                        15                                                                         15[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.max-size                           1GB                                                                        1GB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.path                               var/log/                                                                   var/log/                                                                   The name of the log file will be prefixed with the name of the HTTP client (<client_name>-http-client.log)[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.log.queue-size                         10000                                                                      10000[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-connections-per-server             20                                                                         20[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-direct-memory                      ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-heap-memory                        ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-request-header-size                8kB                                                                        8kB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-requests-queued-per-destination    1024                                                                       1024[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-response-content-length            16MB                                                                       16MB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-response-header-size               16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.max-threads                            200                                                                        200[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.min-threads                            8                                                                          8[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.record-request-complete                true                                                                       true[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.request-buffer-size                    4kB                                                                        4kB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.request-timeout                        5.00m                                                                      5.00m[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.response-buffer-size                   16kB                                                                       16kB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.http-proxy.secure                      false                                                                      false[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.secure-random-algorithm                ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.selector-count                         2                                                                          2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.socks-proxy                            ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.tcp-keep-alive-idle-time               ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.timeout-concurrency                    1                                                                          1                                                                          Number of concurrent locks for timeout[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.timeout-threads                        1                                                                          1                                                                          Total number of timeout threads[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.trust-store-password                   [REDACTED]                                                                 [REDACTED][0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.trust-store-path                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mproxy.http-client.https.hostname-verification            true                                                                       true                                                                       Verify that server hostname matches the server certificate[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.compression.enabled                          true                                                                       true[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http2.session-receive-window-size            16MB                                                                       16MB                                                                       Initial size of session's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http2.stream-receive-window-size             16MB                                                                       16MB                                                                       Initial size of stream's flow control receive window for HTTP/2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http2.input-buffer-size                      8kB                                                                        8kB                                                                        Size of the buffer used to read from the network for HTTP/2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http2.max-concurrent-streams                 16384                                                                      16384                                                                      Maximum concurrent streams per connection for HTTP/2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http2.stream-idle-timeout                    15.00s                                                                     15.00s[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.accept-queue-size                            8000                                                                       8000[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http.acceptor-threads                        ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http.enabled                                 true                                                                       true[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http.port                                    8080                                                                       9080[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.http.selector-threads                        ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.https.acceptor-threads                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.https.enabled                                false                                                                      false[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.https.selector-threads                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.compression.enabled                      true                                                                       true[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.enabled                                  true                                                                       true[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.max-history                              15                                                                         15[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.immediate-flush                          false                                                                      false[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.max-size                                 100MB                                                                      100MB[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.path                                     var/log/http-request.log                                                   var/log/http-request.log[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.log.queue-size                               10000                                                                      10000[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.max-request-header-size                      ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.max-response-header-size                     ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.threads.max                                  200                                                                        200[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.threads.min                                  2                                                                          2[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.net.max-idle-time                            200.00s                                                                    200.00s[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.notify-remote-async-errors                   false                                                                      false                                                                      Should remote exceptions be passed to AsyncContext[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.output-buffer-size                           ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.338+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.process-forwarded                            REJECT                                                                     REJECT                                                                     Process Forwarded and X-Forwarded headers (for proxied environments)[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.show-stack-trace                             true                                                                       true                                                                       Show the stack trace when generating an error response[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.stop-timeout                                 0.00s                                                                      0.00s                                                                      Maximum time to wait for active requests to complete during graceful shutdown[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mhttp-server.threads.max-idle-time                        1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mjmx.rmiregistry.port                                     ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mjmx.rmiserver.port                                       ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.annotation-file                                     ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.annotations                                         ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.binary-spec                                         ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.config-spec                                         ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.environment                                         ----                                                                       test[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.internal-address-source                             IP                                                                         IP[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.location                                            ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.bind-ip                                             ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.external-address                                    ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.id                                                  ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.internal-address                                    ----                                                                       ----[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.pool                                                general                                                                    general[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mnode.prefer-ipv6-address                                 false                                                                      false[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mopenmetrics.jmx-object-names                             []                                                                         []                                                                         JMX object names to include when retrieving all metrics, separated by '|'[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37motel.tracing.sampling-ratio                              1.0                                                                        1.0[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37motel.exporter.endpoint                                   http://localhost:4317                                                      http://localhost:4318/v1/traces[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37motel.exporter.interval                                   1.00m                                                                      1.00m[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37motel.exporter.protocol                                   GRPC                                                                       HTTP_PROTOBUF[0m
+[90m2026-01-28T00:31:09.339+0530[0m	[32mINFO[0m	[36mmain[0m	[35mBootstrap[0m	[37mtracing.enabled                                          false                                                                      true[0m
+[90m2026-01-28T00:31:09.353+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.baseapp.BaseApp[0m	[37mNo managed apps found[0m
+[90m2026-01-28T00:31:09.472+0530[0m	[33mWARN[0m	[36mmain[0m	[35mio.opentelemetry.sdk.trace.samplers.ParentBasedSamplerBuilder[0m	[37mTraceIdRatioBasedSampler is being used as a child sampler (root). This configuration is discouraged per the OpenTelemetry specification and may lead to unexpected sampling behavior.[0m
+[90m2026-01-28T00:31:09.544+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.ha.router.ValkeyDistributedCache[0m	[37mValkey distributed cache initialized: localhost:6379 (database: 0)[0m
+[90m2026-01-28T00:31:09.565+0530[0m	[32mINFO[0m	[36mmain[0m	[35mstdout[0m	[37m# WARNING: Unable to get Instrumentation. Dynamic Attach failed. You may add this JAR as -javaagent manually, or supply -Djdk.attach.allowAttachSelf[0m
+[90m2026-01-28T00:31:09.847+0530[0m	[32mINFO[0m	[36mmain[0m	[35mstdout[0m	[37m# WARNING: Unable to attach Serviceability Agent. You can try again with escalated privileges. Two options: a) use -Djol.tryWithSudo=true to try with sudo; b) echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope[0m
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::loadLibrary has been called by com.aayushatharva.brotli4j.Brotli4jLoader in an unnamed module (file:/Users/hpopuri/Nrprojects/trino-gateway-open/gateway-ha/target/gateway-ha-17-SNAPSHOT-jar-with-dependencies.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+[90m2026-01-28T00:31:11.242+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mRunning cluster monitor with connection task delay of 1.00m[0m
+[90m2026-01-28T00:31:11.242+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mGetting stats for all clusters[0m
+[90m2026-01-28T00:31:11.329+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.eclipse.jetty.server.Server[0m	[37mjetty-12.1.5; built: 2025-12-03T22:18:24.732Z; git: 4905d09d7b6801e792d7b73946cf7b66e4be25d6; jvm 25.0.2+10-69[0m
+[90m2026-01-28T00:31:11.346+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.eclipse.jetty.server.handler.ContextHandler[0m	[37mStarted oeje11s.ServletContextHandler@2e2b9f53{ROOT,/,b=null,a=AVAILABLE,vh=[@http,@https],h=oeje11s.ServletHandler@9f9146d{STARTED}}[0m
+[90m2026-01-28T00:31:11.483+0530[0m	[33mWARN[0m	[36mmain[0m	[35morg.glassfish.jersey.internal.inject.Providers[0m	[37mA provider io.trino.gateway.proxyserver.ProxyRequestHandler registered in SERVER runtime does not implement any provider interfaces applicable in the SERVER runtime. Due to constraint configuration problems the provider io.trino.gateway.proxyserver.ProxyRequestHandler will be ignored. [0m
+[90m2026-01-28T00:31:11.483+0530[0m	[33mWARN[0m	[36mmain[0m	[35morg.glassfish.jersey.internal.inject.Providers[0m	[37mA provider io.trino.gateway.ha.handler.RoutingTargetHandler registered in SERVER runtime does not implement any provider interfaces applicable in the SERVER runtime. Due to constraint configuration problems the provider io.trino.gateway.ha.handler.RoutingTargetHandler will be ignored. [0m
+[90m2026-01-28T00:31:11.553+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.eclipse.jetty.ee11.servlet.ServletContextHandler[0m	[37mStarted oeje11s.ServletContextHandler@2e2b9f53{ROOT,/,b=null,a=AVAILABLE,vh=[@http,@https],h=oeje11s.ServletHandler@9f9146d{STARTED}}[0m
+[90m2026-01-28T00:31:11.557+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.eclipse.jetty.server.AbstractConnector[0m	[37mStarted http@537b3b2e{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:9080}[0m
+[90m2026-01-28T00:31:11.557+0530[0m	[32mINFO[0m	[36mmain[0m	[35morg.eclipse.jetty.server.Server[0m	[37mStarted oejs.Server@28f154cc{STARTING}[12.1.5,sto=0] @228ms[0m
+[90m2026-01-28T00:31:11.614+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.ha.HaGatewayLauncher[0m	[37mServer startup completed in 2.59s[0m
+[90m2026-01-28T00:31:11.614+0530[0m	[32mINFO[0m	[36mmain[0m	[35mio.trino.gateway.ha.HaGatewayLauncher[0m	[37m======== SERVER STARTED ========[0m
+[90m2026-01-28T00:32:09.540+0530[0m	[32mINFO[0m	[36mpool-11-thread-1[0m	[35mio.trino.gateway.ha.persistence.JdbcConnectionManager[0m	[37mPerforming query history cleanup task[0m
+[90m2026-01-28T00:32:11.247+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mGetting stats for all clusters[0m
+[90m2026-01-28T00:33:03.061+0530[0m	[31mERROR[0m	[36mOkHttp http://localhost:4318/...[0m	[35mio.opentelemetry.exporter.internal.http.HttpExporter[0m	[37mFailed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318[0m
+java.net.ConnectException: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:278)
+	at okhttp3.internal.connection.ConnectPlan.connectTcp(ConnectPlan.kt:135)
+	at okhttp3.internal.connection.FastFallbackExchangeFinder$launchTcpConnect$1.runOnce(FastFallbackExchangeFinder.kt:141)
+	at okhttp3.internal.concurrent.TaskRunner$runnable$1.run(TaskRunner.kt:81)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+	Suppressed: java.net.ConnectException: Failed to connect to localhost/127.0.0.1:4318
+		... 7 more
+	Caused by: java.net.ConnectException: Connection refused
+		at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+		at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+		at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+		at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+		at java.base/java.net.Socket.connect(Socket.java:659)
+		at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+		at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+		... 6 more
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+	... 6 more
+
+
+[90m2026-01-28T00:33:11.245+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mGetting stats for all clusters[0m
+[90m2026-01-28T00:33:11.301+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.router.BaseRoutingManager[0m	[37mbackend trino-cluster-1 isHealthy HEALTHY[0m
+[90m2026-01-28T00:33:15.543+0530[0m	[31mERROR[0m	[36mOkHttp http://localhost:4318/...[0m	[35mio.opentelemetry.exporter.internal.http.HttpExporter[0m	[37mFailed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318[0m
+java.net.ConnectException: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:278)
+	at okhttp3.internal.connection.ConnectPlan.connectTcp(ConnectPlan.kt:135)
+	at okhttp3.internal.connection.FastFallbackExchangeFinder$launchTcpConnect$1.runOnce(FastFallbackExchangeFinder.kt:141)
+	at okhttp3.internal.concurrent.TaskRunner$runnable$1.run(TaskRunner.kt:81)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+	Suppressed: java.net.ConnectException: Failed to connect to localhost/127.0.0.1:4318
+		... 7 more
+	Caused by: java.net.ConnectException: Connection refused
+		at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+		at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+		at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+		at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+		at java.base/java.net.Socket.connect(Socket.java:659)
+		at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+		at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+		... 6 more
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+	... 6 more
+
+
+[90m2026-01-28T00:33:27.489+0530[0m	[32mINFO[0m	[36mhttp-server-worker-86[0m	[35mio.trino.gateway.ha.handler.RoutingTargetHandler[0m	[37mRerouting [http://[0:0:0:0:0:0:0:1]:9080/v1/statement]--> [http://localhost:8083/v1/statement][0m
+[90m2026-01-28T00:33:28.080+0530[0m	[31mERROR[0m	[36mOkHttp http://localhost:4318/...[0m	[35mio.opentelemetry.exporter.internal.http.HttpExporter[0m	[37mFailed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318[0m
+java.net.ConnectException: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:278)
+	at okhttp3.internal.connection.ConnectPlan.connectTcp(ConnectPlan.kt:135)
+	at okhttp3.internal.connection.FastFallbackExchangeFinder$launchTcpConnect$1.runOnce(FastFallbackExchangeFinder.kt:141)
+	at okhttp3.internal.concurrent.TaskRunner$runnable$1.run(TaskRunner.kt:81)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+	Suppressed: java.net.ConnectException: Failed to connect to localhost/127.0.0.1:4318
+		... 7 more
+	Caused by: java.net.ConnectException: Connection refused
+		at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+		at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+		at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+		at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+		at java.base/java.net.Socket.connect(Socket.java:659)
+		at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+		at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+		... 6 more
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+	... 6 more
+
+
+[90m2026-01-28T00:33:40.362+0530[0m	[31mERROR[0m	[36mOkHttp http://localhost:4318/...[0m	[35mio.opentelemetry.exporter.internal.http.HttpExporter[0m	[37mFailed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318[0m
+java.net.ConnectException: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:278)
+	at okhttp3.internal.connection.ConnectPlan.connectTcp(ConnectPlan.kt:135)
+	at okhttp3.internal.connection.FastFallbackExchangeFinder$launchTcpConnect$1.runOnce(FastFallbackExchangeFinder.kt:141)
+	at okhttp3.internal.concurrent.TaskRunner$runnable$1.run(TaskRunner.kt:81)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+	Suppressed: java.net.ConnectException: Failed to connect to localhost/127.0.0.1:4318
+		... 7 more
+	Caused by: java.net.ConnectException: Connection refused
+		at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+		at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+		at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+		at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+		at java.base/java.net.Socket.connect(Socket.java:659)
+		at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+		at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+		... 6 more
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+	... 6 more
+
+
+[90m2026-01-28T00:34:11.245+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mGetting stats for all clusters[0m
+[90m2026-01-28T00:34:11.264+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.router.BaseRoutingManager[0m	[37mbackend trino-cluster-1 isHealthy HEALTHY[0m
+[90m2026-01-28T00:34:23.504+0530[0m	[31mERROR[0m	[36mOkHttp http://localhost:4318/...[0m	[35mio.opentelemetry.exporter.internal.http.HttpExporter[0m	[37mFailed to export spans. The request could not be executed. Full error message: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318[0m
+java.net.ConnectException: Failed to connect to localhost/[0:0:0:0:0:0:0:1]:4318
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:278)
+	at okhttp3.internal.connection.ConnectPlan.connectTcp(ConnectPlan.kt:135)
+	at okhttp3.internal.connection.FastFallbackExchangeFinder$launchTcpConnect$1.runOnce(FastFallbackExchangeFinder.kt:141)
+	at okhttp3.internal.concurrent.TaskRunner$runnable$1.run(TaskRunner.kt:81)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+	Suppressed: java.net.ConnectException: Failed to connect to localhost/127.0.0.1:4318
+		... 7 more
+	Caused by: java.net.ConnectException: Connection refused
+		at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+		at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+		at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+		at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+		at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+		at java.base/java.net.Socket.connect(Socket.java:659)
+		at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+		at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+		... 6 more
+Caused by: java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:550)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+	at java.base/java.net.Socket.connect(Socket.java:659)
+	at okhttp3.internal.platform.Platform.connectSocket(Platform.kt:148)
+	at okhttp3.internal.connection.ConnectPlan.connectSocket(ConnectPlan.kt:276)
+	... 6 more
+
+
+[90m2026-01-28T00:35:11.245+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.clustermonitor.ActiveClusterMonitor[0m	[37mGetting stats for all clusters[0m
+[90m2026-01-28T00:35:11.268+0530[0m	[32mINFO[0m	[36mpool-14-thread-1[0m	[35mio.trino.gateway.ha.router.BaseRoutingManager[0m	[37mbackend trino-cluster-1 isHealthy HEALTHY[0m
