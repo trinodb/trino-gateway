@@ -151,8 +151,7 @@ details found in the `docker-compose.yml` file.
 
 ## Configuration
 
-The image uses the configuration file `docker/config.yaml` from the project
-checkout, and mounts it at `/etc/trino-gateway/config.yaml`.
+The image uses the configuration file `docker/default/etc/config.yaml` from the project checkout.
 
 ## Health check
 

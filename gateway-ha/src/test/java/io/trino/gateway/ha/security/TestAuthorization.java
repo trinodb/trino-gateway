@@ -56,8 +56,8 @@ final class TestAuthorization
     {
         postgresql.start();
         File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "auth/auth-test-config.yml");
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        System.setProperty("config", testConfigFile.getAbsolutePath());
+        HaGatewayLauncher.main(new String[] {});
     }
 
     @Test

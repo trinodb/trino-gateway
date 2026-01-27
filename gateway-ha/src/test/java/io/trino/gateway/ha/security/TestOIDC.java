@@ -157,8 +157,8 @@ final class TestOIDC
                 .buildOrThrow();
         File testConfigFile =
                 HaGatewayTestUtils.buildGatewayConfig("auth/oauth-test-config.yml", additionalVars);
-        String[] args = {testConfigFile.getAbsolutePath()};
-        HaGatewayLauncher.main(args);
+        System.setProperty("config", testConfigFile.getAbsolutePath());
+        HaGatewayLauncher.main(new String[] {});
     }
 
     @Test

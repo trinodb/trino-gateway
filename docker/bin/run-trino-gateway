@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -xeuo pipefail
+
+launcher_opts=(--etc-dir /etc/trino-gateway --config /etc/trino-gateway/config.yaml)
+if ! grep -s -q 'node.id' /etc/trino-gateway/node.properties; then
+    launcher_opts+=("-Dnode.id=${HOSTNAME}")
+fi
+
+exec /usr/lib/trino-gateway/bin/launcher run "${launcher_opts[@]}" "$@"

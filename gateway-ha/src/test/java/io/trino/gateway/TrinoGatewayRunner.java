@@ -65,7 +65,8 @@ public final class TrinoGatewayRunner
         OpenTracingCollector tracingCollector = new OpenTracingCollector();
         tracingCollector.start();
 
-        HaGatewayLauncher.main(new String[] {"gateway-ha/config.yaml"});
+        System.setProperty("config", "gateway-ha/config.yaml");
+        HaGatewayLauncher.main(new String[] {});
 
         log.info("======== SERVER STARTED ========");
         log.info("Tracing: http://localhost:16686");

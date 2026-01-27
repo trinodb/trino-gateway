@@ -133,18 +133,12 @@ serverConfig:
 ```
 *  The `log.levels-file` JVM option is no longer supported.
 
-### JVM startup arguments
+### Server startup command
 
-The first arg `server` has been removed.
+cd to the Trino Gateway server directory after extracting the TAR and use the following command:
 
-Old config:
 ```bash
-java -jar gateway-ha.jar server config.yaml
-```
-
-New config:
-```bash
-java -jar gateway-ha.jar config.yaml
+bin/launcher start --config=etc/config.yaml
 ```
 
 ### Format of `extraWhitelistPaths`

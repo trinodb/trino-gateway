@@ -15,27 +15,31 @@ under the project root folder, and run it at the temporary directory.
 
 It  copies the following, necessary files to current directory:
 
-- `gateway-ha.jar` from Maven Central using the version specified in the script
-- `config.yaml` from the `docs` folder of the current project folder
+- `trino-gateway-server.tar.gz` from Maven Central using the version specified in the script
+- `config.yaml` from the `docs` folder of the current project folder to etc directory of the Trino Gateway server
 
 ```shell
 #!/usr/bin/env sh
 
 VERSION=16
-BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha"
-JAR_FILE="gateway-ha-$VERSION-jar-with-dependencies.jar"
-GATEWAY_JAR="gateway-ha.jar"
+BASE_URL="https://repo1.maven.org/maven2/io/trino/gateway/trino-gateway-server"
+GATEWAY_TAR="trino-gateway-server-$VERSION.tar.gz"
+GATEWAY_DIR="trino-gateway-server-$VERSION"
 CONFIG_YAML="config.yaml"
 
 # Copy necessary files
-copy_files() {
-    if [[ ! -f "$GATEWAY_JAR" ]]; then
-        echo "Fetching $GATEWAY_JAR version $VERSION"
-        curl -O "$BASE_URL/$VERSION/$JAR_FILE"
-        mv "$JAR_FILE" "$GATEWAY_JAR"
+copy_and_extract_files() {
+    if [[ ! -f "$GATEWAY_TAR" ]]; then
+        echo "Fetching $GATEWAY_TAR"
+        curl -O "$BASE_URL/$VERSION/$GATEWAY_TAR"
     fi
 
-    [[ ! -f "$CONFIG_YAML" ]] && cp ../docs/$CONFIG_YAML .
+    tar -xzf "$GATEWAY_TAR"
+    mkdir -p "$GATEWAY_DIR"/etc
+    echo -e "-server\n-XX:MinRAMPercentage=80\n-XX:MaxRAMPercentage=80" > "$GATEWAY_DIR"/etc/jvm.config
+
+    [[ ! -f "$CONFIG_YAML" ]] && cp docs/$CONFIG_YAML .
+    cp $CONFIG_YAML "$GATEWAY_DIR"/etc/
 }
 
 # Start PostgreSQL database if not running
@@ -51,19 +55,19 @@ start_postgres_db() {
 }
 
 # Main execution flow
-copy_files
+copy_and_extract_files
 start_postgres_db
 
 # Start Trino Gateway server
 echo "Starting Trino Gateway server..."
-java -Xmx1g -jar ./$GATEWAY_JAR ./$CONFIG_YAML
+./$GATEWAY_DIR/bin/launcher start --config=$GATEWAY_DIR/etc/$CONFIG_YAML
 ```
 
 You can clean up by running
 
 ```shell
 docker kill local-postgres && docker rm local-postgres
-kill -5 $(jps | grep gateway-ha.jar | cut -d' ' -f1)
+kill -5 $(jps | grep HaGatewayLauncher | cut -d' ' -f1)
 ```
 
 ## Add Trino backends
