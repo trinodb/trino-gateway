@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
@@ -72,7 +73,8 @@ final class TestValkeyDistributedCacheIntegration
                 20,
                 10,
                 5,
-                2000);
+                2000,
+                1800);
 
         // Setup routing manager with mocked backend manager
         backendManager = Mockito.mock(GatewayBackendManager.class);

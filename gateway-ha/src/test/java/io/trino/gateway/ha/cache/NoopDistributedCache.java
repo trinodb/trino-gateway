@@ -11,12 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.router;
+package io.trino.gateway.ha.cache;
 
 import java.util.Optional;
 
 public class NoopDistributedCache
-        implements DistributedCache
+        implements Cache
 {
     @Override
     public Optional<String> get(String key)
