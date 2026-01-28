@@ -14,12 +14,10 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.common.base.Strings;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -55,18 +53,22 @@ public abstract class BaseRoutingManager
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
     private final QueryHistoryManager queryHistoryManager;
-    private final LoadingCache<String, String> queryIdBackendCache;
-    private final LoadingCache<String, String> queryIdRoutingGroupCache;
-    private final LoadingCache<String, String> queryIdExternalUrlCache;
+    private final QueryCacheManager queryCacheManager;
 
-    public BaseRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, RoutingConfiguration routingConfiguration)
+    public BaseRoutingManager(
+            GatewayBackendManager gatewayBackendManager,
+            QueryHistoryManager queryHistoryManager,
+            RoutingConfiguration routingConfiguration,
+            Cache distributedCache)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.queryHistoryManager = queryHistoryManager;
-        this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
-        this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
-        this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
+        this.queryCacheManager = new QueryCacheManager(
+                this::findBackendForUnknownQueryId,
+                this::findRoutingGroupForUnknownQueryId,
+                this::findExternalUrlForUnknownQueryId,
+                distributedCache);
         this.backendToStatus = new ConcurrentHashMap<>();
     }
 
@@ -78,13 +80,13 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
-        queryIdBackendCache.put(queryId, backend);
+        queryCacheManager.setBackendInL1(queryId, backend);
     }
 
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
-        queryIdRoutingGroupCache.put(queryId, routingGroup);
+        queryCacheManager.setRoutingGroup(queryId, routingGroup);
     }
 
     /**
@@ -121,7 +123,7 @@ public abstract class BaseRoutingManager
     {
         String backendAddress = null;
         try {
-            backendAddress = queryIdBackendCache.get(queryId);
+            backendAddress = queryCacheManager.getBackendFromL1(queryId);
         }
         catch (ExecutionException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -135,7 +137,7 @@ public abstract class BaseRoutingManager
     {
         String externalUrl = null;
         try {
-            externalUrl = queryIdExternalUrlCache.get(queryId);
+            externalUrl = queryCacheManager.getExternalUrlFromL1(queryId);
         }
         catch (ExecutionException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -153,7 +155,7 @@ public abstract class BaseRoutingManager
     {
         String routingGroup = null;
         try {
-            routingGroup = queryIdRoutingGroupCache.get(queryId);
+            routingGroup = queryCacheManager.getRoutingGroupFromL1(queryId);
         }
         catch (ExecutionException e) {
             log.warn("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
@@ -179,17 +181,37 @@ public abstract class BaseRoutingManager
     @VisibleForTesting
     void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
-        queryIdExternalUrlCache.put(queryId, externalUrl);
+        queryCacheManager.setExternalUrl(queryId, externalUrl);
+    }
+
+    public void updateQueryIdCache(String queryId, String backend, String routingGroup, String externalUrl)
+    {
+        queryCacheManager.updateAllCaches(queryId, backend, routingGroup, externalUrl);
     }
 
     @VisibleForTesting
     String findBackendForUnknownQueryId(String queryId)
     {
         String backend;
+
+        // L2: Check Valkey distributed cache if enabled
+        Optional<String> cachedBackend = queryCacheManager.getCachedBackend(queryId);
+        if (cachedBackend.isPresent()) {
+            backend = cachedBackend.get();
+            // Update L1 cache
+            queryCacheManager.setBackendInL1(queryId, backend);
+            return backend;
+        }
+
+        // L3: Check database
         backend = queryHistoryManager.getBackendForQueryId(queryId);
         if (Strings.isNullOrEmpty(backend)) {
             log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
             backend = searchAllBackendForQuery(queryId);
+        }
+        else {
+            // Update L2 cache
+            queryCacheManager.cacheBackend(queryId, backend);
         }
         return backend;
     }
@@ -245,6 +267,16 @@ public abstract class BaseRoutingManager
      */
     private String findRoutingGroupForUnknownQueryId(String queryId)
     {
+        // L2: Check Valkey distributed cache if enabled
+        Optional<String> cachedRoutingGroup = queryCacheManager.getCachedRoutingGroup(queryId);
+        if (cachedRoutingGroup.isPresent()) {
+            String routingGroup = cachedRoutingGroup.get();
+            // Update L1 cache
+            queryCacheManager.setRoutingGroupInL1(queryId, routingGroup);
+            return routingGroup;
+        }
+
+        // L3: Check database
         String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
         setRoutingGroupForQueryId(queryId, routingGroup);
         return routingGroup;
@@ -255,25 +287,19 @@ public abstract class BaseRoutingManager
      */
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
+        // L2: Check Valkey distributed cache if enabled
+        Optional<String> cachedExternalUrl = queryCacheManager.getCachedExternalUrl(queryId);
+        if (cachedExternalUrl.isPresent()) {
+            String externalUrl = cachedExternalUrl.get();
+            // Update L1 cache
+            queryCacheManager.setExternalUrlInL1(queryId, externalUrl);
+            return externalUrl;
+        }
+
+        // L3: Check database
         String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
         setExternalUrlForQueryId(queryId, externalUrl);
         return externalUrl;
-    }
-
-    private LoadingCache<String, String> buildCache(Function<String, String> loader)
-    {
-        return CacheBuilder.newBuilder()
-                .maximumSize(10000)
-                .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(
-                        new CacheLoader<>()
-                        {
-                            @Override
-                            public String load(String queryId)
-                            {
-                                return loader.apply(queryId);
-                            }
-                        });
     }
 
     private boolean isBackendHealthy(String backendId)
