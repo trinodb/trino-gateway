@@ -11,11 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.router;
+package io.trino.gateway.ha.cache;
 
 import java.util.Optional;
 
-public interface DistributedCache
+public interface Cache
 {
     Optional<String> get(String key);
 

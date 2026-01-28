@@ -14,6 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.NoopDistributedCache;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
@@ -180,7 +182,7 @@ final class TestQueryCountBasedRouter
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
-        DistributedCache distributedCache = new NoopDistributedCache();
+        Cache distributedCache = new NoopDistributedCache();
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration, distributedCache);
         populateData();
         queryCountBasedRouter.updateClusterStats(clusters);

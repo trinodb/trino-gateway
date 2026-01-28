@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.inject.Inject;
+import io.trino.gateway.ha.cache.Cache;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 
@@ -31,7 +32,7 @@ public class StochasticRoutingManager
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             RoutingConfiguration routingConfiguration,
-            DistributedCache distributedCache)
+            Cache distributedCache)
     {
         super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache);
     }

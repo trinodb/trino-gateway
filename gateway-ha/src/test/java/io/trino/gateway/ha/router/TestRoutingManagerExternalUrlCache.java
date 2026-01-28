@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.NoopDistributedCache;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,7 @@ final class TestRoutingManagerExternalUrlCache
         mockQueryHistoryManager = Mockito.mock(QueryHistoryManager.class);
         routingConfiguration = Mockito.mock(RoutingConfiguration.class);
 
-        DistributedCache distributedCache = new NoopDistributedCache();
+        Cache distributedCache = new NoopDistributedCache();
         routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, distributedCache);
     }
 
@@ -117,7 +119,7 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        DistributedCache distributedCache = new NoopDistributedCache();
+        Cache distributedCache = new NoopDistributedCache();
         RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, distributedCache);
 
         String queryId = "mock-test-query";
@@ -134,7 +136,7 @@ final class TestRoutingManagerExternalUrlCache
             extends StochasticRoutingManager
     {
         private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
-                                  RoutingConfiguration routingConfiguration, DistributedCache distributedCache)
+                                  RoutingConfiguration routingConfiguration, Cache distributedCache)
         {
             super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache);
         }

@@ -19,6 +19,8 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.http.client.HttpClient;
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -44,7 +46,6 @@ import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
-import io.trino.gateway.ha.router.DistributedCache;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -54,7 +55,6 @@ import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
-import io.trino.gateway.ha.router.ValkeyDistributedCache;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -211,7 +211,7 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public DistributedCache getDistributedCache()
+    public Cache getDistributedCache()
     {
         ValkeyConfiguration valkeyConfig = configuration.getValkeyConfiguration();
         return new ValkeyDistributedCache(
@@ -223,6 +223,7 @@ public class HaGatewayProviderModule
                 valkeyConfig.getMaxTotal(),
                 valkeyConfig.getMaxIdle(),
                 valkeyConfig.getMinIdle(),
-                valkeyConfig.getTimeoutMs());
+                valkeyConfig.getTimeoutMs(),
+                valkeyConfig.getCacheTtlSeconds());
     }
 }

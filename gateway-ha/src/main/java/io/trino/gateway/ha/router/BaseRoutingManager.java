@@ -16,9 +16,10 @@ package io.trino.gateway.ha.router;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -40,8 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Objects.requireNonNull;
-
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
  * request object. Default implementation comes here.
@@ -55,24 +54,22 @@ public abstract class BaseRoutingManager
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
     private final QueryHistoryManager queryHistoryManager;
-    private final LoadingCache<String, String> queryIdBackendCache;
-    private final LoadingCache<String, String> queryIdRoutingGroupCache;
-    private final LoadingCache<String, String> queryIdExternalUrlCache;
-    protected final DistributedCache distributedCache;
+    private final QueryCacheManager queryCacheManager;
 
     public BaseRoutingManager(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             RoutingConfiguration routingConfiguration,
-            DistributedCache distributedCache)
+            Cache distributedCache)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.queryHistoryManager = queryHistoryManager;
-        this.distributedCache = requireNonNull(distributedCache, "distributedCache is null");
-        this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
-        this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
-        this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
+        this.queryCacheManager = new QueryCacheManager(
+                this::findBackendForUnknownQueryId,
+                this::findRoutingGroupForUnknownQueryId,
+                this::findExternalUrlForUnknownQueryId,
+                distributedCache);
         this.backendToStatus = new ConcurrentHashMap<>();
     }
 
@@ -84,16 +81,13 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
-        queryIdBackendCache.put(queryId, backend);
+        queryCacheManager.setBackendInL1(queryId, backend);
     }
 
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
-        queryIdRoutingGroupCache.put(queryId, routingGroup);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set("trino:query:routing_group:" + queryId, routingGroup);
-        }
+        queryCacheManager.setRoutingGroup(queryId, routingGroup);
     }
 
     /**
@@ -130,7 +124,7 @@ public abstract class BaseRoutingManager
     {
         String backendAddress = null;
         try {
-            backendAddress = queryIdBackendCache.get(queryId);
+            backendAddress = queryCacheManager.getBackendFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -144,7 +138,7 @@ public abstract class BaseRoutingManager
     {
         String externalUrl = null;
         try {
-            externalUrl = queryIdExternalUrlCache.get(queryId);
+            externalUrl = queryCacheManager.getExternalUrlFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -162,7 +156,7 @@ public abstract class BaseRoutingManager
     {
         String routingGroup = null;
         try {
-            routingGroup = queryIdRoutingGroupCache.get(queryId);
+            routingGroup = queryCacheManager.getRoutingGroupFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
@@ -188,20 +182,12 @@ public abstract class BaseRoutingManager
     @Override
     public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
-        queryIdExternalUrlCache.put(queryId, externalUrl);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set("trino:query:external_url:" + queryId, externalUrl);
-        }
+        queryCacheManager.setExternalUrl(queryId, externalUrl);
     }
 
     public void updateQueryIdCache(String queryId, String backend, String routingGroup, String externalUrl)
     {
-        queryIdBackendCache.put(queryId, backend);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set("trino:query:backend:" + queryId, backend);
-            distributedCache.set("trino:query:routing_group:" + queryId, routingGroup);
-            distributedCache.set("trino:query:external_url:" + queryId, externalUrl);
-        }
+        queryCacheManager.updateAllCaches(queryId, backend, routingGroup, externalUrl);
     }
 
     @VisibleForTesting
@@ -210,14 +196,12 @@ public abstract class BaseRoutingManager
         String backend;
 
         // L2: Check Valkey distributed cache if enabled
-        if (distributedCache.isEnabled()) {
-            Optional<String> cachedBackend = distributedCache.get("trino:query:backend:" + queryId);
-            if (cachedBackend.isPresent()) {
-                backend = cachedBackend.get();
-                // Update L1 cache
-                queryIdBackendCache.put(queryId, backend);
-                return backend;
-            }
+        Optional<String> cachedBackend = queryCacheManager.getCachedBackend(queryId);
+        if (cachedBackend.isPresent()) {
+            backend = cachedBackend.get();
+            // Update L1 cache
+            queryCacheManager.setBackendInL1(queryId, backend);
+            return backend;
         }
 
         // L3: Check database
@@ -228,9 +212,7 @@ public abstract class BaseRoutingManager
         }
         else {
             // Update L2 cache
-            if (distributedCache.isEnabled()) {
-                distributedCache.set("trino:query:backend:" + queryId, backend);
-            }
+            queryCacheManager.cacheBackend(queryId, backend);
         }
         return backend;
     }
@@ -287,14 +269,12 @@ public abstract class BaseRoutingManager
     private String findRoutingGroupForUnknownQueryId(String queryId)
     {
         // L2: Check Valkey distributed cache if enabled
-        if (distributedCache.isEnabled()) {
-            Optional<String> cachedRoutingGroup = distributedCache.get("trino:query:routing_group:" + queryId);
-            if (cachedRoutingGroup.isPresent()) {
-                String routingGroup = cachedRoutingGroup.get();
-                // Update L1 cache
-                queryIdRoutingGroupCache.put(queryId, routingGroup);
-                return routingGroup;
-            }
+        Optional<String> cachedRoutingGroup = queryCacheManager.getCachedRoutingGroup(queryId);
+        if (cachedRoutingGroup.isPresent()) {
+            String routingGroup = cachedRoutingGroup.get();
+            // Update L1 cache
+            queryCacheManager.setRoutingGroupInL1(queryId, routingGroup);
+            return routingGroup;
         }
 
         // L3: Check database
@@ -309,28 +289,18 @@ public abstract class BaseRoutingManager
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
         // L2: Check Valkey distributed cache if enabled
-        if (distributedCache.isEnabled()) {
-            Optional<String> cachedExternalUrl = distributedCache.get("trino:query:external_url:" + queryId);
-            if (cachedExternalUrl.isPresent()) {
-                String externalUrl = cachedExternalUrl.get();
-                // Update L1 cache
-                queryIdExternalUrlCache.put(queryId, externalUrl);
-                return externalUrl;
-            }
+        Optional<String> cachedExternalUrl = queryCacheManager.getCachedExternalUrl(queryId);
+        if (cachedExternalUrl.isPresent()) {
+            String externalUrl = cachedExternalUrl.get();
+            // Update L1 cache
+            queryCacheManager.setExternalUrlInL1(queryId, externalUrl);
+            return externalUrl;
         }
 
         // L3: Check database
         String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
         setExternalUrlForQueryId(queryId, externalUrl);
         return externalUrl;
-    }
-
-    private LoadingCache<String, String> buildCache(Function<String, String> loader)
-    {
-        return Caffeine.newBuilder()
-                .maximumSize(10000)
-                .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(loader::apply);
     }
 
     private boolean isBackendHealthy(String backendId)

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.trino.gateway.ha.router;
+package io.trino.gateway.ha.cache;
 
 import io.airlift.log.Logger;
 import io.valkey.Jedis;
@@ -23,7 +23,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 public class ValkeyDistributedCache
-        implements DistributedCache
+        implements Cache
 {
     private static final Logger log = Logger.get(ValkeyDistributedCache.class);
 
@@ -40,10 +40,11 @@ public class ValkeyDistributedCache
             int maxTotal,
             int maxIdle,
             int minIdle,
-            int timeoutMs)
+            int timeoutMs,
+            long cacheTtlSeconds)
     {
         this.enabled = enabled;
-        this.cacheTtlSeconds = 1800;
+        this.cacheTtlSeconds = cacheTtlSeconds;
 
         if (enabled) {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
