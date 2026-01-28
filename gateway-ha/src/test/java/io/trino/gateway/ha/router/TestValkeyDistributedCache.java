@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.cache.NoopDistributedCache;
+import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +33,8 @@ final class TestValkeyDistributedCache
                 20,
                 10,
                 5,
-                2000);
+                2000,
+                1800);
 
         assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("test-key")).isEmpty();

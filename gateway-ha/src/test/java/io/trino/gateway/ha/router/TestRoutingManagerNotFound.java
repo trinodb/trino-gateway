@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.NoopDistributedCache;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -35,7 +37,7 @@ final class TestRoutingManagerNotFound
 
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
         QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
-        DistributedCache distributedCache = new NoopDistributedCache();
+        Cache distributedCache = new NoopDistributedCache();
 
         this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, distributedCache);
     }
