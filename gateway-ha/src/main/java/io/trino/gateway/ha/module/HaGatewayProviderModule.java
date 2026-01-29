@@ -204,26 +204,22 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public ValkeyConfiguration getValkeyConfiguration()
+    public static ValkeyConfiguration getValkeyConfiguration(HaGatewayConfiguration configuration)
     {
         return configuration.getValkeyConfiguration();
     }
 
     @Provides
     @Singleton
-    public Cache getDistributedCache()
+    public static Cache getDistributedCache(ValkeyConfiguration valkeyConfig)
     {
-        ValkeyConfiguration valkeyConfig = configuration.getValkeyConfiguration();
-        return new ValkeyDistributedCache(
-                valkeyConfig.getHost(),
-                valkeyConfig.getPort(),
-                valkeyConfig.getPassword(),
-                valkeyConfig.getDatabase(),
-                valkeyConfig.isEnabled(),
-                valkeyConfig.getMaxTotal(),
-                valkeyConfig.getMaxIdle(),
-                valkeyConfig.getMinIdle(),
-                valkeyConfig.getTimeoutMs(),
-                valkeyConfig.getCacheTtlSeconds());
+        return new ValkeyDistributedCache(valkeyConfig);
+    }
+
+    @Provides
+    @Singleton
+    public static io.trino.gateway.ha.cache.QueryCacheManager getQueryCacheManager(Cache distributedCache)
+    {
+        return new io.trino.gateway.ha.cache.QueryCacheManager(distributedCache);
     }
 }
