@@ -83,7 +83,7 @@ public class ValkeyDistributedCache
             return Optional.empty();
         }
         catch (JedisException e) {
-            log.warn(e, "Failed to get key from Valkey: %s", key);
+            log.error(e, "Failed to get key from Valkey: %s", key);
             return Optional.empty();
         }
     }
@@ -99,7 +99,7 @@ public class ValkeyDistributedCache
             jedis.setex(key, cacheTtlSeconds, value);
         }
         catch (JedisException e) {
-            log.warn(e, "Failed to set key in Valkey: %s", key);
+            log.error(e, "Failed to set key in Valkey: %s", key);
         }
     }
 
@@ -114,7 +114,7 @@ public class ValkeyDistributedCache
             jedis.del(key);
         }
         catch (JedisException e) {
-            log.warn(e, "Failed to invalidate key in Valkey: %s", key);
+            log.error(e, "Failed to invalidate key in Valkey: %s", key);
         }
     }
 
