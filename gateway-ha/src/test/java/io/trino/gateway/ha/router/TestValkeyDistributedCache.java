@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.cache.NoopDistributedCache;
 import io.trino.gateway.ha.cache.ValkeyDistributedCache;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,17 +25,12 @@ final class TestValkeyDistributedCache
     @Test
     void testDisabledCache()
     {
-        ValkeyDistributedCache cache = new ValkeyDistributedCache(
-                "localhost",
-                6379,
-                null,
-                0,
-                false,
-                20,
-                10,
-                5,
-                2000,
-                1800);
+        ValkeyConfiguration config = new ValkeyConfiguration();
+        config.setEnabled(false);
+        config.setHost("localhost");
+        config.setPort(6379);
+
+        ValkeyDistributedCache cache = new ValkeyDistributedCache(config);
 
         assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("test-key")).isEmpty();
