@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.cache;
 
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.valkey.Jedis;
 import io.valkey.JedisPool;
 import io.valkey.JedisPoolConfig;
@@ -31,26 +32,16 @@ public class ValkeyDistributedCache
     private final boolean enabled;
     private final long cacheTtlSeconds;
 
-    public ValkeyDistributedCache(
-            String host,
-            int port,
-            String password,
-            int database,
-            boolean enabled,
-            int maxTotal,
-            int maxIdle,
-            int minIdle,
-            int timeoutMs,
-            long cacheTtlSeconds)
+    public ValkeyDistributedCache(ValkeyConfiguration config)
     {
-        this.enabled = enabled;
-        this.cacheTtlSeconds = cacheTtlSeconds;
+        this.enabled = config.isEnabled();
+        this.cacheTtlSeconds = config.getCacheTtlSeconds();
 
         if (enabled) {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
-            poolConfig.setMaxTotal(maxTotal);
-            poolConfig.setMaxIdle(maxIdle);
-            poolConfig.setMinIdle(minIdle);
+            poolConfig.setMaxTotal(config.getMaxTotal());
+            poolConfig.setMaxIdle(config.getMaxIdle());
+            poolConfig.setMinIdle(config.getMinIdle());
             poolConfig.setTestOnBorrow(true);
             poolConfig.setTestOnReturn(true);
             poolConfig.setTestWhileIdle(true);
@@ -59,14 +50,17 @@ public class ValkeyDistributedCache
             poolConfig.setNumTestsPerEvictionRun(3);
             poolConfig.setBlockWhenExhausted(true);
 
+            String password = config.getPassword();
             if (password != null && !password.isEmpty()) {
-                this.jedisPool = new JedisPool(poolConfig, host, port, timeoutMs, password, database);
+                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(),
+                        config.getTimeoutMs(), password, config.getDatabase());
             }
             else {
-                this.jedisPool = new JedisPool(poolConfig, host, port, timeoutMs);
+                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(), config.getTimeoutMs());
             }
 
-            log.info("Valkey distributed cache initialized: %s:%d (database: %d)", host, port, database);
+            log.info("Valkey distributed cache initialized: %s:%d (database: %d)",
+                    config.getHost(), config.getPort(), config.getDatabase());
         }
         else {
             this.jedisPool = null;

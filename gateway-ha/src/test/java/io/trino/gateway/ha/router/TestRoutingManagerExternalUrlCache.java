@@ -13,8 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
-import io.trino.gateway.ha.cache.Cache;
 import io.trino.gateway.ha.cache.NoopDistributedCache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,8 +42,8 @@ final class TestRoutingManagerExternalUrlCache
         mockQueryHistoryManager = Mockito.mock(QueryHistoryManager.class);
         routingConfiguration = Mockito.mock(RoutingConfiguration.class);
 
-        Cache distributedCache = new NoopDistributedCache();
-        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, distributedCache);
+        QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache());
+        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
     }
 
     @Test
@@ -119,8 +119,8 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        Cache distributedCache = new NoopDistributedCache();
-        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, distributedCache);
+        QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache());
+        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, queryCacheManager);
 
         String queryId = "mock-test-query";
         String expectedUrl = "https://mock-gateway.example.com";
@@ -136,9 +136,9 @@ final class TestRoutingManagerExternalUrlCache
             extends StochasticRoutingManager
     {
         private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
-                                  RoutingConfiguration routingConfiguration, Cache distributedCache)
+                                  RoutingConfiguration routingConfiguration, QueryCacheManager queryCacheManager)
         {
-            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache);
+            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
         }
 
         @Override
