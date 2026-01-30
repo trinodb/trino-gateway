@@ -60,27 +60,6 @@ function check_environment() {
     fi
 }
 
-function temurin_jdk_link() {
-  JDK_RELEASE_NAME="${1}"
-  ARCH="${2}"
-
-  case "${ARCH}" in
-    arm64)
-      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/aarch64/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-    amd64)
-      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/x64/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-    ppc64le)
-      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/ppc64le/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-  *)
-    echo "${ARCH} is not supported for Docker image"
-    exit 1
-    ;;
-  esac
-}
-
 check_environment
 
 if [ -n "$TRINO_GATEWAY_VERSION" ]; then
@@ -117,7 +96,6 @@ for arch in "${ARCHITECTURES[@]}"; do
         "${WORK_DIR}" \
         --pull \
         --build-arg JDK_RELEASE_NAME="${JDK_RELEASE_NAME}" \
-        --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "jdk-${JDK_RELEASE_NAME}" "${arch}")" \
         --build-arg TRINO_GATEWAY_BASE_IMAGE="${TRINO_GATEWAY_BASE_IMAGE}" \
         --build-arg TRINO_GATEWAY_BUILD_IMAGE="${TRINO_GATEWAY_BUILD_IMAGE}" \
         --platform "linux/$arch" \

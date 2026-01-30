@@ -15,18 +15,24 @@
 ARG TRINO_GATEWAY_BASE_IMAGE
 ARG TRINO_GATEWAY_BUILD_IMAGE
 
-FROM --platform=$BUILDPLATFORM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
-ARG JDK_DOWNLOAD_LINK
+FROM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
+ARG TARGETARCH
 ARG JDK_RELEASE_NAME
 ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
 
 RUN \
     set -xeuo pipefail && \
     dnf install -y tar gzip && \
-    # Install JDK from the provided archive link \
-    echo "Downloading JDK from ${JDK_DOWNLOAD_LINK}" && \
+    case "${TARGETARCH}" in \
+        amd64) ADOPTIUM_ARCH="x64" ;; \
+        arm64) ADOPTIUM_ARCH="aarch64" ;; \
+        ppc64le) ADOPTIUM_ARCH="ppc64le" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    JDK_URL="https://api.adoptium.net/v3/binary/version/jdk-${JDK_RELEASE_NAME}/linux/${ADOPTIUM_ARCH}/jdk/hotspot/normal/eclipse?project=jdk" && \
+    echo "Downloading JDK from ${JDK_URL}" && \
     mkdir -p "${JAVA_HOME}" && \
-    curl -#LfS --retry 8 "${JDK_DOWNLOAD_LINK}" -o /jdktarfile && \
+    curl -#LfS --retry 8 "${JDK_URL}" -o /jdktarfile && \
     tar -zxf /jdktarfile --strip 1 -C "${JAVA_HOME}" && \
     echo "Done"
 
