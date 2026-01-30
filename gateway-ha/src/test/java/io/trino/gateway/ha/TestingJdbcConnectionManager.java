@@ -17,26 +17,57 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
-
-import java.io.File;
-import java.nio.file.Path;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 public final class TestingJdbcConnectionManager
 {
     private TestingJdbcConnectionManager() {}
 
+    public static JdbcConnectionManager createTestingJdbcConnectionManager()
+    {
+        PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:14-alpine")
+                .withDatabaseName("testdb")
+                .withInitScript("gateway-ha-persistence-postgres.sql");
+        postgres.start();
+
+        DataStoreConfiguration db = new DataStoreConfiguration(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword(),
+                postgres.getDriverClassName(),
+                4,
+                false);
+        Jdbi jdbi = HaGatewayProviderModule.createJdbi(db);
+
+        return new JdbcConnectionManager(jdbi, db);
+    }
+
     public static DataStoreConfiguration dataStoreConfig()
     {
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath() + ";NON_KEYWORDS=NAME,VALUE";
-        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        return new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
+        PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:14-alpine")
+                .withDatabaseName("testdb")
+                .withInitScript("gateway-ha-persistence-postgres.sql");
+        postgres.start();
+
+        return new DataStoreConfiguration(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword(),
+                postgres.getDriverClassName(),
+                4,
+                false);
     }
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)
     {
         Jdbi jdbi = HaGatewayProviderModule.createJdbi(config);
+        return new JdbcConnectionManager(jdbi, config);
+    }
+
+    public static JdbcConnectionManager createTestingJdbcConnectionManager(JdbcDatabaseContainer<?> container, DataStoreConfiguration config)
+    {
+        Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
         return new JdbcConnectionManager(jdbi, config);
     }
 }
