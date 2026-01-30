@@ -1,0 +1,144 @@
+name: Release new version
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Check if release is running from master
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
+            echo "Release is only allowed from master branch"
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: temurin
+          gpg-private-key: ${{ secrets.RELEASE_GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          cache: maven
+
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "Trino Release"
+          git config user.email "trino-bot@trino.io"
+
+      - name: Lock branch before release
+        uses: github/lock@v2
+        id: release-lock
+        with:
+          mode: lock
+
+      - name: Run mvn release:prepare
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: |
+          mvn -B release:prepare -Poss-release
+
+      - name: Determine release version
+        run: |
+          export VERSION=$(grep 'scm.tag=' release.properties | cut -d'=' -f2)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "Releasing version: ${VERSION}"
+
+      - name: Run mvn release:perform to local staging
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: |
+          mvn -B release:perform -Poss-release
+
+      - name: Display git status and history
+        run: |
+          git status
+          git log --oneline -n 2
+
+      - name: Run njord:validate
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+          MAVENCENTRAL_USERNAME: ${{ vars.RELEASE_MAVEN_CENTRAL_USERNAME }}
+          MAVENCENTRAL_PASSWORD: ${{ secrets.RELEASE_MAVEN_CENTRAL_TOKEN }}
+        run: |
+          mvn njord:list
+          mvn njord:status
+          mvn njord:validate
+
+      - name: Run njord:publish
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+          MAVENCENTRAL_USERNAME: ${{ vars.RELEASE_MAVEN_CENTRAL_USERNAME }}
+          MAVENCENTRAL_PASSWORD: ${{ secrets.RELEASE_MAVEN_CENTRAL_TOKEN }}
+        run:
+          mvn njord:publish -Poss-release
+
+      - name: Push git changes
+        run: |
+          git status
+          git describe
+          git push origin master
+          git push origin --tags
+
+      - name: Build and push multi-arch Docker image
+        continue-on-error: true
+        run: |
+          WORK_DIR="$(mktemp -d)"
+          mkdir -p "$WORK_DIR/gateway-ha"
+          cp target/checkout/gateway-ha/target/gateway-ha-*-jar-with-dependencies.jar \
+             "$WORK_DIR/gateway-ha/gateway-ha-jar-with-dependencies.jar"
+          cp -R target/checkout/docker/bin "$WORK_DIR/gateway-ha/"
+          cp target/checkout/docker/Dockerfile "$WORK_DIR/"
+
+          JDK_VERSION=$(cat target/checkout/.java-version)
+
+          docker buildx build "$WORK_DIR" \
+            --platform linux/amd64,linux/arm64,linux/ppc64le \
+            --build-arg JDK_RELEASE_NAME="$JDK_VERSION" \
+            --build-arg TRINO_GATEWAY_BASE_IMAGE=redhat/ubi10-micro:latest \
+            --build-arg TRINO_GATEWAY_BUILD_IMAGE=redhat/ubi10:latest \
+            --tag trinodb/trino-gateway:${VERSION} \
+            --tag trinodb/trino-gateway:latest \
+            --push
+
+          rm -rf "$WORK_DIR"
+
+      - name: Unlock branch after a release
+        uses: github/lock@v2
+        id: release-unlock
+        with:
+          mode: unlock
+
+      - name: Create release notes
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          gh release create "${VERSION}" \
+              --repo="${GITHUB_REPOSITORY}" \
+              --title="${GITHUB_REPOSITORY#*/} ${VERSION}" \
+              --generate-notes
