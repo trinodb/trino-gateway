@@ -19,6 +19,8 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.http.client.HttpClient;
+import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -40,6 +42,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
@@ -197,5 +200,26 @@ public class HaGatewayProviderModule
             case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
+    }
+
+    @Provides
+    @Singleton
+    public static ValkeyConfiguration getValkeyConfiguration(HaGatewayConfiguration configuration)
+    {
+        return configuration.getValkeyConfiguration();
+    }
+
+    @Provides
+    @Singleton
+    public static Cache getDistributedCache(ValkeyConfiguration valkeyConfig)
+    {
+        return new ValkeyDistributedCache(valkeyConfig);
+    }
+
+    @Provides
+    @Singleton
+    public static io.trino.gateway.ha.cache.QueryCacheManager getQueryCacheManager(Cache distributedCache)
+    {
+        return new io.trino.gateway.ha.cache.QueryCacheManager(distributedCache);
     }
 }

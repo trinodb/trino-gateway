@@ -11,3 +11,11 @@ dataStore:
 
 clusterStatsConfiguration:
   monitorType: INFO_API
+
+# Valkey distributed cache (optional - for multi-instance deployments)
+valkeyConfiguration:
+  enabled: false
+  host: localhost
+  port: 6379
+  # password: ${VALKEY_PASSWORD}  # Uncomment if Valkey requires AUTH
+  # cacheTtlSeconds: 1800  # Cache TTL in seconds (default: 1800 = 30 minutes)
