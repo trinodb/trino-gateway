@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 
@@ -39,6 +40,7 @@ public class HaGatewayConfiguration
     private List<String> extraWhitelistPaths = new ArrayList<>();
     private OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration = new OAuth2GatewayCookieConfiguration();
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
+    private ScheduleConfiguration scheduleConfiguration = new ScheduleConfiguration();
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
     private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
@@ -178,6 +180,18 @@ public class HaGatewayConfiguration
     public OAuth2GatewayCookieConfiguration getOauth2GatewayCookieConfiguration()
     {
         return oauth2GatewayCookieConfiguration;
+    }
+
+    @JsonProperty
+    public ScheduleConfiguration getScheduleConfiguration()
+    {
+        return scheduleConfiguration;
+    }
+
+    @JsonProperty
+    public void setScheduleConfiguration(ScheduleConfiguration scheduleConfiguration)
+    {
+        this.scheduleConfiguration = scheduleConfiguration;
     }
 
     public void setOauth2GatewayCookieConfiguration(OAuth2GatewayCookieConfiguration oauth2GatewayCookieConfiguration)
