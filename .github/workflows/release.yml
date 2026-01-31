@@ -11,10 +11,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Check if release is running from master
+      - name: Check if release is running from main
         run: |
-          if [ "${GITHUB_REF}" != "refs/heads/master" ]; then
-            echo "Release is only allowed from master branch"
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "Release is only allowed from main branch"
             exit 1
           fi
 
@@ -88,7 +88,7 @@ jobs:
         run: |
           git status
           git describe
-          git push origin master
+          git push origin main
           git push origin --tags
 
       - name: Unlock branch after a release
