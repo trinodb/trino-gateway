@@ -2,6 +2,38 @@
 
 ## 2026
 
+### Trino Gateway 18 (4 Mar 2026) { id="18" }
+
+Artifacts:
+
+* [JAR file gateway-ha-18-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/18/gateway-ha-18-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:18`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/18.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/18.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.18.0`
+
+Changes:
+
+**General**
+
+* Support in-memory caching of backend metadata retrieved from the Trino Gateway
+  database with the `databaseCache` setting.
+  ([#783](https://github.com/trinodb/trino-gateway/pull/783))
+* Add `queryHistoryEnabled` configuration property to deactivate query history
+  recording in the Trino Gateway database.
+  ([#800](https://github.com/trinodb/trino-gateway/pull/800))
+* Prevent failure of HTTP HEAD requests to `/v1/statement`.
+  ([#937](https://github.com/trinodb/trino-gateway/pull/937))
+
+**UI**
+
+* Add a time zone selection dropdown for controlling the display time zone.
+  ([#805](https://github.com/trinodb/trino-gateway/pull/805))
+
+More details and a list of all merged pull requests are [available in the
+milestone 18 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A18+is%3Aclosed).
+
 ### Trino Gateway 17 (31 Jan 2026) { id="17" }
 
 Artifacts:
