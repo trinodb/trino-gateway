@@ -79,48 +79,64 @@ notes and other details are available on GitHub](https://github.com/trinodb/trin
 
 ## Release process
 
-A full release process consists a number of steps:
+A full release process consists a number of steps.
 
-Create a release notes pull request including the following changes:
+1. Create a release notes pull request including the following changes:
+    - Add new release notes in `docs/release-notes.md`.
+    - Update `VERSION` in `docs/quickstart.md`. 
+    
+    See the [example pull request for Trino Gateway
+  17](https://github.com/trinodb/trino-gateway/pull/792) for more details.
 
-- Add new release notes in `docs/release-notes.md`.
-- Update `VERSION` in `docs/quickstart.md`.
-- Update `appVersion` to new version and `version` to new version with `.0.0`
-  appended in `helm/trino-gateway/Chart.yaml`. For example, update to
-  `appVersion: "10"` and `version: "10.0.0"`. 
+2. In parallel prepare a pull request to update the Trino Gateway Helm chart in
+   the [charts repository](https://github.com/trinodb/charts):
+    - Update `appVersion` to new version and `version` to the new version
+      `1.x.0`, where `x` is the Trino Gateway version `charts/gateway/Chart.yaml`. For example, update to `appVersion: "17"` and `version: "1.17.0"`.
+    - Update the links `charts/gateway/README.md`
+    - Update the version table in `README.md`
+    
+    See the [example pull request for the 1.17.0 chart](https://github.com/trinodb/charts/pull/386) for more details.
 
-Organize review, approval, and merge for the PR.
+3. Organize review and approval for the release notes PR.
 
-Pull the changes locally:
+4. Confirm that the team wants to proceed with a release via discussions in the
+   developer syncs and the slack channel.
 
-```shell
-cd trino-gateway
-git checkout main
-git pull
-```
+5. Confirm that the main branch builds are successful.
 
-Run a Maven release build:
+6. Merge the release notes pull request.
 
-```shell
-./mvnw clean release:prepare release:perform
-```
+7. After the release notes PR is merged, kick off [the release
+   workflow](https://github.com/trinodb/trino-gateway/actions/workflows/release.yml)
+   to deploy the binaries to Maven Central. A successful release build performs
+   the necessary commits, and pushes the binaries to Maven Central.
 
-A successful release build performs the necessary commits, and pushes the
-binaries to Maven Central staging.
+8. Wait until the workflow completes and until [the binaries available on Maven
+   Central](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/). A
+   folder with the new version should be visible and the link in the release to
+   the JAR must work.
 
-Close and release the staging repository, and wait until the sync to Central is
-completed. Confirm the presence of the artifacts at
-[https://repo.maven.apache.org/maven2/io/trino/gateway/gateway-ha/](https://repo.maven.apache.org/maven2/io/trino/gateway/gateway-ha/).
+9. Once the binaries are on Maven Central you can kick off the [release workflow
+   for publishing the container image to Docker
+   Hub](https://github.com/trinodb/trino-gateway/actions/workflows/release-docker.yml).
 
-Ensure that you are logged into Docker Hub  with suitable permissions, and run
-the container release script with the version  number that was just released, 
-for example `6`:
+10. With the deployment completed, you can verify the container by pulling it
+    down manually, for example with:
 
-```shell
-docker/release-docker.sh 6
-```
+    ```shell
+    docker pull trinodb/trino-gateway:17
+    ```
+    
+    You can also verify availability at
+    [https://hub.docker.com/r/trinodb/trino-gateway](https://hub.docker.com/r/trinodb/trino-gateway).
 
-Once completed, verify the availability at
-[https://hub.docker.com/r/trinodb/trino-gateway](https://hub.docker.com/r/trinodb/trino-gateway).
+11. Push to the pull request in the charts repository and confirm that the build
+    is now successful, since it can finally pull the referenced container image.
 
-Announce the release on Trino Slack and LinkedIn.
+12. Once the PR in the charts repository completed, request review and approval
+    and merge the PR to publish the Helm chart.
+
+13. Announce the release on Trino Slack and LinkedIn.
+
+14. Go back to reviewing PRs, writing code, and get ready for another release
+    preparation.
