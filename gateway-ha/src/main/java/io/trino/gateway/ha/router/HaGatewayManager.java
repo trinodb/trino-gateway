@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
@@ -116,6 +117,7 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration addBackend(ProxyBackendConfiguration backend)
     {
+        validateBackendConfiguration(backend);
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
@@ -125,6 +127,7 @@ public class HaGatewayManager
     @Override
     public ProxyBackendConfiguration updateBackend(ProxyBackendConfiguration backend)
     {
+        validateBackendConfiguration(backend);
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         GatewayBackend model = dao.findFirstByName(backend.getName());
@@ -136,6 +139,14 @@ public class HaGatewayManager
             logActivationStatusChange(backend.getName(), backend.isActive(), model.active());
         }
         return backend;
+    }
+
+    private static void validateBackendConfiguration(ProxyBackendConfiguration backend)
+    {
+        checkArgument(backend.getName() != null, "Backend name cannot be null");
+        checkArgument(backend.getProxyTo() != null, "Backend proxyTo URL cannot be null");
+        checkArgument(backend.getRoutingGroup() != null, "Backend routing group cannot be null");
+        checkArgument(backend.getExternalUrl() != null, "Backend external url cannot be null");
     }
 
     public void deleteBackend(String name)

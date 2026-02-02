@@ -165,7 +165,7 @@ final class TestQueryCountBasedRouter
     {
         ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
         proxyBackend.setActive(true);
-        proxyBackend.setRoutingGroup(clusterStats.routingGroup());
+        proxyBackend.setRoutingGroup(clusterStats.routingGroup() == null ? "unspecified" : clusterStats.routingGroup());
         proxyBackend.setName(clusterStats.clusterId());
         proxyBackend.setProxyTo(clusterStats.proxyTo());
         proxyBackend.setExternalUrl(clusterStats.externalUrl());
