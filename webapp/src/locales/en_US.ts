@@ -18,6 +18,7 @@ const en_US = {
     Summary: "Summary",
     QueryDistribution: "Query distribution in last hour",
     QueryCount: "Query count",
+    TimeZone: "Time Zone",
   },
   History: {
     RoutedToTip: "Default all",

@@ -20,6 +20,9 @@ importers:
       '@douyinfe/semi-ui':
         specifier: ^2.62.0
         version: 2.83.0(acorn@8.11.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      '@vvo/tzdb':
+        specifier: ^6.198.0
+        version: 6.198.0
       echarts:
         specifier: ^5.4.3
         version: 5.4.3
@@ -759,6 +762,9 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0
+
+  '@vvo/tzdb@6.198.0':
+    resolution: {integrity: sha512-bNRWBhWYl0edVgyX6AYbhoCM2tk2lXJjGCyO2VDc2xn6Dw8dLd7WGj2DDXkVOkmOIQTNjEAcxrEpIzz5pWVwFg==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2635,6 +2641,8 @@ snapshots:
       vite: 5.0.0(sass@1.69.5)
     transitivePeerDependencies:
       - supports-color
+
+  '@vvo/tzdb@6.198.0': {}
 
   acorn-jsx@5.3.2(acorn@8.11.3):
     dependencies:
