@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.audit;
 
+import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.persistence.dao.AuditLogDao;
 import org.jdbi.v3.core.Jdbi;
@@ -28,6 +29,7 @@ public class DatabaseAuditLogger
     private static final Logger log = Logger.get(DatabaseAuditLogger.class);
     private final AuditLogDao dao;
 
+    @Inject
     public DatabaseAuditLogger(Jdbi jdbi)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(AuditLogDao.class);
