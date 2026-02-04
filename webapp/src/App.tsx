@@ -16,15 +16,18 @@ import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
 import Cookies from 'js-cookie';
+import { TimezoneProvider } from "./components/TimezoneContext";
 
 function App() {
   return (
     <>
       <ErrorBoundary>
         <LocaleProvider locale={getSemiLang()}>
-          <Router>
-            <Screen />
-          </Router>
+          <TimezoneProvider>
+            <Router>
+              <Screen />
+            </Router>
+          </TimezoneProvider>
         </LocaleProvider >
       </ErrorBoundary>
     </>

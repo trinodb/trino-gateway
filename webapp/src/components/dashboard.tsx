@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Locale from "../locales";
 import styles from './dashboard.module.scss';
 import * as echarts from "echarts";
@@ -10,11 +10,13 @@ import { IconHelpCircle } from "@douyinfe/semi-icons";
 import { useNavigate } from "react-router-dom";
 import { hasPagePermission, routersMapper } from "../router";
 import { useAccessStore } from "../store";
-import { formatZonedDateTime } from "../utils/time";
+import { formatZonedDateTime, formatZonedTimestamp } from "../utils/time";
+import { TimezoneContext } from "./TimezoneContext";
 
 export function Dashboard() {
   const access = useAccessStore();
   const navigate = useNavigate();
+  const timezone = useContext(TimezoneContext).timezone;
   const [distributionDetail, setDistributionDetail] = useState<DistributionDetail>();
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function Dashboard() {
   const data = [
     {
       key: Locale.Dashboard.StartTime,
-      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime)
+      value: distributionDetail && formatZonedDateTime(distributionDetail.startTime, timezone)
     },
     {
       key: Locale.Dashboard.Backends,
@@ -39,7 +41,6 @@ export function Dashboard() {
           }
         }}>{distributionDetail?.totalBackendCount}</span>
         : <span>{distributionDetail?.totalBackendCount}</span>
-
     },
     {
       key: Locale.Dashboard.BackendsOnline,
@@ -111,7 +112,7 @@ export function Dashboard() {
         <Row gutter={[16, 16]}>
           <Col span={16}>
             <Card title={Locale.Dashboard.QueryDistribution} bordered={false} className={styles.card}>
-              <LineChart data={distributionDetail?.lineChart || {}} />
+              <LineChart data={distributionDetail?.lineChart || {}} timeZone={timezone} />
             </Card>
           </Col>
           <Col span={8}>
@@ -143,36 +144,37 @@ function updateLegendColor() {
 }
 
 function LineChart(props: {
-  data: Record<string, LineChartData[]>
+  data: Record<string, LineChartData[]>,
+  timeZone: string
 }) {
   const chartRef = useRef(null);
   const legendColor = updateLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
-    let minMinute = 2400;
-    let maxMinute = 0;
-    Object.keys(props.data).forEach(d => {
-      const lineChartDatas = props.data[d]
-      const lineChartDataTemp = lineChartDatas.map(lineChartData => parseInt(lineChartData.minute.replace(":", "")))
-      const minMinuteTemp = Math.min(...lineChartDataTemp);
-      const maxMinuteTemp = Math.max(...lineChartDataTemp);
-      if (minMinuteTemp < minMinute) {
-        minMinute = minMinuteTemp;
-      }
-      if (maxMinuteTemp > maxMinute) {
-        maxMinute = maxMinuteTemp;
-      }
-    });
-    const minuteStrings: string[] = [];
-    for (let i = minMinute; i <= maxMinute; i++) {
-      if ((i % 100) >= 60) {
-        continue;
-      }
-      const hour = Math.floor(i / 100).toString().padStart(2, "0");
-      const minute = (i % 100).toString().padStart(2, "0");
-      minuteStrings.push(`${hour}:${minute}`);
+
+    const displayData: Record<string, LineChartData[]> = Object.fromEntries(
+      Object.entries(props.data).map(([name, series]) => [
+        name,
+        series.map((item) => ({
+          ...item,
+        })),
+      ])
+    );
+
+    const timestamps = Object.values(displayData).flat().map(d => Number(d.timestamp));
+    let minTimestamp = Math.min(...timestamps);
+    let maxTimestamp = Math.max(...timestamps);
+    const xAxisTimeLabels: number[] = [];
+    const MINUTE = 60 * 1000;
+
+    minTimestamp = Math.floor(minTimestamp / MINUTE) * MINUTE;
+    maxTimestamp = Math.ceil(maxTimestamp / MINUTE) * MINUTE;
+
+    for (let t = minTimestamp; t <= maxTimestamp; t += MINUTE) {
+      xAxisTimeLabels.push(t);
     }
+
     const option = {
       legend: {
         textStyle: {
@@ -181,7 +183,7 @@ function LineChart(props: {
       },
       xAxis: {
         type: 'category',
-        data: minuteStrings
+        data: xAxisTimeLabels.map(ts => formatZonedTimestamp(ts, props.timeZone))
       },
       yAxis: {
         type: 'value',
@@ -190,14 +192,16 @@ function LineChart(props: {
       tooltip: {
         trigger: 'axis'
       },
-      series: Object.keys(props.data).map(d => {
-        const lineChartDatas = props.data[d].reduce((obj, item) => {
-          obj[item.minute] = item.queryCount;
-          return obj;
-        }, {} as Record<string, any>);
+      series: Object.keys(displayData).map(d => {
+        const data = displayData[d];
+        const count = new Map<number, number>();
+        for (const dataPoint of data) {
+          const xValueHHMM = Math.floor(Number(dataPoint.timestamp) / MINUTE) * MINUTE;
+          count.set(xValueHHMM, dataPoint.queryCount);
+        }
         return {
           name: d,
-          data: minuteStrings.map(m => lineChartDatas[m] || 0),
+          data: xAxisTimeLabels.map(timeStamp => count.get(timeStamp) || 0),
           type: 'line',
           smooth: true
         }
@@ -206,7 +210,7 @@ function LineChart(props: {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     chartInstance.setOption(option);
-  }, [props.data, legendColor]);
+  }, [props.data, props.timeZone, legendColor]);
 
   return (
     <div style={{ textAlign: "center" }}>
