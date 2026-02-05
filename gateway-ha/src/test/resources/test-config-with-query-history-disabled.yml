@@ -1,0 +1,29 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: ${ENV:REQUEST_ROUTER_PORT}
+
+includeClusterHostInResponse: true
+dataStore:
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
+  driver: org.postgresql.Driver
+  queryHistoryEnabled: false
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelay: 1s
+
+extraWhitelistPaths:
+  - '/v1/custom.*'
+  - '/custom/logout.*'
+
+gatewayCookieConfiguration:
+  enabled: true
+  cookieSigningSecret: "kjlhbfrewbyuo452cds3dc1234ancdsjh"
+
+oauth2GatewayCookieConfiguration:
+  deletePaths:
+    - "/custom/logout"
