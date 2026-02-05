@@ -13,7 +13,10 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,8 +35,8 @@ final class TestValkeyConfiguration
         assertThat(config.getMaxTotal()).isEqualTo(20);
         assertThat(config.getMaxIdle()).isEqualTo(10);
         assertThat(config.getMinIdle()).isEqualTo(5);
-        assertThat(config.getTimeoutMs()).isEqualTo(2000);
-        assertThat(config.getCacheTtlSeconds()).isEqualTo(1800);
+        assertThat(config.getTimeout()).isEqualTo(new Duration(2, TimeUnit.SECONDS));
+        assertThat(config.getCacheTtl()).isEqualTo(new Duration(30, TimeUnit.MINUTES));
     }
 
     @Test
@@ -49,8 +52,8 @@ final class TestValkeyConfiguration
         config.setMaxTotal(100);
         config.setMaxIdle(50);
         config.setMinIdle(25);
-        config.setTimeoutMs(5000);
-        config.setCacheTtlSeconds(3600);
+        config.setTimeout(new Duration(5, TimeUnit.SECONDS));
+        config.setCacheTtl(new Duration(1, TimeUnit.HOURS));
 
         assertThat(config.isEnabled()).isTrue();
         assertThat(config.getHost()).isEqualTo("valkey.example.com");
@@ -60,7 +63,7 @@ final class TestValkeyConfiguration
         assertThat(config.getMaxTotal()).isEqualTo(100);
         assertThat(config.getMaxIdle()).isEqualTo(50);
         assertThat(config.getMinIdle()).isEqualTo(25);
-        assertThat(config.getTimeoutMs()).isEqualTo(5000);
-        assertThat(config.getCacheTtlSeconds()).isEqualTo(3600);
+        assertThat(config.getTimeout()).isEqualTo(new Duration(5, TimeUnit.SECONDS));
+        assertThat(config.getCacheTtl()).isEqualTo(new Duration(1, TimeUnit.HOURS));
     }
 }

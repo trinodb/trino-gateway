@@ -173,8 +173,7 @@ For multi-instance deployments, Trino Gateway supports distributed caching
 using Valkey (or Redis) to share query metadata across gateway instances.
 This improves query routing and enables horizontal scaling.
 
-For single gateway deployments, distributed caching is not needed - the
-local cache is sufficient.
+For single gateway deployment or low workload environment, distributed caching is not needed. The local cache is sufficient.
 
 ```yaml
 valkeyConfiguration:

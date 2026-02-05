@@ -35,7 +35,7 @@ public class ValkeyDistributedCache
     public ValkeyDistributedCache(ValkeyConfiguration config)
     {
         this.enabled = config.isEnabled();
-        this.cacheTtlSeconds = config.getCacheTtlSeconds();
+        this.cacheTtlSeconds = (long) config.getCacheTtl().getValue(java.util.concurrent.TimeUnit.SECONDS);
 
         if (enabled) {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -51,16 +51,20 @@ public class ValkeyDistributedCache
             poolConfig.setBlockWhenExhausted(true);
 
             String password = config.getPassword();
+            int timeoutMs = (int) config.getTimeout().toMillis();
+            int database;
             if (password != null && !password.isEmpty()) {
+                database = config.getDatabase();
                 this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(),
-                        config.getTimeoutMs(), password, config.getDatabase());
+                        timeoutMs, password, database);
             }
             else {
-                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(), config.getTimeoutMs());
+                database = 0; // JedisPool uses DEFAULT_DATABASE (0) when no password is provided
+                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(), timeoutMs);
             }
 
             log.info("Valkey distributed cache initialized: %s:%d (database: %d)",
-                    config.getHost(), config.getPort(), config.getDatabase());
+                    config.getHost(), config.getPort(), database);
         }
         else {
             this.jedisPool = null;
