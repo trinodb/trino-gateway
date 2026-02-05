@@ -86,8 +86,9 @@ are completed. Otherwise, status code 503 is returned.
 
 Trino Gateway can cache database queries to improve performance and reduce load
 on the backend database. This also allow gateway to continue routing queries
-when the database is temporarily unavailable. The cache can be configured using
-the `databaseCache` section in the config file.
+when the database is temporarily unavailable. Currently only the list of backend
+Trino clusters used for query routing are being cached.
+The cache can be configured using the `databaseCache` section in the config file.
 
 ```yaml
 databaseCache:
@@ -99,9 +100,12 @@ databaseCache:
 Configuration options:
 
 * `enabled` - Enable or disable the database cache. Default is `false`.
-* `expireAfterWrite` - Duration after which cache entries expire following their
-  last update. This ensures stale data is eventually removed.
+* `expireAfterWrite` - The maximum time a cached entry is kept since it was last
+  loaded or refreshed. This ensures stale data is eventually removed.
+  If cache is not refreshed before expiration, requests will fail once the entry
+  expires.
 * `refreshAfterWrite` - Duration after which cache entries are eligible for
-  asynchronous refresh. This helps keep data fresh while serving slightly stale
-  data to avoid blocking requests.
+  asynchronous refresh. When a refresh is triggered, the existing cached value
+  continues to be served while the refresh happens in the background.
+  This helps keep data fresh while serving slightly stale data to avoid blocking requests.
 

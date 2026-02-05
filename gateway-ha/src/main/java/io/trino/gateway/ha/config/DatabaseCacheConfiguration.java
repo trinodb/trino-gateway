@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseCacheConfiguration
 {
     private boolean enabled;
-    private Duration expireAfterWrite = Duration.succinctDuration(10, TimeUnit.MINUTES);
+    private Duration expireAfterWrite = Duration.succinctDuration(60, TimeUnit.MINUTES);
     private Duration refreshAfterWrite = Duration.succinctDuration(5, TimeUnit.SECONDS);
 
     public boolean isEnabled()
