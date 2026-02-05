@@ -25,24 +25,6 @@ public interface GatewayBackendDao
 
     @SqlQuery("""
             SELECT * FROM gateway_backend
-            WHERE active = true
-            """)
-    List<GatewayBackend> findActiveBackend();
-
-    @SqlQuery("""
-            SELECT * FROM gateway_backend
-            WHERE active = true AND routing_group = :routingGroup
-            """)
-    List<GatewayBackend> findActiveBackendByRoutingGroup(String routingGroup);
-
-    @SqlQuery("""
-            SELECT * FROM gateway_backend
-            WHERE name = :name
-            """)
-    List<GatewayBackend> findByName(String name);
-
-    @SqlQuery("""
-            SELECT * FROM gateway_backend
             WHERE name = :name
             LIMIT 1
             """)
