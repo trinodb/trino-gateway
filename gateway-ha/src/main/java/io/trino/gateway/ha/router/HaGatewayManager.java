@@ -111,7 +111,7 @@ public class HaGatewayManager
         }
     }
 
-    private List<GatewayBackend> getOrFetchAllBackends()
+    private List<GatewayBackend> getAllBackendsInternal()
     {
         if (cacheEnabled) {
             try {
@@ -129,14 +129,14 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getAllBackends()
     {
-        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends();
+        List<GatewayBackend> proxyBackendList = getAllBackendsInternal();
         return upcast(proxyBackendList);
     }
 
     @Override
     public List<ProxyBackendConfiguration> getAllActiveBackends()
     {
-        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+        List<GatewayBackend> proxyBackendList = getAllBackendsInternal().stream()
                 .filter(GatewayBackend::active)
                 .collect(toImmutableList());
         return upcast(proxyBackendList);
@@ -157,7 +157,7 @@ public class HaGatewayManager
     @Override
     public List<ProxyBackendConfiguration> getActiveBackends(String routingGroup)
     {
-        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+        List<GatewayBackend> proxyBackendList = getAllBackendsInternal().stream()
                 .filter(GatewayBackend::active)
                 .filter(backend -> backend.routingGroup().equals(routingGroup))
                 .collect(toImmutableList());
@@ -167,7 +167,7 @@ public class HaGatewayManager
     @Override
     public Optional<ProxyBackendConfiguration> getBackendByName(String name)
     {
-        List<GatewayBackend> proxyBackendList = getOrFetchAllBackends().stream()
+        List<GatewayBackend> proxyBackendList = getAllBackendsInternal().stream()
                 .filter(backend -> backend.name().equals(name))
                 .collect(toImmutableList());
         return upcast(proxyBackendList).stream().findAny();
