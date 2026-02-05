@@ -23,8 +23,5 @@ public interface Cache
 
     void invalidate(String key);
 
-    default boolean isEnabled()
-    {
-        return false;
-    }
+    boolean isEnabled();
 }
