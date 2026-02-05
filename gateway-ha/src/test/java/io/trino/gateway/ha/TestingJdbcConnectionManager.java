@@ -19,6 +19,8 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class TestingJdbcConnectionManager
@@ -38,5 +40,26 @@ public final class TestingJdbcConnectionManager
     {
         Jdbi jdbi = HaGatewayProviderModule.createJdbi(config);
         return new JdbcConnectionManager(jdbi, config);
+    }
+
+    public static void destroyTestingDatabase(DataStoreConfiguration config)
+    {
+        String tempH2DbDirPath = config.getJdbcUrl().replace("jdbc:h2:", "").replace(";NON_KEYWORDS=NAME,VALUE", "");
+        File dbFile = Path.of(tempH2DbDirPath).toFile();
+        File parentDir = dbFile.getParentFile();
+
+        if (parentDir != null && parentDir.exists()) {
+            File[] files = parentDir.listFiles((dir, name) -> name.startsWith(dbFile.getName()));
+            if (files != null) {
+                for (File file : files) {
+                    try {
+                        Files.deleteIfExists(file.toPath());
+                    }
+                    catch (IOException e) {
+                        // Ignore deletion errors in test cleanup
+                    }
+                }
+            }
+        }
     }
 }

@@ -21,6 +21,7 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterMetricsStatsExporter;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
@@ -126,6 +127,7 @@ public class BaseApp
         binder.bind(RoutingConfiguration.class).toInstance(configuration.getRouting());
         binder.bind(DataStoreConfiguration.class).toInstance(configuration.getDataStore());
         binder.bind(MonitorConfiguration.class).toInstance(configuration.getMonitor());
+        binder.bind(DatabaseCacheConfiguration.class).toInstance(configuration.getDatabaseCache());
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);
