@@ -17,9 +17,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
@@ -80,18 +77,10 @@ public abstract class BaseRoutingManager
 
     private LoadingCache<String, String> buildCache(Function<String, String> loader)
     {
-        return CacheBuilder.newBuilder()
+        return Caffeine.newBuilder()
                 .maximumSize(10000)
                 .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(
-                        new CacheLoader<>()
-                        {
-                            @Override
-                            public String load(String queryId)
-                            {
-                                return loader.apply(queryId);
-                            }
-                        });
+                .build(loader::apply);
     }
 
     /**
