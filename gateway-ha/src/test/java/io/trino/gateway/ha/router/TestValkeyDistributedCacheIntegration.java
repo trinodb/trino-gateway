@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
@@ -30,6 +31,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
@@ -75,8 +77,8 @@ final class TestValkeyDistributedCacheIntegration
         valkeyConfig.setMaxTotal(20);
         valkeyConfig.setMaxIdle(10);
         valkeyConfig.setMinIdle(5);
-        valkeyConfig.setTimeoutMs(2000);
-        valkeyConfig.setCacheTtlSeconds(1800);
+        valkeyConfig.setTimeout(new Duration(2, TimeUnit.SECONDS));
+        valkeyConfig.setCacheTtl(new Duration(30, TimeUnit.MINUTES));
 
         distributedCache = new ValkeyDistributedCache(valkeyConfig);
         queryCacheManager = new QueryCacheManager(distributedCache);

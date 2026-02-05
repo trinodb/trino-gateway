@@ -13,6 +13,10 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
+import java.util.concurrent.TimeUnit;
+
 public class ValkeyConfiguration
 {
     private boolean enabled;
@@ -23,8 +27,8 @@ public class ValkeyConfiguration
     private int maxTotal = 20;
     private int maxIdle = 10;
     private int minIdle = 5;
-    private int timeoutMs = 2000;
-    private long cacheTtlSeconds = 1800;
+    private Duration timeout = new Duration(2, TimeUnit.SECONDS);
+    private Duration cacheTtl = new Duration(30, TimeUnit.MINUTES);
 
     public boolean isEnabled()
     {
@@ -106,23 +110,23 @@ public class ValkeyConfiguration
         this.minIdle = minIdle;
     }
 
-    public int getTimeoutMs()
+    public Duration getTimeout()
     {
-        return timeoutMs;
+        return timeout;
     }
 
-    public void setTimeoutMs(int timeoutMs)
+    public void setTimeout(Duration timeout)
     {
-        this.timeoutMs = timeoutMs;
+        this.timeout = timeout;
     }
 
-    public long getCacheTtlSeconds()
+    public Duration getCacheTtl()
     {
-        return cacheTtlSeconds;
+        return cacheTtl;
     }
 
-    public void setCacheTtlSeconds(long cacheTtlSeconds)
+    public void setCacheTtl(Duration cacheTtl)
     {
-        this.cacheTtlSeconds = cacheTtlSeconds;
+        this.cacheTtl = cacheTtl;
     }
 }
