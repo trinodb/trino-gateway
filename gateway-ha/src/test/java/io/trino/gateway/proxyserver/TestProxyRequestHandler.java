@@ -51,16 +51,16 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 @TestInstance(PER_CLASS)
 final class TestProxyRequestHandler
 {
+    private static final String OK = "OK";
+    private static final int NOT_FOUND = 404;
+    private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
+
     private final OkHttpClient httpClient = new OkHttpClient();
     private final MockWebServer mockTrinoServer = new MockWebServer();
     private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
 
     private final int routerPort = 21001 + (int) (Math.random() * 1000);
     private final int customBackendPort = 21000 + (int) (Math.random() * 1000);
-
-    private static final String OK = "OK";
-    private static final int NOT_FOUND = 404;
-    private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
     private final String healthCheckEndpoint = "/v1/info";
@@ -70,7 +70,8 @@ final class TestProxyRequestHandler
             throws Exception
     {
         prepareMockBackend(mockTrinoServer, customBackendPort, "default custom response");
-        mockTrinoServer.setDispatcher(new Dispatcher() {
+        mockTrinoServer.setDispatcher(new Dispatcher()
+        {
             @Override
             public MockResponse dispatch(RecordedRequest request)
             {
@@ -78,6 +79,14 @@ final class TestProxyRequestHandler
                     return new MockResponse().setResponseCode(200)
                             .setHeader(CONTENT_TYPE, JSON_UTF_8)
                             .setBody("{\"starting\": false}");
+                }
+
+                if (request.getPath().equals(healthCheckEndpoint + "?test-compression")) {
+                    // Return the Accept-Encoding header value for compression testing
+                    String acceptEncoding = request.getHeader("Accept-Encoding");
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setBody(acceptEncoding != null ? acceptEncoding : "null");
                 }
 
                 if (request.getMethod().equals("PUT") && request.getPath().equals(customPutEndpoint)) {
@@ -131,18 +140,18 @@ final class TestProxyRequestHandler
     {
         // A sample query longer than 200 characters to test against truncation.
         String longQuery = """
-        SELECT
-            c.customer_name,
-            c.customer_region,
-            COUNT(o.order_id) AS total_orders,
-            SUM(o.order_value) AS total_revenue
-        FROM
-            hive.sales_data.customers AS c
-        JOIN
-            hive.sales_data.orders AS o
-                ON c.customer_id = o.customer_id
-        WHERE
-            o.order_date >= date '2023-01-01'""";
+                SELECT
+                    c.customer_name,
+                    c.customer_region,
+                    COUNT(o.order_id) AS total_orders,
+                    SUM(o.order_value) AS total_revenue
+                FROM
+                    hive.sales_data.customers AS c
+                JOIN
+                    hive.sales_data.orders AS o
+                        ON c.customer_id = o.customer_id
+                WHERE
+                    o.order_date >= date '2023-01-01'""";
 
         io.airlift.http.client.Request request = preparePost()
                 .setUri(URI.create("http://localhost:" + routerPort + V1_STATEMENT_PATH))
@@ -158,5 +167,50 @@ final class TestProxyRequestHandler
         assertThat(queryDetail.getUser()).isEqualTo(username.get());
         assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
         assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
+    }
+
+    @Test
+    void testAcceptEncodingHeaderForwarding()
+            throws Exception
+    {
+        // Test that Accept-Encoding header is properly forwarded to backends
+        String url = "http://localhost:" + routerPort + healthCheckEndpoint + "?test-compression";
+        String expectedAcceptEncoding = "gzip, deflate, br";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .addHeader("Accept-Encoding", expectedAcceptEncoding)
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+
+            // The mock backend returns the Accept-Encoding header value in the response body
+            assertThat(response.body().string()).isEqualTo(expectedAcceptEncoding);
+        }
+    }
+
+    @Test
+    void testDefaultAcceptEncodingHeaderForwarding()
+            throws Exception
+    {
+        // Test that requests without explicit Accept-Encoding header work correctly
+        // Note: OkHttp automatically adds "Accept-Encoding: gzip" when none is specified
+        String url = "http://localhost:" + routerPort + healthCheckEndpoint + "?test-compression";
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build(); // No explicit Accept-Encoding header
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+
+            // OkHttp automatically adds "Accept-Encoding: gzip" when none is specified
+            assertThat(response.body().string()).isEqualTo("gzip");
+        }
     }
 }
