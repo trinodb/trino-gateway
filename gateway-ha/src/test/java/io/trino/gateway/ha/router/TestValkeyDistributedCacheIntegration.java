@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.router;
 
 import io.airlift.units.Duration;
-import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
@@ -44,7 +43,6 @@ final class TestValkeyDistributedCacheIntegration
     private final JdbcDatabaseContainer<?> postgresContainer = createPostgreSqlContainer();
     private final GenericContainer<?> valkeyContainer = createValkeyContainer();
     private ValkeyDistributedCache distributedCache;
-    private QueryCacheManager queryCacheManager;
     private StochasticRoutingManager routingManager;
     private QueryHistoryManager queryHistoryManager;
     private GatewayBackendManager backendManager;
@@ -81,12 +79,11 @@ final class TestValkeyDistributedCacheIntegration
         valkeyConfig.setCacheTtl(new Duration(30, TimeUnit.MINUTES));
 
         distributedCache = new ValkeyDistributedCache(valkeyConfig);
-        queryCacheManager = new QueryCacheManager(distributedCache);
 
         // Setup routing manager with mocked backend manager
         backendManager = Mockito.mock(GatewayBackendManager.class);
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
-        routingManager = new StochasticRoutingManager(backendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
+        routingManager = new StochasticRoutingManager(backendManager, queryHistoryManager, routingConfiguration, distributedCache);
     }
 
     @AfterAll
@@ -162,9 +159,8 @@ final class TestValkeyDistributedCacheIntegration
         assertThat(cachedValue.get()).isEqualTo(routingGroup);
 
         // Clear L1 cache by creating new routing manager instance
-        QueryCacheManager newQueryCacheManager = new QueryCacheManager(distributedCache);
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
-                backendManager, queryHistoryManager, new RoutingConfiguration(), newQueryCacheManager);
+                backendManager, queryHistoryManager, new RoutingConfiguration(), distributedCache);
 
         // Should retrieve from L2 (Valkey)
         String retrievedRoutingGroup = newRoutingManager.findRoutingGroupForQueryId(queryId);
@@ -196,9 +192,8 @@ final class TestValkeyDistributedCacheIntegration
         assertThat(cachedValue.get()).isEqualTo(externalUrl);
 
         // Clear L1 cache by creating new routing manager instance
-        QueryCacheManager newQueryCacheManager = new QueryCacheManager(distributedCache);
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
-                backendManager, queryHistoryManager, new RoutingConfiguration(), newQueryCacheManager);
+                backendManager, queryHistoryManager, new RoutingConfiguration(), distributedCache);
 
         // Should retrieve from L2 (Valkey)
         String retrievedExternalUrl = newRoutingManager.findExternalUrlForQueryId(queryId);
@@ -215,9 +210,8 @@ final class TestValkeyDistributedCacheIntegration
         distributedCache.set("trino:query:backend:" + queryId, backend);
 
         // Create new routing manager (empty L1 cache)
-        QueryCacheManager newQueryCacheManager = new QueryCacheManager(distributedCache);
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
-                backendManager, queryHistoryManager, new RoutingConfiguration(), newQueryCacheManager);
+                backendManager, queryHistoryManager, new RoutingConfiguration(), distributedCache);
 
         // L1 miss → L2 hit scenario
         String retrievedBackend = newRoutingManager.findBackendForQueryId(queryId);
@@ -248,9 +242,8 @@ final class TestValkeyDistributedCacheIntegration
         distributedCache.invalidate("trino:query:routing_group:" + queryId);
         distributedCache.invalidate("trino:query:external_url:" + queryId);
 
-        QueryCacheManager newQueryCacheManager = new QueryCacheManager(distributedCache);
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
-                backendManager, queryHistoryManager, new RoutingConfiguration(), newQueryCacheManager);
+                backendManager, queryHistoryManager, new RoutingConfiguration(), distributedCache);
 
         // L1 miss → L2 miss → L3 hit → should backfill L2
         String retrievedBackend = newRoutingManager.findBackendForQueryId(queryId);

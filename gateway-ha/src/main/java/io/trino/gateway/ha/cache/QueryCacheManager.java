@@ -13,16 +13,21 @@
  */
 package io.trino.gateway.ha.cache;
 
-import com.google.common.base.Strings;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Manages distributed cache operations for query metadata.
- * This class encapsulates L2 (distributed cache) operations.
+ * Manages all cache operations for query metadata (L1 local + L2 distributed).
+ * This class encapsulates the complete 3-tier caching strategy:
+ * L1: Local Caffeine cache (per instance)
+ * L2: Distributed cache (Valkey/Redis - shared across instances)
+ * L3: Database/fallback loader
  */
 public class QueryCacheManager
 {
@@ -31,16 +36,45 @@ public class QueryCacheManager
     private static final String EXTERNAL_URL_KEY_PREFIX = "trino:query:external_url:";
 
     private final Cache distributedCache;
+    private final LoadingCache<String, String> backendCache;
+    private final LoadingCache<String, String> routingGroupCache;
+    private final LoadingCache<String, String> externalUrlCache;
 
-    public QueryCacheManager(Cache distributedCache)
+    public QueryCacheManager(
+            Function<String, String> backendLoader,
+            Function<String, String> routingGroupLoader,
+            Function<String, String> externalUrlLoader,
+            Cache distributedCache)
     {
         this.distributedCache = requireNonNull(distributedCache, "distributedCache is null");
+        this.backendCache = buildCache(backendLoader);
+        this.routingGroupCache = buildCache(routingGroupLoader);
+        this.externalUrlCache = buildCache(externalUrlLoader);
     }
 
-    // Distributed cache operations for backend
-
-    public void cacheBackend(String queryId, String backend)
+    private LoadingCache<String, String> buildCache(Function<String, String> loader)
     {
+        return Caffeine.newBuilder()
+                .maximumSize(10000)
+                .expireAfterAccess(30, TimeUnit.MINUTES)
+                .build(loader::apply);
+    }
+
+    // Backend cache operations
+
+    public String getBackendFromL1(String queryId)
+    {
+        return backendCache.get(queryId);
+    }
+
+    public void setBackendInL1(String queryId, String backend)
+    {
+        backendCache.put(queryId, backend);
+    }
+
+    public void setBackend(String queryId, String backend)
+    {
+        backendCache.put(queryId, backend);
         if (distributedCache.isEnabled()) {
             distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
         }
@@ -54,33 +88,28 @@ public class QueryCacheManager
         return distributedCache.get(BACKEND_KEY_PREFIX + queryId);
     }
 
-    /**
-     * Gets backend from L2 cache, falling back to loader function if not found.
-     * Automatically backfills L2 cache on loader hit.
-     */
-    public String getBackend(String queryId, Function<String, String> loader)
+    public void cacheBackend(String queryId, String backend)
     {
-        // Check L2 (distributed cache)
-        Optional<String> cached = getCachedBackend(queryId);
-        if (cached.isPresent()) {
-            return cached.get();
+        if (distributedCache.isEnabled()) {
+            distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
         }
-
-        // L2 miss - call loader (L3 or other fallback)
-        String backend = loader.apply(queryId);
-
-        // Backfill L2 cache
-        if (!Strings.isNullOrEmpty(backend)) {
-            cacheBackend(queryId, backend);
-        }
-
-        return backend;
     }
 
-    // Distributed cache operations for routing group
+    // Routing group cache operations
 
-    public void cacheRoutingGroup(String queryId, String routingGroup)
+    public String getRoutingGroupFromL1(String queryId)
     {
+        return routingGroupCache.get(queryId);
+    }
+
+    public void setRoutingGroupInL1(String queryId, String routingGroup)
+    {
+        routingGroupCache.put(queryId, routingGroup);
+    }
+
+    public void setRoutingGroup(String queryId, String routingGroup)
+    {
+        routingGroupCache.put(queryId, routingGroup);
         if (distributedCache.isEnabled()) {
             distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);
         }
@@ -94,33 +123,28 @@ public class QueryCacheManager
         return distributedCache.get(ROUTING_GROUP_KEY_PREFIX + queryId);
     }
 
-    /**
-     * Gets routing group from L2 cache, falling back to loader function if not found.
-     * Automatically backfills L2 cache on loader hit.
-     */
-    public String getRoutingGroup(String queryId, Function<String, String> loader)
+    public void cacheRoutingGroup(String queryId, String routingGroup)
     {
-        // Check L2 (distributed cache)
-        Optional<String> cached = getCachedRoutingGroup(queryId);
-        if (cached.isPresent()) {
-            return cached.get();
+        if (distributedCache.isEnabled()) {
+            distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);
         }
-
-        // L2 miss - call loader (L3 or other fallback)
-        String routingGroup = loader.apply(queryId);
-
-        // Backfill L2 cache
-        if (routingGroup != null) {
-            cacheRoutingGroup(queryId, routingGroup);
-        }
-
-        return routingGroup;
     }
 
-    // Distributed cache operations for external URL
+    // External URL cache operations
 
-    public void cacheExternalUrl(String queryId, String externalUrl)
+    public String getExternalUrlFromL1(String queryId)
     {
+        return externalUrlCache.get(queryId);
+    }
+
+    public void setExternalUrlInL1(String queryId, String externalUrl)
+    {
+        externalUrlCache.put(queryId, externalUrl);
+    }
+
+    public void setExternalUrl(String queryId, String externalUrl)
+    {
+        externalUrlCache.put(queryId, externalUrl);
         if (distributedCache.isEnabled()) {
             distributedCache.set(EXTERNAL_URL_KEY_PREFIX + queryId, externalUrl);
         }
@@ -134,33 +158,18 @@ public class QueryCacheManager
         return distributedCache.get(EXTERNAL_URL_KEY_PREFIX + queryId);
     }
 
-    /**
-     * Gets external URL from L2 cache, falling back to loader function if not found.
-     * Automatically backfills L2 cache on loader hit.
-     */
-    public String getExternalUrl(String queryId, Function<String, String> loader)
+    public void cacheExternalUrl(String queryId, String externalUrl)
     {
-        // Check L2 (distributed cache)
-        Optional<String> cached = getCachedExternalUrl(queryId);
-        if (cached.isPresent()) {
-            return cached.get();
+        if (distributedCache.isEnabled()) {
+            distributedCache.set(EXTERNAL_URL_KEY_PREFIX + queryId, externalUrl);
         }
-
-        // L2 miss - call loader (L3 or other fallback)
-        String externalUrl = loader.apply(queryId);
-
-        // Backfill L2 cache
-        if (externalUrl != null) {
-            cacheExternalUrl(queryId, externalUrl);
-        }
-
-        return externalUrl;
     }
 
     // Batch operations
 
-    public void cacheAllQueryMetadata(String queryId, String backend, String routingGroup, String externalUrl)
+    public void updateAllCaches(String queryId, String backend, String routingGroup, String externalUrl)
     {
+        backendCache.put(queryId, backend);
         if (distributedCache.isEnabled()) {
             distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
             distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);

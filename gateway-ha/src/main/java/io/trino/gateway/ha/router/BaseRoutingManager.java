@@ -13,11 +13,10 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.cache.Cache;
 import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -39,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -55,32 +53,22 @@ public abstract class BaseRoutingManager
     private final String defaultRoutingGroup;
     private final QueryHistoryManager queryHistoryManager;
     private final QueryCacheManager queryCacheManager;
-    private final LoadingCache<String, String> queryIdBackendCache;
-    private final LoadingCache<String, String> queryIdRoutingGroupCache;
-    private final LoadingCache<String, String> queryIdExternalUrlCache;
 
     public BaseRoutingManager(
             GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             RoutingConfiguration routingConfiguration,
-            QueryCacheManager queryCacheManager)
+            Cache distributedCache)
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.queryHistoryManager = queryHistoryManager;
-        this.queryCacheManager = queryCacheManager;
-        this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
-        this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
-        this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
+        this.queryCacheManager = new QueryCacheManager(
+                this::findBackendForUnknownQueryId,
+                this::findRoutingGroupForUnknownQueryId,
+                this::findExternalUrlForUnknownQueryId,
+                distributedCache);
         this.backendToStatus = new ConcurrentHashMap<>();
-    }
-
-    private LoadingCache<String, String> buildCache(Function<String, String> loader)
-    {
-        return Caffeine.newBuilder()
-                .maximumSize(10000)
-                .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(loader::apply);
     }
 
     /**
@@ -91,15 +79,13 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
-        queryIdBackendCache.put(queryId, backend);
-        queryCacheManager.cacheBackend(queryId, backend);
+        queryCacheManager.setBackend(queryId, backend);
     }
 
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
-        queryIdRoutingGroupCache.put(queryId, routingGroup);
-        queryCacheManager.cacheRoutingGroup(queryId, routingGroup);
+        queryCacheManager.setRoutingGroup(queryId, routingGroup);
     }
 
     /**
@@ -136,7 +122,7 @@ public abstract class BaseRoutingManager
     {
         String backendAddress = null;
         try {
-            backendAddress = queryIdBackendCache.get(queryId);
+            backendAddress = queryCacheManager.getBackendFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -150,7 +136,7 @@ public abstract class BaseRoutingManager
     {
         String externalUrl = null;
         try {
-            externalUrl = queryIdExternalUrlCache.get(queryId);
+            externalUrl = queryCacheManager.getExternalUrlFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
@@ -168,7 +154,7 @@ public abstract class BaseRoutingManager
     {
         String routingGroup = null;
         try {
-            routingGroup = queryIdRoutingGroupCache.get(queryId);
+            routingGroup = queryCacheManager.getRoutingGroupFromL1(queryId);
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
@@ -194,28 +180,37 @@ public abstract class BaseRoutingManager
     @Override
     public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
-        queryIdExternalUrlCache.put(queryId, externalUrl);
-        queryCacheManager.cacheExternalUrl(queryId, externalUrl);
+        queryCacheManager.setExternalUrl(queryId, externalUrl);
     }
 
     public void updateQueryIdCache(String queryId, String backend, String routingGroup, String externalUrl)
     {
-        queryIdBackendCache.put(queryId, backend);
-        queryCacheManager.cacheAllQueryMetadata(queryId, backend, routingGroup, externalUrl);
+        queryCacheManager.updateAllCaches(queryId, backend, routingGroup, externalUrl);
     }
 
     @VisibleForTesting
     String findBackendForUnknownQueryId(String queryId)
     {
-        return queryCacheManager.getBackend(queryId, id -> {
-            // Check database
-            String backend = queryHistoryManager.getBackendForQueryId(id);
-            if (Strings.isNullOrEmpty(backend)) {
-                log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", id);
-                backend = searchAllBackendForQuery(id);
-            }
+        // Check L2 (distributed cache)
+        Optional<String> cachedBackend = queryCacheManager.getCachedBackend(queryId);
+        if (cachedBackend.isPresent()) {
+            String backend = cachedBackend.get();
+            // Update L1 cache
+            queryCacheManager.setBackendInL1(queryId, backend);
             return backend;
-        });
+        }
+
+        // L3: Check database
+        String backend = queryHistoryManager.getBackendForQueryId(queryId);
+        if (Strings.isNullOrEmpty(backend)) {
+            log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
+            backend = searchAllBackendForQuery(queryId);
+        }
+        else {
+            // Update L2 cache
+            queryCacheManager.cacheBackend(queryId, backend);
+        }
+        return backend;
     }
 
     /**
@@ -269,8 +264,19 @@ public abstract class BaseRoutingManager
      */
     private String findRoutingGroupForUnknownQueryId(String queryId)
     {
-        return queryCacheManager.getRoutingGroup(queryId,
-            queryHistoryManager::getRoutingGroupForQueryId);
+        // L2: Check Valkey distributed cache if enabled
+        Optional<String> cachedRoutingGroup = queryCacheManager.getCachedRoutingGroup(queryId);
+        if (cachedRoutingGroup.isPresent()) {
+            return cachedRoutingGroup.get();
+        }
+
+        // L3: Check database
+        String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        // Backfill L2 cache if found in database
+        if (routingGroup != null) {
+            queryCacheManager.cacheRoutingGroup(queryId, routingGroup);
+        }
+        return routingGroup;
     }
 
     /**
@@ -278,8 +284,19 @@ public abstract class BaseRoutingManager
      */
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
-        return queryCacheManager.getExternalUrl(queryId,
-            queryHistoryManager::getExternalUrlForQueryId);
+        // L2: Check Valkey distributed cache if enabled
+        Optional<String> cachedExternalUrl = queryCacheManager.getCachedExternalUrl(queryId);
+        if (cachedExternalUrl.isPresent()) {
+            return cachedExternalUrl.get();
+        }
+
+        // L3: Check database
+        String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
+        // Backfill L2 cache if found in database
+        if (externalUrl != null) {
+            queryCacheManager.cacheExternalUrl(queryId, externalUrl);
+        }
+        return externalUrl;
     }
 
     private boolean isBackendHealthy(String backendId)

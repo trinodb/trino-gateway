@@ -215,11 +215,4 @@ public class HaGatewayProviderModule
     {
         return new ValkeyDistributedCache(valkeyConfig);
     }
-
-    @Provides
-    @Singleton
-    public static io.trino.gateway.ha.cache.QueryCacheManager getQueryCacheManager(Cache distributedCache)
-    {
-        return new io.trino.gateway.ha.cache.QueryCacheManager(distributedCache);
-    }
 }

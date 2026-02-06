@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.cache.NoopDistributedCache;
-import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
@@ -38,9 +37,8 @@ final class TestRoutingManagerNotFound
 
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
-        QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache());
 
-        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, queryCacheManager);
+        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, new NoopDistributedCache());
     }
 
     @Test
