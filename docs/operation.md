@@ -103,7 +103,9 @@ Configuration options:
 * `expireAfterWrite` - The maximum time a cached entry is kept since it was last
   loaded or refreshed. This ensures stale data is eventually removed.
   If cache is not refreshed before expiration, requests will fail once the entry
-  expires.
+  expires (i.e. cache miss will attempt to reload data, but if the database is unavailable,
+  the request fails because there is no stale value to fall back to after
+  expiration).
 * `refreshAfterWrite` - Duration after which cache entries are eligible for
   asynchronous refresh. When a refresh is triggered, the existing cached value
   continues to be served while the refresh happens in the background.
