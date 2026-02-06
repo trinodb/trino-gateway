@@ -21,8 +21,9 @@ public class DataStoreConfiguration
     private String driver;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    private boolean queryHistoryEnabled = true;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
+    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled, boolean queryHistoryEnabled)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
@@ -30,6 +31,7 @@ public class DataStoreConfiguration
         this.driver = driver;
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
         this.runMigrationsEnabled = runMigrationsEnabled;
+        this.queryHistoryEnabled = queryHistoryEnabled;
     }
 
     public DataStoreConfiguration() {}
@@ -92,5 +94,15 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public boolean isQueryHistoryEnabled()
+    {
+        return queryHistoryEnabled;
+    }
+
+    public void setQueryHistoryEnabled(boolean queryHistoryEnabled)
+    {
+        this.queryHistoryEnabled = queryHistoryEnabled;
     }
 }

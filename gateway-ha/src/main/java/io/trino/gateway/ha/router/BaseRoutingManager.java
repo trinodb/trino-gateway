@@ -174,8 +174,8 @@ public abstract class BaseRoutingManager
         }
     }
 
-    @VisibleForTesting
-    void setExternalUrlForQueryId(String queryId, String externalUrl)
+    @Override
+    public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
         queryIdExternalUrlCache.put(queryId, externalUrl);
     }
