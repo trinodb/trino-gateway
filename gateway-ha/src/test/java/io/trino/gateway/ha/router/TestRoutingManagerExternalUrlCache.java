@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.cache.NoopDistributedCache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,31 @@ final class TestRoutingManagerExternalUrlCache
     private QueryHistoryManager mockQueryHistoryManager;
     private RoutingConfiguration routingConfiguration;
 
+    private QueryCacheManager createQueryCacheManager(QueryHistoryManager historyManager)
+    {
+        QueryCacheManager.QueryCacheLoader loader = new QueryCacheManager.QueryCacheLoader()
+        {
+            @Override
+            public String loadBackendFromDatabase(String queryId)
+            {
+                return historyManager.getBackendForQueryId(queryId);
+            }
+
+            @Override
+            public String loadRoutingGroupFromDatabase(String queryId)
+            {
+                return historyManager.getRoutingGroupForQueryId(queryId);
+            }
+
+            @Override
+            public String loadExternalUrlFromDatabase(String queryId)
+            {
+                return historyManager.getExternalUrlForQueryId(queryId);
+            }
+        };
+        return new QueryCacheManager(new NoopDistributedCache(), loader);
+    }
+
     @BeforeAll
     void setUp()
     {
@@ -41,7 +67,7 @@ final class TestRoutingManagerExternalUrlCache
         mockQueryHistoryManager = Mockito.mock(QueryHistoryManager.class);
         routingConfiguration = Mockito.mock(RoutingConfiguration.class);
 
-        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, new NoopDistributedCache());
+        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, createQueryCacheManager(queryHistoryManager));
     }
 
     @Test
@@ -117,7 +143,7 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, new NoopDistributedCache());
+        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, createQueryCacheManager(mockQueryHistoryManager));
 
         String queryId = "mock-test-query";
         String expectedUrl = "https://mock-gateway.example.com";
@@ -133,13 +159,13 @@ final class TestRoutingManagerExternalUrlCache
             extends StochasticRoutingManager
     {
         private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
-                                  RoutingConfiguration routingConfiguration, NoopDistributedCache distributedCache)
+                                  RoutingConfiguration routingConfiguration, QueryCacheManager queryCacheManager)
         {
-            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, distributedCache);
+            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
         }
 
         @Override
-        protected String findBackendForUnknownQueryId(String queryId)
+        String searchAllBackendForQuery(String queryId)
         {
             // Simple implementation for testing - return a default backend
             return "http://default-backend:8080";
