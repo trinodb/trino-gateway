@@ -93,7 +93,7 @@ The cache can be configured using the `databaseCache` section in the config file
 ```yaml
 databaseCache:
   enabled: true
-  expireAfterWrite: 60m
+  expireAfterWrite: 1h
   refreshAfterWrite: 5s
 ```
 
@@ -105,9 +105,12 @@ Configuration options:
   If cache is not refreshed before expiration, requests will fail once the entry
   expires (i.e. cache miss will attempt to reload data, but if the database is unavailable,
   the request fails because there is no stale value to fall back to after
-  expiration).
+  expiration). Default value is `1h`.
 * `refreshAfterWrite` - Duration after which cache entries are eligible for
   asynchronous refresh. When a refresh is triggered, the existing cached value
   continues to be served while the refresh happens in the background.
   This helps keep data fresh while serving slightly stale data to avoid blocking requests.
+  Default value is `5s`.
 
+`expireAfterWrite` and `refreshAfterWrite` can be set to `null` to disable expiration
+or refresh respectively.
