@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
@@ -177,7 +178,7 @@ final class TestQueryCountBasedRouter
     {
         DataStoreConfiguration dataStoreConfig = dataStoreConfig();
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
-        backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+        backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
         populateData();
