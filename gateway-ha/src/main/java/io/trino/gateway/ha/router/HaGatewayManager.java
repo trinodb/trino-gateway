@@ -45,7 +45,6 @@ public class HaGatewayManager
 
     private final GatewayBackendDao dao;
     private final String defaultRoutingGroup;
-    private final boolean cacheEnabled;
     private final LoadingCache<Object, List<GatewayBackend>> backendCache;
 
     private final CounterStat backendLookupSuccesses = new CounterStat();
@@ -62,29 +61,28 @@ public class HaGatewayManager
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(GatewayBackendDao.class);
         defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
-        cacheEnabled = databaseCacheConfiguration.isEnabled();
-        if (cacheEnabled) {
-            Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
-                    .initialCapacity(1)
-                    .ticker(ticker);
-            if (databaseCacheConfiguration.getExpireAfterWrite() != null) {
-                caffeineBuilder = caffeineBuilder.expireAfterWrite(databaseCacheConfiguration.getExpireAfterWrite().toJavaTime());
-            }
-            if (databaseCacheConfiguration.getRefreshAfterWrite() != null) {
-                caffeineBuilder = caffeineBuilder.refreshAfterWrite(databaseCacheConfiguration.getRefreshAfterWrite().toJavaTime());
-            }
-            backendCache = caffeineBuilder.build(this::fetchAllBackends);
 
-            // Load the data once during initialization. This ensures a fail-fast behavior in case of database misconfiguration.
-            try {
-                List<GatewayBackend> _ = backendCache.get(ALL_BACKEND_CACHE_KEY);
-            }
-            catch (Exception e) {
-                throw new RuntimeException("Failed to warm up backend cache", e);
-            }
+        Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
+                .initialCapacity(1)
+                .ticker(ticker);
+        if (databaseCacheConfiguration.getExpireAfterWrite() != null) {
+            caffeineBuilder = caffeineBuilder.expireAfterWrite(databaseCacheConfiguration.getExpireAfterWrite().toJavaTime());
         }
-        else {
-            backendCache = null;
+        if (databaseCacheConfiguration.getRefreshAfterWrite() != null) {
+            caffeineBuilder = caffeineBuilder.refreshAfterWrite(databaseCacheConfiguration.getRefreshAfterWrite().toJavaTime());
+        }
+        if (!databaseCacheConfiguration.isEnabled()) {
+            // No-op cache: never stores anything
+            caffeineBuilder = caffeineBuilder.maximumSize(0);
+        }
+        backendCache = caffeineBuilder.build(this::fetchAllBackends);
+
+        // Load the data once during initialization. This ensures a fail-fast behavior in case of database misconfiguration.
+        try {
+            List<GatewayBackend> _ = backendCache.get(ALL_BACKEND_CACHE_KEY);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("Failed to load gateway backend", e);
         }
     }
 
@@ -104,25 +102,18 @@ public class HaGatewayManager
 
     private void invalidateBackendCache()
     {
-        if (cacheEnabled) {
-            // Avoid using bulk invalidation like invalidateAll(), in order to invalidate in-flight loads properly.
-            // See https://github.com/trinodb/trino/issues/10512#issuecomment-1016398117
-            backendCache.invalidate(ALL_BACKEND_CACHE_KEY);
-        }
+        // Avoid using bulk invalidation like invalidateAll(), in order to invalidate in-flight loads properly.
+        // See https://github.com/trinodb/trino/issues/10512#issuecomment-1016398117
+        backendCache.invalidate(ALL_BACKEND_CACHE_KEY);
     }
 
     private List<GatewayBackend> getAllBackendsInternal()
     {
-        if (cacheEnabled) {
-            try {
-                return backendCache.get(ALL_BACKEND_CACHE_KEY);
-            }
-            catch (Exception e) {
-                throw new RuntimeException("Failed to load backends from database to cache", e);
-            }
+        try {
+            return backendCache.get(ALL_BACKEND_CACHE_KEY);
         }
-        else {
-            return fetchAllBackends(ALL_BACKEND_CACHE_KEY);
+        catch (Exception e) {
+            throw new RuntimeException("Failed to load backends from database to cache", e);
         }
     }
 
