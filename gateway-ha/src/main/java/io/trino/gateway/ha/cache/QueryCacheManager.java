@@ -13,8 +13,8 @@
  */
 package io.trino.gateway.ha.cache;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 
 import java.util.Optional;
@@ -23,26 +23,32 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Manages all cache operations for query metadata (L1 local + L2 distributed + L3 database).
- * This class encapsulates the complete 3-tier caching strategy:
- * L1: Local Caffeine cache (per instance)
- * L2: Distributed cache (Valkey/Redis - shared across instances)
- * L3: Database/fallback loader
+ * Manages all cache operations for query metadata using a 3-tier caching strategy:
+ * <ul>
+ * <li>L1: Local Caffeine cache (per instance, in-memory)</li>
+ * <li>L2: Distributed cache (Valkey/Redis - shared across instances)</li>
+ * <li>L3: Database/fallback loader</li>
+ * </ul>
  *
- * This class follows the Single Responsibility Principle by handling ALL cache-related
- * logic and orchestration, removing this responsibility from BaseRoutingManager.
+ * <p>This refactored design uses a single cache storing {@link QueryMetadata} objects
+ * instead of three separate caches for backend, routing group, and external URL.
+ * This reduces cache operations by 3x, ensures atomicity, and improves consistency.
+ *
+ * <p>Benefits:
+ * <ul>
+ * <li>Single cache lookup instead of three</li>
+ * <li>Atomic updates - all metadata updated together</li>
+ * <li>One network roundtrip to Valkey instead of three</li>
+ * <li>Reduced memory overhead</li>
+ * <li>Simpler code and easier maintenance</li>
+ * </ul>
  */
 public class QueryCacheManager
 {
     private static final Logger log = Logger.get(QueryCacheManager.class);
-    private static final String BACKEND_KEY_PREFIX = "trino:query:backend:";
-    private static final String ROUTING_GROUP_KEY_PREFIX = "trino:query:routing_group:";
-    private static final String EXTERNAL_URL_KEY_PREFIX = "trino:query:external_url:";
 
     private final DistributedCache distributedCache;
-    private final com.github.benmanes.caffeine.cache.Cache<String, String> backendCache;
-    private final com.github.benmanes.caffeine.cache.Cache<String, String> routingGroupCache;
-    private final com.github.benmanes.caffeine.cache.Cache<String, String> externalUrlCache;
+    private final Cache<String, QueryMetadata> localCache;
     private final QueryCacheLoader cacheLoader;
 
     /**
@@ -51,260 +57,229 @@ public class QueryCacheManager
     public interface QueryCacheLoader
     {
         /**
-         * Load backend from database or external source.
-         * May return null if not found.
+         * Load complete query metadata from database or external source.
+         * May return null or a QueryMetadata with some null fields if not fully available.
          */
-        String loadBackendFromDatabase(String queryId);
-
-        /**
-         * Load routing group from database.
-         * May return null if not found.
-         */
-        String loadRoutingGroupFromDatabase(String queryId);
-
-        /**
-         * Load external URL from database.
-         * May return null if not found.
-         */
-        String loadExternalUrlFromDatabase(String queryId);
+        QueryMetadata loadFromDatabase(String queryId);
     }
 
     public QueryCacheManager(DistributedCache distributedCache, QueryCacheLoader cacheLoader)
     {
         this.distributedCache = requireNonNull(distributedCache, "distributedCache is null");
         this.cacheLoader = requireNonNull(cacheLoader, "cacheLoader is null");
-        this.backendCache = buildCache();
-        this.routingGroupCache = buildCache();
-        this.externalUrlCache = buildCache();
-    }
-
-    private com.github.benmanes.caffeine.cache.Cache<String, String> buildCache()
-    {
-        return Caffeine.newBuilder()
+        this.localCache = Caffeine.newBuilder()
                 .maximumSize(10000)
                 .expireAfterAccess(30, TimeUnit.MINUTES)
                 .build();
     }
 
-    // L1/L2/L3 fallback loaders - called by Caffeine when key not in L1
-
-    private String loadBackendWithFallback(String queryId)
+    /**
+     * Gets complete query metadata with full L1→L2→L3 fallback.
+     * Returns empty Optional if not found in any tier.
+     *
+     * @param queryId the query identifier
+     * @return Optional containing QueryMetadata if found, empty otherwise
+     */
+    public Optional<QueryMetadata> get(String queryId)
     {
+        requireNonNull(queryId, "queryId is null");
+
+        // L1: Check local cache first
+        QueryMetadata cached = localCache.getIfPresent(queryId);
+        if (cached != null) {
+            log.debug("Query metadata for [%s] found in L1 cache", queryId);
+            return Optional.of(cached);
+        }
+
         // L2: Check distributed cache
         if (distributedCache.isEnabled()) {
-            Optional<String> cached = distributedCache.get(BACKEND_KEY_PREFIX + queryId);
-            if (cached.isPresent()) {
-                log.debug("Backend for query [%s] found in L2 cache", queryId);
-                return cached.get();
+            Optional<QueryMetadata> l2Result = distributedCache.get(queryId);
+            if (l2Result.isPresent()) {
+                log.debug("Query metadata for [%s] found in L2 cache", queryId);
+                // Backfill L1
+                localCache.put(queryId, l2Result.get());
+                return l2Result;
             }
         }
 
         // L3: Check database
-        String backend = cacheLoader.loadBackendFromDatabase(queryId);
-        if (!Strings.isNullOrEmpty(backend)) {
-            log.debug("Backend for query [%s] found in L3 (database)", queryId);
-            // Backfill L2 cache
-            if (distributedCache.isEnabled()) {
-                distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
+        try {
+            QueryMetadata loaded = cacheLoader.loadFromDatabase(queryId);
+            if (loaded != null && !loaded.isEmpty()) {
+                log.debug("Query metadata for [%s] found in L3 (database)", queryId);
+                // Backfill L2 and L1
+                localCache.put(queryId, loaded);
+                if (distributedCache.isEnabled()) {
+                    distributedCache.set(queryId, loaded);
+                }
+                return Optional.of(loaded);
             }
-            return backend;
+        }
+        catch (RuntimeException e) {
+            log.warn(e, "Exception while loading query metadata for queryId from database: %s", queryId);
         }
 
-        return null;
+        return Optional.empty();
     }
-
-    private String loadRoutingGroupWithFallback(String queryId)
-    {
-        // L2: Check distributed cache
-        if (distributedCache.isEnabled()) {
-            Optional<String> cached = distributedCache.get(ROUTING_GROUP_KEY_PREFIX + queryId);
-            if (cached.isPresent()) {
-                log.debug("Routing group for query [%s] found in L2 cache", queryId);
-                return cached.get();
-            }
-        }
-
-        // L3: Check database
-        String routingGroup = cacheLoader.loadRoutingGroupFromDatabase(queryId);
-        if (!Strings.isNullOrEmpty(routingGroup)) {
-            log.debug("Routing group for query [%s] found in L3 (database)", queryId);
-            // Backfill L2 cache
-            if (distributedCache.isEnabled()) {
-                distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);
-            }
-            return routingGroup;
-        }
-
-        return null;
-    }
-
-    private String loadExternalUrlWithFallback(String queryId)
-    {
-        // L2: Check distributed cache
-        if (distributedCache.isEnabled()) {
-            Optional<String> cached = distributedCache.get(EXTERNAL_URL_KEY_PREFIX + queryId);
-            if (cached.isPresent()) {
-                log.debug("External URL for query [%s] found in L2 cache", queryId);
-                return cached.get();
-            }
-        }
-
-        // L3: Check database
-        String externalUrl = cacheLoader.loadExternalUrlFromDatabase(queryId);
-        if (!Strings.isNullOrEmpty(externalUrl)) {
-            log.debug("External URL for query [%s] found in L3 (database)", queryId);
-            // Backfill L2 cache
-            if (distributedCache.isEnabled()) {
-                distributedCache.set(EXTERNAL_URL_KEY_PREFIX + queryId, externalUrl);
-            }
-            return externalUrl;
-        }
-
-        return null;
-    }
-
-    // Public API - High-level cache operations with full L1/L2/L3 orchestration
 
     /**
-     * Gets backend for queryId with full L1->L2->L3 fallback.
-     * Returns null if not found in any tier.
+     * Sets complete query metadata in both L1 and L2 caches.
+     * This is the preferred method for updating cache with all metadata at once.
+     *
+     * @param queryId the query identifier
+     * @param metadata the complete query metadata
+     */
+    public void set(String queryId, QueryMetadata metadata)
+    {
+        requireNonNull(queryId, "queryId is null");
+        requireNonNull(metadata, "metadata is null");
+
+        localCache.put(queryId, metadata);
+        if (distributedCache.isEnabled()) {
+            distributedCache.set(queryId, metadata);
+        }
+        log.debug("Stored query metadata for [%s] in cache", queryId);
+    }
+
+    /**
+     * Updates query metadata using copy-on-write pattern.
+     * Retrieves existing metadata (with full L1→L2→L3 fallback), merges with the partial update, and stores back.
+     * This enables partial updates while maintaining atomicity and consistency across all cache tiers.
+     *
+     * <p>Example: updating only the backend
+     * <pre>
+     * cacheManager.update(queryId, QueryMetadata.withBackend(newBackend));
+     * </pre>
+     *
+     * @param queryId the query identifier
+     * @param partialMetadata the partial metadata to merge (non-null fields will override)
+     */
+    public void update(String queryId, QueryMetadata partialMetadata)
+    {
+        requireNonNull(queryId, "queryId is null");
+        requireNonNull(partialMetadata, "partialMetadata is null");
+
+        // Get existing metadata with full L1→L2→L3 fallback for consistency
+        QueryMetadata existing = get(queryId).orElse(null);
+        QueryMetadata merged;
+
+        if (existing != null) {
+            // Merge with existing
+            merged = existing.merge(partialMetadata);
+            log.debug("Updated query metadata for [%s] via merge", queryId);
+        }
+        else {
+            // No existing data, use partial as-is
+            merged = partialMetadata;
+            log.debug("Created new query metadata for [%s] from partial update", queryId);
+        }
+
+        // Store merged result
+        set(queryId, merged);
+    }
+
+    /**
+     * Gets backend URL for a query.
+     * Convenience method that extracts backend from QueryMetadata.
+     *
+     * @param queryId the query identifier
+     * @return the backend URL, or null if not found
      */
     public String getBackend(String queryId)
     {
-        // Check L1 cache first
-        String cached = backendCache.getIfPresent(queryId);
-        if (cached != null) {
-            return cached;
-        }
-
-        // L1 miss: Try L2/L3
-        try {
-            String loaded = loadBackendWithFallback(queryId);
-            if (!Strings.isNullOrEmpty(loaded)) {
-                backendCache.put(queryId, loaded);
-            }
-            return loaded;
-        }
-        catch (RuntimeException e) {
-            log.warn(e, "Exception while loading backend for queryId from cache: %s", queryId);
-            return null;
-        }
+        return get(queryId).map(QueryMetadata::backend).orElse(null);
     }
 
     /**
-     * Sets backend in both L1 and L2 caches.
-     */
-    public void setBackend(String queryId, String backend)
-    {
-        backendCache.put(queryId, backend);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
-        }
-    }
-
-    /**
-     * Gets routing group for queryId with full L1->L2->L3 fallback.
-     * Returns null if not found in any tier.
+     * Gets routing group for a query.
+     * Convenience method that extracts routing group from QueryMetadata.
+     *
+     * @param queryId the query identifier
+     * @return the routing group, or null if not found
      */
     public String getRoutingGroup(String queryId)
     {
-        // Check L1 cache first
-        String cached = routingGroupCache.getIfPresent(queryId);
-        if (cached != null) {
-            return cached;
-        }
-
-        // L1 miss: Try L2/L3
-        try {
-            String loaded = loadRoutingGroupWithFallback(queryId);
-            if (!Strings.isNullOrEmpty(loaded)) {
-                routingGroupCache.put(queryId, loaded);
-            }
-            return loaded;
-        }
-        catch (RuntimeException e) {
-            log.warn(e, "Exception while loading routing group for queryId from cache: %s", queryId);
-            return null;
-        }
+        return get(queryId).map(QueryMetadata::routingGroup).orElse(null);
     }
 
     /**
-     * Sets routing group in both L1 and L2 caches.
-     */
-    public void setRoutingGroup(String queryId, String routingGroup)
-    {
-        routingGroupCache.put(queryId, routingGroup);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);
-        }
-    }
-
-    /**
-     * Gets external URL for queryId with full L1->L2->L3 fallback.
-     * Returns null if not found in any tier.
+     * Gets external URL for a query.
+     * Convenience method that extracts external URL from QueryMetadata.
+     *
+     * @param queryId the query identifier
+     * @return the external URL, or null if not found
      */
     public String getExternalUrl(String queryId)
     {
-        // Check L1 cache first
-        String cached = externalUrlCache.getIfPresent(queryId);
-        if (cached != null) {
-            return cached;
-        }
-
-        // L1 miss: Try L2/L3
-        try {
-            String loaded = loadExternalUrlWithFallback(queryId);
-            if (!Strings.isNullOrEmpty(loaded)) {
-                externalUrlCache.put(queryId, loaded);
-            }
-            return loaded;
-        }
-        catch (RuntimeException e) {
-            log.warn(e, "Exception while loading external URL for queryId from cache: %s", queryId);
-            return null;
-        }
+        return get(queryId).map(QueryMetadata::externalUrl).orElse(null);
     }
 
     /**
-     * Sets external URL in both L1 and L2 caches.
+     * Sets only the backend for a query using partial update.
+     * Existing routing group and external URL are preserved.
+     *
+     * @param queryId the query identifier
+     * @param backend the backend URL
+     */
+    public void setBackend(String queryId, String backend)
+    {
+        requireNonNull(backend, "backend is null");
+        update(queryId, QueryMetadata.withBackend(backend));
+    }
+
+    /**
+     * Sets only the routing group for a query using partial update.
+     * Existing backend and external URL are preserved.
+     *
+     * @param queryId the query identifier
+     * @param routingGroup the routing group
+     */
+    public void setRoutingGroup(String queryId, String routingGroup)
+    {
+        requireNonNull(routingGroup, "routingGroup is null");
+        update(queryId, QueryMetadata.withRoutingGroup(routingGroup));
+    }
+
+    /**
+     * Sets only the external URL for a query using partial update.
+     * Existing backend and routing group are preserved.
+     *
+     * @param queryId the query identifier
+     * @param externalUrl the external URL
      */
     public void setExternalUrl(String queryId, String externalUrl)
     {
-        externalUrlCache.put(queryId, externalUrl);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set(EXTERNAL_URL_KEY_PREFIX + queryId, externalUrl);
-        }
+        requireNonNull(externalUrl, "externalUrl is null");
+        update(queryId, QueryMetadata.withExternalUrl(externalUrl));
     }
 
     /**
-     * Batch operation to update all cache entries (backend, routing group, external URL).
-     * Updates both L1 and L2 caches.
+     * Batch update method that sets all metadata fields at once.
+     * This is a convenience method that creates a QueryMetadata object and delegates to set().
+     *
+     * @param queryId the query identifier
+     * @param backend the backend URL
+     * @param routingGroup the routing group
+     * @param externalUrl the external URL
      */
     public void updateAllCaches(String queryId, String backend, String routingGroup, String externalUrl)
     {
-        backendCache.put(queryId, backend);
-        routingGroupCache.put(queryId, routingGroup);
-        externalUrlCache.put(queryId, externalUrl);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set(BACKEND_KEY_PREFIX + queryId, backend);
-            distributedCache.set(ROUTING_GROUP_KEY_PREFIX + queryId, routingGroup);
-            distributedCache.set(EXTERNAL_URL_KEY_PREFIX + queryId, externalUrl);
-        }
+        set(queryId, new QueryMetadata(backend, routingGroup, externalUrl));
     }
 
     /**
      * Invalidates all cache entries for the given queryId in both L1 and L2 caches.
      * Useful for cache eviction, troubleshooting, or when query metadata becomes stale.
+     *
+     * @param queryId the query identifier
      */
     public void invalidate(String queryId)
     {
-        backendCache.invalidate(queryId);
-        routingGroupCache.invalidate(queryId);
-        externalUrlCache.invalidate(queryId);
+        requireNonNull(queryId, "queryId is null");
+        localCache.invalidate(queryId);
         if (distributedCache.isEnabled()) {
-            distributedCache.invalidate(BACKEND_KEY_PREFIX + queryId);
-            distributedCache.invalidate(ROUTING_GROUP_KEY_PREFIX + queryId);
-            distributedCache.invalidate(EXTERNAL_URL_KEY_PREFIX + queryId);
+            distributedCache.invalidate(queryId);
         }
+        log.debug("Invalidated query metadata for [%s]", queryId);
     }
 }

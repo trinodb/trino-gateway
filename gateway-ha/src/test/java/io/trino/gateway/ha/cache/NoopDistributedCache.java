@@ -15,20 +15,24 @@ package io.trino.gateway.ha.cache;
 
 import java.util.Optional;
 
+/**
+ * No-op implementation of DistributedCache for testing scenarios
+ * where distributed caching is not needed or disabled.
+ */
 public class NoopDistributedCache
         implements DistributedCache
 {
     @Override
-    public Optional<String> get(String key)
+    public Optional<QueryMetadata> get(String queryId)
     {
         return Optional.empty();
     }
 
     @Override
-    public void set(String key, String value) {}
+    public void set(String queryId, QueryMetadata metadata) {}
 
     @Override
-    public void invalidate(String key) {}
+    public void invalidate(String queryId) {}
 
     @Override
     public boolean isEnabled()

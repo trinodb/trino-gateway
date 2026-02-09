@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.cache.NoopDistributedCache;
+import io.trino.gateway.ha.cache.QueryMetadata;
 import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.config.ValkeyConfiguration;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,8 @@ final class TestValkeyDistributedCache
         assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("test-key")).isEmpty();
 
-        cache.set("test-key", "test-value");
+        QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
+        cache.set("test-key", metadata);
         assertThat(cache.get("test-key")).isEmpty();
 
         cache.close();
@@ -49,7 +51,8 @@ final class TestValkeyDistributedCache
         assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("any-key")).isEmpty();
 
-        cache.set("key", "value");
+        QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
+        cache.set("key", metadata);
         assertThat(cache.get("key")).isEmpty();
 
         cache.invalidate("key");

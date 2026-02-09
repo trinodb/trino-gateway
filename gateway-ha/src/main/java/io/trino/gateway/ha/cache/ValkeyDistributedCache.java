@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.cache;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.valkey.Jedis;
@@ -27,6 +29,8 @@ public class ValkeyDistributedCache
         implements DistributedCache
 {
     private static final Logger log = Logger.get(ValkeyDistributedCache.class);
+    private static final String KEY_PREFIX = "trino:query:";
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final JedisPool jedisPool;
     private final boolean enabled;
@@ -73,52 +77,67 @@ public class ValkeyDistributedCache
     }
 
     @Override
-    public Optional<String> get(String key)
+    public Optional<QueryMetadata> get(String queryId)
     {
         if (!enabled) {
             return Optional.empty();
         }
 
+        String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
-            String value = jedis.get(key);
-            if (value != null) {
-                return Optional.of(value);
+            String json = jedis.get(key);
+            if (json != null) {
+                QueryMetadata metadata = OBJECT_MAPPER.readValue(json, QueryMetadata.class);
+                log.debug("Retrieved metadata from Valkey for query: %s", queryId);
+                return Optional.of(metadata);
             }
             return Optional.empty();
         }
+        catch (JsonProcessingException e) {
+            log.error(e, "Failed to deserialize QueryMetadata from Valkey for query: %s", queryId);
+            return Optional.empty();
+        }
         catch (JedisException e) {
-            log.error(e, "Failed to get key from Valkey: %s", key);
+            log.error(e, "Failed to get query metadata from Valkey for query: %s", queryId);
             return Optional.empty();
         }
     }
 
     @Override
-    public void set(String key, String value)
+    public void set(String queryId, QueryMetadata metadata)
     {
         if (!enabled) {
             return;
         }
 
+        String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.setex(key, cacheTtlSeconds, value);
+            String json = OBJECT_MAPPER.writeValueAsString(metadata);
+            jedis.setex(key, cacheTtlSeconds, json);
+            log.debug("Stored metadata in Valkey for query: %s", queryId);
+        }
+        catch (JsonProcessingException e) {
+            log.error(e, "Failed to serialize QueryMetadata to JSON for query: %s", queryId);
         }
         catch (JedisException e) {
-            log.error(e, "Failed to set key in Valkey: %s", key);
+            log.error(e, "Failed to set query metadata in Valkey for query: %s", queryId);
         }
     }
 
     @Override
-    public void invalidate(String key)
+    public void invalidate(String queryId)
     {
         if (!enabled) {
             return;
         }
 
+        String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.del(key);
+            log.debug("Invalidated metadata in Valkey for query: %s", queryId);
         }
         catch (JedisException e) {
-            log.error(e, "Failed to invalidate key in Valkey: %s", key);
+            log.error(e, "Failed to invalidate query metadata in Valkey for query: %s", queryId);
         }
     }
 

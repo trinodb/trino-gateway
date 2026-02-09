@@ -47,25 +47,15 @@ final class TestStochasticRoutingManager
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
 
         // Create QueryCacheManager with loader
-        QueryCacheManager.QueryCacheLoader loader = new QueryCacheManager.QueryCacheLoader()
-        {
-            @Override
-            public String loadBackendFromDatabase(String queryId)
-            {
-                return historyManager.getBackendForQueryId(queryId);
-            }
+        QueryCacheManager.QueryCacheLoader loader = queryId -> {
+            String backend = historyManager.getBackendForQueryId(queryId);
+            String routingGroup = historyManager.getRoutingGroupForQueryId(queryId);
+            String externalUrl = historyManager.getExternalUrlForQueryId(queryId);
 
-            @Override
-            public String loadRoutingGroupFromDatabase(String queryId)
-            {
-                return historyManager.getRoutingGroupForQueryId(queryId);
+            if (backend == null && routingGroup == null && externalUrl == null) {
+                return null;
             }
-
-            @Override
-            public String loadExternalUrlFromDatabase(String queryId)
-            {
-                return historyManager.getExternalUrlForQueryId(queryId);
-            }
+            return new io.trino.gateway.ha.cache.QueryMetadata(backend, routingGroup, externalUrl);
         };
         QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache(), loader);
 

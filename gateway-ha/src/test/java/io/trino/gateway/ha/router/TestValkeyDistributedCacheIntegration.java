@@ -50,25 +50,15 @@ final class TestValkeyDistributedCacheIntegration
 
     private QueryCacheManager createQueryCacheManager()
     {
-        QueryCacheManager.QueryCacheLoader loader = new QueryCacheManager.QueryCacheLoader()
-        {
-            @Override
-            public String loadBackendFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getBackendForQueryId(queryId);
-            }
+        QueryCacheManager.QueryCacheLoader loader = queryId -> {
+            String backend = queryHistoryManager.getBackendForQueryId(queryId);
+            String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+            String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
 
-            @Override
-            public String loadRoutingGroupFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getRoutingGroupForQueryId(queryId);
+            if (backend == null && routingGroup == null && externalUrl == null) {
+                return null;
             }
-
-            @Override
-            public String loadExternalUrlFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getExternalUrlForQueryId(queryId);
-            }
+            return new io.trino.gateway.ha.cache.QueryMetadata(backend, routingGroup, externalUrl);
         };
         return new QueryCacheManager(distributedCache, loader);
     }
@@ -128,19 +118,20 @@ final class TestValkeyDistributedCacheIntegration
         // Verify cache is enabled
         assertThat(distributedCache.isEnabled()).isTrue();
 
-        // Test basic set and get
+        // Test basic set and get with QueryMetadata
         String testKey = "test:basic:key";
-        String testValue = "test-value";
+        io.trino.gateway.ha.cache.QueryMetadata testMetadata = new io.trino.gateway.ha.cache.QueryMetadata(
+                "http://backend.example.com", "adhoc", "http://external.example.com");
 
-        distributedCache.set(testKey, testValue);
-        Optional<String> retrievedValue = distributedCache.get(testKey);
+        distributedCache.set(testKey, testMetadata);
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> retrievedValue = distributedCache.get(testKey);
 
         assertThat(retrievedValue).isPresent();
-        assertThat(retrievedValue.get()).isEqualTo(testValue);
+        assertThat(retrievedValue.get()).isEqualTo(testMetadata);
 
         // Test invalidate
         distributedCache.invalidate(testKey);
-        Optional<String> afterInvalidate = distributedCache.get(testKey);
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> afterInvalidate = distributedCache.get(testKey);
         assertThat(afterInvalidate).isEmpty();
     }
 
@@ -155,19 +146,13 @@ final class TestValkeyDistributedCacheIntegration
         // Update cache with all 3 values
         routingManager.updateQueryIdCache(queryId, backend, routingGroup, externalUrl);
 
-        // Verify all 3 values are in Valkey
-        Optional<String> cachedBackend = distributedCache.get("trino:query:backend:" + queryId);
-        Optional<String> cachedRoutingGroup = distributedCache.get("trino:query:routing_group:" + queryId);
-        Optional<String> cachedExternalUrl = distributedCache.get("trino:query:external_url:" + queryId);
+        // Verify all 3 values are in Valkey (now stored as single QueryMetadata object)
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
 
-        assertThat(cachedBackend).isPresent();
-        assertThat(cachedBackend.get()).isEqualTo(backend);
-
-        assertThat(cachedRoutingGroup).isPresent();
-        assertThat(cachedRoutingGroup.get()).isEqualTo(routingGroup);
-
-        assertThat(cachedExternalUrl).isPresent();
-        assertThat(cachedExternalUrl.get()).isEqualTo(externalUrl);
+        assertThat(cached).isPresent();
+        assertThat(cached.get().backend()).isEqualTo(backend);
+        assertThat(cached.get().routingGroup()).isEqualTo(routingGroup);
+        assertThat(cached.get().externalUrl()).isEqualTo(externalUrl);
     }
 
     @Test
@@ -179,10 +164,10 @@ final class TestValkeyDistributedCacheIntegration
         // Set routing group (should cache in L1 and L2)
         routingManager.setRoutingGroupForQueryId(queryId, routingGroup);
 
-        // Verify it's in L2 (Valkey)
-        Optional<String> cachedValue = distributedCache.get("trino:query:routing_group:" + queryId);
-        assertThat(cachedValue).isPresent();
-        assertThat(cachedValue.get()).isEqualTo(routingGroup);
+        // Verify it's in L2 (Valkey) - now stores as QueryMetadata
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
+        assertThat(cached).isPresent();
+        assertThat(cached.get().routingGroup()).isEqualTo(routingGroup);
 
         // Clear L1 cache by creating new routing manager instance
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
@@ -212,10 +197,10 @@ final class TestValkeyDistributedCacheIntegration
         // Update cache
         routingManager.updateQueryIdCache(queryId, queryDetail.getBackendUrl(), "adhoc", externalUrl);
 
-        // Verify it's in L2 (Valkey)
-        Optional<String> cachedValue = distributedCache.get("trino:query:external_url:" + queryId);
-        assertThat(cachedValue).isPresent();
-        assertThat(cachedValue.get()).isEqualTo(externalUrl);
+        // Verify it's in L2 (Valkey) - now stores as QueryMetadata
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
+        assertThat(cached).isPresent();
+        assertThat(cached.get().externalUrl()).isEqualTo(externalUrl);
 
         // Clear L1 cache by creating new routing manager instance
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
@@ -232,8 +217,8 @@ final class TestValkeyDistributedCacheIntegration
         String queryId = "three_tier_backend_test";
         String backend = "http://backend2.example.com:8080";
 
-        // Populate L2 (Valkey) only
-        distributedCache.set("trino:query:backend:" + queryId, backend);
+        // Populate L2 (Valkey) only with QueryMetadata
+        distributedCache.set(queryId, new io.trino.gateway.ha.cache.QueryMetadata(backend, null, null));
 
         // Create new routing manager (empty L1 cache)
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
@@ -264,9 +249,7 @@ final class TestValkeyDistributedCacheIntegration
         queryHistoryManager.submitQueryDetail(queryDetail);
 
         // Create new routing manager (empty L1 cache) and clear L2
-        distributedCache.invalidate("trino:query:backend:" + queryId);
-        distributedCache.invalidate("trino:query:routing_group:" + queryId);
-        distributedCache.invalidate("trino:query:external_url:" + queryId);
+        distributedCache.invalidate(queryId);
 
         StochasticRoutingManager newRoutingManager = new StochasticRoutingManager(
                 backendManager, queryHistoryManager, new RoutingConfiguration(), createQueryCacheManager());
@@ -275,26 +258,20 @@ final class TestValkeyDistributedCacheIntegration
         String retrievedBackend = newRoutingManager.findBackendForQueryId(queryId);
         assertThat(retrievedBackend).isEqualTo(backend);
 
-        // Verify L2 was backfilled
-        Optional<String> cachedBackend = distributedCache.get("trino:query:backend:" + queryId);
-        assertThat(cachedBackend).isPresent();
-        assertThat(cachedBackend.get()).isEqualTo(backend);
+        // Verify L2 was backfilled with complete QueryMetadata
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
+        assertThat(cached).isPresent();
+        assertThat(cached.get().backend()).isEqualTo(backend);
+        assertThat(cached.get().routingGroup()).isEqualTo(routingGroup);
+        assertThat(cached.get().externalUrl()).isEqualTo(externalUrl);
 
-        // Test routing group backfill
+        // Test routing group retrieval
         String retrievedRoutingGroup = newRoutingManager.findRoutingGroupForQueryId(queryId);
         assertThat(retrievedRoutingGroup).isEqualTo(routingGroup);
 
-        Optional<String> cachedRoutingGroup = distributedCache.get("trino:query:routing_group:" + queryId);
-        assertThat(cachedRoutingGroup).isPresent();
-        assertThat(cachedRoutingGroup.get()).isEqualTo(routingGroup);
-
-        // Test external URL backfill
+        // Test external URL retrieval
         String retrievedExternalUrl = newRoutingManager.findExternalUrlForQueryId(queryId);
         assertThat(retrievedExternalUrl).isEqualTo(externalUrl);
-
-        Optional<String> cachedExternalUrl = distributedCache.get("trino:query:external_url:" + queryId);
-        assertThat(cachedExternalUrl).isPresent();
-        assertThat(cachedExternalUrl.get()).isEqualTo(externalUrl);
     }
 
     @Test
@@ -318,20 +295,14 @@ final class TestValkeyDistributedCacheIntegration
             routingManager.updateQueryIdCache(queryIds[i], backends[i], routingGroups[i], externalUrls[i]);
         }
 
-        // Verify all values are correctly stored
+        // Verify all values are correctly stored as QueryMetadata
         for (int i = 0; i < queryIds.length; i++) {
-            Optional<String> cachedBackend = distributedCache.get("trino:query:backend:" + queryIds[i]);
-            Optional<String> cachedRoutingGroup = distributedCache.get("trino:query:routing_group:" + queryIds[i]);
-            Optional<String> cachedExternalUrl = distributedCache.get("trino:query:external_url:" + queryIds[i]);
+            Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryIds[i]);
 
-            assertThat(cachedBackend).isPresent();
-            assertThat(cachedBackend.get()).isEqualTo(backends[i]);
-
-            assertThat(cachedRoutingGroup).isPresent();
-            assertThat(cachedRoutingGroup.get()).isEqualTo(routingGroups[i]);
-
-            assertThat(cachedExternalUrl).isPresent();
-            assertThat(cachedExternalUrl.get()).isEqualTo(externalUrls[i]);
+            assertThat(cached).isPresent();
+            assertThat(cached.get().backend()).isEqualTo(backends[i]);
+            assertThat(cached.get().routingGroup()).isEqualTo(routingGroups[i]);
+            assertThat(cached.get().externalUrl()).isEqualTo(externalUrls[i]);
         }
     }
 
@@ -346,15 +317,15 @@ final class TestValkeyDistributedCacheIntegration
 
         // Set initial value
         routingManager.updateQueryIdCache(queryId, initialBackend, routingGroup, externalUrl);
-        Optional<String> cached = distributedCache.get("trino:query:backend:" + queryId);
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
         assertThat(cached).isPresent();
-        assertThat(cached.get()).isEqualTo(initialBackend);
+        assertThat(cached.get().backend()).isEqualTo(initialBackend);
 
         // Overwrite with new value
         routingManager.updateQueryIdCache(queryId, updatedBackend, routingGroup, externalUrl);
-        Optional<String> updatedCached = distributedCache.get("trino:query:backend:" + queryId);
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> updatedCached = distributedCache.get(queryId);
         assertThat(updatedCached).isPresent();
-        assertThat(updatedCached.get()).isEqualTo(updatedBackend);
+        assertThat(updatedCached.get().backend()).isEqualTo(updatedBackend);
     }
 
     @Test
@@ -368,14 +339,12 @@ final class TestValkeyDistributedCacheIntegration
         // Cache with empty strings
         routingManager.updateQueryIdCache(queryId, backend, emptyRoutingGroup, emptyExternalUrl);
 
-        // Verify empty strings are stored correctly
-        Optional<String> cachedRoutingGroup = distributedCache.get("trino:query:routing_group:" + queryId);
-        Optional<String> cachedExternalUrl = distributedCache.get("trino:query:external_url:" + queryId);
+        // Verify empty strings are stored correctly in QueryMetadata
+        Optional<io.trino.gateway.ha.cache.QueryMetadata> cached = distributedCache.get(queryId);
 
-        assertThat(cachedRoutingGroup).isPresent();
-        assertThat(cachedRoutingGroup.get()).isEqualTo(emptyRoutingGroup);
-
-        assertThat(cachedExternalUrl).isPresent();
-        assertThat(cachedExternalUrl.get()).isEqualTo(emptyExternalUrl);
+        assertThat(cached).isPresent();
+        assertThat(cached.get().backend()).isEqualTo(backend);
+        assertThat(cached.get().routingGroup()).isEqualTo(emptyRoutingGroup);
+        assertThat(cached.get().externalUrl()).isEqualTo(emptyExternalUrl);
     }
 }

@@ -221,26 +221,17 @@ public class HaGatewayProviderModule
     @Singleton
     public static QueryCacheManager getQueryCacheManager(DistributedCache distributedCache, QueryHistoryManager queryHistoryManager)
     {
-        // Create a loader that handles database lookups
-        QueryCacheManager.QueryCacheLoader loader = new QueryCacheManager.QueryCacheLoader()
-        {
-            @Override
-            public String loadBackendFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getBackendForQueryId(queryId);
-            }
+        // Create a loader that fetches complete metadata from database
+        QueryCacheManager.QueryCacheLoader loader = queryId -> {
+            String backend = queryHistoryManager.getBackendForQueryId(queryId);
+            String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+            String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
 
-            @Override
-            public String loadRoutingGroupFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getRoutingGroupForQueryId(queryId);
+            // Return null if nothing found, otherwise return metadata (even if partially populated)
+            if (backend == null && routingGroup == null && externalUrl == null) {
+                return null;
             }
-
-            @Override
-            public String loadExternalUrlFromDatabase(String queryId)
-            {
-                return queryHistoryManager.getExternalUrlForQueryId(queryId);
-            }
+            return new io.trino.gateway.ha.cache.QueryMetadata(backend, routingGroup, externalUrl);
         };
         return new QueryCacheManager(distributedCache, loader);
     }

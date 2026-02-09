@@ -15,13 +15,37 @@ package io.trino.gateway.ha.cache;
 
 import java.util.Optional;
 
+/**
+ * Interface for distributed caching of query metadata across gateway instances.
+ * Implementations should handle serialization/deserialization of QueryMetadata objects.
+ */
 public interface DistributedCache
 {
-    Optional<String> get(String key);
+    /**
+     * Retrieves query metadata from the distributed cache.
+     *
+     * @param queryId the query identifier
+     * @return Optional containing the QueryMetadata if found, empty otherwise
+     */
+    Optional<QueryMetadata> get(String queryId);
 
-    void set(String key, String value);
+    /**
+     * Stores query metadata in the distributed cache.
+     *
+     * @param queryId the query identifier
+     * @param metadata the query metadata to store
+     */
+    void set(String queryId, QueryMetadata metadata);
 
-    void invalidate(String key);
+    /**
+     * Removes query metadata from the distributed cache.
+     *
+     * @param queryId the query identifier
+     */
+    void invalidate(String queryId);
 
+    /**
+     * Returns whether the distributed cache is enabled and operational.
+     */
     boolean isEnabled();
 }

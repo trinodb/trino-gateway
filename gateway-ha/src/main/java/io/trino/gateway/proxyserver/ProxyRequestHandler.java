@@ -31,7 +31,6 @@ import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
-import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.TrinoRequestUser;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 import jakarta.annotation.PreDestroy;
@@ -83,7 +82,6 @@ public class ProxyRequestHandler
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
     private final HttpClient httpClient;
-    private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
     private final QueryCacheManager queryCacheManager;
     private final boolean cookiesEnabled;
@@ -95,13 +93,11 @@ public class ProxyRequestHandler
     @Inject
     public ProxyRequestHandler(
             @ForProxy HttpClient httpClient,
-            RoutingManager routingManager,
             QueryHistoryManager queryHistoryManager,
             QueryCacheManager queryCacheManager,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
-        this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.queryCacheManager = requireNonNull(queryCacheManager, "queryCacheManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
@@ -283,9 +279,6 @@ public class ProxyRequestHandler
             try {
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
-                routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
-                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
-                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
@@ -299,13 +292,14 @@ public class ProxyRequestHandler
         queryDetail.setExternalUrl(routingDestination.externalUrl());
         queryHistoryManager.submitQueryDetail(queryDetail);
 
-        // Update cache (L1 + L2) with query metadata
+        // Update cache (L1 + L2) with complete query metadata in a single atomic operation
         if (queryDetail.getQueryId() != null) {
-            queryCacheManager.updateAllCaches(
+            queryCacheManager.set(
                     queryDetail.getQueryId(),
-                    queryDetail.getBackendUrl(),
-                    queryDetail.getRoutingGroup(),
-                    queryDetail.getExternalUrl());
+                    new io.trino.gateway.ha.cache.QueryMetadata(
+                            queryDetail.getBackendUrl(),
+                            queryDetail.getRoutingGroup(),
+                            queryDetail.getExternalUrl()));
         }
 
         return response;
