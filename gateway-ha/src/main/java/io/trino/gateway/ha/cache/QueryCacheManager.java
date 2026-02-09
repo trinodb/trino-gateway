@@ -39,7 +39,7 @@ public class QueryCacheManager
     private static final String ROUTING_GROUP_KEY_PREFIX = "trino:query:routing_group:";
     private static final String EXTERNAL_URL_KEY_PREFIX = "trino:query:external_url:";
 
-    private final Cache distributedCache;
+    private final DistributedCache distributedCache;
     private final com.github.benmanes.caffeine.cache.Cache<String, String> backendCache;
     private final com.github.benmanes.caffeine.cache.Cache<String, String> routingGroupCache;
     private final com.github.benmanes.caffeine.cache.Cache<String, String> externalUrlCache;
@@ -69,7 +69,7 @@ public class QueryCacheManager
         String loadExternalUrlFromDatabase(String queryId);
     }
 
-    public QueryCacheManager(Cache distributedCache, QueryCacheLoader cacheLoader)
+    public QueryCacheManager(DistributedCache distributedCache, QueryCacheLoader cacheLoader)
     {
         this.distributedCache = requireNonNull(distributedCache, "distributedCache is null");
         this.cacheLoader = requireNonNull(cacheLoader, "cacheLoader is null");

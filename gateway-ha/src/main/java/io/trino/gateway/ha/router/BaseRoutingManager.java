@@ -210,10 +210,13 @@ public abstract class BaseRoutingManager
             log.warn("Query id [%s] not found", queryId);
         }
         // Fallback on first active backend if queryId mapping not found.
-        return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
+        String fallbackBackend = gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
                 .findFirst()
                 .map(ProxyBackendConfiguration::getProxyTo)
                 .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
+        // Cache the fallback backend for future requests
+        setBackendForQueryId(queryId, fallbackBackend);
+        return fallbackBackend;
     }
 
     private boolean isBackendHealthy(String backendId)

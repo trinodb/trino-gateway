@@ -24,7 +24,7 @@ import java.time.Duration;
 import java.util.Optional;
 
 public class ValkeyDistributedCache
-        implements Cache
+        implements DistributedCache
 {
     private static final Logger log = Logger.get(ValkeyDistributedCache.class);
 

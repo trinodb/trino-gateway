@@ -15,7 +15,7 @@ package io.trino.gateway.ha.cache;
 
 import java.util.Optional;
 
-public interface Cache
+public interface DistributedCache
 {
     Optional<String> get(String key);
 

@@ -27,7 +27,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
-import io.trino.gateway.ha.router.BaseRoutingManager;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -85,6 +85,7 @@ public class ProxyRequestHandler
     private final HttpClient httpClient;
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
+    private final QueryCacheManager queryCacheManager;
     private final boolean cookiesEnabled;
     private final boolean addXForwardedHeaders;
     private final List<String> statementPaths;
@@ -96,11 +97,13 @@ public class ProxyRequestHandler
             @ForProxy HttpClient httpClient,
             RoutingManager routingManager,
             QueryHistoryManager queryHistoryManager,
+            QueryCacheManager queryCacheManager,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
+        this.queryCacheManager = requireNonNull(queryCacheManager, "queryCacheManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
         addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
@@ -296,9 +299,9 @@ public class ProxyRequestHandler
         queryDetail.setExternalUrl(routingDestination.externalUrl());
         queryHistoryManager.submitQueryDetail(queryDetail);
 
-        // Also update distributed cache if enabled
-        if (routingManager instanceof BaseRoutingManager baseRoutingManager && queryDetail.getQueryId() != null) {
-            baseRoutingManager.updateQueryIdCache(
+        // Update cache (L1 + L2) with query metadata
+        if (queryDetail.getQueryId() != null) {
+            queryCacheManager.updateAllCaches(
                     queryDetail.getQueryId(),
                     queryDetail.getBackendUrl(),
                     queryDetail.getRoutingGroup(),

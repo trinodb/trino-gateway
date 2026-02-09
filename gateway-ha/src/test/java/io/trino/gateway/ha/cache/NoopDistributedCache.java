@@ -16,7 +16,7 @@ package io.trino.gateway.ha.cache;
 import java.util.Optional;
 
 public class NoopDistributedCache
-        implements Cache
+        implements DistributedCache
 {
     @Override
     public Optional<String> get(String key)

@@ -19,7 +19,7 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.http.client.HttpClient;
-import io.trino.gateway.ha.cache.Cache;
+import io.trino.gateway.ha.cache.DistributedCache;
 import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
@@ -212,14 +212,14 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public static Cache getDistributedCache(ValkeyConfiguration valkeyConfig)
+    public static DistributedCache getDistributedCache(ValkeyConfiguration valkeyConfig)
     {
         return new ValkeyDistributedCache(valkeyConfig);
     }
 
     @Provides
     @Singleton
-    public static QueryCacheManager getQueryCacheManager(Cache distributedCache, QueryHistoryManager queryHistoryManager)
+    public static QueryCacheManager getQueryCacheManager(DistributedCache distributedCache, QueryHistoryManager queryHistoryManager)
     {
         // Create a loader that handles database lookups
         QueryCacheManager.QueryCacheLoader loader = new QueryCacheManager.QueryCacheLoader()

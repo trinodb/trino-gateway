@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 public class TestQueryCacheManager
 {
     @Mock
-    private Cache distributedCache;
+    private DistributedCache distributedCache;
 
     @Mock
     private QueryCacheManager.QueryCacheLoader cacheLoader;
