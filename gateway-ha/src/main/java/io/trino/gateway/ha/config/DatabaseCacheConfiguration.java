@@ -15,13 +15,14 @@ package io.trino.gateway.ha.config;
 
 import io.airlift.units.Duration;
 
-import java.util.concurrent.TimeUnit;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DatabaseCacheConfiguration
 {
     private boolean enabled;
-    private Duration expireAfterWrite = Duration.succinctDuration(60, TimeUnit.MINUTES);
-    private Duration refreshAfterWrite = Duration.succinctDuration(5, TimeUnit.SECONDS);
+    private Duration expireAfterWrite = Duration.succinctDuration(1, HOURS);
+    private Duration refreshAfterWrite = Duration.succinctDuration(5, SECONDS);
 
     public boolean isEnabled()
     {
