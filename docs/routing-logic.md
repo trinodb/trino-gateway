@@ -53,6 +53,7 @@ configuration. If you are using a customized or commercial Trino distribution, t
 the paths used to define the OAuth handshake may be modified.
 
 `routingPaths`: If the request URI starts with a path in this list, then
+
 * If no cookie is present, add a routing cookie
 * If a cookie is present, route the request to the cluster defined by that cookie
 
