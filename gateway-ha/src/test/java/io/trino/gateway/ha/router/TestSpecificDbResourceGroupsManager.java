@@ -47,7 +47,7 @@ final class TestSpecificDbResourceGroupsManager
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath() + ";NON_KEYWORDS=NAME,VALUE";
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
         DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa",
-                "sa", "org.h2.Driver", 4, false);
+                "sa", "org.h2.Driver", true, 4, false);
         Jdbi jdbi = HaGatewayProviderModule.createJdbi(db);
         JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, db);
         super.resourceGroupManager = new HaResourceGroupsManager(connectionManager);
