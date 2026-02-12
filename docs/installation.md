@@ -49,6 +49,11 @@ The files are also included in the JAR file.
 
 If you do not want migrations to be performed automatically on startup, then
 you can set `runMigrationsEnabled` to `false` in the data store configuration.
+
+You can also disable query history recording to the database by setting
+`queryHistoryEnabled` to `false`. This can be useful in scenarios where you
+want to reduce database load or don't need query history tracking.
+
 For example:
 
 ```yaml
@@ -59,6 +64,7 @@ dataStore:
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
   runMigrationsEnabled: false
+  queryHistoryEnabled: true  # Set to false to disable query history recording
 ```
 
 `Flyway` uses a transactional lock in databases that support it such as 

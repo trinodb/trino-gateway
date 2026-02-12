@@ -53,6 +53,14 @@ public interface RoutingManager
     void setRoutingGroupForQueryId(String queryId, String routingGroup);
 
     /**
+     * Associates an external URL with a specific query ID for routing.
+     *
+     * @param queryId the unique identifier of the query
+     * @param externalUrl the external URL to associate with the query
+     */
+    void setExternalUrlForQueryId(String queryId, String externalUrl);
+
+    /**
      * Finds the backend cluster associated with a given query ID.
      *
      * @param queryId the unique identifier of the query
