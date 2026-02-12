@@ -23,3 +23,19 @@ updates:
     ignore:
       # Airbase and Airlift are best updated together. Update Airbase only when updating Airlift.
       - dependency-name: "io.airlift:airbase"
+  - package-ecosystem: "npm"
+    directory: "webapp"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Ignore major updates for all dependencies; allow only minor/patch updates.
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+    cooldown:
+      # Apply 7 day cooldown to avoid updating dependencies right away. This reduces the opportunity window
+      # when supply chain is compromised.
+      default-days: 7
