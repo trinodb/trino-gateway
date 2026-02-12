@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@douyinfe/semi-icons": "^2.62.0",
-    "@douyinfe/semi-icons-lab": "^2.62.0",
+    "@douyinfe/semi-icons-lab": "^2.90.13",
     "@douyinfe/semi-illustrations": "^2.62.0",
     "@douyinfe/semi-ui": "^2.62.0",
     "@vvo/tzdb": "^6.198.0",
