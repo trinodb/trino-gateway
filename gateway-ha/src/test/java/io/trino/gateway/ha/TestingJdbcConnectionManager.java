@@ -33,7 +33,7 @@ public final class TestingJdbcConnectionManager
         tempH2DbDir.deleteOnExit();
         String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath() + ";NON_KEYWORDS=NAME,VALUE";
         HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        return new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", 4, false);
+        return new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", true, 4, false);
     }
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)

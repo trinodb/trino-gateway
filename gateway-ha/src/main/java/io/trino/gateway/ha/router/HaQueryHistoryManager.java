@@ -39,17 +39,23 @@ public class HaQueryHistoryManager
 
     private final QueryHistoryDao dao;
     private final boolean isOracleBackend;
+    private final boolean queryHistoryEnabled;
 
     @Inject
     public HaQueryHistoryManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
         this.isOracleBackend = configuration.getJdbcUrl().startsWith("jdbc:oracle");
+        queryHistoryEnabled = configuration.isQueryHistoryEnabled();
     }
 
     @Override
     public void submitQueryDetail(QueryDetail queryDetail)
     {
+        if (!queryHistoryEnabled) {
+            return;
+        }
+
         String id = queryDetail.getQueryId();
         if (id == null || id.isEmpty()) {
             return;

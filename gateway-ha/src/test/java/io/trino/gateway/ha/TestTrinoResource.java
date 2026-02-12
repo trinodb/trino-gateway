@@ -66,7 +66,7 @@ final class TestTrinoResource
                 HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
 
         // Setup resource group manager
-        DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", 4, true);
+        DataStoreConfiguration db = new DataStoreConfiguration(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword(), "org.postgresql.Driver", true, 4, true);
         Jdbi jdbi = HaGatewayProviderModule.createJdbi(db);
         connectionManager = new JdbcConnectionManager(jdbi, db);
         resourceGroupManager = new HaResourceGroupsManager(connectionManager);

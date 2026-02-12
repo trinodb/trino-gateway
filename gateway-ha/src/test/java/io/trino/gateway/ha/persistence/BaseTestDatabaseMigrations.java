@@ -146,6 +146,7 @@ public abstract class BaseTestDatabaseMigrations
                 container.getUsername(),
                 container.getPassword(),
                 container.getDriverClassName(),
+                true,
                 4,
                 true);
     }

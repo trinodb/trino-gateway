@@ -27,6 +27,7 @@ final class TestDataStoreConfiguration
         assertThat(dataStoreConfiguration.getUser()).isNull();
         assertThat(dataStoreConfiguration.getPassword()).isNull();
         assertThat(dataStoreConfiguration.getDriver()).isNull();
+        assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isTrue();
     }
 
     @Test
@@ -45,5 +46,8 @@ final class TestDataStoreConfiguration
 
         dataStoreConfiguration.setDriver("org.postgresql.Driver");
         assertThat(dataStoreConfiguration.getDriver()).isEqualTo("org.postgresql.Driver");
+
+        dataStoreConfiguration.setQueryHistoryEnabled(false);
+        assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isFalse();
     }
 }

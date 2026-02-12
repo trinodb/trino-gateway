@@ -47,6 +47,7 @@ abstract class BaseTestQueryHistoryManager
                 container.getUsername(),
                 container.getPassword(),
                 container.getDriverClassName(),
+                true,
                 4,
                 true);
         FlywayMigration.migrate(config);
