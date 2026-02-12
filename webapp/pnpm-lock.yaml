@@ -10,16 +10,16 @@ importers:
     dependencies:
       '@douyinfe/semi-icons':
         specifier: ^2.62.0
-        version: 2.83.0(react@18.2.0)
+        version: 2.83.0(react@18.3.1)
       '@douyinfe/semi-icons-lab':
         specifier: ^2.90.13
-        version: 2.90.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 2.90.13(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
       '@douyinfe/semi-illustrations':
         specifier: ^2.62.0
-        version: 2.83.0(react@18.2.0)
+        version: 2.83.0(react@18.3.1)
       '@douyinfe/semi-ui':
         specifier: ^2.62.0
-        version: 2.83.0(acorn@8.11.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 2.83.0(acorn@8.11.3)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
       '@vvo/tzdb':
         specifier: ^6.198.0
         version: 6.198.0
@@ -33,20 +33,20 @@ importers:
         specifier: ^2.29.4
         version: 2.29.4
       react:
-        specifier: ^18.2.0
-        version: 18.2.0
+        specifier: ^18.3.1
+        version: 18.3.1
       react-dom:
         specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
+        version: 18.2.0(react@18.3.1)
       react-router-dom:
         specifier: ^6.20.0
-        version: 6.20.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+        version: 6.20.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
       sass:
         specifier: ^1.69.5
         version: 1.69.5
       zustand:
         specifier: ^4.5.7
-        version: 4.5.7(@types/react@18.2.37)(react@18.2.0)
+        version: 4.5.7(@types/react@18.2.37)(react@18.3.1)
     devDependencies:
       '@types/echarts':
         specifier: ^4.9.22
@@ -1640,8 +1640,8 @@ packages:
       react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
       react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0
 
-  react@18.2.0:
-    resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}
+  react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
 
   readdirp@3.6.0:
@@ -2044,29 +2044,29 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@dnd-kit/accessibility@3.1.0(react@18.2.0)':
+  '@dnd-kit/accessibility@3.1.0(react@18.3.1)':
     dependencies:
-      react: 18.2.0
+      react: 18.3.1
       tslib: 2.6.2
 
-  '@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@dnd-kit/accessibility': 3.1.0(react@18.2.0)
-      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
+      '@dnd-kit/accessibility': 3.1.0(react@18.3.1)
+      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
       tslib: 2.6.2
 
-  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)':
+  '@dnd-kit/sortable@7.0.2(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@dnd-kit/core': 6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
-      react: 18.2.0
+      '@dnd-kit/core': 6.1.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+      react: 18.3.1
       tslib: 2.6.2
 
-  '@dnd-kit/utilities@3.2.2(react@18.2.0)':
+  '@dnd-kit/utilities@3.2.2(react@18.3.1)':
     dependencies:
-      react: 18.2.0
+      react: 18.3.1
       tslib: 2.6.2
 
   '@douyinfe/semi-animation-react@2.83.0':
@@ -2101,19 +2101,19 @@ snapshots:
       - acorn
       - supports-color
 
-  '@douyinfe/semi-icons-lab@2.90.13(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@douyinfe/semi-icons-lab@2.90.13(react-dom@18.2.0(react@18.3.1))(react@18.3.1)':
     dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
 
-  '@douyinfe/semi-icons@2.83.0(react@18.2.0)':
+  '@douyinfe/semi-icons@2.83.0(react@18.3.1)':
     dependencies:
       classnames: 2.5.1
-      react: 18.2.0
+      react: 18.3.1
 
-  '@douyinfe/semi-illustrations@2.83.0(react@18.2.0)':
+  '@douyinfe/semi-illustrations@2.83.0(react@18.3.1)':
     dependencies:
-      react: 18.2.0
+      react: 18.3.1
 
   '@douyinfe/semi-json-viewer-core@2.83.0':
     dependencies:
@@ -2121,16 +2121,16 @@ snapshots:
 
   '@douyinfe/semi-theme-default@2.83.0': {}
 
-  '@douyinfe/semi-ui@2.83.0(acorn@8.11.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
+  '@douyinfe/semi-ui@2.83.0(acorn@8.11.3)(react-dom@18.2.0(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@dnd-kit/core': 6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react@18.2.0)
-      '@dnd-kit/utilities': 3.2.2(react@18.2.0)
+      '@dnd-kit/core': 6.1.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/sortable': 7.0.2(@dnd-kit/core@6.1.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
       '@douyinfe/semi-animation': 2.83.0
       '@douyinfe/semi-animation-react': 2.83.0
       '@douyinfe/semi-foundation': 2.83.0(acorn@8.11.3)
-      '@douyinfe/semi-icons': 2.83.0(react@18.2.0)
-      '@douyinfe/semi-illustrations': 2.83.0(react@18.2.0)
+      '@douyinfe/semi-icons': 2.83.0(react@18.3.1)
+      '@douyinfe/semi-illustrations': 2.83.0(react@18.3.1)
       '@douyinfe/semi-theme-default': 2.83.0
       async-validator: 3.5.2
       classnames: 2.5.1
@@ -2141,10 +2141,10 @@ snapshots:
       jsonc-parser: 3.3.1
       lodash: 4.17.21
       prop-types: 15.8.1
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      react-resizable: 3.0.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
-      react-window: 1.8.10(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
+      react-resizable: 3.0.5(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
+      react-window: 1.8.10(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
       scroll-into-view-if-needed: 2.2.31
       utility-types: 3.11.0
     transitivePeerDependencies:
@@ -3783,51 +3783,51 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  react-dom@18.2.0(react@18.2.0):
+  react-dom@18.2.0(react@18.3.1):
     dependencies:
       loose-envify: 1.4.0
-      react: 18.2.0
+      react: 18.3.1
       scheduler: 0.23.0
 
-  react-draggable@4.4.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  react-draggable@4.4.6(react-dom@18.2.0(react@18.3.1))(react@18.3.1):
     dependencies:
       clsx: 1.2.1
       prop-types: 15.8.1
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
 
   react-is@16.13.1: {}
 
   react-refresh@0.17.0: {}
 
-  react-resizable@3.0.5(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  react-resizable@3.0.5(react-dom@18.2.0(react@18.3.1))(react@18.3.1):
     dependencies:
       prop-types: 15.8.1
-      react: 18.2.0
-      react-draggable: 4.4.6(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react: 18.3.1
+      react-draggable: 4.4.6(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react-dom
 
-  react-router-dom@6.20.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  react-router-dom@6.20.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1):
     dependencies:
       '@remix-run/router': 1.13.0
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      react-router: 6.20.0(react@18.2.0)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
+      react-router: 6.20.0(react@18.3.1)
 
-  react-router@6.20.0(react@18.2.0):
+  react-router@6.20.0(react@18.3.1):
     dependencies:
       '@remix-run/router': 1.13.0
-      react: 18.2.0
+      react: 18.3.1
 
-  react-window@1.8.10(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+  react-window@1.8.10(react-dom@18.2.0(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.24.4
       memoize-one: 5.2.1
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
+      react: 18.3.1
+      react-dom: 18.2.0(react@18.3.1)
 
-  react@18.2.0:
+  react@18.3.1:
     dependencies:
       loose-envify: 1.4.0
 
@@ -4084,9 +4084,9 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  use-sync-external-store@1.6.0(react@18.2.0):
+  use-sync-external-store@1.6.0(react@18.3.1):
     dependencies:
-      react: 18.2.0
+      react: 18.3.1
 
   utility-types@3.11.0: {}
 
@@ -4134,11 +4134,11 @@ snapshots:
     dependencies:
       tslib: 2.3.0
 
-  zustand@4.5.7(@types/react@18.2.37)(react@18.2.0):
+  zustand@4.5.7(@types/react@18.2.37)(react@18.3.1):
     dependencies:
-      use-sync-external-store: 1.6.0(react@18.2.0)
+      use-sync-external-store: 1.6.0(react@18.3.1)
     optionalDependencies:
       '@types/react': 18.2.37
-      react: 18.2.0
+      react: 18.3.1
 
   zwitch@2.0.4: {}
