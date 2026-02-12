@@ -1,0 +1,202 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.trino.gateway.ha.scheduler;
+
+import com.cronutils.model.Cron;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
+import com.cronutils.parser.CronParser;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.ScheduleConfiguration;
+import io.trino.gateway.ha.router.GatewayBackendManager;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.inject.Inject;
+
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static java.util.Objects.requireNonNull;
+
+public class ClusterScheduler
+        implements AutoCloseable
+{
+    private static final Logger log = Logger.get(ClusterScheduler.class);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final GatewayBackendManager backendManager;
+    private final ScheduleConfiguration config;
+    private final Map<String, ExecutionTime> executionTimes = new ConcurrentHashMap<>();
+    private final CronParser cronParser;
+    private final ZoneId timezone;
+
+    @Inject
+    public ClusterScheduler(GatewayBackendManager backendManager, ScheduleConfiguration config)
+    {
+        this.backendManager = requireNonNull(backendManager, "backendManager is null");
+        this.config = requireNonNull(config, "config is null");
+        CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX);
+        this.cronParser = new CronParser(cronDefinition);
+
+        // Initialize timezone from config, default to GMT if not specified or invalid
+        ZoneId configuredTimezone;
+        try {
+            String timezoneStr = config.getTimezone();
+            if (timezoneStr == null || timezoneStr.trim().isEmpty()) {
+                configuredTimezone = ZoneId.of("GMT");
+                log.info("No timezone specified in configuration, using default: GMT");
+            }
+            else {
+                configuredTimezone = ZoneId.of(timezoneStr);
+                log.info("Using configured timezone: %s", timezoneStr);
+            }
+        }
+        catch (Exception e) {
+            configuredTimezone = ZoneId.of("GMT");
+            log.warn(e, "Invalid timezone '%s' in configuration, falling back to GMT", config.getTimezone());
+        }
+        this.timezone = configuredTimezone;
+    }
+
+    @PostConstruct
+    public void start()
+    {
+        if (!config.isEnabled()) {
+            log.info("Cluster scheduling is disabled");
+            return;
+        }
+
+        // Initialize execution times
+        for (ScheduleConfiguration.ClusterSchedule schedule : config.getSchedules()) {
+            try {
+                Cron cron = cronParser.parse(schedule.getCronExpression());
+                executionTimes.put(schedule.getClusterName(), ExecutionTime.forCron(cron));
+                log.info("Scheduled cluster {} with cron expression: {}, activeDuringCron: {}",
+                        schedule.getClusterName(),
+                        schedule.getCronExpression(),
+                        schedule.isActiveDuringCron());
+            }
+            catch (Exception e) {
+                log.error("Skipping cluster {} due to invalid cron expression '{}': {}",
+                        schedule.getClusterName(),
+                        schedule.getCronExpression(),
+                        e.getMessage());
+            }
+        }
+
+        // Schedule the task
+        scheduler.scheduleAtFixedRate(
+                () -> checkAndUpdateClusterStatus(ZonedDateTime.now(timezone)),
+                0,
+                config.getCheckInterval().toMillis(),
+                TimeUnit.MILLISECONDS);
+        log.info("Started cluster scheduler with check interval: %s (using %s timezone)",
+                config.getCheckInterval(),
+                timezone);
+    }
+
+    public void checkAndUpdateClusterStatus(ZonedDateTime currentTime)
+    {
+        try {
+            log.debug("Checking cluster status at: %s (%s)", currentTime, timezone);
+
+            for (Map.Entry<String, ExecutionTime> entry : executionTimes.entrySet()) {
+                String clusterName = entry.getKey();
+                ExecutionTime executionTime = entry.getValue();
+
+                // Find the schedule for this cluster
+                Optional<ScheduleConfiguration.ClusterSchedule> scheduleOpt = config.getSchedules().stream()
+                        .filter(s -> s.getClusterName().equals(clusterName))
+                        .findFirst();
+
+                if (scheduleOpt.isEmpty()) {
+                    log.warn("No schedule configuration found for cluster: %s", clusterName);
+                    continue;
+                }
+
+                ScheduleConfiguration.ClusterSchedule schedule = scheduleOpt.get();
+                boolean cronMatches = executionTime.isMatch(currentTime);
+                boolean shouldBeActive = cronMatches == schedule.isActiveDuringCron();
+
+                log.info("Cluster: %s, cronMatches: %s, activeDuringCron: %s, shouldBeActive: %s",
+                        clusterName,
+                        cronMatches,
+                        schedule.isActiveDuringCron(),
+                        shouldBeActive);
+
+                // Update cluster status if needed
+                Optional<ProxyBackendConfiguration> clusterOpt = backendManager.getBackendByName(clusterName);
+                if (clusterOpt.isPresent()) {
+                    ProxyBackendConfiguration cluster = clusterOpt.get();
+                    boolean currentlyActive = cluster.isActive();
+
+                    log.debug("Cluster: %s, currentlyActive: %s, shouldBeActive: %s",
+                            clusterName,
+                            currentlyActive,
+                            shouldBeActive);
+
+                    if (currentlyActive != shouldBeActive) {
+                        if (shouldBeActive) {
+                            backendManager.activateBackend(clusterName);
+                            log.info("Activated cluster %s based on schedule (cron match: %s, activeDuringCron: %s)",
+                                    clusterName,
+                                    cronMatches,
+                                    schedule.isActiveDuringCron());
+                        }
+                        else {
+                            backendManager.deactivateBackend(clusterName);
+                            log.info("Deactivated cluster %s based on schedule (cron match: %s, activeDuringCron: %s)",
+                                    clusterName,
+                                    cronMatches,
+                                    schedule.isActiveDuringCron());
+                        }
+                    }
+                    else {
+                        log.debug("Cluster %s status unchanged: active=%s", clusterName, currentlyActive);
+                    }
+                }
+                else {
+                    log.warn("Cluster %s not found in backend manager", clusterName);
+                }
+            }
+        }
+        catch (Exception e) {
+            log.error(e, "Error in cluster scheduler task");
+        }
+    }
+
+    @PreDestroy
+    @Override
+    public void close()
+    {
+        scheduler.shutdownNow();
+        try {
+            if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("Cluster scheduler did not terminate in time");
+            }
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn(e, "Interrupted while waiting for scheduler to terminate");
+        }
+    }
+}
