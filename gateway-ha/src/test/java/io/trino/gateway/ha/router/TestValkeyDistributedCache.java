@@ -15,8 +15,6 @@ package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.cache.NoopDistributedCache;
 import io.trino.gateway.ha.cache.QueryMetadata;
-import io.trino.gateway.ha.cache.ValkeyDistributedCache;
-import io.trino.gateway.ha.config.ValkeyConfiguration;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,21 +24,14 @@ final class TestValkeyDistributedCache
     @Test
     void testDisabledCache()
     {
-        ValkeyConfiguration config = new ValkeyConfiguration();
-        config.setEnabled(false);
-        config.setHost("localhost");
-        config.setPort(6379);
+        // When distributed cache is disabled, NoopDistributedCache should be used instead
+        NoopDistributedCache cache = new NoopDistributedCache();
 
-        ValkeyDistributedCache cache = new ValkeyDistributedCache(config);
-
-        assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("test-key")).isEmpty();
 
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
         cache.set("test-key", metadata);
         assertThat(cache.get("test-key")).isEmpty();
-
-        cache.close();
     }
 
     @Test
@@ -48,7 +39,6 @@ final class TestValkeyDistributedCache
     {
         NoopDistributedCache cache = new NoopDistributedCache();
 
-        assertThat(cache.isEnabled()).isFalse();
         assertThat(cache.get("any-key")).isEmpty();
 
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");

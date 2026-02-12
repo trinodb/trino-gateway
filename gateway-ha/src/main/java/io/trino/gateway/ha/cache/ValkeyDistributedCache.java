@@ -13,10 +13,9 @@
  */
 package io.trino.gateway.ha.cache;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.config.ValkeyConfiguration;
+import io.trino.gateway.ha.config.DistributedCacheConfiguration;
 import io.valkey.Jedis;
 import io.valkey.JedisPool;
 import io.valkey.JedisPoolConfig;
@@ -30,70 +29,58 @@ public class ValkeyDistributedCache
 {
     private static final Logger log = Logger.get(ValkeyDistributedCache.class);
     private static final String KEY_PREFIX = "trino:query:";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final JsonCodec<QueryMetadata> JSON_CODEC = JsonCodec.jsonCodec(QueryMetadata.class);
 
     private final JedisPool jedisPool;
-    private final boolean enabled;
     private final long cacheTtlSeconds;
 
-    public ValkeyDistributedCache(ValkeyConfiguration config)
+    public ValkeyDistributedCache(DistributedCacheConfiguration config)
     {
-        this.enabled = config.isEnabled();
         this.cacheTtlSeconds = (long) config.getCacheTtl().getValue(java.util.concurrent.TimeUnit.SECONDS);
 
-        if (enabled) {
-            JedisPoolConfig poolConfig = new JedisPoolConfig();
-            poolConfig.setMaxTotal(config.getMaxTotal());
-            poolConfig.setMaxIdle(config.getMaxIdle());
-            poolConfig.setMinIdle(config.getMinIdle());
-            poolConfig.setTestOnBorrow(true);
-            poolConfig.setTestOnReturn(true);
-            poolConfig.setTestWhileIdle(true);
-            poolConfig.setMinEvictableIdleDuration(Duration.ofSeconds(60));
-            poolConfig.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
-            poolConfig.setNumTestsPerEvictionRun(3);
-            poolConfig.setBlockWhenExhausted(true);
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(config.getMaxTotal());
+        poolConfig.setMaxIdle(config.getMaxIdle());
+        poolConfig.setMinIdle(config.getMinIdle());
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestWhileIdle(true);
+        poolConfig.setMinEvictableIdleDuration(Duration.ofSeconds(60));
+        poolConfig.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
+        poolConfig.setNumTestsPerEvictionRun(3);
+        poolConfig.setBlockWhenExhausted(true);
 
-            String password = config.getPassword();
-            int timeoutMs = (int) config.getTimeout().toMillis();
-            int database;
-            if (password != null && !password.isEmpty()) {
-                database = config.getDatabase();
-                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(),
-                        timeoutMs, password, database);
-            }
-            else {
-                database = 0; // JedisPool uses DEFAULT_DATABASE (0) when no password is provided
-                this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(), timeoutMs);
-            }
-
-            log.info("Valkey distributed cache initialized: %s:%d (database: %d)",
-                    config.getHost(), config.getPort(), database);
+        String password = config.getPassword();
+        int timeoutMs = (int) config.getTimeout().toMillis();
+        int database;
+        if (password != null && !password.isEmpty()) {
+            database = config.getDatabase();
+            this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(),
+                    timeoutMs, password, database);
         }
         else {
-            this.jedisPool = null;
-            log.info("Valkey distributed cache is disabled");
+            database = 0; // JedisPool uses DEFAULT_DATABASE (0) when no password is provided
+            this.jedisPool = new JedisPool(poolConfig, config.getHost(), config.getPort(), timeoutMs);
         }
+
+        log.info("Distributed cache initialized: %s:%d (database: %d)",
+                config.getHost(), config.getPort(), database);
     }
 
     @Override
     public Optional<QueryMetadata> get(String queryId)
     {
-        if (!enabled) {
-            return Optional.empty();
-        }
-
         String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
             String json = jedis.get(key);
             if (json != null) {
-                QueryMetadata metadata = OBJECT_MAPPER.readValue(json, QueryMetadata.class);
+                QueryMetadata metadata = JSON_CODEC.fromJson(json);
                 log.debug("Retrieved metadata from Valkey for query: %s", queryId);
                 return Optional.of(metadata);
             }
             return Optional.empty();
         }
-        catch (JsonProcessingException e) {
+        catch (IllegalArgumentException e) {
             log.error(e, "Failed to deserialize QueryMetadata from Valkey for query: %s", queryId);
             return Optional.empty();
         }
@@ -106,17 +93,13 @@ public class ValkeyDistributedCache
     @Override
     public void set(String queryId, QueryMetadata metadata)
     {
-        if (!enabled) {
-            return;
-        }
-
         String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
-            String json = OBJECT_MAPPER.writeValueAsString(metadata);
+            String json = JSON_CODEC.toJson(metadata);
             jedis.setex(key, cacheTtlSeconds, json);
             log.debug("Stored metadata in Valkey for query: %s", queryId);
         }
-        catch (JsonProcessingException e) {
+        catch (IllegalArgumentException e) {
             log.error(e, "Failed to serialize QueryMetadata to JSON for query: %s", queryId);
         }
         catch (JedisException e) {
@@ -127,10 +110,6 @@ public class ValkeyDistributedCache
     @Override
     public void invalidate(String queryId)
     {
-        if (!enabled) {
-            return;
-        }
-
         String key = KEY_PREFIX + queryId;
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.del(key);
@@ -139,12 +118,6 @@ public class ValkeyDistributedCache
         catch (JedisException e) {
             log.error(e, "Failed to invalidate query metadata in Valkey for query: %s", queryId);
         }
-    }
-
-    @Override
-    public boolean isEnabled()
-    {
-        return enabled;
     }
 
     public void close()

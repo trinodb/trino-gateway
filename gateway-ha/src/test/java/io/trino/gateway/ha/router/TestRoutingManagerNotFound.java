@@ -51,7 +51,7 @@ final class TestRoutingManagerNotFound
         };
         QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache(), loader);
 
-        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, queryCacheManager);
+        this.routingManager = new StochasticRoutingManager(backendManager, routingConfiguration, queryCacheManager);
     }
 
     @Test

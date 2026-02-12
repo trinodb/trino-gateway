@@ -157,11 +157,10 @@ public class QueryCountBasedRouter
     @Inject
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager,
             RoutingConfiguration routingConfiguration,
             QueryCacheManager queryCacheManager)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
+        super(gatewayBackendManager, routingConfiguration, queryCacheManager);
         clusterStats = new ConcurrentHashMap<>();
     }
 

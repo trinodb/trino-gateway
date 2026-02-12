@@ -59,7 +59,7 @@ final class TestStochasticRoutingManager
         };
         QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache(), loader);
 
-        haRoutingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration, queryCacheManager);
+        haRoutingManager = new StochasticRoutingManager(backendManager, routingConfiguration, queryCacheManager);
     }
 
     @Test

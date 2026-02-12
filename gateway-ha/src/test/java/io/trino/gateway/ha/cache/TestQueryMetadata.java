@@ -18,18 +18,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestQueryMetadata
+final class TestQueryMetadata
 {
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    public void testJsonSerializationComplete()
+    void testJsonSerializationComplete()
             throws Exception
     {
         QueryMetadata original = new QueryMetadata("backend1", "group1", "http://external1");
 
-        String json = objectMapper.writeValueAsString(original);
-        QueryMetadata deserialized = objectMapper.readValue(json, QueryMetadata.class);
+        String json = OBJECT_MAPPER.writeValueAsString(original);
+        QueryMetadata deserialized = OBJECT_MAPPER.readValue(json, QueryMetadata.class);
 
         assertThat(deserialized).isEqualTo(original);
         assertThat(deserialized.backend()).isEqualTo("backend1");
@@ -38,13 +38,13 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testJsonSerializationWithNullFields()
+    void testJsonSerializationWithNullFields()
             throws Exception
     {
         QueryMetadata original = new QueryMetadata("backend1", null, null);
 
-        String json = objectMapper.writeValueAsString(original);
-        QueryMetadata deserialized = objectMapper.readValue(json, QueryMetadata.class);
+        String json = OBJECT_MAPPER.writeValueAsString(original);
+        QueryMetadata deserialized = OBJECT_MAPPER.readValue(json, QueryMetadata.class);
 
         assertThat(deserialized).isEqualTo(original);
         assertThat(deserialized.backend()).isEqualTo("backend1");
@@ -53,13 +53,13 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testJsonSerializationAllNull()
+    void testJsonSerializationAllNull()
             throws Exception
     {
         QueryMetadata original = new QueryMetadata(null, null, null);
 
-        String json = objectMapper.writeValueAsString(original);
-        QueryMetadata deserialized = objectMapper.readValue(json, QueryMetadata.class);
+        String json = OBJECT_MAPPER.writeValueAsString(original);
+        QueryMetadata deserialized = OBJECT_MAPPER.readValue(json, QueryMetadata.class);
 
         assertThat(deserialized).isEqualTo(original);
         assertThat(deserialized.backend()).isNull();
@@ -68,11 +68,11 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testJsonFormat()
+    void testJsonFormat()
             throws Exception
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        String json = objectMapper.writeValueAsString(metadata);
+        String json = OBJECT_MAPPER.writeValueAsString(metadata);
 
         // Verify JSON contains expected fields
         assertThat(json).contains("\"backend\"");
@@ -84,7 +84,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testMerge()
+    void testMerge()
     {
         QueryMetadata base = new QueryMetadata("backend1", "group1", null);
         QueryMetadata update = QueryMetadata.withExternalUrl("http://external1");
@@ -97,7 +97,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testMergeOverwrite()
+    void testMergeOverwrite()
     {
         QueryMetadata base = new QueryMetadata("backend1", "group1", "http://external1");
         QueryMetadata update = new QueryMetadata("backend2", null, null);
@@ -110,7 +110,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testMergeAllFields()
+    void testMergeAllFields()
     {
         QueryMetadata base = new QueryMetadata("backend1", null, null);
         QueryMetadata update = new QueryMetadata("backend2", "group2", "http://external2");
@@ -123,7 +123,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testStaticFactories()
+    void testStaticFactories()
     {
         QueryMetadata withBackend = QueryMetadata.withBackend("backend1");
         assertThat(withBackend.backend()).isEqualTo("backend1");
@@ -142,7 +142,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testIsEmpty()
+    void testIsEmpty()
     {
         assertThat(new QueryMetadata(null, null, null).isEmpty()).isTrue();
         assertThat(new QueryMetadata("backend1", null, null).isEmpty()).isFalse();
@@ -151,7 +151,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testIsComplete()
+    void testIsComplete()
     {
         assertThat(new QueryMetadata("backend1", "group1", "http://external1").isComplete()).isTrue();
         assertThat(new QueryMetadata("backend1", "group1", null).isComplete()).isFalse();
@@ -161,7 +161,7 @@ public class TestQueryMetadata
     }
 
     @Test
-    public void testEqualsAndHashCode()
+    void testEqualsAndHashCode()
     {
         QueryMetadata metadata1 = new QueryMetadata("backend1", "group1", "http://external1");
         QueryMetadata metadata2 = new QueryMetadata("backend1", "group1", "http://external1");

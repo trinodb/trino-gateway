@@ -20,12 +20,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-final class TestValkeyConfiguration
+final class TestDistributedCacheConfiguration
 {
     @Test
     void testDefaultValues()
     {
-        ValkeyConfiguration config = new ValkeyConfiguration();
+        DistributedCacheConfiguration config = new DistributedCacheConfiguration();
 
         assertThat(config.isEnabled()).isFalse();
         assertThat(config.getHost()).isEqualTo("localhost");
@@ -42,7 +42,7 @@ final class TestValkeyConfiguration
     @Test
     void testSettersAndGetters()
     {
-        ValkeyConfiguration config = new ValkeyConfiguration();
+        DistributedCacheConfiguration config = new DistributedCacheConfiguration();
 
         config.setEnabled(true);
         config.setHost("valkey.example.com");

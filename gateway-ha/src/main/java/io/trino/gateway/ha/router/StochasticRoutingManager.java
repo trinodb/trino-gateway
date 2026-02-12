@@ -30,11 +30,10 @@ public class StochasticRoutingManager
     @Inject
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager,
             RoutingConfiguration routingConfiguration,
             QueryCacheManager queryCacheManager)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
+        super(gatewayBackendManager, routingConfiguration, queryCacheManager);
     }
 
     @Override

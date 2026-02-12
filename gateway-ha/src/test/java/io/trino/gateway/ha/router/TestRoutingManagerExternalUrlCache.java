@@ -57,7 +57,7 @@ final class TestRoutingManagerExternalUrlCache
         mockQueryHistoryManager = Mockito.mock(QueryHistoryManager.class);
         routingConfiguration = Mockito.mock(RoutingConfiguration.class);
 
-        routingManager = new TestRoutingManager(backendManager, queryHistoryManager, routingConfiguration, createQueryCacheManager(queryHistoryManager));
+        routingManager = new TestRoutingManager(backendManager, routingConfiguration, createQueryCacheManager(queryHistoryManager));
     }
 
     @Test
@@ -133,7 +133,7 @@ final class TestRoutingManagerExternalUrlCache
     @Test
     void testCacheWithMockQueryHistoryManager()
     {
-        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, mockQueryHistoryManager, routingConfiguration, createQueryCacheManager(mockQueryHistoryManager));
+        RoutingManager mockRoutingManager = new TestRoutingManager(backendManager, routingConfiguration, createQueryCacheManager(mockQueryHistoryManager));
 
         String queryId = "mock-test-query";
         String expectedUrl = "https://mock-gateway.example.com";
@@ -148,10 +148,10 @@ final class TestRoutingManagerExternalUrlCache
     private static class TestRoutingManager
             extends StochasticRoutingManager
     {
-        private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
+        private TestRoutingManager(GatewayBackendManager gatewayBackendManager,
                                   RoutingConfiguration routingConfiguration, QueryCacheManager queryCacheManager)
         {
-            super(gatewayBackendManager, queryHistoryManager, routingConfiguration, queryCacheManager);
+            super(gatewayBackendManager, routingConfiguration, queryCacheManager);
         }
 
         @Override

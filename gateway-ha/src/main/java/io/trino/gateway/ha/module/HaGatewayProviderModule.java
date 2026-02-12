@@ -38,12 +38,12 @@ import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DistributedCacheConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
-import io.trino.gateway.ha.config.ValkeyConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
@@ -205,16 +205,19 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public static ValkeyConfiguration getValkeyConfiguration(HaGatewayConfiguration configuration)
+    public static DistributedCacheConfiguration getDistributedCacheConfiguration(HaGatewayConfiguration configuration)
     {
-        return configuration.getValkeyConfiguration();
+        return configuration.getDistributedCacheConfiguration();
     }
 
     @Provides
     @Singleton
-    public static DistributedCache getDistributedCache(ValkeyConfiguration valkeyConfig)
+    public static DistributedCache getDistributedCache(DistributedCacheConfiguration cacheConfig)
     {
-        return new ValkeyDistributedCache(valkeyConfig);
+        if (cacheConfig.isEnabled()) {
+            return new ValkeyDistributedCache(cacheConfig);
+        }
+        return new io.trino.gateway.ha.cache.NoopDistributedCache();
     }
 
     @Provides

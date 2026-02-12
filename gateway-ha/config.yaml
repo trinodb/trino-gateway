@@ -24,10 +24,10 @@ monitor:
   taskDelay: 1m
   clusterMetricsRegistryRefreshPeriod: 30s
 
-# Valkey distributed cache (optional - for multi-instance deployments)
-valkeyConfiguration:
+# Distributed cache (optional - for multi-instance deployments)
+distributedCacheConfiguration:
   enabled: false  # Set to true to enable distributed caching
   host: localhost
   port: 6379
-  # password: ${VALKEY_PASSWORD}  # Uncomment if Valkey requires AUTH
-  # cacheTtlSeconds: 1800  # Cache TTL in seconds (default: 1800 = 30 minutes)
+  # password: ${DISTRIBUTED_CACHE_PASSWORD}  # Uncomment if authentication is required
+  # cacheTtl: 30m  # Cache TTL (default: 30 minutes)

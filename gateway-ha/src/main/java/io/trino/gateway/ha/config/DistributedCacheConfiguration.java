@@ -17,7 +17,7 @@ import io.airlift.units.Duration;
 
 import java.util.concurrent.TimeUnit;
 
-public class ValkeyConfiguration
+public class DistributedCacheConfiguration
 {
     private boolean enabled;
     private String host = "localhost";

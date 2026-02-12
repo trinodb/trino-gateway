@@ -29,7 +29,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TestQueryCacheManager
+final class TestQueryCacheManager
 {
     @Mock
     private DistributedCache distributedCache;
@@ -40,7 +40,7 @@ public class TestQueryCacheManager
     private QueryCacheManager queryCacheManager;
 
     @BeforeEach
-    public void setup()
+    void setup()
     {
         MockitoAnnotations.openMocks(this);
         queryCacheManager = new QueryCacheManager(distributedCache, cacheLoader);
@@ -49,62 +49,54 @@ public class TestQueryCacheManager
     // ========== Single Cache Get Tests ==========
 
     @Test
-    public void testGetFromL1Cache()
+    void testGetFromL1Cache()
     {
         // Setup: First call loads from loader, second call should hit L1 cache
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(metadata);
 
         // First call - loads from database
         Optional<QueryMetadata> result1 = queryCacheManager.get("query1");
-        assertThat(result1).isPresent();
-        assertThat(result1.get()).isEqualTo(metadata);
+        assertThat(result1).hasValue(metadata);
 
         // Second call - should hit L1 cache (loader not called again)
         Optional<QueryMetadata> result2 = queryCacheManager.get("query1");
-        assertThat(result2).isPresent();
-        assertThat(result2.get()).isEqualTo(metadata);
+        assertThat(result2).hasValue(metadata);
 
         // Verify loader was only called once (L1 cache hit on second call)
         verify(cacheLoader, times(1)).loadFromDatabase("query1");
     }
 
     @Test
-    public void testGetFromL2DistributedCache()
+    void testGetFromL2DistributedCache()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.of(metadata));
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(metadata);
+        assertThat(result).hasValue(metadata);
 
         // Verify database loader was never called (found in L2)
         verify(cacheLoader, never()).loadFromDatabase(anyString());
     }
 
     @Test
-    public void testGetFromL3Database()
+    void testGetFromL3Database()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty());
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(metadata);
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(metadata);
+        assertThat(result).hasValue(metadata);
 
         // Verify L2 cache was backfilled
         verify(distributedCache).set("query1", metadata);
     }
 
     @Test
-    public void testGetNotFoundInAnyTier()
+    void testGetNotFoundInAnyTier()
     {
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty());
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(null);
 
@@ -116,30 +108,30 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testGetWithPartialMetadataFromDatabase()
+    void testGetWithPartialMetadataFromDatabase()
     {
         // Database returns metadata with only backend populated
         QueryMetadata partialMetadata = new QueryMetadata("backend1", null, null);
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty());
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(partialMetadata);
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isNull();
-        assertThat(result.get().externalUrl()).isNull();
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isNull();
+                    assertThat(metadata.externalUrl()).isNull();
+                });
 
         // Verify L2 cache was backfilled with partial metadata
         verify(distributedCache).set("query1", partialMetadata);
     }
 
     @Test
-    public void testGetWithEmptyMetadataFromDatabase()
+    void testGetWithEmptyMetadataFromDatabase()
     {
         // Database returns empty metadata (all fields null)
         QueryMetadata emptyMetadata = new QueryMetadata(null, null, null);
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty());
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(emptyMetadata);
 
@@ -153,10 +145,9 @@ public class TestQueryCacheManager
     // ========== Set Tests ==========
 
     @Test
-    public void testSetUpdatesL1AndL2()
+    void testSetUpdatesL1AndL2()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(true);
 
         queryCacheManager.set("query1", metadata);
 
@@ -164,37 +155,17 @@ public class TestQueryCacheManager
         verify(distributedCache).set("query1", metadata);
 
         // Verify L1 cache was updated by checking we can retrieve it
-        when(distributedCache.isEnabled()).thenReturn(false); // Disable L2 to test L1 only
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(metadata);
-    }
-
-    @Test
-    public void testSetWithL2Disabled()
-    {
-        QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
-
-        queryCacheManager.set("query1", metadata);
-
-        // Verify L2 cache was not updated
-        verify(distributedCache, never()).set(anyString(), any(QueryMetadata.class));
-
-        // Verify L1 cache was still updated
-        Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(metadata);
+        assertThat(result).hasValue(metadata);
     }
 
     // ========== Update Tests (Copy-on-Write Pattern) ==========
 
     @Test
-    public void testUpdateMergesWithExistingMetadata()
+    void testUpdateMergesWithExistingMetadata()
     {
         // Set initial metadata with backend only
         QueryMetadata initial = new QueryMetadata("backend1", null, null);
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", initial);
 
         // Update with routing group only
@@ -202,34 +173,35 @@ public class TestQueryCacheManager
 
         // Verify merged result
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isEqualTo("group1");
-        assertThat(result.get().externalUrl()).isNull();
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isEqualTo("group1");
+                    assertThat(metadata.externalUrl()).isNull();
+                });
     }
 
     @Test
-    public void testUpdateWithNoExistingMetadata()
+    void testUpdateWithNoExistingMetadata()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
-
         // Update with only backend (no existing metadata)
         queryCacheManager.update("query1", QueryMetadata.withBackend("backend1"));
 
         // Verify only backend is set
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isNull();
-        assertThat(result.get().externalUrl()).isNull();
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isNull();
+                    assertThat(metadata.externalUrl()).isNull();
+                });
     }
 
     @Test
-    public void testUpdateOverwritesExistingFields()
+    void testUpdateOverwritesExistingFields()
     {
         // Set initial metadata
         QueryMetadata initial = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", initial);
 
         // Update backend only (should overwrite)
@@ -237,19 +209,20 @@ public class TestQueryCacheManager
 
         // Verify backend was overwritten, others preserved
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend2");
-        assertThat(result.get().routingGroup()).isEqualTo("group1");
-        assertThat(result.get().externalUrl()).isEqualTo("http://external1");
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend2");
+                    assertThat(metadata.routingGroup()).isEqualTo("group1");
+                    assertThat(metadata.externalUrl()).isEqualTo("http://external1");
+                });
     }
 
     // ========== Convenience Method Tests ==========
 
     @Test
-    public void testGetBackendConvenienceMethod()
+    void testGetBackendConvenienceMethod()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", metadata);
 
         String backend = queryCacheManager.getBackend("query1");
@@ -257,10 +230,9 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testGetRoutingGroupConvenienceMethod()
+    void testGetRoutingGroupConvenienceMethod()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", metadata);
 
         String routingGroup = queryCacheManager.getRoutingGroup("query1");
@@ -268,10 +240,9 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testGetExternalUrlConvenienceMethod()
+    void testGetExternalUrlConvenienceMethod()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", metadata);
 
         String externalUrl = queryCacheManager.getExternalUrl("query1");
@@ -279,54 +250,53 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testSetBackendConvenienceMethod()
+    void testSetBackendConvenienceMethod()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
-
         queryCacheManager.setBackend("query1", "backend1");
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isNull();
-        assertThat(result.get().externalUrl()).isNull();
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isNull();
+                    assertThat(metadata.externalUrl()).isNull();
+                });
     }
 
     @Test
-    public void testSetRoutingGroupConvenienceMethod()
+    void testSetRoutingGroupConvenienceMethod()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
-
         queryCacheManager.setRoutingGroup("query1", "group1");
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isNull();
-        assertThat(result.get().routingGroup()).isEqualTo("group1");
-        assertThat(result.get().externalUrl()).isNull();
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isNull();
+                    assertThat(metadata.routingGroup()).isEqualTo("group1");
+                    assertThat(metadata.externalUrl()).isNull();
+                });
     }
 
     @Test
-    public void testSetExternalUrlConvenienceMethod()
+    void testSetExternalUrlConvenienceMethod()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
-
         queryCacheManager.setExternalUrl("query1", "http://external1");
 
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isNull();
-        assertThat(result.get().routingGroup()).isNull();
-        assertThat(result.get().externalUrl()).isEqualTo("http://external1");
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isNull();
+                    assertThat(metadata.routingGroup()).isNull();
+                    assertThat(metadata.externalUrl()).isEqualTo("http://external1");
+                });
     }
 
     // ========== Invalidate Tests ==========
 
     @Test
-    public void testInvalidateRemovesFromL1AndL2()
+    void testInvalidateRemovesFromL1AndL2()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", "group1", "http://external1");
-        when(distributedCache.isEnabled()).thenReturn(true);
 
         // Set metadata
         queryCacheManager.set("query1", metadata);
@@ -348,10 +318,8 @@ public class TestQueryCacheManager
     // ========== Legacy Method Tests ==========
 
     @Test
-    public void testUpdateAllCachesLegacyMethod()
+    void testUpdateAllCachesLegacyMethod()
     {
-        when(distributedCache.isEnabled()).thenReturn(true);
-
         queryCacheManager.updateAllCaches("query1", "backend1", "group1", "http://external1");
 
         // Verify it delegates to set()
@@ -359,19 +327,20 @@ public class TestQueryCacheManager
 
         // Verify all fields were set
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isEqualTo("group1");
-        assertThat(result.get().externalUrl()).isEqualTo("http://external1");
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isEqualTo("group1");
+                    assertThat(metadata.externalUrl()).isEqualTo("http://external1");
+                });
     }
 
     // ========== Edge Case Tests ==========
 
     @Test
-    public void testGetWithNullFieldsReturnsNull()
+    void testGetWithNullFieldsReturnsNull()
     {
         QueryMetadata metadata = new QueryMetadata("backend1", null, null);
-        when(distributedCache.isEnabled()).thenReturn(false);
         queryCacheManager.set("query1", metadata);
 
         assertThat(queryCacheManager.getRoutingGroup("query1")).isNull();
@@ -379,9 +348,8 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testGetNonExistentQueryReturnsNull()
+    void testGetNonExistentQueryReturnsNull()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
         when(cacheLoader.loadFromDatabase("nonexistent")).thenReturn(null);
 
         assertThat(queryCacheManager.getBackend("nonexistent")).isNull();
@@ -390,9 +358,8 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testLoaderExceptionHandling()
+    void testLoaderExceptionHandling()
     {
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty());
         when(cacheLoader.loadFromDatabase("query1")).thenThrow(new RuntimeException("Database error"));
 
@@ -404,11 +371,10 @@ public class TestQueryCacheManager
     // ========== Critical L2 Preservation Tests ==========
 
     @Test
-    public void testUpdatePreservesL2DataAfterL1Eviction()
+    void testUpdatePreservesL2DataAfterL1Eviction()
     {
         // Set up L2 (distributed cache) with complete metadata
         QueryMetadata completeMetadata = new QueryMetadata("backend1", "group1", "url1");
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.of(completeMetadata));
 
         // Simulate L1 cache miss (e.g., after eviction) - L2 returns complete data
@@ -417,18 +383,19 @@ public class TestQueryCacheManager
 
         // Verify: backend updated, but routing group and external URL preserved from L2
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend2");
-        assertThat(result.get().routingGroup()).isEqualTo("group1"); // Preserved from L2
-        assertThat(result.get().externalUrl()).isEqualTo("url1"); // Preserved from L2
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend2");
+                    assertThat(metadata.routingGroup()).isEqualTo("group1"); // Preserved from L2
+                    assertThat(metadata.externalUrl()).isEqualTo("url1"); // Preserved from L2
+                });
     }
 
     @Test
-    public void testPartialUpdateWithL2Lookup()
+    void testPartialUpdateWithL2Lookup()
     {
         // Setup: Complete metadata exists in L2 only (L1 is empty)
         QueryMetadata l2Metadata = new QueryMetadata("backend1", "group1", "url1");
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.of(l2Metadata));
 
         // Update only routing group - should merge with L2 data
@@ -440,18 +407,19 @@ public class TestQueryCacheManager
         // Get should now return merged data
         when(distributedCache.get("query1")).thenReturn(Optional.of(new QueryMetadata("backend1", "group2", "url1")));
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isEqualTo("group2");
-        assertThat(result.get().externalUrl()).isEqualTo("url1");
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isEqualTo("group2");
+                    assertThat(metadata.externalUrl()).isEqualTo("url1");
+                });
     }
 
     @Test
-    public void testPartialUpdateWithL3Lookup()
+    void testPartialUpdateWithL3Lookup()
     {
         // Setup: Complete metadata exists in L3 (database) only
         QueryMetadata l3Metadata = new QueryMetadata("backend1", "group1", "url1");
-        when(distributedCache.isEnabled()).thenReturn(true);
         when(distributedCache.get("query1")).thenReturn(Optional.empty()); // L2 miss
         when(cacheLoader.loadFromDatabase("query1")).thenReturn(l3Metadata); // L3 hit
 
@@ -463,10 +431,8 @@ public class TestQueryCacheManager
     }
 
     @Test
-    public void testMultiplePartialUpdatesPreserveData()
+    void testMultiplePartialUpdatesPreserveData()
     {
-        when(distributedCache.isEnabled()).thenReturn(false);
-
         // Start with backend only
         queryCacheManager.setBackend("query1", "backend1");
 
@@ -478,9 +444,11 @@ public class TestQueryCacheManager
 
         // Verify complete metadata
         Optional<QueryMetadata> result = queryCacheManager.get("query1");
-        assertThat(result).isPresent();
-        assertThat(result.get().backend()).isEqualTo("backend1");
-        assertThat(result.get().routingGroup()).isEqualTo("group1");
-        assertThat(result.get().externalUrl()).isEqualTo("url1");
+        assertThat(result)
+                .hasValueSatisfying(metadata -> {
+                    assertThat(metadata.backend()).isEqualTo("backend1");
+                    assertThat(metadata.routingGroup()).isEqualTo("group1");
+                    assertThat(metadata.externalUrl()).isEqualTo("url1");
+                });
     }
 }

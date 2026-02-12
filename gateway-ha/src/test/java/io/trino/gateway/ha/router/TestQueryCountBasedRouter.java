@@ -195,7 +195,7 @@ final class TestQueryCountBasedRouter
         };
         QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache(), loader);
 
-        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration, queryCacheManager);
+        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, routingConfiguration, queryCacheManager);
         populateData();
         queryCountBasedRouter.updateClusterStats(clusters);
     }

@@ -43,9 +43,4 @@ public interface DistributedCache
      * @param queryId the query identifier
      */
     void invalidate(String queryId);
-
-    /**
-     * Returns whether the distributed cache is enabled and operational.
-     */
-    boolean isEnabled();
 }

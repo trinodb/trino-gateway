@@ -83,8 +83,8 @@ public abstract class BaseRoutingManager
         queryCacheManager.setRoutingGroup(queryId, routingGroup);
     }
 
-    @VisibleForTesting
-    void setExternalUrlForQueryId(String queryId, String externalUrl)
+    @Override
+    public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
         queryCacheManager.setExternalUrl(queryId, externalUrl);
     }

@@ -18,9 +18,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.airlift.log.Logger;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * Manages all cache operations for query metadata using a 3-tier caching strategy:
@@ -69,7 +69,7 @@ public class QueryCacheManager
         this.cacheLoader = requireNonNull(cacheLoader, "cacheLoader is null");
         this.localCache = Caffeine.newBuilder()
                 .maximumSize(10000)
-                .expireAfterAccess(30, TimeUnit.MINUTES)
+                .expireAfterAccess(30, MINUTES)
                 .build();
     }
 
@@ -92,14 +92,12 @@ public class QueryCacheManager
         }
 
         // L2: Check distributed cache
-        if (distributedCache.isEnabled()) {
-            Optional<QueryMetadata> l2Result = distributedCache.get(queryId);
-            if (l2Result.isPresent()) {
-                log.debug("Query metadata for [%s] found in L2 cache", queryId);
-                // Backfill L1
-                localCache.put(queryId, l2Result.get());
-                return l2Result;
-            }
+        Optional<QueryMetadata> l2Result = distributedCache.get(queryId);
+        if (l2Result.isPresent()) {
+            log.debug("Query metadata for [%s] found in L2 cache", queryId);
+            // Backfill L1
+            localCache.put(queryId, l2Result.get());
+            return l2Result;
         }
 
         // L3: Check database
@@ -109,9 +107,7 @@ public class QueryCacheManager
                 log.debug("Query metadata for [%s] found in L3 (database)", queryId);
                 // Backfill L2 and L1
                 localCache.put(queryId, loaded);
-                if (distributedCache.isEnabled()) {
-                    distributedCache.set(queryId, loaded);
-                }
+                distributedCache.set(queryId, loaded);
                 return Optional.of(loaded);
             }
         }
@@ -135,9 +131,7 @@ public class QueryCacheManager
         requireNonNull(metadata, "metadata is null");
 
         localCache.put(queryId, metadata);
-        if (distributedCache.isEnabled()) {
-            distributedCache.set(queryId, metadata);
-        }
+        distributedCache.set(queryId, metadata);
         log.debug("Stored query metadata for [%s] in cache", queryId);
     }
 
@@ -277,9 +271,7 @@ public class QueryCacheManager
     {
         requireNonNull(queryId, "queryId is null");
         localCache.invalidate(queryId);
-        if (distributedCache.isEnabled()) {
-            distributedCache.invalidate(queryId);
-        }
+        distributedCache.invalidate(queryId);
         log.debug("Invalidated query metadata for [%s]", queryId);
     }
 }

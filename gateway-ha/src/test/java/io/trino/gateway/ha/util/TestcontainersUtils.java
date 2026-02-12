@@ -38,12 +38,11 @@ public final class TestcontainersUtils
                                 .withStartupTimeout(Duration.ofMinutes(1))));
     }
 
-    public static GenericContainer createValkeyContainer()
+    public static GenericContainer<?> createValkeyContainer()
     {
         //noinspection resource
-        return new GenericContainer(DockerImageName.parse("valkey/valkey:latest"))
+        return new GenericContainer<>(DockerImageName.parse("valkey/valkey:latest"))
                 .withExposedPorts(6379)
-                .waitingFor(Wait.forListeningPort()
-                        .withStartupTimeout(Duration.ofSeconds(30)));
+                .waitingFor(Wait.forListeningPort());
     }
 }
