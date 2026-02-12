@@ -19,7 +19,7 @@ env:
   MAVEN: ./mvnw -B
 
 jobs:
-  build:
+  maven-build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -36,9 +36,24 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
-      - uses: docker/setup-qemu-action@v3
+
+  docker-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [25]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+      - name: Install required Java distribution
+        uses: actions/setup-java@v5
         with:
-          platforms: amd64,arm64,ppc64le
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+      - name: Build with Maven
+        run: $MAVEN clean verify -DskipTests
       - name: Build and Test Docker Image
         run: docker/build.sh
       - name: Set up Helm
