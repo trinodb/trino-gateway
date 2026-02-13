@@ -17,7 +17,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.audit.AuditContext;
-import io.trino.gateway.ha.audit.AuditLogger;
+import io.trino.gateway.ha.audit.AuditLogDispatcher;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.AdminProxyBackendConfiguration;
@@ -87,7 +87,7 @@ public class GatewayWebAppResource
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
-    private final AuditLogger auditLogger;
+    private final AuditLogDispatcher auditLogger;
 
     @Inject
     public GatewayWebAppResource(
@@ -97,7 +97,7 @@ public class GatewayWebAppResource
             ResourceGroupsManager resourceGroupsManager,
             RoutingRulesManager routingRulesManager,
             HaGatewayConfiguration configuration,
-            AuditLogger auditLogger)
+            AuditLogDispatcher auditLogger)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");

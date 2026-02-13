@@ -13,15 +13,7 @@
  */
 package io.trino.gateway.ha.audit;
 
-import static java.util.Objects.requireNonNullElse;
-
 public interface AuditLogger
 {
     void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment);
-
-    static String sanitizeComment(String comment)
-    {
-        String c = requireNonNullElse(comment, "");
-        return c.replaceAll("\\s+", " ").trim();
-    }
 }

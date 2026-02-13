@@ -23,8 +23,7 @@ public class LogAuditLogger
     @Override
     public void logAudit(String user, String ip, String backendName, AuditAction action, AuditContext context, boolean success, String userComment)
     {
-        String comment = AuditLogger.sanitizeComment(userComment);
         log.info("GW_AUDIT_LOG: user=%s, ipAddress=%s, backend=%s, action=%s, context=%s, success=%s, userComment=%s",
-                user, ip, backendName, action, context, success, comment);
+                user, ip, backendName, action, context, success, userComment);
     }
 }

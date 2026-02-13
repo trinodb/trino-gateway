@@ -13,30 +13,29 @@
  */
 package io.trino.gateway.ha.audit;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 
-import java.util.Collections;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 
-public class CompositeAuditLogger
-        implements AuditLogger
+public final class AuditLogDispatcher
 {
-    private static final Logger log = Logger.get(CompositeAuditLogger.class);
+    private static final Logger log = Logger.get(AuditLogDispatcher.class);
     private final Set<AuditLogger> loggers;
 
     @Inject
-    public CompositeAuditLogger(Set<AuditLogger> loggers)
+    public AuditLogDispatcher(Set<AuditLogger> loggers)
     {
-        this.loggers = requireNonNullElse(loggers, Collections.emptySet());
+        this.loggers = ImmutableSet.copyOf(requireNonNull(loggers, "loggers is null"));
     }
 
-    @Override
     public void logAudit(String user, String ip, String backend, AuditAction action, AuditContext context, boolean success, String userComment)
     {
-        String sanitizedComment = AuditLogger.sanitizeComment(userComment);
+        String sanitizedComment = sanitizeComment(userComment);
         for (AuditLogger logger : loggers) {
             try {
                 logger.logAudit(user, ip, backend, action, context, success, sanitizedComment);
@@ -45,5 +44,11 @@ public class CompositeAuditLogger
                 log.error(e, "Audit sink %s failed", logger.getClass().getSimpleName());
             }
         }
+    }
+
+    private static String sanitizeComment(String comment)
+    {
+        String c = requireNonNullElse(comment, "");
+        return c.replaceAll("\\s+", " ").trim();
     }
 }

@@ -40,7 +40,7 @@ public class DatabaseAuditLogger
     {
         try {
             dao.log(user, ip, backendName, action.toString(), context.toString(), success,
-                    AuditLogger.sanitizeComment(userComment), Timestamp.from(Instant.now()));
+                    userComment, Timestamp.from(Instant.now()));
         }
         catch (Exception e) {
             log.error("Failed to write audit log to database: %s", e.getMessage());
