@@ -302,13 +302,13 @@ class TestRoutingTargetHandler
 
     @Test
     void testResolveRoutingWithKnownQueryIdAndFailingFallback()
-            throws Exception
     {
+        // ref: https://github.com/trinodb/trino-gateway/issues/920
         // Simulate a request to /ui/query.html?queryId where the query ID is known
         // but the fallback routing (getRoutingTargetResponse) would fail because
         // there are no backends for the resolved routing group.
         // This tests that the eagerly-evaluated fallback does not throw when
-        // previousCluster is present.
+        // previousCluster is present. 
         String queryId = "20240101_000000_00001_aaaaa";
         String backendUrl = "https://trino-backend.example.com";
 
