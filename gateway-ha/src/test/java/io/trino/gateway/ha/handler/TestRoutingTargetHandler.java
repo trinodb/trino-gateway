@@ -300,6 +300,38 @@ class TestRoutingTargetHandler
                 .isInstanceOf(WebApplicationException.class);
     }
 
+    @Test
+    void testResolveRoutingWithKnownQueryIdAndFailingFallback()
+            throws Exception
+    {
+        // Simulate a request to /ui/query.html?queryId where the query ID is known
+        // but the fallback routing (getRoutingTargetResponse) would fail because
+        // there are no backends for the resolved routing group.
+        // This tests that the eagerly-evaluated fallback does not throw when
+        // previousCluster is present.
+        String queryId = "20240101_000000_00001_aaaaa";
+        String backendUrl = "https://trino-backend.example.com";
+
+        HttpServletRequest uiRequest = Mockito.mock(HttpServletRequest.class);
+        when(uiRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(uiRequest.getRequestURI()).thenReturn("/ui/query.html");
+        when(uiRequest.getQueryString()).thenReturn(queryId);
+
+        // Query ID is known — cache returns the backend
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
+        when(routingManager.findRoutingGroupForQueryId(queryId)).thenReturn("test-group");
+        when(routingManager.findExternalUrlForQueryId(queryId)).thenReturn(backendUrl);
+
+        // Fallback routing would throw (no backends for the routing group)
+        when(routingManager.provideBackendConfiguration(any(), any()))
+                .thenThrow(new IllegalStateException("Number of active backends found zero"));
+
+        // With orElse(), this throws. With orElseGet(), this succeeds.
+        RoutingTargetResponse response = handler.resolveRouting(uiRequest);
+
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+    }
+
     private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()
     {
         config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);
