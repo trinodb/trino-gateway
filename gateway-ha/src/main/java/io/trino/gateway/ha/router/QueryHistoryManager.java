@@ -32,10 +32,6 @@ public interface QueryHistoryManager
 
     String getBackendForQueryId(String queryId);
 
-    String getRoutingGroupForQueryId(String queryId);
-
-    String getExternalUrlForQueryId(String queryId);
-
     TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query);
 
     List<DistributionResponse.LineChart> findDistribution(Long ts);

@@ -78,18 +78,6 @@ public interface QueryHistoryDao
     String findBackendUrlByQueryId(String queryId);
 
     @SqlQuery("""
-            SELECT routing_group FROM query_history
-            WHERE query_id = :queryId
-            """)
-    String findRoutingGroupByQueryId(String queryId);
-
-    @SqlQuery("""
-            SELECT external_url FROM query_history
-            WHERE query_id = :queryId
-            """)
-    String findExternalUrlByQueryId(String queryId);
-
-    @SqlQuery("""
             SELECT * FROM query_history
             WHERE 1 = 1 <condition>
             ORDER BY created DESC
