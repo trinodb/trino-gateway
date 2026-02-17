@@ -83,20 +83,6 @@ public interface QueryHistoryDao
 
     @SqlQuery(
             """
-            SELECT routing_group FROM query_history
-            WHERE query_id = :queryId
-            """)
-    String findRoutingGroupByQueryId(String queryId);
-
-    @SqlQuery(
-            """
-            SELECT external_url FROM query_history
-            WHERE query_id = :queryId
-            """)
-    String findExternalUrlByQueryId(String queryId);
-
-    @SqlQuery(
-            """
             SELECT * FROM query_history
             WHERE (:userName IS NULL OR user_name = :userName)
             AND (:externalUrl IS NULL OR external_url = :externalUrl)

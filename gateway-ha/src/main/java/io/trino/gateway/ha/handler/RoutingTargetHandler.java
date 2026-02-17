@@ -87,21 +87,17 @@ public class RoutingTargetHandler
         else if (queryId.isPresent()) {
             // Query ID based routing
             previousCluster = queryId.map(routingManager::findBackendForQueryId);
-            routingTargetResponse = previousCluster.map(cluster -> {
-                String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
-                        .orElse(defaultRoutingGroup);
-                String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
-                        .orElse(cluster);
-                return new RoutingTargetResponse(
-                        new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
-                        request);
-            });
+            // Setting routingGroup to empty because the info is not being used.
+            // This should be refactored in the future to include routingGroup info if needed instead of leaving it empty.
+            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
+                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    request));
         }
         else {
             // Cookie based routing
             previousCluster = getPreviousCluster(request);
             routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
                     request));
         }
 
