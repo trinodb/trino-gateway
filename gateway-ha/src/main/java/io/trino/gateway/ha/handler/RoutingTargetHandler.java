@@ -52,8 +52,6 @@ public class RoutingTargetHandler
     private final String defaultRoutingGroup;
     private final boolean unmatchedRequestFallbackEnabled;
     private final List<String> statementPaths;
-    private final boolean requestAnalyserClientsUseV2Format;
-    private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
     private final boolean oauth2RoutingEnabled;
 
@@ -70,15 +68,13 @@ public class RoutingTargetHandler
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         this.unmatchedRequestFallbackEnabled = haGatewayConfiguration.getRouting().isUnmatchedRequestFallbackEnabled();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
-        requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         oauth2RoutingEnabled = haGatewayConfiguration.getRouting().isOauth2RoutingEnabled();
     }
 
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
-        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
         Optional<String> previousCluster = getPreviousCluster(queryId, request);
 
         RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
