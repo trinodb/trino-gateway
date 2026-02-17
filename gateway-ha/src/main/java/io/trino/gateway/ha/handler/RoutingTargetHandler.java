@@ -66,7 +66,13 @@ public class RoutingTargetHandler
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
         Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
-        Optional<String> previousCluster = getPreviousCluster(queryId, request);
+        Optional<String> previousCluster;
+        if (queryId.isPresent()) {
+            previousCluster = queryId.map(routingManager::findBackendForQueryId);
+        }
+        else {
+            previousCluster = getPreviousCluster(request);
+        }
 
         RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
             String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
@@ -146,11 +152,8 @@ public class RoutingTargetHandler
         }
     }
 
-    private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
+    private Optional<String> getPreviousCluster(HttpServletRequest request)
     {
-        if (queryId.isPresent()) {
-            return queryId.map(routingManager::findBackendForQueryId);
-        }
         if (cookiesEnabled && request.getCookies() != null) {
             List<GatewayCookie> cookies = Arrays.stream(request.getCookies())
                     .filter(c -> c.getName().startsWith(GatewayCookie.PREFIX))
