@@ -75,29 +75,42 @@ public class RoutingTargetHandler
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
         Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
+        Optional<String> previousCluster;
+        Optional<RoutingTargetResponse> routingTargetResponse;
         // OAuth2 token-exchange pinning comes first, since its redirects can carry a query ID in a parameter
-        Optional<String> previousCluster = oauth2RoutingEnabled ? getOAuth2StickyBackend(request) : Optional.empty();
-        if (previousCluster.isEmpty()) {
-            if (queryId.isPresent()) {
-                previousCluster = queryId.map(routingManager::findBackendForQueryId);
-            }
-            else {
-                previousCluster = getPreviousCluster(request);
-            }
+        Optional<String> oauth2Cluster = oauth2RoutingEnabled ? getOAuth2StickyBackend(request) : Optional.empty();
+        if (oauth2Cluster.isPresent()) {
+            routingTargetResponse = oauth2Cluster.map(cluster -> new RoutingTargetResponse(
+                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    request));
+        }
+        else if (queryId.isPresent()) {
+            // Query ID based routing
+            previousCluster = queryId.map(routingManager::findBackendForQueryId);
+            routingTargetResponse = previousCluster.map(cluster -> {
+                String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
+                        .orElse(defaultRoutingGroup);
+                String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
+                        .orElse(cluster);
+                return new RoutingTargetResponse(
+                        new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
+                        request);
+            });
+        }
+        else {
+            // Cookie based routing
+            previousCluster = getPreviousCluster(request);
+            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
+                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    request));
         }
 
-        RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
-            String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
-                    .orElse(defaultRoutingGroup);
-            String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
-                    .orElse(cluster);
-            return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
-                    request);
-        }).orElseGet(() -> getRoutingTargetResponse(request));
+        if (routingTargetResponse.isEmpty()) {
+            routingTargetResponse = Optional.of(getRoutingTargetResponse(request));
+        }
 
-        logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
-        return routingTargetResponse;
+        logRewrite(routingTargetResponse.orElseThrow().routingDestination().clusterHost(), request);
+        return routingTargetResponse.orElseThrow();
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
