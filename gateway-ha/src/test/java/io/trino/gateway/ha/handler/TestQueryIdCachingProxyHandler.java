@@ -180,7 +180,7 @@ final class TestQueryIdCachingProxyHandler
 
     private static Optional<String> extractQueryId(HttpServletRequest request)
     {
-        return extractQueryIdIfPresent(request, ImmutableList.of(), false, 1_000_000);
+        return extractQueryIdIfPresent(request, ImmutableList.of());
     }
 
     private static HttpServletRequest request(String query, String defaultCatalog)

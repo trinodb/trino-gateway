@@ -48,8 +48,6 @@ public class RoutingTargetHandler
     private final RoutingGroupSelector routingGroupSelector;
     private final String defaultRoutingGroup;
     private final List<String> statementPaths;
-    private final boolean requestAnalyserClientsUseV2Format;
-    private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
 
     @Inject
@@ -62,14 +60,12 @@ public class RoutingTargetHandler
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
-        requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
-        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
         Optional<String> previousCluster = getPreviousCluster(queryId, request);
 
         RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
