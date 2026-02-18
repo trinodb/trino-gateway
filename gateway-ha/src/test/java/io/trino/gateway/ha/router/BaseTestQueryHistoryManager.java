@@ -24,6 +24,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,11 +47,12 @@ abstract class BaseTestQueryHistoryManager
                 container.getUsername(),
                 container.getPassword(),
                 container.getDriverClassName(),
+                true,
                 4,
                 true);
         FlywayMigration.migrate(config);
-        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"));
+        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
     }
 
     @AfterAll
@@ -117,16 +119,17 @@ abstract class BaseTestQueryHistoryManager
     @Test
     void testTimestampParsing()
     {
-        long result = 30338640;
+        // This ensures odd-minute values remain precision when converted from different formats.
+        long expectedMinuteBucket = 30338641;
 
-        // postgres: minute -> {Double@9333} 3.033864E7
-        String postgresTimestamp = "3.033864E7";
-        long parsedLongTimestamp = (long) Float.parseFloat(postgresTimestamp);
-        assertThat(parsedLongTimestamp).isEqualTo(result);
+        // postgres: minute -> {Double@9333} 3.0338641E7
+        String postgresTimestamp = "3.0338641E7";
+        long parsedPostgresMinute = new BigDecimal(postgresTimestamp).longValue();
+        assertThat(parsedPostgresMinute).isEqualTo(expectedMinuteBucket);
 
-        // mysql: minute -> {BigDecimal@9775} "30338640"
-        String mysqlTimestamp = "30338640";
-        long parsedLongTimestamp2 = (long) Float.parseFloat(mysqlTimestamp);
-        assertThat(parsedLongTimestamp2).isEqualTo(result);
+        // mysql: minute -> {BigDecimal@9775} "30338641"
+        String mysqlTimestamp = "30338641";
+        long parsedMysqlMinute = new BigDecimal(mysqlTimestamp).longValue();
+        assertThat(parsedMysqlMinute).isEqualTo(expectedMinuteBucket);
     }
 }

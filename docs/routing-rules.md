@@ -159,6 +159,7 @@ actions:
 ```
 
 Three objects are available by default. They are
+
 * `request`, the incoming request as an [HttpServletRequest](https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html)
 * `state`, a `HashMap<String, Object>` that allows passing arbitrary state from one rule evaluation to the next
 * `result`, a `HashMap<String, String>` that is used to return the result of rule evaluation to the engine

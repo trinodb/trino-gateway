@@ -35,7 +35,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -351,12 +351,13 @@ final class TestRoutingSelector
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
-                    "---\n"
-                            + "name: \"airflow1\"\n"
-                            + "description: \"original rule\"\n"
-                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                            + "actions:\n"
-                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl\\\")\"");
+                    """
+                            ---
+                            name: "airflow1"
+                            description: "original rule"
+                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                            actions:
+                              - "result.put(\\"routingGroup\\", \\"etl\\")\"""");
         }
 
         Duration refreshPeriod = new Duration(1, MILLISECONDS);
@@ -373,12 +374,13 @@ final class TestRoutingSelector
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
-                    "---\n"
-                            + "name: \"airflow2\"\n"
-                            + "description: \"updated rule\"\n"
-                            + "condition: \"request.getHeader(\\\"X-Trino-Source\\\") == \\\"airflow\\\"\"\n"
-                            + "actions:\n"
-                            + "  - \"result.put(\\\"routingGroup\\\", \\\"etl2\\\")\""); // change from etl to etl2
+                    """
+                            ---
+                            name: "airflow2"
+                            description: "updated rule"
+                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                            actions:
+                              - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
         }
         Thread.sleep(2 * refreshPeriod.toMillis());
 
@@ -525,7 +527,7 @@ final class TestRoutingSelector
         TrinoQueryProperties trinoQueryPropertiesWithDefaults = getTrinoQueryProps(mockRequestNoDefaults);
         Set<QualifiedName> tablesWithDefaults = trinoQueryPropertiesWithDefaults.getTables();
         assertThat(tablesWithDefaults).containsExactly(QualifiedName.of("cat", "schem", "tbl1"));
-        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(new StringReader(query)));
+        when(mockRequestNoDefaults.getReader()).thenReturn(new BufferedReader(Reader.of(query)));
 
         TrinoQueryProperties trinoQueryPropertiesNoDefaults = (TrinoQueryProperties) mockRequestNoDefaults.getAttribute(TRINO_QUERY_PROPERTIES);
         Set<QualifiedName> tablesNoDefaults = trinoQueryPropertiesNoDefaults.getTables();

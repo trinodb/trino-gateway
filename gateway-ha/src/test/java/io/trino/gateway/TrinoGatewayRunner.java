@@ -16,9 +16,9 @@ package io.trino.gateway;
 import io.airlift.log.Logger;
 import io.airlift.log.Logging;
 import io.trino.gateway.ha.HaGatewayLauncher;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.trino.TrinoContainer;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public final class TrinoGatewayRunner
         trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();
 
-        PostgreSQLContainer<?> postgres = createPostgreSqlContainer();
+        PostgreSQLContainer postgres = createPostgreSqlContainer();
         postgres.withUsername("trino_gateway_db_admin");
         postgres.withPassword("P0stG&es");
         postgres.withDatabaseName("trino_gateway_db");
@@ -53,7 +53,7 @@ public final class TrinoGatewayRunner
         postgres.setPortBindings(List.of("5432:5432"));
         postgres.start();
 
-        MySQLContainer<?> mysql = new MySQLContainer("mysql:5.7");
+        MySQLContainer mysql = new MySQLContainer("mysql:5.7");
         mysql.withUsername("root");
         mysql.withPassword("root123");
         mysql.withDatabaseName("trinogateway");
@@ -61,8 +61,13 @@ public final class TrinoGatewayRunner
         mysql.withCopyFileToContainer(forClasspathResource("add_backends_mysql.sql"), "/docker-entrypoint-initdb.d/2-add_backends_mysql.sql");
         mysql.setPortBindings(List.of("3306:3306"));
         mysql.start();
+
+        OpenTracingCollector tracingCollector = new OpenTracingCollector();
+        tracingCollector.start();
+
         HaGatewayLauncher.main(new String[] {"gateway-ha/config.yaml"});
 
         log.info("======== SERVER STARTED ========");
+        log.info("Tracing: http://localhost:16686");
     }
 }

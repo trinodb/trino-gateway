@@ -13,12 +13,11 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -137,7 +135,7 @@ public abstract class BaseRoutingManager
         try {
             backendAddress = queryIdBackendCache.get(queryId);
         }
-        catch (ExecutionException e) {
+        catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return backendAddress;
@@ -151,7 +149,7 @@ public abstract class BaseRoutingManager
         try {
             externalUrl = queryIdExternalUrlCache.get(queryId);
         }
-        catch (ExecutionException e) {
+        catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
         }
         return externalUrl;
@@ -169,7 +167,7 @@ public abstract class BaseRoutingManager
         try {
             routingDecision = queryIdRoutingDecisionCache.get(queryId);
         }
-        catch (ExecutionException e) {
+        catch (RuntimeException e) {
             log.warn("Exception while loading queryId from routing decision cache %s", e.getLocalizedMessage());
         }
         return routingDecision;
@@ -190,8 +188,8 @@ public abstract class BaseRoutingManager
         }
     }
 
-    @VisibleForTesting
-    void setExternalUrlForQueryId(String queryId, String externalUrl)
+    @Override
+    public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
         queryIdExternalUrlCache.put(queryId, externalUrl);
     }
@@ -269,25 +267,15 @@ public abstract class BaseRoutingManager
      */
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
-        String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
-        setExternalUrlForQueryId(queryId, externalUrl);
-        return externalUrl;
+        return queryHistoryManager.getExternalUrlForQueryId(queryId);
     }
 
     private LoadingCache<String, String> buildCache(Function<String, String> loader)
     {
-        return CacheBuilder.newBuilder()
+        return Caffeine.newBuilder()
                 .maximumSize(10000)
                 .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(
-                        new CacheLoader<>()
-                        {
-                            @Override
-                            public String load(String queryId)
-                            {
-                                return loader.apply(queryId);
-                            }
-                        });
+                .build(loader::apply);
     }
 
     private boolean isBackendHealthy(String backendId)

@@ -21,7 +21,7 @@ Consider the following requirements for your Trino Gateway installation.
 
 ### Java
 
-Trino Gateway requires a Java 24 runtime. Older versions of Java can not be
+Trino Gateway requires a Java 25 runtime. Older versions of Java can not be
 used. Newer versions might work but are not tested.
 
 Verify the Java version on your system with `java -version`.
@@ -49,6 +49,11 @@ The files are also included in the JAR file.
 
 If you do not want migrations to be performed automatically on startup, then
 you can set `runMigrationsEnabled` to `false` in the data store configuration.
+
+You can also disable query history recording to the database by setting
+`queryHistoryEnabled` to `false`. This can be useful in scenarios where you
+want to reduce database load or don't need query history tracking.
+
 For example:
 
 ```yaml
@@ -59,6 +64,7 @@ dataStore:
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
   runMigrationsEnabled: false
+  queryHistoryEnabled: true  # Set to false to disable query history recording
 ```
 
 `Flyway` uses a transactional lock in databases that support it such as 
@@ -375,8 +381,7 @@ it is marked as UNHEALTHY, and the Trino Gateway stops routing requests to it.
 It is important to distinguish TrinoStatus from the active/inactive
 state of a backend. The active/inactive state indicates whether a backend is
 manually turned on or off, whereas TrinoStatus is programmatically determined
-by the health check process. Health checks are only performed on backends
-that are marked as active.
+by the health check process.
 
 See [TrinoStatus](routing-rules.md#trinostatus) for more details on 
 what each Trino status means.

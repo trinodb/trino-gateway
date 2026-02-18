@@ -18,10 +18,12 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
 import io.airlift.log.Logger;
-import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterMetricsStatsExporter;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
@@ -41,10 +43,7 @@ import io.trino.gateway.ha.router.StochasticRoutingManager;
 import io.trino.gateway.ha.security.AuthorizedExceptionMapper;
 import io.trino.gateway.ha.security.QueryMetadataParser;
 import io.trino.gateway.ha.security.QueryUserInfoParser;
-import io.trino.gateway.proxyserver.ForProxy;
-import io.trino.gateway.proxyserver.ProxyRequestHandler;
-import io.trino.gateway.proxyserver.RouteToBackendResource;
-import io.trino.gateway.proxyserver.RouterPreMatchContainerRequestFilter;
+import io.trino.gateway.proxyserver.ProxyServerModule;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
 import java.lang.reflect.Constructor;
@@ -126,7 +125,9 @@ public class BaseApp
     {
         binder.bind(HaGatewayConfiguration.class).toInstance(configuration);
         binder.bind(RoutingConfiguration.class).toInstance(configuration.getRouting());
-        binder.bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
+        binder.bind(DataStoreConfiguration.class).toInstance(configuration.getDataStore());
+        binder.bind(MonitorConfiguration.class).toInstance(configuration.getMonitor());
+        binder.bind(DatabaseCacheConfiguration.class).toInstance(configuration.getDatabaseCache());
         registerAuthFilters(binder);
         registerResources(binder);
         registerProxyResources(binder);
@@ -187,12 +188,9 @@ public class BaseApp
 
     private static void registerProxyResources(Binder binder)
     {
-        jaxrsBinder(binder).bind(RouteToBackendResource.class);
-        jaxrsBinder(binder).bind(RouterPreMatchContainerRequestFilter.class);
+        binder.install(new ProxyServerModule());
         jaxrsBinder(binder).bind(QueryUserInfoParser.class);
         jaxrsBinder(binder).bind(QueryMetadataParser.class);
-        jaxrsBinder(binder).bind(ProxyRequestHandler.class);
-        httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
         httpClientBinder(binder).bindHttpClient("monitor", ForMonitor.class);
         httpClientBinder(binder).bindHttpClient("router", ForRouter.class);
     }

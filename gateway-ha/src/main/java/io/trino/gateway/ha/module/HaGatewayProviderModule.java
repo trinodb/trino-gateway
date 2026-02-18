@@ -13,12 +13,13 @@
  */
 package io.trino.gateway.ha.module;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import com.google.inject.multibindings.Multibinder;
 import io.airlift.http.client.HttpClient;
+import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsJdbcMonitor;
@@ -33,14 +34,14 @@ import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
-import io.trino.gateway.ha.config.UserConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -50,18 +51,11 @@ import io.trino.gateway.ha.router.HaResourceGroupsManager;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
-import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.RoutingSelector;
-import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
-import io.trino.gateway.ha.security.BasicAuthFilter;
-import io.trino.gateway.ha.security.FormAuthenticator;
-import io.trino.gateway.ha.security.LbAuthenticator;
 import io.trino.gateway.ha.security.LbAuthorizer;
-import io.trino.gateway.ha.security.LbFilter;
 import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
-import io.trino.gateway.ha.security.LbUnauthorizedHandler;
 import io.trino.gateway.ha.security.NoopAuthorizer;
 import io.trino.gateway.ha.security.NoopFilter;
 import io.trino.gateway.ha.security.ResourceSecurityDynamicFeature;
@@ -69,10 +63,9 @@ import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
-import java.util.List;
-import java.util.Map;
-
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.NOOP;
@@ -81,133 +74,82 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayProviderModule
         extends AbstractModule
 {
-    private final LbOAuthManager oauthManager;
-    private final LbFormAuthManager formAuthManager;
-    private final AuthorizationManager authorizationManager;
-    private final ResourceSecurityDynamicFeature resourceSecurityDynamicFeature;
     private final HaGatewayConfiguration configuration;
-    private final ResourceGroupsManager resourceGroupsManager;
-    private final GatewayBackendManager gatewayBackendManager;
-    private final QueryHistoryManager queryHistoryManager;
-    private final PathFilter pathFilter;
 
     @Override
     protected void configure()
     {
-        jaxrsBinder(binder()).bindInstance(resourceSecurityDynamicFeature);
-        binder().bind(ResourceGroupsManager.class).toInstance(resourceGroupsManager);
-        binder().bind(GatewayBackendManager.class).toInstance(gatewayBackendManager);
-        binder().bind(QueryHistoryManager.class).toInstance(queryHistoryManager);
+        jaxrsBinder(binder()).bind(ResourceSecurityDynamicFeature.class);
+        binder().bind(ResourceGroupsManager.class).to(HaResourceGroupsManager.class).in(Scopes.SINGLETON);
+        binder().bind(GatewayBackendManager.class).to(HaGatewayManager.class).in(Scopes.SINGLETON);
+        binder().bind(QueryHistoryManager.class).to(HaQueryHistoryManager.class).in(Scopes.SINGLETON);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
-        binder().bind(PathFilter.class).toInstance(pathFilter);
+        binder().bind(JdbcConnectionManager.class).in(Scopes.SINGLETON);
+        binder().bind(AuthorizationManager.class).in(Scopes.SINGLETON);
+        binder().bind(PathFilter.class).in(Scopes.SINGLETON);
+
+        Multibinder<TrinoClusterStatsObserver> observers = newSetBinder(binder(), TrinoClusterStatsObserver.class);
+        observers.addBinding().to(HealthCheckObserver.class).in(Scopes.SINGLETON);
+        observers.addBinding().to(ClusterStatsObserver.class).in(Scopes.SINGLETON);
+
+        if (configuration.getAuthentication() != null) {
+            binder().bind(ContainerRequestFilter.class).to(ChainedAuthFilter.class).in(Scopes.SINGLETON);
+        }
+        else {
+            binder().bind(ContainerRequestFilter.class).to(NoopFilter.class).in(Scopes.SINGLETON);
+        }
+        binder().bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
     }
 
     public HaGatewayProviderModule(HaGatewayConfiguration configuration)
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
-        pathFilter = new PathFilter(configuration.getStatementPaths(), configuration.getExtraWhitelistPaths());
-        Map<String, UserConfiguration> presetUsers = configuration.getPresetUsers();
-
-        oauthManager = getOAuthManager(configuration);
-        formAuthManager = getFormAuthManager(configuration);
-
-        authorizationManager = new AuthorizationManager(configuration.getAuthorization(), presetUsers);
-        resourceSecurityDynamicFeature = getAuthFilter(configuration);
 
         GatewayCookieConfigurationPropertiesProvider gatewayCookieConfigurationPropertiesProvider = GatewayCookieConfigurationPropertiesProvider.getInstance();
         gatewayCookieConfigurationPropertiesProvider.initialize(configuration.getGatewayCookieConfiguration());
 
         OAuth2GatewayCookieConfigurationPropertiesProvider oAuth2GatewayCookieConfigurationPropertiesProvider = OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance();
         oAuth2GatewayCookieConfigurationPropertiesProvider.initialize(configuration.getOauth2GatewayCookieConfiguration());
-
-        Jdbi jdbi = Jdbi.create(configuration.getDataStore().getJdbcUrl(), configuration.getDataStore().getUser(), configuration.getDataStore().getPassword());
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(jdbi, configuration.getDataStore());
-        resourceGroupsManager = new HaResourceGroupsManager(connectionManager);
-        gatewayBackendManager = new HaGatewayManager(jdbi, configuration.getRouting());
-        queryHistoryManager = new HaQueryHistoryManager(jdbi, configuration.getDataStore().getJdbcUrl().startsWith("jdbc:oracle"));
     }
 
-    private LbOAuthManager getOAuthManager(HaGatewayConfiguration configuration)
+    @Singleton
+    @Provides
+    public static Jdbi createJdbi(DataStoreConfiguration config)
     {
-        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-        if (authenticationConfiguration != null && authenticationConfiguration.getOauth() != null) {
-            return new LbOAuthManager(authenticationConfiguration.getOauth(), configuration.getPagePermissions());
-        }
-        return null;
+        Jdbi jdbi = Jdbi.create(config.getJdbcUrl(), config.getUser(), config.getPassword());
+        jdbi.installPlugin(new SqlObjectPlugin());
+        jdbi.registerRowMapper(new RecordAndAnnotatedConstructorMapper());
+        return jdbi;
     }
 
-    private LbFormAuthManager getFormAuthManager(HaGatewayConfiguration configuration)
-    {
-        AuthenticationConfiguration authenticationConfiguration = configuration.getAuthentication();
-        if (authenticationConfiguration != null && authenticationConfiguration.getForm() != null) {
-            return new LbFormAuthManager(authenticationConfiguration.getForm(),
-                    configuration.getPresetUsers(), configuration.getPagePermissions());
-        }
-        return null;
-    }
-
-    private ChainedAuthFilter getAuthenticationFilters(AuthenticationConfiguration config, Authorizer authorizer)
-    {
-        ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
-        String defaultType = config.getDefaultType();
-        if (oauthManager != null) {
-            authFilters.add(new LbFilter(
-                    new LbAuthenticator(oauthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-        }
-
-        if (formAuthManager != null) {
-            authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-
-            authFilters.add(new BasicAuthFilter(
-                    new ApiAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    new LbUnauthorizedHandler(defaultType)));
-        }
-
-        return new ChainedAuthFilter(authFilters.build());
-    }
-
-    private ResourceSecurityDynamicFeature getAuthFilter(HaGatewayConfiguration configuration)
+    @Provides
+    @Singleton
+    public static Authorizer getAuthorizer(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
-        Authorizer authorizer = (authorizationConfig != null)
-                ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
+        return authorizationConfig != null ? new LbAuthorizer(authorizationConfig) : new NoopAuthorizer();
+    }
 
-        AuthenticationConfiguration authenticationConfig = configuration.getAuthentication();
-
-        if (authenticationConfig != null) {
-            return new ResourceSecurityDynamicFeature(getAuthenticationFilters(authenticationConfig, authorizer));
+    @Provides
+    @Singleton
+    public static LbOAuthManager getAuthenticationManager(HaGatewayConfiguration config)
+    {
+        AuthenticationConfiguration authenticationConfiguration = config.getAuthentication();
+        if (authenticationConfiguration != null && authenticationConfiguration.getOauth() != null) {
+            return new LbOAuthManager(authenticationConfiguration.getOauth(), config.getPagePermissions());
         }
-
-        return new ResourceSecurityDynamicFeature(new NoopFilter());
+        return null;
     }
 
     @Provides
     @Singleton
-    public LbOAuthManager getAuthenticationManager()
+    public static LbFormAuthManager getFormAuthentication(HaGatewayConfiguration config)
     {
-        return this.oauthManager;
-    }
-
-    @Provides
-    @Singleton
-    public LbFormAuthManager getFormAuthentication()
-    {
-        return this.formAuthManager;
-    }
-
-    @Provides
-    @Singleton
-    public AuthorizationManager getAuthorizationManager()
-    {
-        return this.authorizationManager;
+        AuthenticationConfiguration authenticationConfiguration = config.getAuthentication();
+        if (authenticationConfiguration != null && authenticationConfiguration.getForm() != null) {
+            return new LbFormAuthManager(authenticationConfiguration.getForm(), config.getPresetUsers(), config.getPagePermissions());
+        }
+        return null;
     }
 
     @Provides
@@ -237,7 +179,7 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient)
+    public static ClusterStatsMonitor getClusterStatsMonitor(@ForMonitor HttpClient httpClient, HaGatewayConfiguration configuration)
     {
         ClusterStatsConfiguration clusterStatsConfig = configuration.getClusterStatsConfiguration();
         if (clusterStatsConfig == null) {
@@ -255,24 +197,5 @@ public class HaGatewayProviderModule
             case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
-    }
-
-    @Provides
-    @Singleton
-    public List<TrinoClusterStatsObserver> getClusterStatsObservers(
-            RoutingManager mgr,
-            BackendStateManager backendStateManager)
-    {
-        return ImmutableList.<TrinoClusterStatsObserver>builder()
-                .add(new HealthCheckObserver(mgr))
-                .add(new ClusterStatsObserver(backendStateManager))
-                .build();
-    }
-
-    @Provides
-    @Singleton
-    public MonitorConfiguration getMonitorConfiguration()
-    {
-        return configuration.getMonitor();
     }
 }

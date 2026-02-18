@@ -26,7 +26,6 @@ import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 public class HaGatewayConfiguration
 {
     private Map<String, String> serverConfig = new HashMap<>();
-    private NotifierConfiguration notifier;
     private DataStoreConfiguration dataStore;
     private MonitorConfiguration monitor = new MonitorConfiguration();
     private RoutingConfiguration routing = new RoutingConfiguration();
@@ -43,10 +42,9 @@ public class HaGatewayConfiguration
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
     private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
-
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
-
     private UIConfiguration uiConfiguration = new UIConfiguration();
+    private DatabaseCacheConfiguration databaseCache = new DatabaseCacheConfiguration();
 
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
@@ -64,16 +62,6 @@ public class HaGatewayConfiguration
     public void setServerConfig(Map<String, String> serverConfig)
     {
         this.serverConfig = serverConfig;
-    }
-
-    public NotifierConfiguration getNotifier()
-    {
-        return this.notifier;
-    }
-
-    public void setNotifier(NotifierConfiguration notifier)
-    {
-        this.notifier = notifier;
     }
 
     public DataStoreConfiguration getDataStore()
@@ -276,6 +264,16 @@ public class HaGatewayConfiguration
     public void setProxyResponseConfiguration(ProxyResponseConfiguration proxyResponseConfiguration)
     {
         this.proxyResponseConfiguration = proxyResponseConfiguration;
+    }
+
+    public DatabaseCacheConfiguration getDatabaseCache()
+    {
+        return databaseCache;
+    }
+
+    public void setDatabaseCache(DatabaseCacheConfiguration databaseCache)
+    {
+        this.databaseCache = databaseCache;
     }
 
     private void validateStatementPath(String statementPath, List<String> statementPaths)

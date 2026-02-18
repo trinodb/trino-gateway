@@ -125,7 +125,7 @@ final class TestJdbcConnectionManager
 
     private static JdbcConnectionManager createConnectionManager(String jdbcUrl)
     {
-        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", 4, true);
+        DataStoreConfiguration db = new DataStoreConfiguration(jdbcUrl, "sa", "sa", "", true, 4, true);
         return new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), db);
     }
 }

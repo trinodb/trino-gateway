@@ -281,6 +281,7 @@ public class ProxyRequestHandler
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
                 routingManager.setRoutingDecisionForQueryId(queryDetail.getQueryId(), routingDestination.routingDecision());
+                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
