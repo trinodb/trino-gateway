@@ -14,15 +14,22 @@ jobs:
     steps:
       - uses: actions/stale@v10.1.1
         with:
+          # PRs
           stale-pr-message: 'This pull request has gone a while without any activity. Ask for help on #trino-gateway-dev on Trino slack.'
           days-before-pr-stale: 21
           days-before-pr-close: 21
           close-pr-message: 'Closing this pull request, as it has been stale for six weeks. Feel free to re-open at any time.'
           stale-pr-label: 'stale'
           exempt-pr-labels: 'stale-ignore'
-          start-date: '2020-01-01T00:00:00Z'
           exempt-draft-pr: false
+          # Issues
+          stale-issue-message: 'This issue has gone a while without any activity. Ask for help on #trino-gateway-dev on Trino slack.'
+          days-before-issue-stale: 21
+          days-before-issue-close: 21
+          close-issue-message: 'Closing this issue, as it has been stale for six weeks. Feel free to re-open at any time.'
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'stale-ignore,roadmap'
+          # Global settings
+          start-date: '2020-01-01T00:00:00Z'
           operations-per-run: 200
-          # Avoid processing issues completely, see https://github.com/actions/stale/issues/1112
-          days-before-issue-stale: -1
-          days-before-issue-close: -1
+  
