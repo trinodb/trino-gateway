@@ -107,7 +107,7 @@ final class TestStochasticRoutingManager
     {
         assertThatThrownBy(() -> haRoutingManager.provideBackendConfiguration(routingGroup, "user", true))
                 .isInstanceOfSatisfying(WebApplicationException.class, exception ->
-                        assertThat(exception.getResponse().getStatus()).isEqualTo(Status.NOT_FOUND.getStatusCode()));
+                        assertThat(exception.getResponse().getStatus()).isEqualTo(Status.SERVICE_UNAVAILABLE.getStatusCode()));
     }
 
     private static ProxyBackendConfiguration createBackend(

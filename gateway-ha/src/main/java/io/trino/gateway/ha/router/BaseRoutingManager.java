@@ -44,7 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
+import static jakarta.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -104,7 +104,7 @@ public abstract class BaseRoutingManager
 
     /**
      * Performs routing to a given cluster group. This falls back to a default backend if the target group
-     * has no suitable backend unless {@code strictRouting} is true, in which case a 404 is returned.
+     * has no suitable backend unless {@code strictRouting} is true, in which case a 503 is returned.
      */
     @Override
     public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, boolean strictRouting)
@@ -114,7 +114,7 @@ public abstract class BaseRoutingManager
                 .toList();
         if (strictRouting && backends.isEmpty()) {
             throw new WebApplicationException(
-                             Response.status(NOT_FOUND)
+                             Response.status(SERVICE_UNAVAILABLE)
                             .entity(String.format("No healthy backends available for routing group '%s' under strict routing for user '%s'", routingGroup, user))
                             .build());
         }

@@ -149,6 +149,26 @@ actions:
   - 'result.put("routingGroup", "etl-special")'
 ```
 
+#### Strict routing
+
+By default, if no healthy backend is available for the resolved routing group,
+Trino Gateway falls back to the default routing group. You can override this
+behavior by setting `strictRouting` to `true` on a rule. When strict routing is
+enabled and no healthy backend is available for the routing group, Trino Gateway
+returns a `503 Service Unavailable` error to the client instead of falling back.
+
+```yaml
+---
+name: "airflow"
+description: "if query from airflow, route to etl group with strict routing"
+strictRouting: true
+condition: 'request.getHeader("X-Trino-Source") == "airflow"'
+actions:
+  - 'result.put("routingGroup", "etl")'
+```
+
+The `strictRouting` property defaults to `false` if not specified.
+
 Three objects are available by default. They are
 * `request`, the incoming request as an [HttpServletRequest](https://docs.oracle.com/javaee/6/api/javax/servlet/http/HttpServletRequest.html)
 * `state`, a `HashMap<String, Object>` that allows passing arbitrary state from one rule evaluation to the next
