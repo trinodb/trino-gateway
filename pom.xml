@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>353</version>
+        <version>354</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
@@ -71,12 +71,6 @@
                 <version>2.0.3</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>1.5.31</version>
             </dependency>
 
             <dependency>
