@@ -10,10 +10,11 @@ The example commands are for a Trino Gateway server running at
 If there are duplicate `proxyTo` URLs in the configuration, the `Name` in the
 **Query History** page of the UI might not show correctly.
 
-## Add or update a Trino cluster
+## Create a Trino cluster
 
 ```shell
-curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
+curl -X POST http://localhost:8080/gateway/backend/modify/add \
+ -H "Content-Type: application/json" \
  -d '{  "name": "trino-3",
         "proxyTo": "http://localhost:8083",
         "active": true,
@@ -26,7 +27,21 @@ they are internal and external hostnames used, you can use the optional
 `externalUrl` field to override the link in the **Active Backends** page.
 
 ```shell
-curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
+curl -X POST http://localhost:8080/gateway/backend/modify/add \
+ -H "Content-Type: application/json" \
+ -d '{  "name": "trino-3",
+        "proxyTo": "http://localhost:8083",
+        "active": true,
+        "routingGroup": "adhoc",
+        "externalUrl": "http://localhost:8084"
+    }'
+```
+
+## Update a Trino cluster
+
+```shell
+curl -X POST http://localhost:8080/gateway/backend/modify/update \
+ -H "Content-Type: application/json" \
  -d '{  "name": "trino-3",
         "proxyTo": "http://localhost:8083",
         "active": true,
@@ -38,7 +53,7 @@ curl -X POST http://localhost:8080/entity?entityType=GATEWAY_BACKEND \
 ## List all Trino clusters
 
 ```shell
-curl -X GET http://localhost:8080/entity/GATEWAY_BACKEND
+curl -X GET http://localhost:8080/gateway/backend/all
 ```
 
 Returns a JSON array of Trino cluster:
@@ -109,6 +124,9 @@ curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 
 ## Update routing rules
 
+This endpoint is part of the `/webapp` endpoint family and requires the
+`ADMIN` role.
+
 The API can be used to programmatically update the routing rules. Rule are
 updated based on the rule name. Storage of the rules must use a writeable file
 and the configuration 'rulesType: FILE'.
@@ -128,4 +146,3 @@ curl -X POST http://localhost:8080/webapp/updateRoutingRules \
         "condition": "updated condition"
     }'
 ```
-
