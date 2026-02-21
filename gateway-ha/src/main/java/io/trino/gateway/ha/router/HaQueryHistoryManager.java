@@ -110,18 +110,6 @@ public class HaQueryHistoryManager
     }
 
     @Override
-    public String getRoutingGroupForQueryId(String queryId)
-    {
-        return dao.findRoutingGroupByQueryId(queryId);
-    }
-
-    @Override
-    public String getExternalUrlForQueryId(String queryId)
-    {
-        return dao.findExternalUrlByQueryId(queryId);
-    }
-
-    @Override
     public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
     {
         int start = getStart(query.page(), query.size());

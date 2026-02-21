@@ -280,8 +280,6 @@ public class ProxyRequestHandler
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
-                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
-                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
