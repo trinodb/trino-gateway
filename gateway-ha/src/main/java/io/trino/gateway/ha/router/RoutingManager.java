@@ -89,7 +89,8 @@ public interface RoutingManager
      *
      * @param routingGroup the routing group to use for backend selection
      * @param user the user requesting the backend
+     * @param strictRouting whether to force strict routing
      * @return the backend configuration for the selected cluster
      */
-    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user);
+    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user, boolean strictRouting);
 }
