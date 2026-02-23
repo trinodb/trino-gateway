@@ -59,6 +59,7 @@ import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.http.client.Request.Builder.prepareDelete;
 import static io.airlift.http.client.Request.Builder.prepareGet;
+import static io.airlift.http.client.Request.Builder.prepareHead;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
@@ -151,6 +152,15 @@ public class ProxyRequestHandler
     {
         Request.Builder request = preparePut()
                 .setBodyGenerator(createStaticBodyGenerator(statement, UTF_8));
+        performRequest(routingDestination, servletRequest, asyncResponse, request);
+    }
+
+    public void headRequest(
+            HttpServletRequest servletRequest,
+            AsyncResponse asyncResponse,
+            RoutingDestination routingDestination)
+    {
+        Request.Builder request = prepareHead();
         performRequest(routingDestination, servletRequest, asyncResponse, request);
     }
 
