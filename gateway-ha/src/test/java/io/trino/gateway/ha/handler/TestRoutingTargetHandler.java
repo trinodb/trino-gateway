@@ -29,6 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -108,13 +109,20 @@ class TestRoutingTargetHandler
         config = provideGatewayConfiguration();
         httpClient = Mockito.mock(HttpClient.class);
         routingManager = Mockito.mock(RoutingManager.class);
-        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(new ProxyBackendConfiguration());
         request = prepareMockRequest();
 
         // Initialize the handler with the configuration
         handler = new RoutingTargetHandler(
                 routingManager,
                 RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
+    }
+
+    @BeforeEach
+    void resetMocks()
+    {
+        Mockito.reset(routingManager);
+        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(new ProxyBackendConfiguration());
+        config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(false);
     }
 
     @Test
@@ -307,7 +315,7 @@ class TestRoutingTargetHandler
         // but the fallback routing (getRoutingTargetResponse) would fail because
         // there are no backends for the resolved routing group.
         // This tests that the eagerly-evaluated fallback does not throw when
-        // previousCluster is present.
+        // previousCluster is present. 
         String queryId = "20240101_000000_00001_aaaaa";
         String backendUrl = "https://trino-backend.example.com";
 
