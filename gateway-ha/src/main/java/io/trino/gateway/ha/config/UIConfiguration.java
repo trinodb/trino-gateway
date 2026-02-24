@@ -20,6 +20,7 @@ import java.util.List;
 public class UIConfiguration
 {
     private List<String> disablePages;
+    private boolean isUserRoleAllowedToViewAllQueryHistory;
 
     @JsonProperty
     public List<String> getDisablePages()
@@ -30,5 +31,16 @@ public class UIConfiguration
     public void setDisablePages(List<String> disablePages)
     {
         this.disablePages = disablePages;
+    }
+
+    @JsonProperty
+    public boolean isUserRoleAllowedToViewAllQueryHistory()
+    {
+        return isUserRoleAllowedToViewAllQueryHistory;
+    }
+
+    public void setUserRoleAllowedToViewAllQueryHistory(boolean isUserRoleAllowedToViewAllQueryHistory)
+    {
+        this.isUserRoleAllowedToViewAllQueryHistory = isUserRoleAllowedToViewAllQueryHistory;
     }
 }

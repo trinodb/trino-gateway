@@ -19,16 +19,12 @@ export const RootLayout = (props: {
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState(location.pathname.substring(location.pathname.lastIndexOf('/') + 1));
   const [userProfile, setUserProfile] = useState(false);
-  const [disabledPages, setDisabledPages] = useState<string[]>(['']);
+  const [disabledPages, setDisabledPages] = useState<string[]>([]);
   const [filteredRouters, setFilteredRouters] = useState(routers);
 
   useEffect(() => {
       getUIConfiguration().then((res) => {
-          if (Object.keys(res).length == 0) {
-              setDisabledPages(res)
-          } else {
-              setDisabledPages(res.disablePages)
-          }
+          setDisabledPages(Array.isArray(res?.disablePages) ? res.disablePages : []);
       })
   }, []);
 
