@@ -4,6 +4,7 @@ export interface HistoryDetail {
   user: string;
   source: string;
   backendUrl: string;
+  backendName?: string;
   captureTime: number;
   routingGroup: string;
   externalUrl: string;

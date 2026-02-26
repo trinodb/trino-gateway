@@ -300,6 +300,29 @@ class TestRoutingTargetHandler
                 .isInstanceOf(WebApplicationException.class);
     }
 
+    @Test
+    void testRoutingDestinationContainsBackendName()
+    {
+        // Setup backend configuration with a specific name
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("my-cluster");
+        backend.setProxyTo("http://localhost:8080");
+        backend.setExternalUrl("https://trino.example.com");
+        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(backend);
+
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                Collections.emptyList(),
+                ImmutableMap.of());
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        // Execute
+        RoutingTargetResponse response = handler.resolveRouting(request);
+
+        // Verify backend name is passed through RoutingDestination
+        assertThat(response.routingDestination().name()).isEqualTo("my-cluster");
+    }
+
     private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()
     {
         config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);

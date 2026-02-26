@@ -169,7 +169,11 @@ public class GatewayWebAppResource
         Integer latestHour = query.latestHour();
         Long ts = System.currentTimeMillis() - (latestHour * 60 * 60 * 1000);
         List<DistributionResponse.LineChart> lineChart = queryHistoryManager.findDistribution(ts);
-        lineChart.forEach(qh -> qh.setName(urlToNameMap.get(qh.getBackendUrl())));
+        lineChart.forEach(qh -> {
+            if (qh.getName() == null) {
+                qh.setName(urlToNameMap.getOrDefault(qh.getBackendUrl(), qh.getBackendUrl()));
+            }
+        });
         Map<String, List<DistributionResponse.LineChart>> lineChartMap = lineChart.stream().collect(Collectors.groupingBy(DistributionResponse.LineChart::getName));
         List<DistributionResponse.DistributionChart> distributionChart = lineChartMap.values().stream().map(d -> {
             DistributionResponse.DistributionChart dc = new DistributionResponse.DistributionChart();

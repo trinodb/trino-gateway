@@ -293,6 +293,7 @@ public class ProxyRequestHandler
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
+        queryDetail.setBackendName(routingDestination.name());
         queryHistoryManager.submitQueryDetail(queryDetail);
         return response;
     }

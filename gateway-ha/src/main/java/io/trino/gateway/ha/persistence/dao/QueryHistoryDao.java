@@ -107,19 +107,20 @@ public interface QueryHistoryDao
     @SqlQuery("""
             SELECT FLOOR(created / 1000 / 60) AS minute,
                    backend_url AS backend_url,
+                   backend_name AS backend_name,
                    COUNT(1) AS query_count
             FROM query_history
             WHERE created > :created
-            GROUP BY FLOOR(created / 1000 / 60), backend_url
+            GROUP BY FLOOR(created / 1000 / 60), backend_url, backend_name
             """)
     @UseRowMapper(MapMapper.class)
     List<Map<String, Object>> findDistribution(long created);
 
     @SqlUpdate("""
-            INSERT INTO query_history (query_id, query_text, backend_url, user_name, source, created, routing_group, external_url)
-            VALUES (:queryId, :queryText, :backendUrl, :userName, :source, :created, :routingGroup, :externalUrl)
+            INSERT INTO query_history (query_id, query_text, backend_url, backend_name, user_name, source, created, routing_group, external_url)
+            VALUES (:queryId, :queryText, :backendUrl, :backendName, :userName, :source, :created, :routingGroup, :externalUrl)
             """)
-    void insertHistory(String queryId, String queryText, String backendUrl, String userName, String source, long created, String routingGroup, String externalUrl);
+    void insertHistory(String queryId, String queryText, String backendUrl, String backendName, String userName, String source, long created, String routingGroup, String externalUrl);
 
     @SqlUpdate("""
             DELETE FROM query_history

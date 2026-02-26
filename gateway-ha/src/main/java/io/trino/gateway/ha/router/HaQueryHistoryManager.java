@@ -65,6 +65,7 @@ public class HaQueryHistoryManager
                 queryDetail.getQueryId(),
                 queryDetail.getQueryText(),
                 queryDetail.getBackendUrl(),
+                queryDetail.getBackendName(),
                 queryDetail.getUser(),
                 queryDetail.getSource(),
                 queryDetail.getCaptureTime(),
@@ -94,6 +95,7 @@ public class HaQueryHistoryManager
             queryDetail.setQueryText(dao.queryText());
             queryDetail.setCaptureTime(dao.created());
             queryDetail.setBackendUrl(dao.backendUrl());
+            queryDetail.setBackendName(dao.backendName());
             queryDetail.setUser(dao.userName());
             queryDetail.setSource(dao.source());
             queryDetail.setRoutingGroup(dao.routingGroup());
@@ -157,6 +159,10 @@ public class HaQueryHistoryManager
             lineChart.setEpochMillis(epochMillis);
             lineChart.setQueryCount(Long.parseLong(model.get("query_count").toString()));
             lineChart.setBackendUrl(model.get("backend_url").toString());
+            String backendName = (String) model.get("backend_name");
+            if (backendName != null) {
+                lineChart.setName(backendName);
+            }
             resList.add(lineChart);
         }
         return resList;

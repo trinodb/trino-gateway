@@ -154,7 +154,7 @@ export function History() {
                 return value === record.routingGroup
             }}
             render={routingGroupRender} />
-          <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
+          <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string, record: HistoryDetail) => <Text>{record.backendName || backendMapping[text] || text}</Text>} />
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
           <Column title="User" dataIndex="user" key="user" />
           <Column title="Source" dataIndex="source" key="source" />

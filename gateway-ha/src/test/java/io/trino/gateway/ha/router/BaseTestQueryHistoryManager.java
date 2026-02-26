@@ -117,6 +117,80 @@ abstract class BaseTestQueryHistoryManager
     }
 
     @Test
+    void testFindDistributionWithBackendName()
+    {
+        long currentTime = System.currentTimeMillis();
+
+        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
+        queryDetail.setBackendUrl("http://localhost:7777");
+        queryDetail.setBackendName("test-cluster");
+        queryDetail.setSource("sqlWorkbench");
+        queryDetail.setUser("test@ea.com");
+        queryDetail.setQueryText("select 1");
+        queryDetail.setQueryId("dist-with-name-" + System.currentTimeMillis());
+        queryDetail.setCaptureTime(System.currentTimeMillis());
+        queryHistoryManager.submitQueryDetail(queryDetail);
+
+        // Should return entry with backend name populated
+        List<DistributionResponse.LineChart> resList = queryHistoryManager.findDistribution(currentTime);
+        DistributionResponse.LineChart entry = resList.stream()
+                .filter(r -> r.getBackendUrl().equals("http://localhost:7777"))
+                .findFirst().orElseThrow();
+        assertThat(entry.getName()).isEqualTo("test-cluster");
+    }
+
+    @Test
+    void testFindDistributionWithoutBackendName()
+    {
+        long currentTime = System.currentTimeMillis();
+
+        // Simulate a legacy record without backend name
+        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
+        queryDetail.setBackendUrl("http://localhost:6666");
+        queryDetail.setSource("sqlWorkbench");
+        queryDetail.setUser("test@ea.com");
+        queryDetail.setQueryText("select 1");
+        queryDetail.setQueryId("dist-no-name-" + System.currentTimeMillis());
+        queryDetail.setCaptureTime(System.currentTimeMillis());
+        queryHistoryManager.submitQueryDetail(queryDetail);
+
+        // Should return entry with null name for legacy records
+        List<DistributionResponse.LineChart> resList = queryHistoryManager.findDistribution(currentTime);
+        DistributionResponse.LineChart entry = resList.stream()
+                .filter(r -> r.getBackendUrl().equals("http://localhost:6666"))
+                .findFirst().orElseThrow();
+        assertThat(entry.getName()).isNull();
+    }
+
+    @Test
+    void testFindDistributionGroupsByBackendName()
+    {
+        long currentTime = System.currentTimeMillis();
+
+        // Submit queries with same backend URL but different backend names
+        for (String name : List.of("cluster-a", "cluster-b")) {
+            QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
+            queryDetail.setBackendUrl("http://localhost:5555");
+            queryDetail.setBackendName(name);
+            queryDetail.setSource("sqlWorkbench");
+            queryDetail.setUser("test@ea.com");
+            queryDetail.setQueryText("select 1");
+            queryDetail.setQueryId("dist-group-" + name + "-" + System.currentTimeMillis());
+            queryDetail.setCaptureTime(System.currentTimeMillis());
+            queryHistoryManager.submitQueryDetail(queryDetail);
+        }
+
+        // Should return separate entries for each backend name even with the same URL
+        List<DistributionResponse.LineChart> resList = queryHistoryManager.findDistribution(currentTime);
+        List<DistributionResponse.LineChart> entries = resList.stream()
+                .filter(r -> r.getBackendUrl().equals("http://localhost:5555"))
+                .toList();
+        assertThat(entries).hasSize(2);
+        assertThat(entries).extracting(DistributionResponse.LineChart::getName)
+                .containsExactlyInAnyOrder("cluster-a", "cluster-b");
+    }
+
+    @Test
     void testTimestampParsing()
     {
         // This ensures odd-minute values remain precision when converted from different formats.

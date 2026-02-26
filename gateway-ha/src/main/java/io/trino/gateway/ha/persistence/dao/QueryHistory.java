@@ -22,6 +22,7 @@ public record QueryHistory(
         @ColumnName("query_id") String queryId,
         @ColumnName("query_text") String queryText,
         @ColumnName("backend_url") String backendUrl,
+        @ColumnName("backend_name") @Nullable String backendName,
         @ColumnName("user_name") @Nullable String userName,
         @ColumnName("source") @Nullable String source,
         @ColumnName("created") long created,

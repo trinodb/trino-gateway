@@ -48,6 +48,7 @@ public interface QueryHistoryManager
         private String user;
         private String source;
         private String backendUrl;
+        private String backendName;
         private long captureTime;
         private String routingGroup;
         private String externalUrl;
@@ -121,6 +122,17 @@ public interface QueryHistoryManager
         }
 
         @JsonProperty
+        public String getBackendName()
+        {
+            return backendName;
+        }
+
+        public void setBackendName(String backendName)
+        {
+            this.backendName = backendName;
+        }
+
+        @JsonProperty
         public long getCaptureTime()
         {
             return captureTime;
@@ -169,6 +181,7 @@ public interface QueryHistoryManager
                     Objects.equals(user, that.user) &&
                     Objects.equals(source, that.source) &&
                     Objects.equals(backendUrl, that.backendUrl) &&
+                    Objects.equals(backendName, that.backendName) &&
                     Objects.equals(routingGroup, that.routingGroup) &&
                     Objects.equals(externalUrl, that.externalUrl);
         }
@@ -176,7 +189,7 @@ public interface QueryHistoryManager
         @Override
         public int hashCode()
         {
-            return Objects.hash(queryId, queryText, user, source, backendUrl, captureTime, routingGroup, externalUrl);
+            return Objects.hash(queryId, queryText, user, source, backendUrl, backendName, captureTime, routingGroup, externalUrl);
         }
 
         @Override
@@ -188,6 +201,7 @@ public interface QueryHistoryManager
                     .add("user", user)
                     .add("source", source)
                     .add("backendUrl", backendUrl)
+                    .add("backendName", backendName)
                     .add("captureTime", captureTime)
                     .add("routingGroup", routingGroup)
                     .add("externalUrl", externalUrl)

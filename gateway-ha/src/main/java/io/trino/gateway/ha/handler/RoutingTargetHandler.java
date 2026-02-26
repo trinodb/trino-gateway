@@ -78,7 +78,7 @@ public class RoutingTargetHandler
             String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
                     .orElse(cluster);
             return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
+                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl, null),
                     request);
         }).orElse(getRoutingTargetResponse(request));
 
@@ -98,13 +98,14 @@ public class RoutingTargetHandler
         ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
         String clusterHost = backendConfiguration.getProxyTo();
         String externalUrl = backendConfiguration.getExternalUrl();
+        String backendName = backendConfiguration.getName();
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
         if (!routingDestination.externalHeaders().isEmpty()) {
             modifiedRequest = new HeaderModifyingRequestWrapper(request, routingDestination.externalHeaders());
         }
         return new RoutingTargetResponse(
-                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl),
+                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl, backendName),
                 modifiedRequest);
     }
 

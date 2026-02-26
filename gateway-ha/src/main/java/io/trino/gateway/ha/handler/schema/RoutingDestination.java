@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.handler.schema;
 
+import jakarta.annotation.Nullable;
+
 import java.net.URI;
 
-public record RoutingDestination(String routingGroup, String clusterHost, URI clusterUri, String externalUrl) {}
+public record RoutingDestination(String routingGroup, String clusterHost, URI clusterUri, String externalUrl, @Nullable String name) {}
