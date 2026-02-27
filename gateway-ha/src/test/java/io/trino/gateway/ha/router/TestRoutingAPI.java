@@ -77,7 +77,7 @@ final class TestRoutingAPI
     {
         Request request =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
+                        .url("http://localhost:" + routerPort + "/gateway/routing-rules/all")
                         .get()
                         .build();
         Response response = httpClient.newCall(request).execute();
@@ -105,7 +105,7 @@ final class TestRoutingAPI
         RoutingRule updatedRoutingRules = new RoutingRule("airflow", "if query from airflow, route to adhoc group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
         RequestBody requestBody = RequestBody.create(OBJECT_MAPPER.writeValueAsString(updatedRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request = new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/webapp/updateRoutingRules")
+                        .url("http://localhost:" + routerPort + "/gateway/routing-rules/modify/update")
                         .addHeader("Content-Type", "application/json")
                         .post(requestBody)
                         .build();
@@ -116,7 +116,7 @@ final class TestRoutingAPI
         //Fetch the routing rules to see if the update was successful
         Request request2 =
                 new Request.Builder()
-                        .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
+                        .url("http://localhost:" + routerPort + "/gateway/routing-rules/all")
                         .get()
                         .build();
         Response response2 = httpClient.newCall(request2).execute();
@@ -139,11 +139,24 @@ final class TestRoutingAPI
         RoutingRule revertRoutingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
         RequestBody requestBody3 = RequestBody.create(OBJECT_MAPPER.writeValueAsString(revertRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request3 = new Request.Builder()
-                .url("http://localhost:" + routerPort + "/webapp/updateRoutingRules")
+                .url("http://localhost:" + routerPort + "/gateway/routing-rules/modify/update")
                 .addHeader("Content-Type", "application/json")
                 .post(requestBody3)
                 .build();
         httpClient.newCall(request3).execute();
+    }
+
+    @Test
+    void testWebappRoutingRulesCompatibilityAPI()
+            throws Exception
+    {
+        Request request =
+                new Request.Builder()
+                        .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
+                        .get()
+                        .build();
+        Response response = httpClient.newCall(request).execute();
+        assertThat(response.code()).isEqualTo(200);
     }
 
     @Test

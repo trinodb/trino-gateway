@@ -124,20 +124,25 @@ curl -X POST http://localhost:8080/gateway/backend/activate/trino-2
 
 ## Update routing rules
 
-This endpoint is part of the `/webapp` endpoint family and requires the
-`ADMIN` role.
-
 The API can be used to programmatically update the routing rules. Rule are
 updated based on the rule name. Storage of the rules must use a writeable file
-and the configuration 'rulesType: FILE'.
+and the configuration `rulesType: FILE`.
 
 For this feature to work with multiple replicas of the Trino Gateway, you must
 provide a shared storage that supports file locking for the routing rules file.
 If multiple replicas are used with local storage, then rules get out of
 sync when updated.
 
+Get all routing rules:
+
 ```shell
-curl -X POST http://localhost:8080/webapp/updateRoutingRules \
+curl -X GET http://localhost:8080/gateway/routing-rules/all
+```
+
+Update a routing rule:
+
+```shell
+curl -X POST http://localhost:8080/gateway/routing-rules/modify/update \
  -H 'Content-Type: application/json' \
  -d '{  "name": "trino-rule",
         "description": "updated rule description",

@@ -15,8 +15,10 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.domain.RoutingRule;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -26,6 +28,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+
+import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,11 +41,13 @@ public class GatewayResource
     private static final Logger log = Logger.get(GatewayResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
+    private final RoutingRulesResourceHandler routingRulesResourceHandler;
 
     @Inject
-    public GatewayResource(GatewayBackendManager gatewayBackendManager)
+    public GatewayResource(GatewayBackendManager gatewayBackendManager, RoutingRulesResourceHandler routingRulesResourceHandler)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.routingRulesResourceHandler = requireNonNull(routingRulesResourceHandler, "routingRulesResourceHandler is null");
     }
 
     @GET
@@ -90,6 +96,23 @@ public class GatewayResource
             return throwError(e);
         }
         return Response.ok().build();
+    }
+
+    @GET
+    @Path("/routing-rules/all")
+    public Response getRoutingRules()
+            throws IOException
+    {
+        return routingRulesResourceHandler.getRoutingRules();
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/routing-rules/modify/update")
+    public Response updateRoutingRules(RoutingRule routingRule)
+            throws IOException
+    {
+        return routingRulesResourceHandler.updateRoutingRules(routingRule);
     }
 
     private Response throwError(Exception e)
