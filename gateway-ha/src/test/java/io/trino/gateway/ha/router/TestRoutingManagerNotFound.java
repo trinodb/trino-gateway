@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.cache.NoopDistributedCache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
@@ -37,7 +39,19 @@ final class TestRoutingManagerNotFound
         GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
 
-        this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
+        QueryCacheManager.QueryCacheLoader loader = queryId -> {
+            String backend = historyManager.getBackendForQueryId(queryId);
+            String routingGroup = historyManager.getRoutingGroupForQueryId(queryId);
+            String externalUrl = historyManager.getExternalUrlForQueryId(queryId);
+
+            if (backend == null && routingGroup == null && externalUrl == null) {
+                return null;
+            }
+            return new io.trino.gateway.ha.cache.QueryMetadata(backend, routingGroup, externalUrl);
+        };
+        QueryCacheManager queryCacheManager = new QueryCacheManager(new NoopDistributedCache(), loader);
+
+        this.routingManager = new StochasticRoutingManager(backendManager, routingConfiguration, queryCacheManager);
     }
 
     @Test

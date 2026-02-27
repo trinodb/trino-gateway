@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.inject.Inject;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 
@@ -29,10 +30,10 @@ public class StochasticRoutingManager
     @Inject
     public StochasticRoutingManager(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager,
-            RoutingConfiguration routingConfiguration)
+            RoutingConfiguration routingConfiguration,
+            QueryCacheManager queryCacheManager)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        super(gatewayBackendManager, routingConfiguration, queryCacheManager);
     }
 
     @Override

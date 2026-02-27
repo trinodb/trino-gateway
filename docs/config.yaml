@@ -11,3 +11,11 @@ dataStore:
 
 clusterStatsConfiguration:
   monitorType: INFO_API
+
+# Distributed cache (optional - for multi-instance deployments)
+distributedCacheConfiguration:
+  enabled: false
+  host: localhost
+  port: 6379
+  # password: ${DISTRIBUTED_CACHE_PASSWORD}  # Uncomment if authentication is required
+  # cacheTtl: 30m  # Cache TTL (default: 30 minutes)

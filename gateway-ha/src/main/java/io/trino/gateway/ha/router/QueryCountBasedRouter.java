@@ -17,6 +17,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import io.trino.gateway.ha.cache.QueryCacheManager;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
@@ -156,10 +157,10 @@ public class QueryCountBasedRouter
     @Inject
     public QueryCountBasedRouter(
             GatewayBackendManager gatewayBackendManager,
-            QueryHistoryManager queryHistoryManager,
-            RoutingConfiguration routingConfiguration)
+            RoutingConfiguration routingConfiguration,
+            QueryCacheManager queryCacheManager)
     {
-        super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        super(gatewayBackendManager, routingConfiguration, queryCacheManager);
         clusterStats = new ConcurrentHashMap<>();
     }
 
