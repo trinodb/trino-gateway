@@ -1,0 +1,2311 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Overview, guides, reference documentation and other resources for Trino Gateway.">
+      
+      
+        <meta name="author" content="Trino Gateway contributors">
+      
+      
+        <link rel="canonical" href="https://trinodb.github.io/trino-gateway/release-notes/">
+      
+      
+        <link rel="prev" href="../users/">
+      
+      
+        <link rel="next" href="../quickstart/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logos/trino-favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Release notes - Trino Gateway</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Release notes - Trino Gateway" />
+<meta property="og:description" content="Overview, guides, reference documentation and other resources for Trino Gateway." />
+<meta property="og:image" content="https://trinodb.github.io/trino-gateway/assets/images/social/release-notes.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:url" content="https://trinodb.github.io/trino-gateway/release-notes/" />
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:title" content="Release notes - Trino Gateway" />
+<meta property="twitter:description" content="Overview, guides, reference documentation and other resources for Trino Gateway." />
+<meta property="twitter:image" content="https://trinodb.github.io/trino-gateway/assets/images/social/release-notes.png" />
+</head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#release-notes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Trino Gateway" class="md-header__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trino Gateway
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Release notes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../routing-rules/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../development/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Contribute
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Trino Gateway" class="md-nav__button md-logo" aria-label="Trino Gateway" data-md-component="logo">
+      
+  <img src="../assets/logos/trino.svg" alt="logo">
+
+    </a>
+    Trino Gateway
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trinodb/trino-gateway" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trinodb/trino-gateway
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Home
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../users/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Users
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 17 (31 Jan 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2025
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2025">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 16 (17 Sep 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 15 (12 Mar 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 14 (14 Feb 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 13 (3 Dec 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2024
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2024">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 12 (7 Nov 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 11 (12 Sep 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 10 (24 Jul 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 9 (8 May 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 8 (6 May 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 7 (21 Mar 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 6 (16 Feb 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 5 (24 Jan 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 4 (30 Nov 2023)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2023
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2023">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 3 (26 Sep 2023)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Operation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routing-logic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routing logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gateway-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gateway API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resource-groups-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resource groups API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration-to-airlift/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration to Airlift
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribute
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contribute
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../routers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Routers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2026
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2026">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 17 (31 Jan 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2025" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2025
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2025">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 16 (17 Sep 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 15 (12 Mar 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 14 (14 Feb 2025)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 13 (3 Dec 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2024" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2024
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2024">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 12 (7 Nov 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 11 (12 Sep 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 10 (24 Jul 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 9 (8 May 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 8 (6 May 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 7 (21 Mar 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 6 (16 Feb 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 5 (24 Jan 2024)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 4 (30 Nov 2023)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2023" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2023
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2023">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trino Gateway 3 (26 Sep 2023)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/trinodb/trino-gateway/edit/main/docs/release-notes.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway/raw/main/docs/release-notes.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="release-notes">Release notes<a class="headerlink" href="#release-notes" title="Permanent link">&para;</a></h1>
+<h2 id="2026">2026<a class="headerlink" href="#2026" title="Permanent link">&para;</a></h2>
+<h3 id="17">Trino Gateway 17 (31 Jan 2026)<a class="headerlink" href="#17" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/17/gateway-ha-17-jar-with-dependencies.jar">JAR file gateway-ha-17-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:17</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/17.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/17.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>1.17.0</code></li>
+</ul>
+<p>Changes:</p>
+<p><strong>General</strong></p>
+<ul>
+<li>Use UBI10 micro as the base Docker image.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/779">#779</a>)</li>
+<li>Expose Trino cluster state via JMX.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/782">#782</a>)</li>
+<li>Check health status for all clusters regardless of activation status.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/809">#809</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Require Java 25 to run Trino Gateway
+  and use it in the container image.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/802">#802</a>)</li>
+<li>Remove defunct email notifier.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/843">#843</a>)</li>
+<li>Fix <code>partialCancel</code> statement path redirection.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/776">#776</a>)</li>
+<li>Fix issues with large HTTP headers by setting <code>max-request-header-size</code> and
+  <code>max-response-header-size</code> parameters for HTTP client connections.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/571">#571</a>)</li>
+</ul>
+<p><strong>UI</strong></p>
+<ul>
+<li>Display a truncated query text in the query history list.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/806">#806</a>)</li>
+<li>Use and require Node.js v24.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/813">#813</a>)</li>
+<li>Fix incorrect display of zero queries in the query distribution chart.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/788">#788</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A17+is%3Aclosed">available in the
+milestone 17 list</a>.</p>
+<h2 id="2025">2025<a class="headerlink" href="#2025" title="Permanent link">&para;</a></h2>
+<h3 id="16">Trino Gateway 16 (17 Sep 2025)<a class="headerlink" href="#16" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/16/gateway-ha-16-jar-with-dependencies.jar">JAR file gateway-ha-16-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:16</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/16.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/16.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>1.16.0</code></li>
+</ul>
+<p>Changes:</p>
+<p><strong>General</strong></p>
+<ul>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Require Java 24 to run Trino Gateway
+  and use it in the container image.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/727">#727</a>)</li>
+<li>Update database testing and therefore support to PostgreSQL version 17.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/753">#753</a>)</li>
+<li>Allow configuration of a default routing group and error propagation to client
+  tools. (<a href="https://github.com/trinodb/trino-gateway/pull/687">#687</a>)</li>
+<li>Add an option to add the <code>X-Forwarded-Proto</code> HTTP header when fetching cluster
+  stats to enable Trino Gateway use with clusters behind a TLS-terminations load
+  balancer.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/729">#729</a>)  </li>
+<li>Improve error propagation when using an external routing service.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/687">#687</a>)</li>
+<li>Add support for HTTP header modifications by an external routing service.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/646">#646</a>)</li>
+<li>Add cluster activation status metric and emit to <code>/v1/jmx</code>.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/673">#673</a>)</li>
+<li>Improve properties handling for JDBC connection to the database.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/651">#651</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Rename the task delay configuration
+  for the monitor from <code>taskDelaySeconds</code> to <code>taskDelay</code> and to support Airlift
+  duration string instead of second values only.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/695">#695</a>)</li>
+</ul>
+<p><strong>UI</strong></p>
+<ul>
+<li>Display routing group name in the query history page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/607">#607</a>)</li>
+<li>Rename <code>RoutedTo</code> to <code>Name</code> field in query history page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/639">#639</a>)</li>
+<li>Use external URL for query routing history display.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/693">#693</a>)</li>
+<li>Add separate window for query text in query history page and enable display of
+  the full query text. 
+  (<a href="https://github.com/trinodb/trino-gateway/pull/740">#740</a>)</li>
+<li>Show counts for healthy and unhealthy clusters in the summary section of the 
+  dashboard page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/758">#758</a>)</li>
+<li>A column sorting to the clusters list on the dashboard page and column sorting
+  and filtering to the query list on the query history page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/752">#752</a>)</li>
+<li>Fix UI rendering issues on routing rules page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/660">#660</a>)</li>
+<li>Fix bug for non-admin users seeing login errors when accessing the UI when
+  page restrictions are configured.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/664">#664</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A16+is%3Aclosed">available in the
+milestone 16 list</a>.</p>
+<h3 id="15">Trino Gateway 15 (12 Mar 2025)<a class="headerlink" href="#15" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/15/gateway-ha-15-jar-with-dependencies.jar">JAR file gateway-ha-15-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:15</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/15.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/15.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>1.15.0</code></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add pop up messages for operations in the user interface.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/617">#617</a>)</li>
+<li>Add support for configuring custom OpenMetrics from the Trino clusters for the
+  metrics monitor health check.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/621">#621</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Change paths and file names in the
+  Docker image. Configuration file name is <code>/opt/trino-gateway/config.yaml</code> and 
+  folder names use <code>trino-gateway</code> consistently.<br />
+  (<a href="https://github.com/trinodb/trino-gateway/pull/623">#623</a>) and 
+  (<a href="https://github.com/trinodb/trino-gateway/pull/628">#628</a>)</li>
+<li>Prevent proxy failures resulting from backend URL configuration containing a 
+  trailing slash.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/564">#564</a>)</li>
+<li>Fix query errors when adhoc routing group has no healthy backends.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/630">#630</a>) and
+  (<a href="https://github.com/trinodb/trino-gateway/issues/641">#641</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A15+is%3Aclosed">available in the
+milestone 15 list</a>.</p>
+<h3 id="14">Trino Gateway 14 (14 Feb 2025)<a class="headerlink" href="#14" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/14/gateway-ha-14-jar-with-dependencies.jar">JAR file gateway-ha-14-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:14</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/14.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/14.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>1.14.0</code></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add display of the cluster health status on the cluster page.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/601">#601</a>)</li>
+<li>Add user interface page to show and edit routing rules.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/433">#433</a>)</li>
+<li>Add support for <a href="../installation/#backend-database">automatic database schema validation and 
+  upgrade</a> during Trino Gateway startup.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/575">#575</a>)</li>
+<li>Enable use of Oracle as backend database for Trino Gateway.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/588">#588</a>)</li>
+<li>Add support to configure HTTP client options for the external routing group
+  selector. (<a href="https://github.com/trinodb/trino-gateway/pull/580">#580</a>)</li>
+<li>Add a cluster monitor using JMX data from Trino.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/472">#472</a>)</li>
+<li>Add a cluster monitor using the Trino OpenMetrics endpoint with customizable
+  health definition. (<a href="https://github.com/trinodb/trino-gateway/pull/584">#584</a>)</li>
+<li>Add API health endpoints at <code>/trino-gateway/livez</code> and <code>/trino-gateway/readyz</code>
+  for monitoring liveness and readiness.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/595">#595</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Change configuration file name from 
+  <code>gateway-ha-config.yml</code> to <code>config.yaml</code>.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/598">#598</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Load fundamental modules by default, 
+  and remove  the related configurations <code>HaGatewayProviderModule</code>, 
+  <code>ActiveClusterMonitor</code>, <code>ClusterStateListenerModule</code>, and 
+  <code>ClusterStatsMonitorModule</code> from the configuration file. 
+  (<a href="https://github.com/trinodb/trino-gateway/pull/597">#597</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Remove support for composite rules and
+  the use of easy-rules syntax.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/540">#540</a>)</li>
+<li>Improve performance of Trino cluster stats collection and add a timeout
+  configuration. (<a href="https://github.com/trinodb/trino-gateway/pull/583">#583</a>)</li>
+<li>Fix visibility of chart legend text when changing the theme of the user
+  interface. (<a href="https://github.com/trinodb/trino-gateway/issues/585">#585</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A14+is%3Aclosed">available in the
+milestone 14 list</a>.</p>
+<h3 id="13">Trino Gateway 13 (3 Dec 2024)<a class="headerlink" href="#13" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/13/gateway-ha-13-jar-with-dependencies.jar">JAR file gateway-ha-13-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:13</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/13.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/13.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>1.13.0</code></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Allow proxying of HTTP PUT requests to Trino clusters.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/543">#543</a>)</li>
+<li>Add a filter for <code>source</code> to the <strong>History</strong> page in the UI.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/551">#551</a>)</li>
+<li>Log out inactive users from the UI automatically.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/544">#544</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A13+is%3Aclosed">available in the
+milestone 13 list</a>.</p>
+<h2 id="2024">2024<a class="headerlink" href="#2024" title="Permanent link">&para;</a></h2>
+<h3 id="12">Trino Gateway 12 (7 Nov 2024)<a class="headerlink" href="#12" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/12/gateway-ha-12-jar-with-dependencies.jar">JAR file gateway-ha-12-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:12</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/12.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/12.zip">zip</a></li>
+<li><a href="https://trinodb.github.io/charts/">Trino Helm chart</a> <code>trino/trino-gateway</code> version <code>0.12.0</code></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add support for parsing <code>EXECUTE IMMEDIATE</code> statements for routing.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/484">#484</a>)</li>
+<li>Add support to set configuration values from environment variables.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/483">#483</a>)</li>
+<li>Add support to include information about the cluster used for query processing
+  to the response cookie.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/465">#465</a>)</li>
+<li>Add support for configuring the startup command for Trino Gateway in the
+  Helm chart with the <code>command</code> node.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/505">#505</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Require Java 23 for build and 
+  runtime. Use Java 23 as runtime in the container.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/486">#486</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Rename routing rule configuration
+  <code>blackListHeaders</code> to<code>excludeHeaders</code>.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/470">#470</a>)</li>
+<li>Prevent request analyzer failures for some queries without a defined catalog.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/478">#478</a>)</li>
+<li>Fix parsing failure and therefore routing problems for queries using <code>WITH</code> 
+  clauses.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/528">#528</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A12+is%3Aclosed">available in the
+milestone 12 list</a>.</p>
+<h3 id="11">Trino Gateway 11 (12 Sep 2024)<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/11/gateway-ha-11-jar-with-dependencies.jar">JAR file gateway-ha-11-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:11</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/11.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/11.zip">zip</a></li>
+<li>Helm chart <code>11.0.0</code> in <code>helm/trino-gateway</code> of the tagged source code</li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Require Java 22 for build and runtime.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/441">#441</a>)</li>
+<li>Add support for determining routing group in an external service.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/423">#423</a>)</li>
+<li>Add an option to forward requests without adding <code>X-Forwarded-*</code> HTTP headers
+  with the <code>addXForwardedHeaders: false</code> configuration in <code>routing</code>.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/417">#417</a>)</li>
+<li>Add OpenMetrics endpoint to
+  <a href="../operation/#monitoring">enable monitoring</a> with Prometheus and compatible systems.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/429">#429</a>)</li>
+<li>Add option to <a href="../security/#cert-trino">deactivate hostname verification for the certificate 
+  of the Trino clusters</a>.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/436">#436</a>)</li>
+<li>Add option to use additional paths as Trino client REST API endpoints.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/326">#326</a>)</li>
+<li>Add timeout parameters for INFO_API and JDBC health checks.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/424">#424</a>)</li>
+<li>Add support for specifying custom labels in the Helm chart <code>commonLabels</code>.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/448">#448</a>)</li>
+<li>Enable routing for requests to kill query processing.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/427">#427</a>)</li>
+<li>Fix routing functionality and query history issues caused by lowercase 
+  HTTP headers in HTTP/2 connections.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/450">#450</a>)</li>
+<li>Fix failures when clients use HTTP/2.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/451">#451</a>)</li>
+<li>Ensure that the user history dashboard displays the correct user name.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/370">#370</a>)</li>
+<li>Fix incorrect routing of OAuth logout requests.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/455">#455</a>)</li>
+</ul>
+<p>More details and a list of all merged pull requests are <a href="https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A11+is%3Aclosed">available in the 
+milestone 11 list</a>.</p>
+<h3 id="10">Trino Gateway 10 (24 Jul 2024)<a class="headerlink" href="#10" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/10/gateway-ha-10-jar-with-dependencies.jar">JAR file gateway-ha-10-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:10</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/10.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/10.zip">zip</a></li>
+<li>Helm chart <code>10.0.0</code> in <code>helm/trino-gateway</code> of the tagged source code</li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Remove support for Dropwizard and
+  Jetty Proxy integration and usage. Add
+  <a href="https://github.com/airlift/airlift">Airlift</a> as the base application
+  framework as
+  used in Trino. This changes the supported Trino Gateway startup, configuration
+  files, and relevant properties. Find details in the
+  <a href="../quickstart/">documentation</a>, and specifically refer to the
+  <a href="../migration-to-airlift/">upgrade guide</a> when migrating from older releases.
+  (<a href="https://github.com/trinodb/trino-gateway/issues/41">#41</a>)</li>
+<li><a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Breaking change:</a> Improve Helm chart reliability and
+  adjust to new Airlift base framework.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/401">#401</a>)</li>
+<li>Enable routing rules to use query and user details extracted from the HTTP
+  request.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/325">#325</a>)</li>
+<li>Add support for using an OIDC claim for authorization.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/322">#322</a>)</li>
+<li>Improve OIDC spec compliance, and add state and nonce verification.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/339">#348</a>)</li>
+<li>Allow null values for <code>userName</code> and <code>source</code> in the query history.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/381">#381</a>)</li>
+<li>Show times in query distribution graph in UI in local time instead of UTC.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/369">#369</a>)</li>
+<li>Fix problems with secrets, liveness, and readiness templates in Helm chart.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/348">#348</a>)</li>
+<li>Fix cluster reordering issue in the cluster user interface.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/331">#331</a>)</li>
+<li>Fix creation of new resource groups.
+  (<a href="https://github.com/trinodb/trino-gateway/pull/379">#379</a>)</li>
+</ul>
+<h3 id="9">Trino Gateway 9 (8 May 2024)<a class="headerlink" href="#9" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/9/gateway-ha-9-jar-with-dependencies.jar">JAR file gateway-ha-9-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:9</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/9.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/9.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Ensure inclusion of UI in JAR and container artifacts. (<a href="https://github.com/trinodb/trino-gateway/pull/337">#337</a>)</li>
+</ul>
+<h3 id="8">Trino Gateway 8 (6 May 2024)<a class="headerlink" href="#8" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/8/gateway-ha-8-jar-with-dependencies.jar">JAR file gateway-ha-8-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:8</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/8.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/8.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add support for configurable router policies. (<a href="https://github.com/trinodb/trino-gateway/pull/98">#98</a>)</li>
+<li>Add a router policy based on query count per cluster. (<a href="https://github.com/trinodb/trino-gateway/pull/98">#98</a>)</li>
+<li>Add a router policy for select paths based on cookie content. (<a href="https://github.com/trinodb/trino-gateway/pull/188">#188</a>)</li>
+<li>Support configuring access permissions for UI pages. (<a href="https://github.com/trinodb/trino-gateway/pull/296">#296</a>)</li>
+<li>Add Helm chart for Kubernetes deployments. (<a href="https://github.com/trinodb/trino-gateway/issues/87">#87</a>)</li>
+<li>Require Java 21 for build and runtime. (<a href="https://github.com/trinodb/trino-gateway/pull/225">#225</a>)</li>
+<li>Fix the <code>userInfo</code> resource to pass role information used by the API, so that
+  the webapp authentication matches the API authentication. (<a href="https://github.com/trinodb/trino-gateway/pull/310">#310</a>)</li>
+</ul>
+<h3 id="7">Trino Gateway 7 (21 Mar 2024)<a class="headerlink" href="#7" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/7/gateway-ha-7-jar-with-dependencies.jar">JAR file gateway-ha-7-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:7</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/7.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/7.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Replace user interface with a new modern UI. (<a href="https://github.com/trinodb/trino-gateway/pull/116">#116</a>)</li>
+<li>Improve logging configurability. Users must update to the 
+  <a href="../installation/#logging">new logging configuration</a>. (<a href="https://github.com/trinodb/trino-gateway/pull/260">#260</a>)</li>
+<li>Improve Trino cluster health check performance and remove authentication requirement 
+  by using the <code>v1/info</code> endpoint. (<a href="https://github.com/trinodb/trino-gateway/pull/264">#264</a>)</li>
+<li>Fix query id tracking based on request querystring parsing. (<a href="https://github.com/trinodb/trino-gateway/pull/265">#265</a>)</li>
+</ul>
+<p><a href="https://github.com/trinodb/trino-gateway/issues?q=milestone%3A7+is%3Aclosed">Details about all pull requests and issues</a></p>
+<h3 id="6">Trino Gateway 6 (16 Feb 2024)<a class="headerlink" href="#6" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/6/gateway-ha-6-jar-with-dependencies.jar">JAR file gateway-ha-6-jar-with-dependencies.jar</a></li>
+<li>Container image <code>trinodb/trino-gateway:6</code></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/6.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/6.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add Docker container build, publishing, and usage setup and instructions. (<a href="https://github.com/trinodb/trino-gateway/issues/86">#86</a>)</li>
+</ul>
+<p><a href="https://github.com/trinodb/trino-gateway/issues?q=milestone%3A6+is%3Aclosed">Details about all pull requests and issues</a></p>
+<h3 id="5">Trino Gateway 5 (24 Jan 2024)<a class="headerlink" href="#5" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/5/gateway-ha-5-jar-with-dependencies.jar">gateway-ha-5-jar-with-dependencies.jar</a></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/5.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/5.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add support for OAuth 2 audience use. (<a href="https://github.com/trinodb/trino-gateway/pull/164">#164</a>)</li>
+<li>Add quickstart scripts and documentation. (<a href="https://github.com/trinodb/trino-gateway/pull/110">#110</a>)</li>
+<li>Add project logo. (<a href="https://github.com/trinodb/trino-gateway/pull/111">#111</a>)</li>
+<li>Prevent ignoring HTTP header configuration. (<a href="https://github.com/trinodb/trino-gateway/issues/100">#100</a>)</li>
+</ul>
+<p><a href="https://github.com/trinodb/trino-gateway/pull/168">Details about all merged pull requests</a></p>
+<h3 id="4">Trino Gateway 4 (30 Nov 2023)<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/4/gateway-ha-4-jar-with-dependencies.jar">gateway-ha-4-jar-with-dependencies.jar</a></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/4.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/4.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<ul>
+<li>Add support for configuring additional whitelisted URL paths. (<a href="https://github.com/trinodb/trino-gateway/pull/63">#63</a>)</li>
+<li>Improve flexibility of user and group name matching for authorization. (<a href="https://github.com/trinodb/trino-gateway/pull/32">#32</a>)</li>
+<li>Add support to use external URL for backend creation. (<a href="https://github.com/trinodb/trino-gateway/pull/76">#76</a>)</li>
+<li>Enable configuration of HTTP header size. (<a href="https://github.com/trinodb/trino-gateway/pull/67">#67</a>)</li>
+<li>Automatically set JDBC configuration parameter for TLS when connecting to
+  clusters for monitoring. (<a href="https://github.com/trinodb/trino-gateway/pull/71">#71</a>)</li>
+<li>Modernize application and remove potential for undiscovered bugs and security
+  issues with update of many core dependencies. (<a href="https://github.com/trinodb/trino-gateway/pull/59">#59</a>)</li>
+<li>Avoid failure when unhandled OIDC properties are present. (<a href="https://github.com/trinodb/trino-gateway/pull/69">#69</a>)</li>
+<li>Prevent failures resulting from reloading and parsing rules file. (<a href="https://github.com/trinodb/trino-gateway/pull/5">#5</a>)</li>
+</ul>
+<p><a href="https://github.com/trinodb/trino-gateway/pull/73">Details about all merged pull requests</a></p>
+<h2 id="2023">2023<a class="headerlink" href="#2023" title="Permanent link">&para;</a></h2>
+<h3 id="3">Trino Gateway 3 (26 Sep 2023)<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<p>Artifacts:</p>
+<ul>
+<li><a href="https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/3/gateway-ha-3-jar-with-dependencies.jar">gateway-ha-3-jar-with-dependencies.jar</a></li>
+<li>Source code as
+  <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/3.tar.gz">tar.gz</a>
+  or <a href="https://github.com/trinodb/trino-gateway/archive/refs/tags/3.zip">zip</a></li>
+</ul>
+<p>Changes:</p>
+<p>The first release of Trino Gateway is based on the 
+<a href="https://github.com/lyft/presto-gateway/">Presto Gateway</a> 1.9.5 codebase
+(<a href="https://github.com/trinodb/trino-gateway/pull/4">#4</a>) with these additions:</p>
+<ul>
+<li>Add authentication and authorization with LDAP, OIDC and user list from config
+  file. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+<li>Add support for user, admin and API roles. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+<li>Add healthcheck for Trino backends using JDBC. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+<li>Add TCP check for routing. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+<li>Add logic to route requests only to healthy backends. (<a href="https://github.com/trinodb/trino-gateway/pull/13">#13</a>)</li>
+<li>Add PostgreSQL support for backend database. (<a href="https://github.com/trinodb/trino-gateway/pull/13">#13</a>)</li>
+<li>Allow routing of <code>/v1/node</code> endpoint URL. (<a href="https://github.com/trinodb/trino-gateway/pull/27">#27</a>)</li>
+<li>Filter logs for sensitive information. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+<li>Require Java 17 for build and runtime. (<a href="https://github.com/trinodb/trino-gateway/pull/16">#16</a>)</li>
+<li>Deactivate clusters with zero workers. (<a href="https://github.com/trinodb/trino-gateway/pull/13">#13</a>)</li>
+<li>Remove concurrency issue from repeated rules file loading. (<a href="https://github.com/trinodb/trino-gateway/pull/9">#9</a>)</li>
+</ul>
+<p><a href="https://github.com/trinodb/trino-gateway/pull/52">Details about all merged pull requests</a></p>
+<h2 id="breaking-changes">Breaking changes <a name="breaking"><a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h2>
+<p>Starting with Trino Gateway 10, release note entries include a <a href="#breaking"><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" />
+Breaking change:</a> prefix to highlight any changes as potentially 
+breaking changes. The following changes are considered and may require
+adjustments:</p>
+<ul>
+<li>Removal or renaming of configuration properties that may prevent startup or 
+  require configuration changes.</li>
+<li>Changes to default values for configuration properties that may significantly
+  change the behavior of a system.</li>
+<li>Updates to the requirements for external systems or software used with 
+  Trino Gateway.</li>
+<li>Non-backwards compatible changes which may require router modules to 
+  be updated.</li>
+<li>Otherwise significant changes that requires specific attention from teams 
+  managing a Trino Gateway deployment.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Trino Gateway is open source software licensed under the
+<a href="https://github.com/trinodb/trino-gateway/blob/main/LICENSE">Apache License 2.0</a>
+and supported by the <a href="https://trino.io/foundation.html">Trino Software Foundation</a>.
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/trinodb/trino-gateway" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.youtube.com/c/trinodb" target="_blank" rel="noopener" title="www.youtube.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M549.7 124.1c-6.2-23.7-24.8-42.3-48.3-48.6C458.9 64 288.1 64 288.1 64S117.3 64 74.7 75.5c-23.5 6.3-42 24.9-48.3 48.6C15 167 15 256.4 15 256.4s0 89.4 11.4 132.3c6.3 23.6 24.8 41.5 48.3 47.8C117.3 448 288.1 448 288.1 448s170.8 0 213.4-11.5c23.5-6.3 42-24.2 48.3-47.8 11.4-42.9 11.4-132.3 11.4-132.3s0-89.4-11.4-132.3zM232.2 337.6V175.2l142.7 81.2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://trino.io/slack" target="_blank" rel="noopener" title="trino.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M94.1 315.1c0 25.9-21.2 47.1-47.1 47.1S0 341 0 315.1 21.2 268 47.1 268h47.1v47.1zm23.7 0c0-25.9 21.2-47.1 47.1-47.1s47.1 21.2 47.1 47.1v117.8c0 25.9-21.2 47.1-47.1 47.1s-47.1-21.2-47.1-47.1zm47.1-189c-25.9 0-47.1-21.2-47.1-47.1s21.2-47 47.1-47S212 53.2 212 79.1v47.1h-47.1zm0 23.7c25.9 0 47.1 21.2 47.1 47.1S190.8 244 164.9 244H47.1C21.2 244 0 222.8 0 196.9s21.2-47.1 47.1-47.1zm189 47.1c0-25.9 21.2-47.1 47.1-47.1s47 21.2 47 47.1-21.2 47.1-47.1 47.1h-47.1v-47.1zm-23.7 0c0 25.9-21.2 47.1-47.1 47.1S236 222.8 236 196.9V79.1c0-25.9 21.2-47.1 47.1-47.1s47.1 21.2 47.1 47.1zm-47.1 189c25.9 0 47.1 21.2 47.1 47.1s-21.2 47-47.1 47-47.1-21.2-47.1-47.1v-47.1h47.1zm0-23.7c-25.9 0-47.1-21.2-47.1-47.1s21.2-47.1 47.1-47.1h117.8c25.9 0 47.1 21.2 47.1 47.1s-21.2 47.1-47.1 47.1z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://www.linkedin.com/company/trino-software-foundation" target="_blank" rel="noopener" title="www.linkedin.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3M135.4 416H69V202.2h66.5V416zM102.2 96a38.5 38.5 0 1 1 0 77 38.5 38.5 0 1 1 0-77m282.1 320h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.indexes", "navigation.instant", "navigation.path", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../assets/js/extra.js"></script>
+      
+    
+  </body>
+</html>

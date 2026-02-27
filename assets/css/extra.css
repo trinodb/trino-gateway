@@ -1,0 +1,20 @@
+/*  Additional CSS hackery */
+:root {
+    --md-primary-fg-color: #000033;
+}
+
+.md-typeset a {
+    color: #DD00A1;
+}
+
+.youtube {
+    color: #EE0F0F;
+}
+
+/* override for right hand nav to be a bit wider and prevent wrapping on release notes */
+[dir=ltr] .md-nav--secondary .md-nav__item>.md-nav__link {
+    margin-right: .1rem;
+}
+[dir=rtl] .md-nav--primary .md-nav__title .md-nav__icon {
+    margin-left: .1rem
+}
