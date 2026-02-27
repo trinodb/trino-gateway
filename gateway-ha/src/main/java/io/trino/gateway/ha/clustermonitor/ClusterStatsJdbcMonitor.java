@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
@@ -39,7 +40,7 @@ public class ClusterStatsJdbcMonitor
 {
     private static final Logger log = Logger.get(ClusterStatsJdbcMonitor.class);
 
-    private final Properties properties; // TODO Avoid using a mutable field
+    private final ImmutableMap<String, String> properties;
     private final Duration queryTimeout;
 
     private static final String STATE_QUERY = "SELECT state, COUNT(*) as count "
@@ -49,15 +50,15 @@ public class ClusterStatsJdbcMonitor
 
     public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration, MonitorConfiguration monitorConfiguration)
     {
-        properties = new Properties();
-        properties.setProperty("user", backendStateConfiguration.getUsername());
-        properties.setProperty("password", backendStateConfiguration.getPassword());
-        properties.setProperty("SSL", String.valueOf(backendStateConfiguration.getSsl()));
+        ImmutableMap.Builder<String, String> propertiesBuilder = ImmutableMap.builder();
+        propertiesBuilder.put("user", backendStateConfiguration.getUsername());
+        propertiesBuilder.put("password", backendStateConfiguration.getPassword());
         // explicitPrepare is a valid property for Trino versions >= 431. To avoid compatibility
         // issues with versions < 431, this property is left unset when explicitPrepare=true, which is the default
         if (!monitorConfiguration.isExplicitPrepare()) {
-            properties.setProperty("explicitPrepare", "false");
+            propertiesBuilder.put("explicitPrepare", "false");
         }
+        properties = propertiesBuilder.build();
         queryTimeout = monitorConfiguration.getQueryTimeout();
         log.info("state check configured");
     }
@@ -68,23 +69,32 @@ public class ClusterStatsJdbcMonitor
         String url = backend.getProxyTo();
         ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         String jdbcUrl;
+        Properties connectionProperties;
         try {
             URL parsedUrl = new URL(url);
             jdbcUrl = String
                     .format("jdbc:trino://%s:%s/system",
                             parsedUrl.getHost(),
                             parsedUrl.getPort() == -1 ? parsedUrl.getDefaultPort() : parsedUrl.getPort());
-            // automatically set ssl config based on url protocol
-            properties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
+            // Create connection properties from immutable map
+            connectionProperties = new Properties();
+            // Remove any existing SSL property to avoid confusion
+            for (String key : properties.keySet()) {
+                if (!key.equalsIgnoreCase("SSL")) {
+                    connectionProperties.setProperty(key, properties.get(key));
+                }
+            }
+            // Set SSL config based on url protocol, always taking precedence
+            connectionProperties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
         }
         catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid backend URL: " + url, e);
         }
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, properties);
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, connectionProperties);
                 PreparedStatement statement = SimpleTimeLimiter.create(Executors.newSingleThreadExecutor()).callWithTimeout(
                         () -> conn.prepareStatement(STATE_QUERY), 10, SECONDS)) {
-            statement.setString(1, (String) properties.get("user"));
+            statement.setString(1, properties.get("user"));
             statement.setQueryTimeout((int) queryTimeout.roundTo(SECONDS));
             Map<String, Integer> partialState = new HashMap<>();
             ResultSet rs = statement.executeQuery();
