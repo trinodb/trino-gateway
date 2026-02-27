@@ -101,7 +101,7 @@ return a result with the following criteria:
 
 * Response status code of OK (200)
 * Message in JSON format
-* Only one group can be returned
+* Only one group or one cluster can be returned
 * If `errors` is not null, the query is routed to the configured default group
 
 #### Request headers modification
@@ -126,7 +126,16 @@ or setting client tags before the request reaches the Trino cluster.
     }
 }
 ```
-
+```json
+{
+    "routingCluster": "test-cluster",
+    "errors": [
+        "Error1",
+        "Error2",
+        "Error3"
+    ]
+}
+```
 ### Configure routing rules with a file
 
 Rules consist of a name, description, condition, and list
@@ -159,10 +168,10 @@ In addition to the default objects, rules may optionally utilize
 [trinoRequestUser](#trinorequestuser) and
 [trinoQueryProperties](#trinoqueryproperties)
 , which provide information about the user and query respectively.
-You must include an action of the form `result.put(\"routingGroup\", \"foo\")`
-to trigger routing of a request that satisfies the condition to the specific
-routing group. Without this action, the configured default group is used and the
-whole routing rule is redundant.
+You must include an action of the form `result.put(\"routingGroup\", \"foo\")` or 
+`result.put(\"routingCluster\", \"bar\")` to trigger routing of a request that satisfies 
+the condition to the specific routing group. Without this action, the configured default 
+group is used and the whole routing rule is redundant.
 
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
 an expression language with Java-like syntax. Classes from `java.util`, data-type 
@@ -374,6 +383,13 @@ priority: 1
 condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=special"'
 actions:
   - 'result.put("routingGroup", "etl-special")'
+---
+name: "airflow cluster"
+description: "query can also be pinned to a specific cluster"
+priority: 10
+condition: 'request.getHeader("X-Trino-Source") == "airflow" && request.getHeader("X-Trino-Client-Tags") contains "label=airflow-cluster"'
+actions:
+    - 'result.put("routingCluster", "airflow-cluster")'
 ```
 
 Note that both rules still fire. The difference is that you are guaranteed
@@ -381,8 +397,14 @@ that the first rule (priority 0) is fired before the second rule (priority 1).
 Thus `routingGroup` is set to `etl` and then to `etl-special`, so the
 `routingGroup` is always `etl-special` in the end.
 
+When mixing cluster and group actions, the same rule priority semantics apply.
+If a higher-priority rule (evaluated later) sets `routingCluster`, it overwrites
+any previously set group, and vice versa. In practice, the
+last assignment wins and `RoutingTargetHandler` inspects the resulting
+`RoutingDecision`, using the cluster when both values are present.
+
 More specific rules must be set to a higher priority so they are evaluated last
-to set a `routingGroup`.
+to set a `routingGroup` or a `routingCluster`.
 
 ##### Passing State
 

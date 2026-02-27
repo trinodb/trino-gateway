@@ -20,18 +20,19 @@ import java.util.Map;
 
 /**
  * Response from the routing service that includes:
- * - routingGroup: The target routing group for the request (Optional)
+ * - routingDecision: The target routing group for the request (Optional)
+ * - routingCluster: The target routing cluster for the request (Optional)
  * - externalHeaders: Headers that can be set in the request (Currently can only be set in ExternalRoutingGroupSelector)
  */
-public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders)
-        implements RoutingGroupResponse
+public record RoutingSelectorResponse(@Nullable String routingGroup, @Nullable String routingCluster, Map<String, String> externalHeaders)
+        implements RoutingResponse
 {
     public RoutingSelectorResponse {
         externalHeaders = ImmutableMap.copyOf(externalHeaders);
     }
 
-    public RoutingSelectorResponse(String routingGroup)
+    public RoutingSelectorResponse(String routingGroup, String routingCluster)
     {
-        this(routingGroup, ImmutableMap.of());
+        this(routingGroup, routingCluster, ImmutableMap.of());
     }
 }

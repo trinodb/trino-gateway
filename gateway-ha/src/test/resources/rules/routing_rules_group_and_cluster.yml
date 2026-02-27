@@ -1,0 +1,32 @@
+---
+name: "routing_cluster_pinning_rule"
+description: "Pin user to specific cluster"
+condition: "request.getHeader(\"X-Trino-User\") == \"user1\""
+actions:
+  - "result.put(\"routingCluster\", \"cluster01\")"
+---
+name: "routing_cluster_higher_priority_rule"
+description: "Higher priority sets cluster"
+condition: "request.getHeader(\"X-Trino-User\") == \"user2\""
+actions:
+  - "result.put(\"routingCluster\", \"adhoc01\")"
+---
+name: "routing_group_lower_priority_rule"
+description: "Lower priority sets routing group"
+priority: -1
+condition: "request.getHeader(\"X-Trino-User\") == \"user2\""
+actions:
+  - "result.put(\"routingGroup\", \"adhoc\")"
+---
+name: "routing_group_higher_priority_rule"
+description: "Higher priority sets routing group"
+condition: "request.getHeader(\"X-Trino-User\") == \"user3\""
+actions:
+  - "result.put(\"routingGroup\", \"adhoc\")"
+---
+name: "routing_cluster_lower_priority_rule"
+description: "Lower priority sets routing cluster"
+priority: -1
+condition: "request.getHeader(\"X-Trino-User\") == \"user3\""
+actions:
+  - "result.put(\"routingGroup\", \"adhoc01\")"
