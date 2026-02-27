@@ -62,9 +62,7 @@ public final class ProxyUtils
 
     public static Optional<String> extractQueryIdIfPresent(
             HttpServletRequest request,
-            List<String> statementPaths,
-            boolean requestAnalyserClientsUseV2Format,
-            int requestAnalyserMaxBodySize)
+            List<String> statementPaths)
     {
         String path = request.getRequestURI();
         String queryParams = request.getQueryString();

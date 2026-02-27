@@ -89,35 +89,6 @@ abstract class BaseExternalUrlQueryHistoryTest
     }
 
     @Test
-    void testGetExternalUrlByQueryId()
-    {
-        // Create and submit query with external URL
-        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
-        queryDetail.setQueryId("external-url-test-456");
-        queryDetail.setQueryText("SELECT count(*) FROM users");
-        queryDetail.setBackendUrl("http://backend:8080");
-        queryDetail.setUser("admin");
-        queryDetail.setSource("trino-cli");
-        queryDetail.setRoutingGroup("analytics");
-        queryDetail.setExternalUrl("https://analytics-gateway.company.com");
-        queryDetail.setCaptureTime(System.currentTimeMillis());
-
-        queryHistoryManager.submitQueryDetail(queryDetail);
-
-        // Test retrieving external URL by query ID
-        String externalUrl = queryHistoryManager.getExternalUrlForQueryId("external-url-test-456");
-        assertThat(externalUrl).isEqualTo("https://analytics-gateway.company.com");
-    }
-
-    @Test
-    void testGetExternalUrlForNonExistentQuery()
-    {
-        // Test retrieving external URL for non-existent query
-        String externalUrl = queryHistoryManager.getExternalUrlForQueryId("non-existent-query");
-        assertThat(externalUrl).isNull();
-    }
-
-    @Test
     void testSubmitQueryWithNullExternalUrl()
     {
         // Create and submit query with null external URL
@@ -164,8 +135,9 @@ abstract class BaseExternalUrlQueryHistoryTest
 
         // Verify all queries were stored with correct external URLs
         for (int i = 1; i <= 3; i++) {
-            String externalUrl = queryHistoryManager.getExternalUrlForQueryId("multi-external-url-test-" + i);
-            assertThat(externalUrl).isEqualTo("https://external-" + i + ".example.com");
+            List<QueryHistoryManager.QueryDetail> queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of("user-" + i));
+            assertThat(queryDetails).hasSize(1);
+            assertThat(queryDetails.getFirst().getExternalUrl()).isEqualTo("https://external-" + i + ".example.com");
         }
     }
 
