@@ -63,6 +63,7 @@ final class TestProxyRequestHandler
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
+    private final String customHeadEndpoint = "/v1/query";
     private final String healthCheckEndpoint = "/v1/info";
 
     @BeforeAll
@@ -84,6 +85,11 @@ final class TestProxyRequestHandler
                     return new MockResponse().setResponseCode(200)
                             .setHeader(CONTENT_TYPE, JSON_UTF_8)
                             .setBody(OK);
+                }
+
+                if (request.getMethod().equals("HEAD") && request.getPath().equals(customHeadEndpoint)) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8);
                 }
 
                 return new MockResponse().setResponseCode(NOT_FOUND);
@@ -122,6 +128,24 @@ final class TestProxyRequestHandler
 
         Request postRequest = new Request.Builder().url(url).post(requestBody).build();
         try (Response response = httpClient.newCall(postRequest).execute()) {
+            assertThat(response.code()).isEqualTo(NOT_FOUND);
+        }
+    }
+
+    @Test
+    void testHeadRequestHandler()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + customHeadEndpoint;
+
+        Request headRequest = new Request.Builder().url(url).head().build();
+        try (Response response = httpClient.newCall(headRequest).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.header("Content-Type")).isEqualTo("application/json;charset=utf-8");
+        }
+
+        Request getRequest = new Request.Builder().url(url).get().build();
+        try (Response response = httpClient.newCall(getRequest).execute()) {
             assertThat(response.code()).isEqualTo(NOT_FOUND);
         }
     }
