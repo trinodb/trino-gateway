@@ -25,10 +25,13 @@ import java.util.Map;
  Implementations of this interface are used to:
     * Specify the target routing group for a request
     * Provide additional headers that should be added to the request
+    * Specify whether strict routing should be used
  */
 public interface RoutingGroupResponse
 {
     @Nullable String routingGroup();
 
     Map<String, String> externalHeaders();
+
+    @Nullable Boolean strictRouting();
 }

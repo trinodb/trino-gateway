@@ -33,6 +33,7 @@ public record RoutingRule(
         String name,
         String description,
         Integer priority,
+        Boolean strictRouting,
         List<String> actions,
         String condition)
 {
@@ -40,6 +41,7 @@ public record RoutingRule(
         requireNonNull(name, "name is null");
         description = requireNonNullElse(description, "");
         priority = requireNonNullElse(priority, 0);
+        strictRouting = requireNonNullElse(strictRouting, false);
         actions = ImmutableList.copyOf(actions);
         requireNonNull(condition, "condition is null");
     }

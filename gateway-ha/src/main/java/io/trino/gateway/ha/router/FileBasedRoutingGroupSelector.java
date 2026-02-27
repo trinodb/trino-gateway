@@ -37,6 +37,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.sort;
+import static java.util.Objects.requireNonNull;
 
 public class FileBasedRoutingGroupSelector
         implements RoutingGroupSelector
@@ -72,13 +73,15 @@ public class FileBasedRoutingGroupSelector
             data = ImmutableMap.of("request", request);
         }
 
-        rules.get().forEach(rule -> {
+        boolean strictRouting = false;
+        for (RoutingRule rule : requireNonNull(rules.get())) {
             if (rule.evaluateCondition(data, state)) {
                 log.debug("%s evaluated to true on request: %s", rule, request);
                 rule.evaluateAction(result, data, state);
+                strictRouting = rule.isStrictRouting();
             }
-        });
-        return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY));
+        }
+        return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY), ImmutableMap.of(), strictRouting);
     }
 
     public List<RoutingRule> readRulesFromPath(Path rulesPath)
