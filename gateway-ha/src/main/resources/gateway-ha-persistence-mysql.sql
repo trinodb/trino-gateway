@@ -76,3 +76,15 @@ CREATE TABLE IF NOT EXISTS exact_match_source_selectors (
     PRIMARY KEY (environment, source, query_type),
     UNIQUE (source, environment, query_type, resource_group_id)
 );
+
+CREATE TABLE IF NOT EXISTS gateway_audit_logs (
+    audit_id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_name VARCHAR(256) NOT NULL,
+    ip_address VARCHAR(45),
+    backend_name VARCHAR(256) NOT NULL,
+    operation VARCHAR(64) NOT NULL,
+    context VARCHAR(64) NOT NULL,
+    success BOOLEAN NOT NULL,
+    user_comment VARCHAR(1024),
+    change_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
