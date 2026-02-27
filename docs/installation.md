@@ -225,6 +225,18 @@ The following pages are available:
 - `history`
 - `routing-rules`
 
+### Configure query history visibility for USER role
+
+You can set `allowUserRoleToViewAllQueryHistory` to control whether `USER` role can view query history across users.
+
+```yaml
+uiConfiguration:
+  allowUserRoleToViewAllQueryHistory: false
+```
+
+- `false` (default): non-admin users can only view their own query history.
+- `true`: non-admin users can view query history across all users.
+
 ## Configure behind a load balancer
 
 A possible deployment of Trino Gateway is to run multiple instances of Trino 

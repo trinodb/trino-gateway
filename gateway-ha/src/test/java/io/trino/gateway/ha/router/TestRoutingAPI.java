@@ -166,5 +166,6 @@ final class TestRoutingAPI
 
         assertThat(response.code()).isEqualTo(200);
         assertThat(uiConfiguration.getDisablePages()).containsExactly("routing-rules");
+        assertThat(uiConfiguration.isUserRoleAllowedToViewAllQueryHistory()).isFalse();
     }
 }
