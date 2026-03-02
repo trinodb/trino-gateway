@@ -65,6 +65,17 @@ export function Cluster() {
     );
   }
 
+  const tagsRender = (tags: string[]) => {
+    if (!tags || tags.length === 0) return null;
+    return (
+      <>
+        {tags.map(tag => (
+          <Tag key={tag} style={{ marginRight: 4, marginBottom: 2 }}>{tag}</Tag>
+        ))}
+      </>
+    );
+  }
+
   const statusRender = (text: string) => {
       let statusColor: TagColor;
       switch (text) {
@@ -116,6 +127,7 @@ export function Cluster() {
             }} />
           <Column title="ProxyToUrl" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
           <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
+          <Column title="Tags" dataIndex="tags" key="tags" render={tagsRender} />
           <Column title="Queued" dataIndex="queued" key="queued" sorter={(a, b) => (!a || !b) ? 0 : a.queued - b.queued} />
           <Column title="Running" dataIndex="running" key="running" sorter={(a, b) => (!a || !b) ? 0 : a.running - b.running} />
           <Column title="Active" dataIndex="active" key="active" render={switchRender} />
@@ -206,6 +218,13 @@ export function Cluster() {
               { type: 'string', message: 'type error' },
             ]}
             initValue={form?.externalUrl}
+          />
+          <Form.TagInput
+            field="tags"
+            label="Tags"
+            initValue={form?.tags}
+            separator={[' ']}
+            placeholder="Type a tag and press Space or Enter"
           />
           <Form.Switch label="Active" field='active' initValue={form?.active || false} />
         </Form>
