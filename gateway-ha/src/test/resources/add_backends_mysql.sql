@@ -1,5 +1,5 @@
 INSERT INTO gateway_backend
-(name, routing_group, backend_url, external_url, active)
+(name, routing_group, backend_url, external_url, active, tags)
 VALUES
-('trino-1', 'adhoc', 'http://localhost:8081', 'http://localhost:8081', 1),
-('trino-2', 'adhoc', 'http://localhost:8082', 'http://localhost:8082', 1);
+('trino-1', 'adhoc', 'http://localhost:8081', 'http://localhost:8081', 1, 'local,prod'),
+('trino-2', 'adhoc', 'http://localhost:8082', 'http://localhost:8082', 1, 'test');

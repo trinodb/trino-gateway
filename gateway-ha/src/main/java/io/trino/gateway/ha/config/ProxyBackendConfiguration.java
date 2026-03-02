@@ -15,6 +15,11 @@ package io.trino.gateway.ha.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
+
+import static java.util.Objects.requireNonNullElse;
 
 public class ProxyBackendConfiguration
 {
@@ -23,6 +28,7 @@ public class ProxyBackendConfiguration
     private String externalUrl;
     private String name;
     private String proxyTo;
+    private List<String> tags = ImmutableList.of();
 
     @JsonProperty
     public String getName()
@@ -85,5 +91,17 @@ public class ProxyBackendConfiguration
     public void setRoutingGroup(String routingGroup)
     {
         this.routingGroup = routingGroup;
+    }
+
+    @JsonProperty
+    public List<String> getTags()
+    {
+        return tags;
+    }
+
+    @JsonSetter
+    public void setTags(List<String> tags)
+    {
+        this.tags = requireNonNullElse(tags, ImmutableList.of());
     }
 }

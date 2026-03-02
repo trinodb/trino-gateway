@@ -24,12 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.destroyTestingDatabase;
+import static io.trino.gateway.ha.router.HaGatewayManager.tagsFromString;
+import static io.trino.gateway.ha.router.HaGatewayManager.tagsToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -151,6 +154,166 @@ final class TestHaGatewayManager
     }
 
     @Test
+    void testAddBackendWithTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("tagged-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("tagged.trino.gateway.io");
+        backend.setExternalUrl("tagged.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("prod", "us-east-1"));
+
+        haGatewayManager.addBackend(backend);
+
+        ProxyBackendConfiguration retrieved = haGatewayManager.getBackendByName("tagged-backend").orElseThrow();
+        assertThat(retrieved.getTags()).containsExactly("prod", "us-east-1");
+    }
+
+    @Test
+    void testAddBackendWithoutTagsReturnsEmptyList()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("untagged-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("untagged.trino.gateway.io");
+        backend.setExternalUrl("untagged.trino.gateway.io");
+        backend.setActive(true);
+        // tags not set — defaults to empty list
+
+        haGatewayManager.addBackend(backend);
+
+        ProxyBackendConfiguration retrieved = haGatewayManager.getBackendByName("untagged-backend").orElseThrow();
+        assertThat(retrieved.getTags()).isEmpty();
+    }
+
+    @Test
+    void testUpdateBackendTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("update-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("update-tags.trino.gateway.io");
+        backend.setExternalUrl("update-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("dev"));
+        haGatewayManager.addBackend(backend);
+
+        backend.setTags(List.of("prod", "critical"));
+        haGatewayManager.updateBackend(backend);
+
+        ProxyBackendConfiguration retrieved = haGatewayManager.getBackendByName("update-tags-backend").orElseThrow();
+        assertThat(retrieved.getTags()).containsExactly("prod", "critical");
+    }
+
+    @Test
+    void testClearBackendTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("clear-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("clear-tags.trino.gateway.io");
+        backend.setExternalUrl("clear-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("to-be-removed"));
+        haGatewayManager.addBackend(backend);
+
+        backend.setTags(List.of());
+        haGatewayManager.updateBackend(backend);
+
+        ProxyBackendConfiguration retrieved = haGatewayManager.getBackendByName("clear-tags-backend").orElseThrow();
+        assertThat(retrieved.getTags()).isEmpty();
+    }
+
+    @Test
+    void testTagsAreIncludedInGetAllBackends()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("all-backends-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("all-backends-tags.trino.gateway.io");
+        backend.setExternalUrl("all-backends-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("env:prod", "region:us-west-2"));
+        haGatewayManager.addBackend(backend);
+
+        List<ProxyBackendConfiguration> allBackends = haGatewayManager.getAllBackends();
+        ProxyBackendConfiguration match = allBackends.stream()
+                .filter(b -> b.getName().equals("all-backends-tags-backend"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(match.getTags()).containsExactly("env:prod", "region:us-west-2");
+    }
+
+    @Test
+    void testAddBackendRejectsTagWithComma()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("comma-tag-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("comma-tag.trino.gateway.io");
+        backend.setExternalUrl("comma-tag.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("version - 480,475"));
+
+        assertThatThrownBy(() -> haGatewayManager.addBackend(backend))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Backend tag cannot contain ',' character")
+                .hasMessageContaining("version - 480,475");
+    }
+
+    @Test
+    void testAddBackendRejectsBlankTag()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("blank-tag-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("blank-tag.trino.gateway.io");
+        backend.setExternalUrl("blank-tag.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("env:prod", "   "));
+
+        assertThatThrownBy(() -> haGatewayManager.addBackend(backend))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Backend tag cannot be null or blank");
+    }
+
+    @Test
+    void testUpdateBackendRejectsTagWithComma()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("update-comma-tag-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("update-comma-tag.trino.gateway.io");
+        backend.setExternalUrl("update-comma-tag.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("env:prod"));
+        haGatewayManager.addBackend(backend);
+
+        backend.setTags(List.of("a,b"));
+        assertThatThrownBy(() -> haGatewayManager.updateBackend(backend))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Backend tag cannot contain ',' character");
+    }
+
+    @Test
     void testRemoveTrailingSlashInUrl()
     {
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
@@ -177,6 +340,34 @@ final class TestHaGatewayManager
 
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl2.trino.gateway.io:443");
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getExternalUrl)).hasValue("https://etl2.trino.gateway.io:443");
+    }
+
+    @Test
+    void testTagsToString()
+    {
+        assertThat(tagsToString(null)).isNull();
+        assertThat(tagsToString(List.of())).isNull();
+        assertThat(tagsToString(List.of("prod"))).isEqualTo("prod");
+        assertThat(tagsToString(List.of("prod", "us-east-1", "critical")))
+                .isEqualTo("prod,us-east-1,critical");
+    }
+
+    @Test
+    void testTagsFromString()
+    {
+        assertThat(tagsFromString(null)).isEmpty();
+        assertThat(tagsFromString("")).isEmpty();
+        assertThat(tagsFromString("   ")).isEmpty();
+        assertThat(tagsFromString("prod")).containsExactly("prod");
+        assertThat(tagsFromString("prod,us-east-1,critical"))
+                .containsExactly("prod", "us-east-1", "critical");
+        assertThat(tagsFromString("prod , us-east-1 , critical"))
+                .containsExactly("prod", "us-east-1", "critical");
+        assertThat(tagsFromString(",prod,,us-east-1,"))
+                .containsExactly("prod", "us-east-1");
+
+        List<String> original = List.of("prod", "us-east-1", "critical");
+        assertThat(tagsFromString(tagsToString(original))).isEqualTo(original);
     }
 
     private static class TestingTicker
