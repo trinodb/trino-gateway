@@ -31,17 +31,17 @@ public interface GatewayBackendDao
     GatewayBackend findFirstByName(String name);
 
     @SqlUpdate("""
-            INSERT INTO gateway_backend (name, routing_group, backend_url, external_url, active)
-            VALUES (:name, :routingGroup, :backendUrl, :externalUrl, :active)
+            INSERT INTO gateway_backend (name, routing_group, backend_url, external_url, active, tags)
+            VALUES (:name, :routingGroup, :backendUrl, :externalUrl, :active, :tags)
             """)
-    void create(String name, String routingGroup, String backendUrl, String externalUrl, boolean active);
+    void create(String name, String routingGroup, String backendUrl, String externalUrl, boolean active, String tags);
 
     @SqlUpdate("""
             UPDATE gateway_backend
-            SET routing_group = :routingGroup, backend_url = :backendUrl, external_url = :externalUrl, active = :active
+            SET routing_group = :routingGroup, backend_url = :backendUrl, external_url = :externalUrl, active = :active, tags = :tags
             WHERE name = :name
             """)
-    void update(String name, String routingGroup, String backendUrl, String externalUrl, boolean active);
+    void update(String name, String routingGroup, String backendUrl, String externalUrl, boolean active, String tags);
 
     @SqlUpdate("""
             UPDATE gateway_backend

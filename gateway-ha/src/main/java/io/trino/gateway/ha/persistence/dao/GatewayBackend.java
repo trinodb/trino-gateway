@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.persistence.dao;
 
+import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.mapper.reflect.ColumnName;
 
 import static java.util.Objects.requireNonNull;
@@ -22,7 +23,8 @@ public record GatewayBackend(
         @ColumnName("routing_group") String routingGroup,
         @ColumnName("backend_url") String backendUrl,
         @ColumnName("external_url") String externalUrl,
-        @ColumnName("active") boolean active)
+        @ColumnName("active") boolean active,
+        @ColumnName("tags") @Nullable String tags)
 {
     public GatewayBackend
     {

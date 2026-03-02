@@ -121,6 +121,7 @@ public class GatewayWebAppResource
             backendResponse.setStatus(backendState.trinoStatus().toString());
             backendResponse.setRoutingGroup(b.getRoutingGroup());
             backendResponse.setExternalUrl(b.getExternalUrl());
+            backendResponse.setTags(b.getTags());
             return backendResponse;
         }).toList();
         return Response.ok(Result.ok(data)).build();
