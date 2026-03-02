@@ -77,6 +77,8 @@ public class HaGatewayTestUtils
         try (Handle handle = jdbi.open()) {
             handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
                     .execute();
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("mysql/V5__add_tags_to_gateway_backend.sql"))
+                    .execute();
         }
     }
 
