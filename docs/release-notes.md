@@ -2,6 +2,50 @@
 
 ## 2026
 
+### Trino Gateway 19 (11 May 2026) { id="19" }
+
+Artifacts:
+
+* [JAR file gateway-ha-19-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/19/gateway-ha-19-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:19`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/19.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/19.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.19.0`
+
+Changes:
+
+**General**
+
+* [:warning: Breaking change:](#breaking) Remove all resource group management
+  functionality. Existing resource group database tables are preserved and not
+  dropped on upgrade to avoid accidental data loss from Trino Gateway update.
+  New Trino Gateway deployments no longer create or manage these tables.
+  Resource groups are a Trino feature and must be managed through Trino
+  directly.
+  ([#656](https://github.com/trinodb/trino-gateway/issues/656))
+* [:warning: Breaking change:](#breaking) Rename routing configuration
+  `addXForwardedHeaders` to `addForwardedHeaders`.
+  ([#1005](https://github.com/trinodb/trino-gateway/pull/1005))
+* Fix HTTP header forwarding when `routing.addForwardedHeaders` is set to
+  `false` to properly drop both the modern RFC 7239 `Forwarded` and the legacy
+  `X-Forwarded-*` HTTP headers.
+  ([#1005](https://github.com/trinodb/trino-gateway/pull/1005))
+* Fix issue with eager evaluation of fallback routing for queries. 
+  ([#922](https://github.com/trinodb/trino-gateway/pull/922))
+* Prevent SQL analysis failures due to missing character encoding.
+  ([#1032](https://github.com/trinodb/trino-gateway/issues/1032))
+
+**UI**
+
+* Fix rendering of the query distribution chart.
+  ([#942](https://github.com/trinodb/trino-gateway/pull/942))
+* Improve application name display in header
+  ([#1003](https://github.com/trinodb/trino-gateway/pull/1003))
+
+More details and a list of all merged pull requests are [available in the
+milestone 19 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A19+is%3Aclosed).
+
 ### Trino Gateway 18 (4 Mar 2026) { id="18" }
 
 Artifacts:
