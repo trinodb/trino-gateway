@@ -4,6 +4,7 @@ import Locale from "../locales";
 import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
+import { getUIConfiguration } from "../api/webapp/login";
 import { HistoryData, HistoryDetail } from "../types/history";
 import { formatTimestamp } from "../utils/time";
 import { backendsApi } from "../api/webapp/cluster";
@@ -27,6 +28,7 @@ export function History() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState<string>("");
   const [okText, setOkText] = useState("Copy to Clipboard");
+  const [allowUserRoleToViewAllQueryHistory, setAllowUserRoleToViewAllQueryHistory] = useState(false);
 
   useEffect(() => {
     backendsApi({})
@@ -41,6 +43,14 @@ export function History() {
         }
         setBackendMapping(mapping);
       }).catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    getUIConfiguration()
+      .then((res) => {
+        setAllowUserRoleToViewAllQueryHistory(!!res.allowUserRoleToViewAllQueryHistory);
+      })
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -116,7 +126,7 @@ export function History() {
                   </Form.Select.Option>
                 ))}
               </Form.Select>
-              <Form.Input field='user' label='User' initValue={form.user} disabled={!access.hasRole(Role.ADMIN)} style={{ width: 150 }} showClear />
+              <Form.Input field='user' label='User' initValue={form.user} disabled={!access.hasRole(Role.ADMIN) && !allowUserRoleToViewAllQueryHistory} style={{ width: 150 }} showClear />
               <Form.Input field='queryId' label='QueryId' style={{ width: 260 }} showClear placeholder={Locale.History.QueryIdTip} />
               <Form.Input field='source' label='Source' style={{ width:150 }} showClear />
               <Button htmlType='submit' style={{ width: 70 }}>{Locale.UI.Query}</Button>
