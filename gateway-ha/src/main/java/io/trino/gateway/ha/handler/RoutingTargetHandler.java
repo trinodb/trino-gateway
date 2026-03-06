@@ -48,8 +48,6 @@ public class RoutingTargetHandler
     private final RoutingGroupSelector routingGroupSelector;
     private final String defaultRoutingGroup;
     private final List<String> statementPaths;
-    private final boolean requestAnalyserClientsUseV2Format;
-    private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
 
     @Inject
@@ -62,28 +60,35 @@ public class RoutingTargetHandler
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
-        requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
     }
 
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
-        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
-        Optional<String> previousCluster = getPreviousCluster(queryId, request);
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
+        Optional<String> previousCluster;
+        Optional<RoutingTargetResponse> routingTargetResponse;
+        if (queryId.isPresent()) {
+            // Query ID based routing
+            previousCluster = queryId.map(routingManager::findBackendForQueryId);
+            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
+                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    request));
+        }
+        else {
+            // Cookie based routing
+            previousCluster = getPreviousCluster(request);
+            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
+                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    request));
+        }
 
-        RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
-            String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
-                    .orElse(defaultRoutingGroup);
-            String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
-                    .orElse(cluster);
-            return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
-                    request);
-        }).orElse(getRoutingTargetResponse(request));
+        if (routingTargetResponse.isEmpty()) {
+            routingTargetResponse = Optional.of(getRoutingTargetResponse(request));
+        }
 
-        logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
-        return routingTargetResponse;
+        logRewrite(routingTargetResponse.orElseThrow().routingDestination().clusterHost(), request);
+        return routingTargetResponse.orElseThrow();
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
@@ -150,11 +155,8 @@ public class RoutingTargetHandler
         }
     }
 
-    private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
+    private Optional<String> getPreviousCluster(HttpServletRequest request)
     {
-        if (queryId.isPresent()) {
-            return queryId.map(routingManager::findBackendForQueryId);
-        }
         if (cookiesEnabled && request.getCookies() != null) {
             List<GatewayCookie> cookies = Arrays.stream(request.getCookies())
                     .filter(c -> c.getName().startsWith(GatewayCookie.PREFIX))
