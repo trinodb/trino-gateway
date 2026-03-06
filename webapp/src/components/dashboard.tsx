@@ -162,7 +162,7 @@ function LineChart(props: {
       ])
     );
 
-    const timestamps = Object.values(displayData).flat().map(d => Number(d.timestamp));
+    const timestamps = Object.values(displayData).flat().map(d => Number(d.epochMillis));
     let minTimestamp = Math.min(...timestamps);
     let maxTimestamp = Math.max(...timestamps);
     const xAxisTimeLabels: number[] = [];
@@ -196,7 +196,7 @@ function LineChart(props: {
         const data = displayData[d];
         const count = new Map<number, number>();
         for (const dataPoint of data) {
-          const xValueHHMM = Math.floor(Number(dataPoint.timestamp) / MINUTE) * MINUTE;
+          const xValueHHMM = Math.floor(Number(dataPoint.epochMillis) / MINUTE) * MINUTE;
           count.set(xValueHHMM, dataPoint.queryCount);
         }
         return {
