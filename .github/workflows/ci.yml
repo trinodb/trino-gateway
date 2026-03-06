@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version: [25]
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout source
         uses: actions/checkout@v6
