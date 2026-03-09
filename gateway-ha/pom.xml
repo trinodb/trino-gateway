@@ -197,6 +197,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.valkey</groupId>
+            <artifactId>valkey-java</artifactId>
+            <version>5.5.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
