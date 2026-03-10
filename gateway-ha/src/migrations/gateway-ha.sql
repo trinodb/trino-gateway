@@ -5,7 +5,8 @@ name VARCHAR(256) PRIMARY KEY,
 routing_group VARCHAR (256),
 backend_url VARCHAR (256),
 external_url VARCHAR (256),
-active BOOLEAN
+active BOOLEAN,
+tags TEXT NULL
 );
 
 CREATE TABLE IF NOT EXISTS query_history (
