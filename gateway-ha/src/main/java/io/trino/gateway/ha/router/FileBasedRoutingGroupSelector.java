@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.google.common.base.Suppliers.memoizeWithExpiration;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
@@ -77,8 +78,11 @@ public class FileBasedRoutingGroupSelector
         for (RoutingRule rule : requireNonNull(rules.get())) {
             if (rule.evaluateCondition(data, state)) {
                 log.debug("%s evaluated to true on request: %s", rule, request);
+                String previousRoutingGroup = result.get(RESULTS_ROUTING_GROUP_KEY);
                 rule.evaluateAction(result, data, state);
-                strictRouting = rule.isStrictRouting();
+                if (!Objects.equals(previousRoutingGroup, result.get(RESULTS_ROUTING_GROUP_KEY))) {
+                    strictRouting = rule.isStrictRouting();
+                }
             }
         }
         return new RoutingSelectorResponse(result.get(RESULTS_ROUTING_GROUP_KEY), ImmutableMap.of(), strictRouting);

@@ -24,6 +24,7 @@ import java.util.Map;
  * - routingGroup: The target routing group for the request (optional)
  * - errors: Any errors that occurred during routing
  * - externalHeaders: Headers that can be set in the request
+ * - strictRouting: If true, a 503 error is returned instead of falling back when no backend is available for the routing group
  */
 public record ExternalRouterResponse(
         @Nullable String routingGroup,
