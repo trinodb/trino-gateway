@@ -46,12 +46,13 @@ abstract class BaseExternalUrlQueryHistoryTest
                 container.getUsername(),
                 container.getPassword(),
                 container.getDriverClassName(),
+                true,
                 4,
                 true);
         FlywayMigration.migrate(config);
-        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(container, config);
+        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
         WriteBufferConfiguration writeBufferConfiguration = new WriteBufferConfiguration();
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), container.getJdbcUrl().startsWith("jdbc:oracle"), writeBufferConfiguration);
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config, writeBufferConfiguration);
     }
 
     @AfterAll

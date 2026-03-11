@@ -13,12 +13,15 @@
  */
 package io.trino.gateway.ha.router;
 
+import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.Test;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 final class TestRoutingManagerNotFound
@@ -27,13 +30,14 @@ final class TestRoutingManagerNotFound
 
     public TestRoutingManagerNotFound()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         routingConfiguration.setDefaultRoutingGroup("default");
 
-        GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+        GatewayBackendManager backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         WriteBufferConfiguration writeBufferConfiguration = new WriteBufferConfiguration();
-        QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false, writeBufferConfiguration);
+        QueryHistoryManager historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig, writeBufferConfiguration);
 
         this.routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
     }

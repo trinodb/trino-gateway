@@ -13,8 +13,9 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
 import java.util.List;
 import java.util.Set;
@@ -34,16 +35,19 @@ import static java.util.Objects.requireNonNull;
  * A filter component that determines whether a given path should be whitelisted
  * for routing to Trino clusters.
  */
-@Singleton
 public class PathFilter
 {
     private final Set<String> statementPaths;
     private final List<Pattern> extraWhitelistPatterns;
 
     @Inject
-    public PathFilter(
-            List<String> statementPaths,
-            List<String> extraWhitelistPaths)
+    public PathFilter(HaGatewayConfiguration config)
+    {
+        this(config.getStatementPaths(), config.getExtraWhitelistPaths());
+    }
+
+    @VisibleForTesting
+    PathFilter(List<String> statementPaths, List<String> extraWhitelistPaths)
     {
         this.statementPaths = Set.copyOf(requireNonNull(statementPaths, "Required configuration 'statementPaths' can't be null"));
         this.extraWhitelistPatterns = requireNonNull(extraWhitelistPaths, "extraWhitelistPaths cannot be null").stream()

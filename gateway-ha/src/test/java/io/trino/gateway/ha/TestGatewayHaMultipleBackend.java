@@ -35,8 +35,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.trino.TrinoContainer;
 
 import java.io.File;
 import java.io.IOException;

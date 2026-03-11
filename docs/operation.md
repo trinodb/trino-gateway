@@ -81,3 +81,36 @@ taking a long time for garbage collection.
 completed initialization and is ready to serve requests. This means the initial
 connection to the database and the first round of health check on Trino clusters
 are completed. Otherwise, status code 503 is returned.
+
+## Database cache configuration
+
+Trino Gateway can cache database queries to improve performance and reduce load
+on the backend database. This also allow gateway to continue routing queries
+when the database is temporarily unavailable. Currently only the list of backend
+Trino clusters used for query routing are being cached.
+The cache can be configured using the `databaseCache` section in the config file.
+
+```yaml
+databaseCache:
+  enabled: true
+  expireAfterWrite: 1h
+  refreshAfterWrite: 5s
+```
+
+Configuration options:
+
+* `enabled` - Enable or disable the database cache. Default is `false`.
+* `expireAfterWrite` - The maximum time a cached entry is kept since it was last
+  loaded or refreshed. This ensures stale data is eventually removed.
+  If cache is not refreshed before expiration, requests will fail once the entry
+  expires (i.e. cache miss will attempt to reload data, but if the database is unavailable,
+  the request fails because there is no stale value to fall back to after
+  expiration). Default value is `1h`.
+* `refreshAfterWrite` - Duration after which cache entries are eligible for
+  asynchronous refresh. When a refresh is triggered, the existing cached value
+  continues to be served while the refresh happens in the background.
+  This helps keep data fresh while serving slightly stale data to avoid blocking requests.
+  Default value is `5s`.
+
+`expireAfterWrite` and `refreshAfterWrite` can be set to `null` to disable expiration
+or refresh respectively.

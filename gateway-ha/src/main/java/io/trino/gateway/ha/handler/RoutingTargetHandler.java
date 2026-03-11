@@ -116,7 +116,7 @@ public class RoutingTargetHandler
     {
         private final Map<String, String> customHeaders;
 
-        public HeaderModifyingRequestWrapper(HttpServletRequest request, Map<String, String> customHeaders)
+        private HeaderModifyingRequestWrapper(HttpServletRequest request, Map<String, String> customHeaders)
         {
             super(request);
             this.customHeaders = customHeaders;

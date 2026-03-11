@@ -20,6 +20,7 @@ import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -95,5 +96,14 @@ public class RouteToBackendResource
         MultiReadHttpServletRequest multiReadHttpServletRequest = new MultiReadHttpServletRequest(servletRequest, body);
         RoutingTargetResponse result = routingTargetHandler.resolveRouting(multiReadHttpServletRequest);
         proxyRequestHandler.putRequest(body, result.modifiedRequest(), asyncResponse, result.routingDestination());
+    }
+
+    @HEAD
+    public void headHandler(
+            @Context HttpServletRequest servletRequest,
+            @Suspended AsyncResponse asyncResponse)
+    {
+        RoutingTargetResponse result = routingTargetHandler.resolveRouting(servletRequest);
+        proxyRequestHandler.headRequest(result.modifiedRequest(), asyncResponse, result.routingDestination());
     }
 }

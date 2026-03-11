@@ -16,6 +16,8 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.config.WriteBufferConfiguration;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestQueryCountBasedRouter
@@ -164,7 +167,7 @@ final class TestQueryCountBasedRouter
     {
         ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
         proxyBackend.setActive(true);
-        proxyBackend.setRoutingGroup(clusterStats.routingGroup());
+        proxyBackend.setRoutingGroup(clusterStats.routingGroup() == null ? "unspecified" : clusterStats.routingGroup());
         proxyBackend.setName(clusterStats.clusterId());
         proxyBackend.setProxyTo(clusterStats.proxyTo());
         proxyBackend.setExternalUrl(clusterStats.externalUrl());
@@ -174,10 +177,11 @@ final class TestQueryCountBasedRouter
     @BeforeEach
     public void init()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager();
-        backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration);
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+        backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         WriteBufferConfiguration writeBufferConfiguration = new WriteBufferConfiguration();
-        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), false, writeBufferConfiguration);
+        historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig, writeBufferConfiguration);
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
         populateData();
         queryCountBasedRouter.updateClusterStats(clusters);

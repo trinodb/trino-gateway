@@ -28,8 +28,8 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.TrinoContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.trino.TrinoContainer;
 
 import java.io.File;
 import java.util.List;
@@ -44,7 +44,7 @@ final class TestRoutingAPI
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
-    private final PostgreSQLContainer<?> postgresql = createPostgreSqlContainer();
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
     int routerPort = 21001 + (int) (Math.random() * 1000);
     int backendPort;
 

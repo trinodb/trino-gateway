@@ -51,7 +51,7 @@ final class TestQueryMetadataParser
         requestAnalyzerConfig = new RequestAnalyzerConfig();
         requestAnalyzerConfig.setAnalyzeRequest(true);
         config.setRequestAnalyzerConfig(requestAnalyzerConfig);
-        pathFilter = new PathFilter(config.getStatementPaths(), config.getExtraWhitelistPaths());
+        pathFilter = new PathFilter(config);
         filter = new QueryMetadataParser(config, pathFilter);
     }
 

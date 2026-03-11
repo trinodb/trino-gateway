@@ -1,0 +1,68 @@
+name: release-docker
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 16). Leave empty for most recent release.'
+        required: false
+        type: string
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
+
+jobs:
+  publish-docker:
+    if: github.repository_owner == 'trinodb'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ -n "${{ inputs.version }}" ]]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=$(gh release view --json tagName -q '.tagName' 2>/dev/null || echo "")
+            VERSION="${VERSION#v}"
+            if [[ -z "$VERSION" ]]; then
+              echo "Error: Could not determine version. Please specify a version."
+              exit 1
+            fi
+          fi
+          echo "Publishing Docker images for version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: amd64,arm64,ppc64le
+
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.5
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.RELEASE_DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.RELEASE_DOCKER_HUB_TOKEN }}
+
+      - name: Build and publish Docker images
+        run: docker/release-docker.sh "${{ steps.version.outputs.version }}"
+
+      - name: Verify published images
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO="trinodb/trino-gateway"
+
+          echo "=== Manifest for $REPO:$VERSION ==="
+          crane manifest "$REPO:$VERSION" | jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture)"'
+
+          echo "=== Manifest for $REPO:latest ==="
+          crane manifest "$REPO:latest" | jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture)"'

@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.google.inject.Inject;
 import io.trino.gateway.ha.router.BackendStateManager;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class ClusterStatsObserver
 {
     private final BackendStateManager backendStateManager;
 
+    @Inject
     public ClusterStatsObserver(BackendStateManager backendStateManager)
     {
         this.backendStateManager = backendStateManager;
