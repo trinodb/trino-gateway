@@ -40,6 +40,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
@@ -175,6 +176,13 @@ public class HaGatewayProviderModule
             }
         }
         return RoutingGroupSelector.byRoutingGroupHeader();
+    }
+
+    @Provides
+    @Singleton
+    public static WriteBufferConfiguration getWriteBufferConfiguration(HaGatewayConfiguration configuration)
+    {
+        return configuration.getWriteBuffer();
     }
 
     @Provides

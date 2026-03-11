@@ -42,6 +42,7 @@ public class HaGatewayConfiguration
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
     private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
+    private WriteBufferConfiguration writeBuffer = new WriteBufferConfiguration();
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private UIConfiguration uiConfiguration = new UIConfiguration();
     private DatabaseCacheConfiguration databaseCache = new DatabaseCacheConfiguration();
@@ -254,6 +255,16 @@ public class HaGatewayConfiguration
     public void setIncludeClusterHostInResponse(boolean includeClusterHostInResponse)
     {
         this.includeClusterHostInResponse = includeClusterHostInResponse;
+    }
+
+    public WriteBufferConfiguration getWriteBuffer()
+    {
+        return writeBuffer;
+    }
+
+    public void setWriteBuffer(WriteBufferConfiguration writeBuffer)
+    {
+        this.writeBuffer = writeBuffer;
     }
 
     public ProxyResponseConfiguration getProxyResponseConfiguration()
