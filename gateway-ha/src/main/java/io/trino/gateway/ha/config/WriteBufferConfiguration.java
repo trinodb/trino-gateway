@@ -20,12 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class WriteBufferConfiguration
 {
     private boolean enabled;
-    // 10,000 entries at ~500 bytes each ≈ 5 MB; large enough to absorb
-    // several minutes of typical query traffic during a DB outage without
-    // consuming significant heap.
     private int maxCapacity = 10_000;
-    // 2 seconds balances recovery latency against unnecessary DB chatter;
-    // short enough that records are durable quickly once the DB is back.
     private Duration flushInterval = new Duration(2, TimeUnit.SECONDS);
 
     public boolean isEnabled()
