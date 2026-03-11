@@ -26,26 +26,29 @@ public final class WriteBuffer<T>
         this.deque = new LinkedBlockingDeque<>(maxCapacity);
     }
 
-    /** Buffer an item for later flush. Drops the oldest if full. */
-    public void buffer(T item)
+    /**
+     * Buffer an item for later flush. Drops the oldest item if the buffer is full.
+     *
+     * @return true if an existing item was dropped to make room, false otherwise
+     */
+    public synchronized boolean buffer(T item)
     {
-        synchronized (this) {
-            if (!deque.offerLast(item)) {
-                deque.pollFirst();
-                deque.offerLast(item);
-            }
+        if (!deque.offerLast(item)) {
+            deque.pollFirst();
+            deque.offerLast(item);
+            return true;
         }
+        return false;
     }
 
     /**
      * Flushes items in insertion order by applying the provided flusher.
-     * Stops immediately if flush can't be performed on item and re-inserts
-     * the failed item at the head of the buffer.
+     * Stops immediately if the flusher throws, leaving the failed item at the head.
      *
      * @param flusher consumer invoked for each buffered item
      * @return number of items successfully flushed
      */
-    public int flushAll(Consumer<T> flusher)
+    public synchronized int flushAll(Consumer<T> flusher)
     {
         int flushed = 0;
         for (T next; (next = deque.peekFirst()) != null; ) {
@@ -62,7 +65,7 @@ public final class WriteBuffer<T>
         return flushed;
     }
 
-    public int size()
+    public synchronized int size()
     {
         return deque.size();
     }

@@ -26,10 +26,10 @@ class TestWriteBuffer
     void testBufferDropsOldestWhenFull()
     {
         WriteBuffer<Integer> buffer = new WriteBuffer<>(2);
-        buffer.buffer(1);
-        buffer.buffer(2);
-        // At capacity now. Next add should drop 1 (oldest)
-        buffer.buffer(3);
+        assertThat(buffer.buffer(1)).isFalse();
+        assertThat(buffer.buffer(2)).isFalse();
+        // At capacity now. Next add should drop 1 (oldest) and return true
+        assertThat(buffer.buffer(3)).isTrue();
         assertThat(buffer.size()).isEqualTo(2);
 
         List<Integer> flushed = new ArrayList<>();

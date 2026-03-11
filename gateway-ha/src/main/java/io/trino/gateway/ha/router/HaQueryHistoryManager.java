@@ -56,6 +56,8 @@ public class HaQueryHistoryManager
     public HaQueryHistoryManager(Jdbi jdbi, DataStoreConfiguration configuration, WriteBufferConfiguration writeBufferConfig)
     {
         dao = requireNonNull(jdbi, "jdbi is null").onDemand(QueryHistoryDao.class);
+        requireNonNull(configuration, "configuration is null");
+        requireNonNull(writeBufferConfig, "writeBufferConfig is null");
         this.isOracleBackend = configuration.getJdbcUrl().startsWith("jdbc:oracle");
         this.queryHistoryEnabled = configuration.isQueryHistoryEnabled();
         if (writeBufferConfig.isEnabled()) {
@@ -102,9 +104,15 @@ public class HaQueryHistoryManager
         }
         catch (RuntimeException e) {
             if (isConnectionIssue(e) && writeBuffer != null) {
-                writeBuffer.buffer(queryDetail);
-                log.warn(e, "DB unavailable; buffered query_history entry. queryId=%s, bufferSize=%s",
-                        queryDetail.getQueryId(), writeBuffer.size());
+                boolean dropped = writeBuffer.buffer(queryDetail);
+                if (dropped) {
+                    log.warn("Write buffer full; dropped oldest query_history entry to make room. queryId=%s, bufferSize=%s",
+                            queryDetail.getQueryId(), writeBuffer.size());
+                }
+                else {
+                    log.warn(e, "DB unavailable; buffered query_history entry. queryId=%s, bufferSize=%s",
+                            queryDetail.getQueryId(), writeBuffer.size());
+                }
             }
             else {
                 throw e;
