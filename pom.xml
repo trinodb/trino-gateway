@@ -6,12 +6,12 @@
     <parent>
         <groupId>io.airlift</groupId>
         <artifactId>airbase</artifactId>
-        <version>355</version>
+        <version>362</version>
     </parent>
 
     <groupId>io.trino.gateway</groupId>
     <artifactId>trino-gateway-parent</artifactId>
-    <version>18-SNAPSHOT</version>
+    <version>19-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>trino-gateway-parent</name>
@@ -52,7 +52,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>404</version>
+                <version>413</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
