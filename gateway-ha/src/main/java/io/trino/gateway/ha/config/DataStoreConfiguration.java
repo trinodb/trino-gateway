@@ -36,11 +36,6 @@ public class DataStoreConfiguration
         this.maxPoolSize = maxPoolSize;
     }
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
-    {
-        this(jdbcUrl, user, password, driver, queryHistoryEnabled, queryHistoryHoursRetention, runMigrationsEnabled, null);
-    }
-
     public DataStoreConfiguration() {}
 
     public String getJdbcUrl()

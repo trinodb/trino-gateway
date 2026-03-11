@@ -68,8 +68,8 @@ public class JdbcConnectionManager
 
         Integer maxPoolSize = configuration.getMaxPoolSize();
         if (maxPoolSize != null && maxPoolSize > 0) {
-            HikariDataSource ds = getOrCreateDataSource(routingGroupDatabase, maxPoolSize);
-            return Jdbi.create(ds)
+            HikariDataSource dataSource = getOrCreateDataSource(routingGroupDatabase, maxPoolSize);
+            return Jdbi.create(dataSource)
                     .installPlugin(new SqlObjectPlugin())
                     .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
         }
@@ -155,10 +155,10 @@ public class JdbcConnectionManager
     public void close()
     {
         for (Map.Entry<String, HikariDataSource> e : pools.entrySet()) {
-            HikariDataSource ds = e.getValue();
-            if (ds != null && !ds.isClosed()) {
+            HikariDataSource dataSource = e.getValue();
+            if (dataSource != null && !dataSource.isClosed()) {
                 try {
-                    ds.close();
+                    dataSource.close();
                 }
                 catch (RuntimeException ex) {
                     log.warn(ex, "Failed to close datasource for key: %s", e.getKey());

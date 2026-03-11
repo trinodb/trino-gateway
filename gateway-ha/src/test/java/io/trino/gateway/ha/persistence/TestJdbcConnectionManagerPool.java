@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 final class TestJdbcConnectionManagerPool
 {
     @Test
-    void blocksWhenExceedingMaxPoolSize()
+    void testBlocksWhenExceedingMaxPoolSize()
             throws Exception
     {
         String dbPath = Path.of(System.getProperty("java.io.tmpdir"), "h2db-pool-" + System.currentTimeMillis()).toString();
@@ -101,7 +101,7 @@ final class TestJdbcConnectionManagerPool
     }
 
     @Test
-    void doesNotBlockWhenMaxPoolSizeIsNull()
+    void testDoesNotBlockWhenMaxPoolSizeIsNull()
             throws Exception
     {
         String dbPath = Path.of(System.getProperty("java.io.tmpdir"), "h2db-nopool-" + System.currentTimeMillis()).toString();
@@ -110,7 +110,8 @@ final class TestJdbcConnectionManagerPool
         // maxPoolSize == null  ->  no pool path
         DataStoreConfiguration cfg = new DataStoreConfiguration(
                 jdbcUrl, "sa", "sa", "org.h2.Driver",
-                true, 4, true);
+                true, 4, true,
+                null);
 
         JdbcConnectionManager cm = new JdbcConnectionManager(Jdbi.create(jdbcUrl, "sa", "sa"), cfg);
         Jdbi jdbi = cm.getJdbi("testdb");

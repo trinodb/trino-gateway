@@ -55,8 +55,7 @@ You can also disable query history recording to the database by setting
 want to reduce database load or don't need query history tracking.
 
 If `maxPoolSize` is configured and greater than 0, Trino Gateway uses a
-HikariCP connection pool for routing-group database connections created via
-`JdbcConnectionManager#getJdbi(routingGroupDatabase)`.
+connection pool for routing-group database connections.
 If `maxPoolSize` is not configured, Trino Gateway creates a new JDBC connection
 per request for routing-group databases.
 A value of `10` is a reasonable starting point for many deployments, but the
