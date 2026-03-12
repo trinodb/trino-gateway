@@ -73,7 +73,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail.setBackendUrl("http://localhost:8080");
         queryDetail.setUser("test-user");
         queryDetail.setSource("sqlWorkbench");
-        queryDetail.setRoutingGroup("adhoc");
+        queryDetail.setRoutingDecision("adhoc");
         queryDetail.setExternalUrl("https://external-gateway.example.com");
         queryDetail.setCaptureTime(System.currentTimeMillis());
 
@@ -98,7 +98,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail.setBackendUrl("http://backend:8080");
         queryDetail.setUser("admin");
         queryDetail.setSource("trino-cli");
-        queryDetail.setRoutingGroup("analytics");
+        queryDetail.setRoutingDecision("analytics");
         queryDetail.setExternalUrl("https://analytics-gateway.company.com");
         queryDetail.setCaptureTime(System.currentTimeMillis());
 
@@ -127,7 +127,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail.setBackendUrl("http://localhost:8080");
         queryDetail.setUser("test-user");
         queryDetail.setSource("sqlWorkbench");
-        queryDetail.setRoutingGroup("adhoc");
+        queryDetail.setRoutingDecision("adhoc");
         queryDetail.setExternalUrl(null);
         queryDetail.setCaptureTime(System.currentTimeMillis());
 
@@ -155,7 +155,7 @@ abstract class BaseExternalUrlQueryHistoryTest
             queryDetail.setBackendUrl("http://backend-" + i + ":8080");
             queryDetail.setUser("user-" + i);
             queryDetail.setSource("source-" + i);
-            queryDetail.setRoutingGroup("group-" + i);
+            queryDetail.setRoutingDecision("group-" + i);
             queryDetail.setExternalUrl("https://external-" + i + ".example.com");
             queryDetail.setCaptureTime(System.currentTimeMillis());
 
@@ -180,7 +180,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail1.setBackendUrl("http://localhost:8080");
         queryDetail1.setUser("test-user");
         queryDetail1.setSource("sqlWorkbench");
-        queryDetail1.setRoutingGroup("adhoc");
+        queryDetail1.setRoutingDecision("adhoc");
         queryDetail1.setExternalUrl("https://external.example.com");
         queryDetail1.setCaptureTime(captureTime);
 
@@ -190,7 +190,7 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryDetail2.setBackendUrl("http://localhost:8080");
         queryDetail2.setUser("test-user");
         queryDetail2.setSource("sqlWorkbench");
-        queryDetail2.setRoutingGroup("adhoc");
+        queryDetail2.setRoutingDecision("adhoc");
         queryDetail2.setExternalUrl("https://external.example.com");
         queryDetail2.setCaptureTime(captureTime);
 
