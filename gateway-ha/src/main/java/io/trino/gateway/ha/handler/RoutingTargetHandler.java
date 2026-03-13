@@ -40,6 +40,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 
 public class RoutingTargetHandler
 {
@@ -91,11 +92,11 @@ public class RoutingTargetHandler
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
 
-        // This falls back on default routing group backend if there is no cluster found for the routing group.
         String routingGroup = !isNullOrEmpty(routingDestination.routingGroup())
                 ? routingDestination.routingGroup()
                 : defaultRoutingGroup;
-        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
+        boolean strictRouting = requireNonNullElse(routingDestination.strictRouting(), false);
+        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user, strictRouting);
         String clusterHost = backendConfiguration.getProxyTo();
         String externalUrl = backendConfiguration.getExternalUrl();
         // Apply headers from RoutingDestination if there are any

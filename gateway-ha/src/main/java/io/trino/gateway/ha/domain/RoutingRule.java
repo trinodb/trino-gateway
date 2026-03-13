@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNullElse;
  * @param name name of the routing rule
  * @param description description of the routing rule. Defaults to an empty string if not provided, indicating the user intends it to be blank.
  * @param priority priority of the routing rule. Higher number represents higher priority. If two rules have same priority then order of execution is not guaranteed.
+ * @param strictRouting if true, return 503 instead of falling back to the default backend when no healthy backend is available for the routing group
  * @param actions actions of the routing rule
  * @param condition condition of the routing rule
  */
@@ -33,6 +34,7 @@ public record RoutingRule(
         String name,
         String description,
         Integer priority,
+        Boolean strictRouting,
         List<String> actions,
         String condition)
 {
@@ -40,6 +42,7 @@ public record RoutingRule(
         requireNonNull(name, "name is null");
         description = requireNonNullElse(description, "");
         priority = requireNonNullElse(priority, 0);
+        strictRouting = requireNonNullElse(strictRouting, false);
         actions = ImmutableList.copyOf(actions);
         requireNonNull(condition, "condition is null");
     }
