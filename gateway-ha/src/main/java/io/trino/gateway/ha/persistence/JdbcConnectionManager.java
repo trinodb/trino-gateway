@@ -137,17 +137,17 @@ public class JdbcConnectionManager
                 return existing;
             }
 
-            HikariConfig cfg = new HikariConfig();
-            cfg.setJdbcUrl(buildJdbcUrl(key));
-            cfg.setUsername(configuration.getUser());
-            cfg.setPassword(configuration.getPassword());
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setJdbcUrl(buildJdbcUrl(key));
+            hikariConfig.setUsername(configuration.getUser());
+            hikariConfig.setPassword(configuration.getPassword());
             if (configuration.getDriver() != null) {
-                cfg.setDriverClassName(configuration.getDriver());
+                hikariConfig.setDriverClassName(configuration.getDriver());
             }
-            cfg.setMaximumPoolSize(maxPoolSize);
-            cfg.setPoolName("gateway-ha-" + key);
+            hikariConfig.setMaximumPoolSize(maxPoolSize);
+            hikariConfig.setPoolName("gateway-ha-" + key);
 
-            return new HikariDataSource(cfg);
+            return new HikariDataSource(hikariConfig);
         });
     }
 
