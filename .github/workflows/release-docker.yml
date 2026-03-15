@@ -40,7 +40,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: amd64,arm64,ppc64le
 
