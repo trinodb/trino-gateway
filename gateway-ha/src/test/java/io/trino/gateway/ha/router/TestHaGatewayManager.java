@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -148,6 +149,109 @@ final class TestHaGatewayManager
         // Expired from cache, failed to read from DB
         ticker.increment(2, SECONDS);
         assertThatThrownBy(() -> haGatewayManager.getBackendByName("new-etl1")).hasMessage("Failed to load backends from database to cache");
+    }
+
+    @Test
+    void testAddBackendWithTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+
+        var backend = new ProxyBackendConfiguration();
+        backend.setName("tagged-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("tagged.trino.gateway.io");
+        backend.setExternalUrl("tagged.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("prod", "us-east-1"));
+
+        haGatewayManager.addBackend(backend);
+
+        var retrieved = haGatewayManager.getBackendByName("tagged-backend").orElseThrow();
+        assertThat(retrieved.getTags()).containsExactly("prod", "us-east-1");
+    }
+
+    @Test
+    void testAddBackendWithoutTagsReturnsEmptyList()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        var backend = new ProxyBackendConfiguration();
+        backend.setName("untagged-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("untagged.trino.gateway.io");
+        backend.setExternalUrl("untagged.trino.gateway.io");
+        backend.setActive(true);
+        // tags not set — defaults to empty list
+
+        haGatewayManager.addBackend(backend);
+
+        var retrieved = haGatewayManager.getBackendByName("untagged-backend").orElseThrow();
+        assertThat(retrieved.getTags()).isEmpty();
+    }
+
+    @Test
+    void testUpdateBackendTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        var backend = new ProxyBackendConfiguration();
+        backend.setName("update-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("update-tags.trino.gateway.io");
+        backend.setExternalUrl("update-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("dev"));
+        haGatewayManager.addBackend(backend);
+
+        backend.setTags(List.of("prod", "critical"));
+        haGatewayManager.updateBackend(backend);
+
+        var retrieved = haGatewayManager.getBackendByName("update-tags-backend").orElseThrow();
+        assertThat(retrieved.getTags()).containsExactly("prod", "critical");
+    }
+
+    @Test
+    void testClearBackendTags()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        var backend = new ProxyBackendConfiguration();
+        backend.setName("clear-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("clear-tags.trino.gateway.io");
+        backend.setExternalUrl("clear-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("to-be-removed"));
+        haGatewayManager.addBackend(backend);
+
+        backend.setTags(List.of());
+        haGatewayManager.updateBackend(backend);
+
+        var retrieved = haGatewayManager.getBackendByName("clear-tags-backend").orElseThrow();
+        assertThat(retrieved.getTags()).isEmpty();
+    }
+
+    @Test
+    void testTagsAreIncludedInGetAllBackends()
+    {
+        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        var backend = new ProxyBackendConfiguration();
+        backend.setName("all-backends-tags-backend");
+        backend.setRoutingGroup("adhoc");
+        backend.setProxyTo("all-backends-tags.trino.gateway.io");
+        backend.setExternalUrl("all-backends-tags.trino.gateway.io");
+        backend.setActive(true);
+        backend.setTags(List.of("env:prod", "region:us-west-2"));
+        haGatewayManager.addBackend(backend);
+
+        var allBackends = haGatewayManager.getAllBackends();
+        var match = allBackends.stream()
+                .filter(b -> b.getName().equals("all-backends-tags-backend"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(match.getTags()).containsExactly("env:prod", "region:us-west-2");
     }
 
     @Test

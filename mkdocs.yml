@@ -91,6 +91,7 @@ nav:
       - Routing rules: routing-rules.md
       - Routing logic: routing-logic.md
       - Gateway API: gateway-api.md
+      - Backend tags: backend-tags.md
       - Resource groups API: resource-groups-api.md
       - Code architecture: design.md
       - Migration to Airlift: migration-to-airlift.md

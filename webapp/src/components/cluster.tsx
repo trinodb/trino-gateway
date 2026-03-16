@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from './cluster.module.scss';
 import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
@@ -16,6 +16,13 @@ export function Cluster() {
   const [visibleForm, setVisibleForm] = useState(false);
   const [formApi, setFormApi] = useState<FormApi<any>>();
   const [form, setForm] = useState<BackendData>();
+  const [editTags, setEditTags] = useState<string[]>([]);
+  const editTagsRef = useRef<string[]>([]);
+
+  const updateEditTags = (tags: string[]) => {
+    editTagsRef.current = tags;
+    setEditTags(tags);
+  };
 
   useEffect(() => {
     list();
@@ -45,6 +52,7 @@ export function Cluster() {
       <ButtonGroup size={'default'}>
         <Button onClick={() => {
           setForm(record)
+          updateEditTags(record.tags || [])
           setVisibleForm(true)
         }}>{Locale.UI.Edit}</Button>
         <Popconfirm
@@ -62,6 +70,17 @@ export function Cluster() {
           <Button>{Locale.UI.Delete}</Button>
         </Popconfirm>
       </ButtonGroup>
+    );
+  }
+
+  const tagsRender = (tags: string[]) => {
+    if (!tags || tags.length === 0) return null;
+    return (
+      <>
+        {tags.map(tag => (
+          <Tag key={tag} style={{ marginRight: 4, marginBottom: 2 }}>{tag}</Tag>
+        ))}
+      </>
     );
   }
 
@@ -116,6 +135,7 @@ export function Cluster() {
             }} />
           <Column title="ProxyToUrl" dataIndex="proxyTo" key="proxyTo" render={linkRender} />
           <Column title="ExternalUrl" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
+          <Column title="Tags" dataIndex="tags" key="tags" render={tagsRender} />
           <Column title="Queued" dataIndex="queued" key="queued" sorter={(a, b) => (!a || !b) ? 0 : a.queued - b.queued} />
           <Column title="Running" dataIndex="running" key="running" sorter={(a, b) => (!a || !b) ? 0 : a.running - b.running} />
           <Column title="Active" dataIndex="active" key="active" render={switchRender} />
@@ -125,6 +145,7 @@ export function Cluster() {
               <ButtonGroup size={'default'}>
                 <Button onClick={() => {
                   setForm(undefined)
+                  updateEditTags([])
                   setVisibleForm(true)
                 }}>{Locale.UI.Create}</Button>
               </ButtonGroup>
@@ -148,15 +169,16 @@ export function Cluster() {
           labelWidth={150}
           style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
+            const payload = { ...values, tags: editTagsRef.current };
             if (form === undefined) {
-              backendSaveApi(values)
+              backendSaveApi(payload)
                 .then(() => {
                   list();
                   Toast.success(Locale.Cluster.Create);
                   setVisibleForm(false);
                 }).catch(() => { Toast.error(Locale.Cluster.ErrorCreate) });
             } else {
-              backendUpdateApi(values)
+              backendUpdateApi(payload)
                 .then(() => {
                   list();
                   Toast.success(Locale.Cluster.Update);
@@ -206,6 +228,14 @@ export function Cluster() {
               { type: 'string', message: 'type error' },
             ]}
             initValue={form?.externalUrl}
+          />
+          <Form.TagInput
+            field="tags"
+            label="Tags"
+            initValue={editTags}
+            separator={[' ']}
+            onChange={(v) => updateEditTags(v as string[])}
+            placeholder="Type a tag and press Space or Enter"
           />
           <Form.Switch label="Active" field='active' initValue={form?.active || false} />
         </Form>
