@@ -94,7 +94,7 @@ final class TestExternalRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
 
         // Create a mock response
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", null, ImmutableMap.of());
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", null, ImmutableMap.of(), false);
 
         // Create ArgumentCaptor
         ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
@@ -210,7 +210,8 @@ final class TestExternalRoutingGroupSelector
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 ImmutableList.of(),
-                ImmutableMap.of(headerKey, headerValue));
+                ImmutableMap.of(headerKey, headerValue),
+                false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -244,7 +245,8 @@ final class TestExternalRoutingGroupSelector
                 ImmutableList.of(),
                 ImmutableMap.of(
                         allowedHeaderKey, allowedHeaderValue,
-                        excludedHeaderKey, excludedHeaderValue));
+                        excludedHeaderKey, excludedHeaderValue),
+                false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -272,7 +274,8 @@ final class TestExternalRoutingGroupSelector
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
                 ImmutableList.of("Error occurred"),
-                ImmutableMap.of(headerKey, headerValue));
+                ImmutableMap.of(headerKey, headerValue),
+                false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -292,7 +295,7 @@ final class TestExternalRoutingGroupSelector
         HttpServletRequest mockRequest = prepareMockRequest();
         setMockHeaders(mockRequest);
 
-        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", ImmutableList.of(), null);
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse("test-group", ImmutableList.of(), null, false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -317,7 +320,8 @@ final class TestExternalRoutingGroupSelector
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "",
                 ImmutableList.of(),
-                ImmutableMap.of(headerKey, headerValue));
+                ImmutableMap.of(headerKey, headerValue),
+                false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -340,7 +344,7 @@ final class TestExternalRoutingGroupSelector
         setMockHeaders(mockRequest);
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group", List.of("some-error"), ImmutableMap.of());
+                "test-group", List.of("some-error"), ImmutableMap.of(), false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -363,7 +367,7 @@ final class TestExternalRoutingGroupSelector
         setMockHeaders(mockRequest);
 
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
-                "test-group", List.of("some-error"), ImmutableMap.of());
+                "test-group", List.of("some-error"), ImmutableMap.of(), false);
 
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
