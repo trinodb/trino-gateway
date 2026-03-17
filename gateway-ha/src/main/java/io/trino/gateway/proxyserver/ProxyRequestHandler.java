@@ -290,7 +290,7 @@ public class ProxyRequestHandler
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
                 routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
-                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
+                routingManager.setRoutingDecisionForQueryId(queryDetail.getQueryId(), routingDestination.routingDecision());
                 routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
@@ -301,7 +301,7 @@ public class ProxyRequestHandler
         else {
             log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
         }
-        queryDetail.setRoutingGroup(routingDestination.routingGroup());
+        queryDetail.setRoutingDecision(routingDestination.routingDecision());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
         queryHistoryManager.submitQueryDetail(queryDetail);
         return response;

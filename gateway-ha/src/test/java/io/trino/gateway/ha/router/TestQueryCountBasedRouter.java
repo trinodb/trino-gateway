@@ -200,7 +200,7 @@ final class TestQueryCountBasedRouter
     {
         // The user u1 has same number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queries running
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("etl", "u1");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("etl", null, "u1");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(proxyTo).isEqualTo(BACKEND_URL_3);
@@ -216,7 +216,7 @@ final class TestQueryCountBasedRouter
         assertThat(c3Stats.userQueuedCount().getOrDefault("u1", 0))
                 .isEqualTo(6);
 
-        proxyConfig = queryCountBasedRouter.provideBackendConfiguration("etl", "u1");
+        proxyConfig = queryCountBasedRouter.provideBackendConfiguration("etl", null, "u1");
         proxyTo = proxyConfig.getProxyTo();
 
         assertThat(proxyTo).isEqualTo(BACKEND_URL_1);
@@ -228,7 +228,7 @@ final class TestQueryCountBasedRouter
     {
         // The user u2 has different number of queries queued on each cluster
         // The query needs to be routed to cluster with least number of queued for that user
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), "u2");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), null, "u2");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_2).isEqualTo(proxyTo);
@@ -238,7 +238,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithDifferentQueueLengthUser2()
     {
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), "u3");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), null, "u3");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_1).isEqualTo(proxyTo);
@@ -248,7 +248,7 @@ final class TestQueryCountBasedRouter
     @Test
     void testUserWithNoQueuedQueries()
     {
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), "u101");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), null, "u101");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
@@ -258,7 +258,7 @@ final class TestQueryCountBasedRouter
     void testAdhocRoutingGroupFailOver()
     {
         // The ETL routing group doesn't exist
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", "u1");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", null, "u1");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_3).isEqualTo(proxyTo);
@@ -275,7 +275,7 @@ final class TestQueryCountBasedRouter
                 .build();
         queryCountBasedRouter.updateClusterStats(clusters);
 
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", "u1");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", null, "u1");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_4).isEqualTo(proxyTo);
@@ -294,7 +294,7 @@ final class TestQueryCountBasedRouter
 
         queryCountBasedRouter.updateClusterStats(clusters);
 
-        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", "u1");
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("NonExisting", null, "u1");
         String proxyTo = proxyConfig.getProxyTo();
 
         assertThat(BACKEND_URL_5).isEqualTo(proxyTo);

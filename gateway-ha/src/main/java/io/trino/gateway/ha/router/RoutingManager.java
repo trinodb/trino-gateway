@@ -45,12 +45,12 @@ public interface RoutingManager
     void setBackendForQueryId(String queryId, String backend);
 
     /**
-     * Associates a routing group with a specific query ID.
+     * Associates a routing decision with a specific query ID.
      *
      * @param queryId the unique identifier of the query
-     * @param routingGroup the routing group to associate with the query
+     * @param routingDecision the routing decision to associate with the query
      */
-    void setRoutingGroupForQueryId(String queryId, String routingGroup);
+    void setRoutingDecisionForQueryId(String queryId, String routingDecision);
 
     /**
      * Associates an external URL with a specific query ID for routing.
@@ -77,19 +77,20 @@ public interface RoutingManager
     String findExternalUrlForQueryId(String queryId);
 
     /**
-     * Finds the routing group associated with a given query ID.
+     * Finds the routing decision associated with a given query ID.
      *
      * @param queryId the unique identifier of the query
-     * @return the routing group, or null if not found
+     * @return the routing decision, or null if not found
      */
-    String findRoutingGroupForQueryId(String queryId);
+    String findRoutingDecisionForQueryId(String queryId);
 
     /**
-     * Provides the backend configuration for a given routing group and user.
+     * Provides the backend configuration for a given routing group or cluster and user.
      *
      * @param routingGroup the routing group to use for backend selection
+     * @param routingCluster the routing cluster to use for backend selection
      * @param user the user requesting the backend
      * @return the backend configuration for the selected cluster
      */
-    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user);
+    ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String routingCluster, String user);
 }
