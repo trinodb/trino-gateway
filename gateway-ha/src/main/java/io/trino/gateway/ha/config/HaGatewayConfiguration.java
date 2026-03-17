@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.config;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 
 import java.util.ArrayList;
@@ -56,7 +57,12 @@ public class HaGatewayConfiguration
 
     public Map<String, String> getServerConfig()
     {
-        return this.serverConfig;
+        /* START GENAI@CLINE */
+        if (this.serverConfig == null || this.serverConfig.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return ImmutableMap.copyOf(this.serverConfig);
+        /* END GENAI@CLINE */
     }
 
     public void setServerConfig(Map<String, String> serverConfig)
@@ -136,7 +142,12 @@ public class HaGatewayConfiguration
 
     public Map<String, String> getPagePermissions()
     {
-        return this.pagePermissions;
+        /* START GENAI@CLINE */
+        if (this.pagePermissions == null || this.pagePermissions.isEmpty()) {
+            return ImmutableMap.of();
+        }
+        return ImmutableMap.copyOf(this.pagePermissions);
+        /* END GENAI@CLINE */
     }
 
     public void setPagePermissions(Map<String, String> pagePermissions)
@@ -166,7 +177,12 @@ public class HaGatewayConfiguration
 
     public List<String> getExtraWhitelistPaths()
     {
-        return this.extraWhitelistPaths;
+        /* START GENAI@CLINE */
+        if (this.extraWhitelistPaths == null || this.extraWhitelistPaths.isEmpty()) {
+            return ImmutableList.of();
+        }
+        return ImmutableList.copyOf(this.extraWhitelistPaths);
+        /* END GENAI@CLINE */
     }
 
     public void setExtraWhitelistPaths(List<String> extraWhitelistPaths)
