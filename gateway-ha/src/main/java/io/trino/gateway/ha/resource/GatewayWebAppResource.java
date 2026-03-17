@@ -19,8 +19,6 @@ import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import io.trino.gateway.ha.config.RoutingRulesConfiguration;
-import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
@@ -40,7 +38,6 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
-import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -76,11 +73,9 @@ public class GatewayWebAppResource
     private final QueryHistoryManager queryHistoryManager;
     private final BackendStateManager backendStateManager;
     private final ResourceGroupsManager resourceGroupsManager;
-    private final boolean isRulesEngineEnabled;
-    private final RulesType ruleType;
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
-    private final RoutingRulesManager routingRulesManager;
+    private final RoutingRulesResourceHandler routingRulesResourceHandler;
 
     @Inject
     public GatewayWebAppResource(
@@ -88,7 +83,7 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
-            RoutingRulesManager routingRulesManager,
+            RoutingRulesResourceHandler routingRulesResourceHandler,
             HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
@@ -96,10 +91,7 @@ public class GatewayWebAppResource
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.uiConfiguration = configuration.getUiConfiguration();
-        this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
-        RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
-        isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
-        ruleType = routingRules.getRulesType();
+        this.routingRulesResourceHandler = requireNonNull(routingRulesResourceHandler, "routingRulesResourceHandler is null");
     }
 
     @POST
@@ -461,12 +453,7 @@ public class GatewayWebAppResource
     public Response getRoutingRules()
             throws IOException
     {
-        if (isRulesEngineEnabled && ruleType == RulesType.EXTERNAL) {
-            return Response.status(Response.Status.NO_CONTENT)
-                    .entity(Result.fail("Routing rules are managed by an external service")).build();
-        }
-        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
-        return Response.ok(Result.ok(routingRulesList)).build();
+        return routingRulesResourceHandler.getRoutingRules();
     }
 
     @POST
@@ -477,8 +464,7 @@ public class GatewayWebAppResource
     public Response updateRoutingRules(RoutingRule routingRule)
             throws IOException
     {
-        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
-        return Response.ok(Result.ok(routingRulesList)).build();
+        return routingRulesResourceHandler.updateRoutingRules(routingRule);
     }
 
     @GET
