@@ -72,14 +72,14 @@ public class RoutingTargetHandler
             // Query ID based routing
             previousCluster = queryId.map(routingManager::findBackendForQueryId);
             routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
                     request));
         }
         else {
             // Cookie based routing
             previousCluster = getPreviousCluster(request);
             routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
+                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
                     request));
         }
 
