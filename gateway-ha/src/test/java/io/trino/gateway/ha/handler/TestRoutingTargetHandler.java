@@ -326,8 +326,6 @@ class TestRoutingTargetHandler
 
         // Query ID is known — cache returns the backend
         when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
-        when(routingManager.findRoutingGroupForQueryId(queryId)).thenReturn("test-group");
-        when(routingManager.findExternalUrlForQueryId(queryId)).thenReturn(backendUrl);
 
         // Fallback routing would throw (no backends for the routing group)
         when(routingManager.provideBackendConfiguration(any(), any()))
