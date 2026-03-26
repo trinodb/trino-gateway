@@ -90,6 +90,7 @@ nav:
   - Reference:
       - Routing rules: routing-rules.md
       - Routing logic: routing-logic.md
+      - Spooling protocol: spooling-protocol.md
       - Gateway API: gateway-api.md
       - Resource groups API: resource-groups-api.md
       - Code architecture: design.md
