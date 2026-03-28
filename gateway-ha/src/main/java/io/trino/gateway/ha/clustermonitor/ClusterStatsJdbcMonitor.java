@@ -21,6 +21,7 @@ import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -69,7 +70,7 @@ public class ClusterStatsJdbcMonitor
         ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         String jdbcUrl;
         try {
-            URL parsedUrl = new URL(url);
+            URL parsedUrl = URI.create(url).toURL();
             jdbcUrl = String
                     .format("jdbc:trino://%s:%s/system",
                             parsedUrl.getHost(),
