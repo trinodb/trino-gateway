@@ -14,10 +14,10 @@
 package io.trino.gateway.ha;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.airlift.json.ObjectMapperProvider;
+import io.airlift.json.JsonMapperProvider;
 import io.trino.gateway.ha.clustermonitor.ServerInfo;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.Result;
@@ -42,13 +42,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestObjectSerializable
 {
-    private final ObjectMapper objectMapper = new ObjectMapperProvider().get();
+    private final JsonMapper jsonMapper = new JsonMapperProvider().get();
 
     @Test
     void testServerInfo()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new ServerInfo(true)))
+        assertThat(jsonMapper.writeValueAsString(new ServerInfo(true)))
                 .contains("starting");
     }
 
@@ -60,7 +60,7 @@ final class TestObjectSerializable
         proxyBackendConfiguration.setExternalUrl("http://localhost:8080");
         proxyBackendConfiguration.setActive(false);
         proxyBackendConfiguration.setRoutingGroup("batch-1");
-        assertThat(objectMapper.writeValueAsString(proxyBackendConfiguration))
+        assertThat(jsonMapper.writeValueAsString(proxyBackendConfiguration))
                 .contains(ImmutableList.of("externalUrl", "active", "routingGroup"));
     }
 
@@ -68,11 +68,11 @@ final class TestObjectSerializable
     void testResult()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(Result.ok()))
+        assertThat(jsonMapper.writeValueAsString(Result.ok()))
                 .contains(ImmutableList.of("code", "msg"));
-        assertThat(objectMapper.writeValueAsString(Result.ok("some_msg")))
+        assertThat(jsonMapper.writeValueAsString(Result.ok("some_msg")))
                 .contains(ImmutableList.of("code", "msg"));
-        assertThat(objectMapper.writeValueAsString(Result.ok(123)))
+        assertThat(jsonMapper.writeValueAsString(Result.ok(123)))
                 .contains(ImmutableList.of("code", "msg", "data"));
     }
 
@@ -81,7 +81,7 @@ final class TestObjectSerializable
             throws JsonProcessingException
     {
         TableData<String> tableData = new TableData<>(ImmutableList.of("t1", "t2"), 2);
-        assertThat(objectMapper.writeValueAsString(tableData))
+        assertThat(jsonMapper.writeValueAsString(tableData))
                 .contains(ImmutableList.of("total", "rows"));
     }
 
@@ -90,9 +90,9 @@ final class TestObjectSerializable
             throws JsonProcessingException
     {
         ResourceGroupsManager.GlobalPropertiesDetail data = new ResourceGroupsManager.GlobalPropertiesDetail("cpu_quota_period");
-        assertThat(objectMapper.writeValueAsString(new GlobalPropertyRequest(null, data)))
+        assertThat(jsonMapper.writeValueAsString(new GlobalPropertyRequest(null, data)))
                 .contains("data");
-        assertThat(objectMapper.writeValueAsString(new GlobalPropertyRequest("some_schema", data)))
+        assertThat(jsonMapper.writeValueAsString(new GlobalPropertyRequest("some_schema", data)))
                 .contains(ImmutableList.of("useSchema", "data"));
     }
 
@@ -100,9 +100,9 @@ final class TestObjectSerializable
     void testQueryDistributionRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QueryDistributionRequest(null)))
+        assertThat(jsonMapper.writeValueAsString(new QueryDistributionRequest(null)))
                 .contains("\"latestHour\":1");
-        assertThat(objectMapper.writeValueAsString(new QueryDistributionRequest(3)))
+        assertThat(jsonMapper.writeValueAsString(new QueryDistributionRequest(3)))
                 .contains("\"latestHour\":3");
     }
 
@@ -110,11 +110,11 @@ final class TestObjectSerializable
     void testQueryGlobalPropertyRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest(null, null)))
+        assertThat(jsonMapper.writeValueAsString(new QueryGlobalPropertyRequest(null, null)))
                 .isEqualTo("{}");
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", null)))
+        assertThat(jsonMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", null)))
                 .contains("\"useSchema\":\"some_schema\"");
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", "some_name")))
+        assertThat(jsonMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", "some_name")))
                 .contains(ImmutableList.of("\"useSchema\":\"some_schema\"", "\"name\":\"some_name\""));
     }
 
@@ -122,9 +122,9 @@ final class TestObjectSerializable
     void testQueryHistoryRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id", "source")))
+        assertThat(jsonMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id", "source")))
                 .contains(ImmutableList.of("\"page\":1", "\"size\":10", "user", "externalUrl", "queryId", "source"));
-        assertThat(objectMapper.writeValueAsString(new QueryHistoryRequest(5, 6, "user1", "url1", "query_id", "source")))
+        assertThat(jsonMapper.writeValueAsString(new QueryHistoryRequest(5, 6, "user1", "url1", "query_id", "source")))
                 .contains(ImmutableList.of("\"page\":5", "\"size\":6", "user", "externalUrl", "queryId", "source"));
     }
 
@@ -132,9 +132,9 @@ final class TestObjectSerializable
     void testQueryResourceGroupsRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QueryResourceGroupsRequest(null, 123L)))
+        assertThat(jsonMapper.writeValueAsString(new QueryResourceGroupsRequest(null, 123L)))
                 .contains("resourceGroupId");
-        assertThat(objectMapper.writeValueAsString(new QueryResourceGroupsRequest("some_schema", 123L)))
+        assertThat(jsonMapper.writeValueAsString(new QueryResourceGroupsRequest("some_schema", 123L)))
                 .contains(ImmutableList.of("useSchema", "resourceGroupId"));
     }
 
@@ -142,9 +142,9 @@ final class TestObjectSerializable
     void testQuerySelectorsRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new QuerySelectorsRequest(null, 123L)))
+        assertThat(jsonMapper.writeValueAsString(new QuerySelectorsRequest(null, 123L)))
                 .contains("resourceGroupId");
-        assertThat(objectMapper.writeValueAsString(new QuerySelectorsRequest("some_schema", 123L)))
+        assertThat(jsonMapper.writeValueAsString(new QuerySelectorsRequest("some_schema", 123L)))
                 .contains(ImmutableList.of("useSchema", "resourceGroupId"));
     }
 
@@ -153,9 +153,9 @@ final class TestObjectSerializable
             throws JsonProcessingException
     {
         ResourceGroupsManager.ResourceGroupsDetail data = new ResourceGroupsManager.ResourceGroupsDetail();
-        assertThat(objectMapper.writeValueAsString(new ResourceGroupsRequest(null, data)))
+        assertThat(jsonMapper.writeValueAsString(new ResourceGroupsRequest(null, data)))
                 .contains(ImmutableList.of("data", "resourceGroupId"));
-        assertThat(objectMapper.writeValueAsString(new ResourceGroupsRequest("some_schema", data)))
+        assertThat(jsonMapper.writeValueAsString(new ResourceGroupsRequest("some_schema", data)))
                 .contains(ImmutableList.of("useSchema", "data", "resourceGroupId"));
     }
 
@@ -163,7 +163,7 @@ final class TestObjectSerializable
     void testRestLoginRequest()
             throws JsonProcessingException
     {
-        assertThat(objectMapper.writeValueAsString(new RestLoginRequest("user", "pass")))
+        assertThat(jsonMapper.writeValueAsString(new RestLoginRequest("user", "pass")))
                 .contains(ImmutableList.of("username", "password"));
     }
 
@@ -173,9 +173,9 @@ final class TestObjectSerializable
     {
         ResourceGroupsManager.SelectorsDetail data = new ResourceGroupsManager.SelectorsDetail();
         ResourceGroupsManager.SelectorsDetail oldData = new ResourceGroupsManager.SelectorsDetail();
-        assertThat(objectMapper.writeValueAsString(new SelectorsRequest(null, data, oldData)))
+        assertThat(jsonMapper.writeValueAsString(new SelectorsRequest(null, data, oldData)))
                 .contains(ImmutableList.of("data", "oldData"));
-        assertThat(objectMapper.writeValueAsString(new SelectorsRequest("some_schema", data, oldData)))
+        assertThat(jsonMapper.writeValueAsString(new SelectorsRequest("some_schema", data, oldData)))
                 .contains(ImmutableList.of("useSchema", "data", "oldData"));
     }
 
@@ -192,7 +192,7 @@ final class TestObjectSerializable
         backendResponse.setRoutingGroup("batch-1");
         backendResponse.setExternalUrl("example.com");
         backendResponse.setStatus("HEALTHY");
-        assertThat(objectMapper.writeValueAsString(backendResponse))
+        assertThat(jsonMapper.writeValueAsString(backendResponse))
                 .contains(ImmutableList.of("queued", "running", "active", "routingGroup", "externalUrl", "name", "proxyTo", "status"));
     }
 
@@ -219,7 +219,7 @@ final class TestObjectSerializable
         distributionResponse.setAverageQueryCountSecond(5.0);
         distributionResponse.setAverageQueryCountMinute(10.0);
         distributionResponse.setStartTime("2024-04-01 12:34:56");
-        assertThat(objectMapper.writeValueAsString(distributionResponse))
+        assertThat(jsonMapper.writeValueAsString(distributionResponse))
                 .contains(ImmutableList.of(
                         "totalBackendCount",    // DistributionResponse
                         "offlineBackendCount",
