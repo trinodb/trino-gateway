@@ -15,6 +15,7 @@ package io.trino.gateway.ha.clustermonitor;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpUriBuilder;
 import io.airlift.http.client.Request;
@@ -35,7 +36,8 @@ import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
+import static io.airlift.http.client.HeaderNames.CONTENT_TYPE;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.ResponseHandlerUtils.propagate;
@@ -139,8 +141,8 @@ public class ClusterStatsMetricsMonitor
 
         Request.Builder requestBuilder = prepareGet()
                 .setUri(uri.build())
-                .addHeader(identityHeader.name, identityHeader.value)
-                .addHeader("Content-Type", "application/openmetrics-text; version=1.0.0; charset=utf-8");
+                .addHeader(HeaderName.of(identityHeader.name), identityHeader.value)
+                .addHeader(CONTENT_TYPE, "application/openmetrics-text; version=1.0.0; charset=utf-8");
         if (xForwardedProtoHeader) {
             requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
         }
