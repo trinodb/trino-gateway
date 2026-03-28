@@ -46,6 +46,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
 
+import static io.airlift.http.client.HeaderNames.CONTENT_TYPE;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.json.JsonCodec.jsonCodec;
@@ -110,7 +111,7 @@ final class TestExternalRoutingGroupSelector
 
         // Create a request
         Request request = preparePost()
-                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .addHeader(CONTENT_TYPE, "application/json; charset=utf-8")
                 .setUri(new URI(rulesExternalConfiguration.getUrlPath()))  // Replace with actual URI
                 .setBodyGenerator(requestBodyGenerator)
                 .build();
