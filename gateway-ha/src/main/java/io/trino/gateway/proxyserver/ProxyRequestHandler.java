@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
+import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.Request;
 import io.airlift.http.client.StaticBodyGenerator;
@@ -50,13 +51,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.net.HttpHeaders.VIA;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_FOR;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_HOST;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_PORT;
-import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.airlift.http.client.HeaderNames.VIA;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_FOR;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_HOST;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_PORT;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_PROTO;
 import static io.airlift.http.client.Request.Builder.prepareDelete;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.prepareHead;
@@ -179,7 +180,7 @@ public class ProxyRequestHandler
                 if (!name.equalsIgnoreCase("Accept-Encoding")
                         && !name.equalsIgnoreCase("Host")
                         && (addXForwardedHeaders || !name.startsWith("X-Forwarded"))) {
-                    requestBuilder.addHeader(name, value);
+                    requestBuilder.addHeader(HeaderName.of(name), value);
                 }
             }
         }

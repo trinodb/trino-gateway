@@ -15,6 +15,7 @@ package io.trino.gateway.ha.handler;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
+import io.airlift.http.client.HeaderName;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.TrinoQueryProperties;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +39,7 @@ import static java.util.Locale.ENGLISH;
 
 public final class ProxyUtils
 {
-    public static final String SOURCE_HEADER = "X-Trino-Source";
+    public static final HeaderName SOURCE_HEADER = HeaderName.of("X-Trino-Source");
     public static final String AUTHORIZATION = "Authorization";
 
     private static final Logger log = Logger.get(ProxyUtils.class);

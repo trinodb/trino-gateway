@@ -15,6 +15,7 @@ package io.trino.gateway.ha.clustermonitor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.airlift.http.client.BasicAuthRequestFilter;
+import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.HttpRequestFilter;
 import io.airlift.http.client.JsonResponseHandler;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
+import static io.airlift.http.client.HeaderNames.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
@@ -133,7 +134,7 @@ public class ClusterStatsJmxMonitor
                         .appendPath(JMX_PATH)
                         .appendPath(mbeanName)
                         .build())
-                .addHeader("X-Trino-User", username);
+                .addHeader(HeaderName.of("X-Trino-User"), username);
         if (xForwardedProtoHeader) {
             requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
         }
