@@ -15,7 +15,6 @@ package io.trino.gateway.ha.persistence.dao;
 
 import org.jdbi.v3.core.mapper.MapMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
-import org.jdbi.v3.sqlobject.customizer.Define;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 import org.jdbi.v3.sqlobject.statement.UseRowMapper;
@@ -91,18 +90,61 @@ public interface QueryHistoryDao
 
     @SqlQuery("""
             SELECT * FROM query_history
-            WHERE 1 = 1 <condition>
+            WHERE (:userName IS NULL OR user_name = :userName)
+            AND (:externalUrl IS NULL OR external_url = :externalUrl)
+            AND (:queryId IS NULL OR query_id = :queryId)
+            AND (:source IS NULL OR source = :source)
             ORDER BY created DESC
             LIMIT :limit
             OFFSET :offset
             """)
-    List<QueryHistory> pageQueryHistory(@Define("condition") String condition, @Bind("limit") int limit, @Bind("offset") int offset);
+    List<QueryHistory> pageQueryHistory(
+            @Bind("userName") String userName,
+            @Bind("externalUrl") String externalUrl,
+            @Bind("queryId") String queryId,
+            @Bind("source") String source,
+            @Bind("limit") int limit,
+            @Bind("offset") int offset);
+
+    @SqlQuery("""
+            SELECT * FROM query_history
+            WHERE (:userName IS NULL OR user_name = :userName)
+            AND (:externalUrl IS NULL OR external_url = :externalUrl)
+            AND (:queryId IS NULL OR query_id = :queryId)
+            AND (:source IS NULL OR source = :source)
+            ORDER BY created DESC
+            OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
+            """)
+    List<QueryHistory> pageQueryHistoryWithFetch(
+            @Bind("userName") String userName,
+            @Bind("externalUrl") String externalUrl,
+            @Bind("queryId") String queryId,
+            @Bind("source") String source,
+            @Bind("limit") int limit,
+            @Bind("offset") int offset);
+
+    default List<QueryHistory> pageQueryHistory(
+            String userName, String externalUrl, String queryId, String source,
+            int limit, int offset, boolean isLimitUnsupported)
+    {
+        if (isLimitUnsupported) {
+            return pageQueryHistoryWithFetch(userName, externalUrl, queryId, source, limit, offset);
+        }
+        return pageQueryHistory(userName, externalUrl, queryId, source, limit, offset);
+    }
 
     @SqlQuery("""
             SELECT count(1) FROM query_history
-            WHERE 1 = 1 <condition>
+            WHERE (:userName IS NULL OR user_name = :userName)
+            AND (:externalUrl IS NULL OR external_url = :externalUrl)
+            AND (:queryId IS NULL OR query_id = :queryId)
+            AND (:source IS NULL OR source = :source)
             """)
-    Long count(@Define("condition") String condition);
+    Long count(
+            @Bind("userName") String userName,
+            @Bind("externalUrl") String externalUrl,
+            @Bind("queryId") String queryId,
+            @Bind("source") String source);
 
     @SqlQuery("""
             SELECT FLOOR(created / 1000 / 60) AS minute,
