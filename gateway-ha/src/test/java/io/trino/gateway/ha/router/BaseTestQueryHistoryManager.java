@@ -19,14 +19,14 @@ import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.math.BigDecimal;
@@ -37,11 +37,11 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 abstract class BaseTestQueryHistoryManager
 {
     protected final JdbcDatabaseContainer<?> container = startContainer();
     private QueryHistoryManager queryHistoryManager;
+    private QueryHistoryDao dao;
 
     protected abstract JdbcDatabaseContainer<?> startContainer();
 
@@ -58,7 +58,15 @@ abstract class BaseTestQueryHistoryManager
                 true);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
+        Jdbi jdbi = jdbcConnectionManager.getJdbi();
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, config);
+        dao = jdbi.onDemand(QueryHistoryDao.class);
+    }
+
+    @BeforeEach
+    void cleanUp()
+    {
+        dao.deleteOldHistory(Long.MAX_VALUE);
     }
 
     @AfterAll
@@ -68,7 +76,6 @@ abstract class BaseTestQueryHistoryManager
     }
 
     @Test
-    @Order(1)
     void testSubmitAndFetchQueryHistory()
     {
         List<QueryHistoryManager.QueryDetail> queryDetails =
@@ -102,7 +109,6 @@ abstract class BaseTestQueryHistoryManager
     }
 
     @Test
-    @Order(2)
     void testFindDistribution()
     {
         long currentTime = System.currentTimeMillis();
