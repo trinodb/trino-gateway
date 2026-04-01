@@ -79,9 +79,7 @@ export const RootLayout = (props: {
                 />
               ),
               text: (
-                <Link to="/" style={{ textDecoration: "none" }}>
-                  Trino Gateway
-                </Link>
+                <div>Trino Gateway</div>
               ),
             }}
             footer={
