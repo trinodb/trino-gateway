@@ -26,7 +26,7 @@ final class TestRoutingConfiguration
     {
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         assertThat(routingConfiguration.getAsyncTimeout()).isEqualTo(new Duration(2, MINUTES));
-        assertThat(routingConfiguration.isAddXForwardedHeaders()).isTrue();
+        assertThat(routingConfiguration.isAddForwardedHeaders()).isTrue();
         assertThat(routingConfiguration.getDefaultRoutingGroup()).isEqualTo("adhoc");
     }
 
@@ -39,8 +39,8 @@ final class TestRoutingConfiguration
         routingConfiguration.setAsyncTimeout(customTimeout);
         assertThat(routingConfiguration.getAsyncTimeout()).isEqualTo(customTimeout);
 
-        routingConfiguration.setAddXForwardedHeaders(false);
-        assertThat(routingConfiguration.isAddXForwardedHeaders()).isFalse();
+        routingConfiguration.setAddForwardedHeaders(false);
+        assertThat(routingConfiguration.isAddForwardedHeaders()).isFalse();
 
         routingConfiguration.setDefaultRoutingGroup("batch");
         assertThat(routingConfiguration.getDefaultRoutingGroup()).isEqualTo("batch");

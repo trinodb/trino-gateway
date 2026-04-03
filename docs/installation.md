@@ -113,13 +113,13 @@ at all for users.
 This setting is also required for Trino to authenticate in the case TLS is 
 terminated at the Trino Gateway. Normally it refuses to authenticate plain HTTP 
 requests, but if `http-server.process-forwarded=true` it authenticates over 
-HTTP if the request includes `X-Forwarded-Proto: HTTPS`.
+HTTP if the request includes a forwarded HTTPS protocol header, such as `X-Forwarded-Proto: HTTPS`.
 
-To prevent Trino Gateway from sending `X-Forwarded-*` headers, add the following configuration:
+To prevent Trino Gateway from sending `X-Forwarded-*` and `Forwarded` headers, add the following configuration:
 
 ```yaml
 routing:
-  addXForwardedHeaders: false
+  addForwardedHeaders: false
 ```
 
 Find more information in [the related Trino documentation](https://trino.io/docs/current/security/tls.html#use-a-load-balancer-to-terminate-tls-https).
