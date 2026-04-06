@@ -22,18 +22,11 @@ import io.trino.gateway.ha.clustermonitor.ServerInfo;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.TableData;
-import io.trino.gateway.ha.domain.request.GlobalPropertyRequest;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
-import io.trino.gateway.ha.domain.request.QueryGlobalPropertyRequest;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
-import io.trino.gateway.ha.domain.request.QueryResourceGroupsRequest;
-import io.trino.gateway.ha.domain.request.QuerySelectorsRequest;
-import io.trino.gateway.ha.domain.request.ResourceGroupsRequest;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
-import io.trino.gateway.ha.domain.request.SelectorsRequest;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
-import io.trino.gateway.ha.router.ResourceGroupsManager;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -86,17 +79,6 @@ final class TestObjectSerializable
     }
 
     @Test
-    void testGlobalPropertyRequest()
-            throws JsonProcessingException
-    {
-        ResourceGroupsManager.GlobalPropertiesDetail data = new ResourceGroupsManager.GlobalPropertiesDetail("cpu_quota_period");
-        assertThat(objectMapper.writeValueAsString(new GlobalPropertyRequest(null, data)))
-                .contains("data");
-        assertThat(objectMapper.writeValueAsString(new GlobalPropertyRequest("some_schema", data)))
-                .contains(ImmutableList.of("useSchema", "data"));
-    }
-
-    @Test
     void testQueryDistributionRequest()
             throws JsonProcessingException
     {
@@ -104,18 +86,6 @@ final class TestObjectSerializable
                 .contains("\"latestHour\":1");
         assertThat(objectMapper.writeValueAsString(new QueryDistributionRequest(3)))
                 .contains("\"latestHour\":3");
-    }
-
-    @Test
-    void testQueryGlobalPropertyRequest()
-            throws JsonProcessingException
-    {
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest(null, null)))
-                .isEqualTo("{}");
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", null)))
-                .contains("\"useSchema\":\"some_schema\"");
-        assertThat(objectMapper.writeValueAsString(new QueryGlobalPropertyRequest("some_schema", "some_name")))
-                .contains(ImmutableList.of("\"useSchema\":\"some_schema\"", "\"name\":\"some_name\""));
     }
 
     @Test
@@ -129,54 +99,11 @@ final class TestObjectSerializable
     }
 
     @Test
-    void testQueryResourceGroupsRequest()
-            throws JsonProcessingException
-    {
-        assertThat(objectMapper.writeValueAsString(new QueryResourceGroupsRequest(null, 123L)))
-                .contains("resourceGroupId");
-        assertThat(objectMapper.writeValueAsString(new QueryResourceGroupsRequest("some_schema", 123L)))
-                .contains(ImmutableList.of("useSchema", "resourceGroupId"));
-    }
-
-    @Test
-    void testQuerySelectorsRequest()
-            throws JsonProcessingException
-    {
-        assertThat(objectMapper.writeValueAsString(new QuerySelectorsRequest(null, 123L)))
-                .contains("resourceGroupId");
-        assertThat(objectMapper.writeValueAsString(new QuerySelectorsRequest("some_schema", 123L)))
-                .contains(ImmutableList.of("useSchema", "resourceGroupId"));
-    }
-
-    @Test
-    void testResourceGroupsRequest()
-            throws JsonProcessingException
-    {
-        ResourceGroupsManager.ResourceGroupsDetail data = new ResourceGroupsManager.ResourceGroupsDetail();
-        assertThat(objectMapper.writeValueAsString(new ResourceGroupsRequest(null, data)))
-                .contains(ImmutableList.of("data", "resourceGroupId"));
-        assertThat(objectMapper.writeValueAsString(new ResourceGroupsRequest("some_schema", data)))
-                .contains(ImmutableList.of("useSchema", "data", "resourceGroupId"));
-    }
-
-    @Test
     void testRestLoginRequest()
             throws JsonProcessingException
     {
         assertThat(objectMapper.writeValueAsString(new RestLoginRequest("user", "pass")))
                 .contains(ImmutableList.of("username", "password"));
-    }
-
-    @Test
-    void testSelectorsRequest()
-            throws JsonProcessingException
-    {
-        ResourceGroupsManager.SelectorsDetail data = new ResourceGroupsManager.SelectorsDetail();
-        ResourceGroupsManager.SelectorsDetail oldData = new ResourceGroupsManager.SelectorsDetail();
-        assertThat(objectMapper.writeValueAsString(new SelectorsRequest(null, data, oldData)))
-                .contains(ImmutableList.of("data", "oldData"));
-        assertThat(objectMapper.writeValueAsString(new SelectorsRequest("some_schema", data, oldData)))
-                .contains(ImmutableList.of("useSchema", "data", "oldData"));
     }
 
     @Test

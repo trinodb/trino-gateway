@@ -22,7 +22,6 @@ import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
-import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
@@ -40,8 +39,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.trino.gateway.ha.router.ResourceGroupsManager.ResourceGroupsDetail;
-import static io.trino.gateway.ha.router.ResourceGroupsManager.SelectorsDetail;
 import static java.util.Objects.requireNonNull;
 
 @RolesAllowed("ADMIN")
@@ -52,19 +49,16 @@ public class EntityEditorResource
     private static final Logger log = Logger.get(EntityEditorResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
-    private final ResourceGroupsManager resourceGroupsManager;
     private final RoutingManager routingManager;
     private final BackendStateManager backendStateManager;
 
     @Inject
     public EntityEditorResource(
             GatewayBackendManager gatewayBackendManager,
-            ResourceGroupsManager resourceGroupsManager,
             RoutingManager routingManager,
             BackendStateManager backendStateManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
-        this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
     }
@@ -105,24 +99,6 @@ public class EntityEditorResource
                                     .trinoStatus(trinoStatus)
                                     .build());
                 }
-                case RESOURCE_GROUP -> {
-                    ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
-                            ResourceGroupsDetail.class);
-                    resourceGroupsManager.updateResourceGroup(resourceGroupDetails, database);
-                }
-                case SELECTOR -> {
-                    SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
-                            SelectorsDetail.class);
-                    List<SelectorsDetail> oldSelectorDetails =
-                            resourceGroupsManager.readSelector(selectorDetails.getResourceGroupId(), database);
-                    if (oldSelectorDetails.size() >= 1) {
-                        resourceGroupsManager.updateSelector(oldSelectorDetails.get(0),
-                                selectorDetails, database);
-                    }
-                    else {
-                        resourceGroupsManager.createSelector(selectorDetails, database);
-                    }
-                }
             }
         }
         catch (IOException e) {
@@ -143,8 +119,6 @@ public class EntityEditorResource
 
         return switch (entityType) {
             case GATEWAY_BACKEND -> Response.ok(gatewayBackendManager.getAllBackends()).build();
-            case RESOURCE_GROUP -> Response.ok(resourceGroupsManager.readAllResourceGroups(database)).build();
-            case SELECTOR -> Response.ok(resourceGroupsManager.readAllSelectors(database)).build();
         };
     }
 }
