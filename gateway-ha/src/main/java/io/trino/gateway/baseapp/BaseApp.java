@@ -35,6 +35,7 @@ import io.trino.gateway.ha.resource.GatewayWebAppResource;
 import io.trino.gateway.ha.resource.HaGatewayResource;
 import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
+import io.trino.gateway.ha.resource.RoutingRulesResourceHandler;
 import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -137,6 +138,7 @@ public class BaseApp
         binder.bind(ProxyHandlerStats.class).in(Scopes.SINGLETON);
         newExporter(binder).export(ProxyHandlerStats.class).withGeneratedName();
         binder.bind(RoutingRulesManager.class);
+        binder.bind(RoutingRulesResourceHandler.class);
         binder.bind(ClusterMetricsStatsExporter.class).in(Scopes.SINGLETON);
         newOptionalBinder(binder, RoutingManager.class)
                 .setDefault()
