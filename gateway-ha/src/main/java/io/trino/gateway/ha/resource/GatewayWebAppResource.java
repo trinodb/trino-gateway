@@ -78,7 +78,6 @@ public class GatewayWebAppResource
     private final ResourceGroupsManager resourceGroupsManager;
     private final boolean isRulesEngineEnabled;
     private final RulesType ruleType;
-    // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
 
@@ -95,7 +94,7 @@ public class GatewayWebAppResource
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.resourceGroupsManager = requireNonNull(resourceGroupsManager, "resourceGroupsManager is null");
-        this.uiConfiguration = configuration.getUiConfiguration();
+        this.uiConfiguration = requireNonNull(configuration.getUiConfiguration(), "uiConfiguration is null");
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
         RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
         isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
