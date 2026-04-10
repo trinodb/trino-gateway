@@ -69,15 +69,16 @@ public class HaGatewayTestUtils
                 .setResponseCode(200));
     }
 
-    public static void seedRequiredData(String h2DbFilePath)
+    /* START GENAI@CLINE */
+    public static void seedRequiredData(PostgreSQLContainer container)
     {
-        String jdbcUrl = "jdbc:h2:" + h2DbFilePath + ";NON_KEYWORDS=NAME,VALUE";
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
+        Jdbi jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
         try (Handle handle = jdbi.open()) {
-            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
+            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-postgres.sql"))
                     .execute();
         }
     }
+    /* END GENAI@CLINE */
 
     public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
             throws Exception
