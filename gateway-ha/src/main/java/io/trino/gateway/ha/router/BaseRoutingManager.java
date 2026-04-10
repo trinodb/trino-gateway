@@ -76,12 +76,30 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
+        if (Strings.isNullOrEmpty(queryId)) {
+            log.warn("Skipping backend cache update for empty queryId");
+            return;
+        }
+        if (Strings.isNullOrEmpty(backend)) {
+            queryIdBackendCache.invalidate(queryId);
+            log.debug("Invalidated backend cache for queryId [%s] due to empty backend", queryId);
+            return;
+        }
         queryIdBackendCache.put(queryId, backend);
     }
 
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
+        if (Strings.isNullOrEmpty(queryId)) {
+            log.warn("Skipping routing group cache update for empty queryId");
+            return;
+        }
+        if (Strings.isNullOrEmpty(routingGroup)) {
+            queryIdRoutingGroupCache.invalidate(queryId);
+            log.debug("Invalidated routing group cache for queryId [%s] due to empty routing group", queryId);
+            return;
+        }
         queryIdRoutingGroupCache.put(queryId, routingGroup);
     }
 
@@ -177,6 +195,15 @@ public abstract class BaseRoutingManager
     @Override
     public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
+        if (Strings.isNullOrEmpty(queryId)) {
+            log.warn("Skipping externalUrl cache update for empty queryId");
+            return;
+        }
+        if (externalUrl == null) {
+            queryIdExternalUrlCache.invalidate(queryId);
+            log.debug("Invalidated externalUrl cache for queryId [%s] due to null externalUrl", queryId);
+            return;
+        }
         queryIdExternalUrlCache.put(queryId, externalUrl);
     }
 
