@@ -2,6 +2,32 @@
 
 ## 2026
 
+### Trino Gateway 19 (?? Apr 2026) { id="19" }
+
+Artifacts:
+
+* [JAR file gateway-ha-19-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/19/gateway-ha-19-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:19`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/19.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/19.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.19.0`
+
+Changes:
+
+**General**
+
+* Fix issue with eager evaluation of fallback routing for queries. 
+  ([#922](https://github.com/trinodb/trino-gateway/pull/922))
+
+**UI**
+
+* Fix rendering of the query distribution chart.
+  ([#942](https://github.com/trinodb/trino-gateway/pull/942))
+
+More details and a list of all merged pull requests are [available in the
+milestone 19 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A19+is%3Aclosed).
+
 ### Trino Gateway 18 (4 Mar 2026) { id="18" }
 
 Artifacts:
