@@ -21,7 +21,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.30.3",
-    "sass": "^1.98.0",
+    "sass": "^1.99.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
