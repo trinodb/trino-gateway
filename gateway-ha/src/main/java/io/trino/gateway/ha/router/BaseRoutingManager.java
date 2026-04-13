@@ -17,7 +17,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -39,6 +38,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -76,11 +77,11 @@ public abstract class BaseRoutingManager
     @Override
     public void setBackendForQueryId(String queryId, String backend)
     {
-        if (Strings.isNullOrEmpty(queryId)) {
-            log.warn("Skipping backend cache update for empty queryId");
+        if (isNullOrEmpty(queryId)) {
+            log.debug("Skipping backend cache update for empty queryId");
             return;
         }
-        if (Strings.isNullOrEmpty(backend)) {
+        if (isNullOrEmpty(backend)) {
             queryIdBackendCache.invalidate(queryId);
             log.debug("Invalidated backend cache for queryId [%s] due to empty backend", queryId);
             return;
@@ -91,11 +92,11 @@ public abstract class BaseRoutingManager
     @Override
     public void setRoutingGroupForQueryId(String queryId, String routingGroup)
     {
-        if (Strings.isNullOrEmpty(queryId)) {
-            log.warn("Skipping routing group cache update for empty queryId");
+        if (isNullOrEmpty(queryId)) {
+            log.debug("Skipping routing group cache update for empty queryId");
             return;
         }
-        if (Strings.isNullOrEmpty(routingGroup)) {
+        if (isNullOrEmpty(routingGroup)) {
             queryIdRoutingGroupCache.invalidate(queryId);
             log.debug("Invalidated routing group cache for queryId [%s] due to empty routing group", queryId);
             return;
@@ -195,13 +196,13 @@ public abstract class BaseRoutingManager
     @Override
     public void setExternalUrlForQueryId(String queryId, String externalUrl)
     {
-        if (Strings.isNullOrEmpty(queryId)) {
-            log.warn("Skipping externalUrl cache update for empty queryId");
+        if (isNullOrEmpty(queryId)) {
+            log.debug("Skipping externalUrl cache update for empty queryId");
             return;
         }
-        if (externalUrl == null) {
+        if (isNullOrEmpty(externalUrl)) {
             queryIdExternalUrlCache.invalidate(queryId);
-            log.debug("Invalidated externalUrl cache for queryId [%s] due to null externalUrl", queryId);
+            log.debug("Invalidated externalUrl cache for queryId [%s] due to empty externalUrl", queryId);
             return;
         }
         queryIdExternalUrlCache.put(queryId, externalUrl);
@@ -212,7 +213,7 @@ public abstract class BaseRoutingManager
     {
         String backend;
         backend = queryHistoryManager.getBackendForQueryId(queryId);
-        if (Strings.isNullOrEmpty(backend)) {
+        if (isNullOrEmpty(backend)) {
             log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
             backend = searchAllBackendForQuery(queryId);
         }
