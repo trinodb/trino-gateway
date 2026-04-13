@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.JsonBodyGenerator;
 import io.airlift.http.client.JsonResponseHandler;
@@ -40,8 +41,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.base.Throwables.throwIfInstanceOf;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static io.airlift.http.client.HeaderNames.CONTENT_TYPE;
 import static io.airlift.http.client.JsonBodyGenerator.jsonBodyGenerator;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.preparePost;
@@ -161,13 +162,13 @@ public class ExternalRoutingGroupSelector
                 request.getParameterMap());
     }
 
-    private Multimap<String, String> getValidHeaders(HttpServletRequest servletRequest)
+    private Multimap<HeaderName, String> getValidHeaders(HttpServletRequest servletRequest)
     {
-        Multimap<String, String> headers = ArrayListMultimap.create();
+        Multimap<HeaderName, String> headers = ArrayListMultimap.create();
         for (String name : list(servletRequest.getHeaderNames())) {
             for (String value : list(servletRequest.getHeaders(name))) {
                 if (!excludeHeaders.contains(name)) {
-                    headers.put(name, value);
+                    headers.put(HeaderName.of(name), value);
                 }
             }
         }

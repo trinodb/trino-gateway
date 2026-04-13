@@ -10,18 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.62.0",
-    "@douyinfe/semi-icons-lab": "^2.90.13",
-    "@douyinfe/semi-illustrations": "^2.62.0",
-    "@douyinfe/semi-ui": "^2.90.13",
+    "@douyinfe/semi-icons": "^2.93.0",
+    "@douyinfe/semi-icons-lab": "^2.93.0",
+    "@douyinfe/semi-illustrations": "^2.93.0",
+    "@douyinfe/semi-ui": "^2.93.0",
     "@vvo/tzdb": "^6.198.0",
     "echarts": "^5.4.3",
     "js-cookie": "^3.0.5",
-    "moment": "^2.29.4",
+    "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.20.0",
-    "sass": "^1.69.5",
+    "react-router-dom": "^6.30.3",
+    "sass": "^1.99.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
@@ -33,9 +33,9 @@
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0",
-    "vite-plugin-svgr": "^4.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vite-plugin-svgr": "^4.5.0",
     "@types/echarts": "^4.9.22",
     "@types/js-cookie": "^3.0.6"
   }
