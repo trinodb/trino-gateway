@@ -107,11 +107,15 @@ final class TestRoutingManagerExternalUrlCache
     void testEmptyStringExternalUrl()
     {
         String queryId = "empty-url-test";
-        String emptyUrl = "";
-        routingManager.setExternalUrlForQueryId(queryId, emptyUrl);
+        String expectedFallbackUrl = "https://fallback-after-empty.example.com";
+
+        when(queryHistoryManager.getExternalUrlForQueryId(queryId)).thenReturn(expectedFallbackUrl);
+
+        routingManager.setExternalUrlForQueryId(queryId, "");
         String retrievedUrl = routingManager.findExternalUrlForQueryId(queryId);
 
-        assertThat(retrievedUrl).isEqualTo(emptyUrl);
+        assertThat(retrievedUrl).isEqualTo(expectedFallbackUrl);
+        Mockito.verify(queryHistoryManager).getExternalUrlForQueryId(queryId);
     }
 
     @Test
