@@ -26,8 +26,6 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.Jdbi;
 import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -67,16 +65,6 @@ public class HaGatewayTestUtils
                 .setBody(expectedResponse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
-    }
-
-    public static void seedRequiredData(String h2DbFilePath)
-    {
-        String jdbcUrl = "jdbc:h2:" + h2DbFilePath + ";NON_KEYWORDS=NAME,VALUE";
-        Jdbi jdbi = Jdbi.create(jdbcUrl, "sa", "sa");
-        try (Handle handle = jdbi.open()) {
-            handle.createUpdate(HaGatewayTestUtils.getResourceFileContent("gateway-ha-persistence-mysql.sql"))
-                    .execute();
-        }
     }
 
     public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
