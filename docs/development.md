@@ -21,8 +21,8 @@ or execute the following command:
 
 #### Locally
 
-This project requires Java 25. Note that higher version of Java have not been
-verified and may run into unexpected issues.
+This project requires Java 25. Higher version of Java are verified in our CI
+pipeline, but may run into unexpected issues.
 
 Run `./mvnw clean install` to build `trino-gateway`. VM options required for
 compilation and testing are specified in `.mvn/jvm.config`.

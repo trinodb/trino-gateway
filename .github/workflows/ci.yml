@@ -25,7 +25,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [25]
+        include: 
+          - { java-version: 25 }
+          - { java-version: 26 }
+          - { java-version: 27-ea }
     timeout-minutes: 30
     steps:
       - name: Checkout source
@@ -34,6 +37,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
