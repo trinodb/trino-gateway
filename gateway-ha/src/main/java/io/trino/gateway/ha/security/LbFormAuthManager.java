@@ -55,7 +55,7 @@ public class LbFormAuthManager
                 .filter(entry -> entry.getValue() != null)
                 .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(ENGLISH), Map.Entry::getValue));
 
-        if (configuration != null) {
+        if (configuration != null && configuration.getSelfSignKeyPair() != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
                     .getSelfSignKeyPair());
         }
@@ -104,7 +104,7 @@ public class LbFormAuthManager
         try {
             DecodedJWT jwt = JWT.decode(idToken);
 
-            if (LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.empty())) {
+            if (LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.empty())) {
                 return Optional.of(jwt.getClaims());
             }
         }
@@ -119,10 +119,9 @@ public class LbFormAuthManager
         String token = "";
 
         try {
-            Algorithm algorithm = Algorithm.RSA256(lbKeyProvider.getRsaPublicKey(),
-                    lbKeyProvider.getRsaPrivateKey());
+            Algorithm algorithm = lbKeyProvider.signingAlgorithm();
 
-            Map<String, Object> headers = Map.of("alg", "RS256");
+            Map<String, Object> headers = Map.of("alg", lbKeyProvider.jwtAlgorithmName());
 
             token = JWT.create()
                     .withHeader(headers)
