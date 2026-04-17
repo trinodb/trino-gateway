@@ -17,9 +17,10 @@ defaults:
 env:
   # Use Maven wrapper from repo with Maven version and other configs
   MAVEN: ./mvnw -B
+  MAVEN_FAST_INSTALL: "-B -V -T 1C -DskipTests -Dmaven.source.skip=true -Dair.check.skip-all"
 
 jobs:
-  build:
+  maven-build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -36,6 +37,20 @@ jobs:
           distribution: 'temurin'
       - name: Build with Maven
         run: $MAVEN clean verify
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+      - name: Install required Java distribution
+        uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: 'temurin'
+      - name: Maven Build
+        run: $MAVEN install ${MAVEN_FAST_INSTALL}
       - uses: docker/setup-qemu-action@v4
         with:
           platforms: amd64,arm64,ppc64le
