@@ -1,0 +1,15 @@
+{
+    "rules": [
+        {
+            "pattern": "blocked@example\\.com",
+            "allow": false
+        },
+        {
+            "pattern": "(.+?)@example\\.com",
+            "user": "$1_file"
+        },
+        {
+            "pattern": "(.*)"
+        }
+    ]
+}
