@@ -32,6 +32,9 @@ import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.security.ClientCertificateUserResolver;
+import io.trino.gateway.ha.security.UserMappingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
 
@@ -60,10 +63,11 @@ public class TrinoRequestUser
 
     private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
 
-    private TrinoRequestUser(ContainerRequestContext request, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
+    private TrinoRequestUser(ContainerRequestContext request, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
+            throws UserMappingException
     {
         this.userInfoCache = requireNonNull(userInfoCache);
-        user = extractUser(request, userField);
+        user = extractUser(request, servletRequest, clientCertificateUserResolver, userField);
     }
 
     @JsonCreator
@@ -129,12 +133,18 @@ public class TrinoRequestUser
         });
     }
 
-    private Optional<String> extractUser(ContainerRequestContext requestContext, String userField)
+    private Optional<String> extractUser(ContainerRequestContext requestContext, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField)
+            throws UserMappingException
     {
         String header;
         header = requestContext.getHeaderString(TRINO_USER_HEADER_NAME);
         if (header != null) {
             return Optional.of(header);
+        }
+
+        Optional<String> clientCertificateIdentity = extractUserFromClientCertificate(servletRequest, clientCertificateUserResolver);
+        if (clientCertificateIdentity.isPresent()) {
+            return clientCertificateIdentity;
         }
 
         Optional<String> user = extractUserFromAuthorizationHeader(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), userField);
@@ -143,6 +153,16 @@ public class TrinoRequestUser
         }
 
         return extractUserFromCookies(requestContext, userField);
+    }
+
+    private Optional<String> extractUserFromClientCertificate(HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver)
+            throws UserMappingException
+    {
+        if (servletRequest == null || clientCertificateUserResolver == null) {
+            return Optional.empty();
+        }
+
+        return clientCertificateUserResolver.resolveMappedUser(servletRequest);
     }
 
     private Optional<String> extractUserFromAuthorizationHeader(String header, String userField)
@@ -205,13 +225,21 @@ public class TrinoRequestUser
 
     public static class TrinoRequestUserProvider
     {
+        private static final Logger log = Logger.get(TrinoRequestUserProvider.class);
         private final String userField;
+        private final ClientCertificateUserResolver clientCertificateUserResolver;
         private final Optional<URI> oauthUserInfoUrl;
         private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
 
         public TrinoRequestUserProvider(RequestAnalyzerConfig config)
         {
+            this(config, new ClientCertificateUserResolver(config));
+        }
+
+        public TrinoRequestUserProvider(RequestAnalyzerConfig config, ClientCertificateUserResolver clientCertificateUserResolver)
+        {
             userField = config.getTokenUserField();
+            this.clientCertificateUserResolver = clientCertificateUserResolver;
             if (config.getOauthTokenInfoUrl() != null) {
                 oauthUserInfoUrl = Optional.of(URI.create(config.getOauthTokenInfoUrl()));
                 userInfoCache = Optional.of(Caffeine.newBuilder()
@@ -225,9 +253,14 @@ public class TrinoRequestUser
             }
         }
 
-        public TrinoRequestUser getInstance(ContainerRequestContext request)
+        public TrinoRequestUser getInstance(ContainerRequestContext request, HttpServletRequest servletRequest)
         {
-            return new TrinoRequestUser(request, userField, userInfoCache);
+            try {
+                return new TrinoRequestUser(request, servletRequest, clientCertificateUserResolver, userField, userInfoCache);
+            }
+            catch (UserMappingException e) {
+                throw new IllegalArgumentException(e.getMessage(), e);
+            }
         }
 
         private UserInfo getUserInfo(String token)
