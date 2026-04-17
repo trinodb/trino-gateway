@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
@@ -56,5 +58,52 @@ class TestHaGatewayConfiguration
         assertThatThrownBy(() -> haGatewayConfiguration.setAdditionalStatementPaths(ImmutableList.of("/api/v2", "/api/v2/statement")))
                 .isInstanceOf(HaGatewayConfiguration.HaGatewayConfigurationException.class)
                 .hasMessage("Statement paths cannot be prefixes of other statement paths");
+    }
+
+    @Test
+    void testClientCertificateJwtAuthenticationDeserialization()
+            throws Exception
+    {
+        String yaml = """
+                requestAnalyzerConfig:
+                  clientCertificateIdentityField: SUBJECT_DN
+                  clientCertificateUserMappingPattern: (.*)@example.com
+                clientCertificateJwtAuthentication:
+                  jwtPrincipalClaim: preferred_username
+                  jwtIssuer: trino-gateway-tests
+                  jwtAudiences:
+                    - trino
+                    - backend
+                  jwtKeyId: test-key
+                  jwtSigningKeyPair:
+                    privateKey: private.pem
+                    publicKey: public.pem
+                """;
+
+        HaGatewayConfiguration configuration = new ObjectMapper(new YAMLFactory())
+                .readValue(yaml, HaGatewayConfiguration.class);
+
+        assertThat(configuration.getRequestAnalyzerConfig().getClientCertificateIdentityField()).isEqualTo("SUBJECT_DN");
+        assertThat(configuration.getRequestAnalyzerConfig().getClientCertificateUserMappingPattern()).isEqualTo("(.*)@example.com");
+        assertThat(configuration.getClientCertificateJwtAuthentication()).isNotNull();
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtPrincipalClaim()).isEqualTo("preferred_username");
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtIssuer()).isEqualTo("trino-gateway-tests");
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtAudiences()).containsExactly("trino", "backend");
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtKeyId()).isEqualTo("test-key");
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtSigningKeyPair().getPrivateKey()).isEqualTo("private.pem");
+        assertThat(configuration.getClientCertificateJwtAuthentication().getJwtSigningKeyPair().getPublicKey()).isEqualTo("public.pem");
+    }
+
+    @Test
+    void testInvalidClientCertificateUserMappingConfiguration()
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setClientCertificateUserMappingPattern("(.*)");
+        requestAnalyzerConfig.setClientCertificateUserMappingFile("src/test/resources/auth/test-user-mapping.json");
+
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        assertThatThrownBy(() -> configuration.setRequestAnalyzerConfig(requestAnalyzerConfig))
+                .isInstanceOf(HaGatewayConfiguration.HaGatewayConfigurationException.class)
+                .hasMessageContaining("Invalid client certificate user mapping configuration");
     }
 }

@@ -18,7 +18,9 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.multibindings.OptionalBinder;
 import io.airlift.http.client.HttpClient;
+import io.airlift.http.server.HttpServer;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -97,6 +99,12 @@ public class HaGatewayProviderModule
         }
         else {
             binder().bind(ContainerRequestFilter.class).to(NoopFilter.class).in(Scopes.SINGLETON);
+        }
+
+        if (configuration.getClientCertificateJwtAuthentication() != null) {
+            OptionalBinder.newOptionalBinder(binder(), HttpServer.ClientCertificate.class)
+                    .setBinding()
+                    .toInstance(HttpServer.ClientCertificate.REQUESTED);
         }
         binder().bind(ActiveClusterMonitor.class).in(Scopes.SINGLETON);
     }
