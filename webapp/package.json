@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.93.0",
+    "@douyinfe/semi-icons": "^2.94.0",
     "@douyinfe/semi-icons-lab": "^2.94.0",
     "@douyinfe/semi-illustrations": "^2.93.0",
     "@douyinfe/semi-ui": "^2.94.0",
