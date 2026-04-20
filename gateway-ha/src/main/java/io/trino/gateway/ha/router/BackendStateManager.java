@@ -21,16 +21,16 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import org.weakref.jmx.MBeanExporter;
 import org.weakref.jmx.Managed;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
 
 public class BackendStateManager
 {
     private final MBeanExporter exporter;
-    private final Map<String, ClusterStats> clusterStats = new HashMap<>();
-    private final Map<String, ClusterStatsJMX> clusterStatsJMXs = new HashMap<>();
+    private final Map<String, ClusterStats> clusterStats = new ConcurrentHashMap<>();
+    private final Map<String, ClusterStatsJMX> clusterStatsJMXs = new ConcurrentHashMap<>();
 
     @Inject
     public BackendStateManager(MBeanExporter exporter)
@@ -44,31 +44,41 @@ public class BackendStateManager
         return clusterStats.getOrDefault(name, ClusterStats.builder(name).build());
     }
 
-    public void updateStates(String clusterId, ClusterStats stats)
+    public synchronized void updateStates(String clusterId, ClusterStats stats)
     {
-        if (!clusterStatsJMXs.containsKey(clusterId)) {
+        clusterStatsJMXs.computeIfAbsent(clusterId, id -> {
             ClusterStatsJMX clusterStatsJMX = new ClusterStatsJMX(stats);
             exporter.exportWithGeneratedName(
                     clusterStatsJMX,
                     ClusterStatsJMX.class,
-                    ImmutableMap.<String, String>builder()
-                            .put("name", "ClusterStats")
-                            .put("cluster_id", clusterId)
-                            .build());
-            clusterStatsJMXs.put(clusterId, clusterStatsJMX);
-        }
-        else {
-            clusterStatsJMXs.get(clusterId).updateFrom(stats);
-        }
+                    clusterIdProperties(id));
+            return clusterStatsJMX;
+        }).updateFrom(stats);
         clusterStats.put(clusterId, stats);
+    }
+
+    public synchronized void removeStates(String clusterId)
+    {
+        if (clusterStatsJMXs.remove(clusterId) != null) {
+            exporter.unexportWithGeneratedName(ClusterStatsJMX.class, clusterIdProperties(clusterId));
+        }
+        clusterStats.remove(clusterId);
+    }
+
+    private static Map<String, String> clusterIdProperties(String clusterId)
+    {
+        return ImmutableMap.<String, String>builder()
+                .put("name", "ClusterStats")
+                .put("cluster_id", clusterId)
+                .build();
     }
 
     public static class ClusterStatsJMX
     {
-        private int runningQueryCount;
-        private int queuedQueryCount;
-        private int numWorkerNodes;
-        private TrinoStatus trinoStatus;
+        private volatile int runningQueryCount;
+        private volatile int queuedQueryCount;
+        private volatile int numWorkerNodes;
+        private volatile TrinoStatus trinoStatus;
 
         public ClusterStatsJMX(ClusterStats clusterStats)
         {
