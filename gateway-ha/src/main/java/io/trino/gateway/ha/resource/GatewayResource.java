@@ -15,6 +15,7 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.router.BackendLifecycleManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
@@ -37,11 +38,15 @@ public class GatewayResource
     private static final Logger log = Logger.get(GatewayResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
+    private final BackendLifecycleManager backendLifecycleManager;
 
     @Inject
-    public GatewayResource(GatewayBackendManager gatewayBackendManager)
+    public GatewayResource(
+            GatewayBackendManager gatewayBackendManager,
+            BackendLifecycleManager backendLifecycleManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.backendLifecycleManager = requireNonNull(backendLifecycleManager, "backendLifecycleManager is null");
     }
 
     @GET
@@ -69,7 +74,7 @@ public class GatewayResource
     public Response deactivateBackend(@PathParam("name") String name)
     {
         try {
-            this.gatewayBackendManager.deactivateBackend(name);
+            backendLifecycleManager.deactivateBackend(name);
         }
         catch (Exception e) {
             log.error(e, e.getMessage());
@@ -83,7 +88,7 @@ public class GatewayResource
     public Response activateBackend(@PathParam("name") String name)
     {
         try {
-            this.gatewayBackendManager.activateBackend(name);
+            backendLifecycleManager.activateBackend(name);
         }
         catch (Exception e) {
             log.error(e, e.getMessage());

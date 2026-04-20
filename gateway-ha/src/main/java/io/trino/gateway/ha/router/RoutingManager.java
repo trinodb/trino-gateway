@@ -18,9 +18,18 @@ import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RoutingManager
 {
+    /**
+     * Returns the current health status of a backend cluster.
+     *
+     * @param backendId the unique identifier of the backend cluster
+     * @return the health status, or empty if the backend is not tracked
+     */
+    Optional<TrinoStatus> getBackEndHealth(String backendId);
+
     /**
      * Updates the health status of a backend cluster.
      *
@@ -28,6 +37,13 @@ public interface RoutingManager
      * @param value the health status of the backend (UP, DOWN, etc.)
      */
     void updateBackEndHealth(String backendId, TrinoStatus value);
+
+    /**
+     * Removes a backend cluster from health tracking entirely.
+     *
+     * @param backendId the unique identifier of the backend cluster to remove
+     */
+    void removeBackEndHealth(String backendId);
 
     /**
      * Updates the statistics for all backend clusters.

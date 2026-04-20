@@ -15,8 +15,7 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import io.trino.gateway.ha.router.GatewayBackendManager;
-import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.BackendLifecycleManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -31,19 +30,19 @@ import static java.util.Objects.requireNonNull;
 @Produces(MediaType.APPLICATION_JSON)
 public class HaGatewayResource
 {
-    private final GatewayBackendManager haGatewayManager;
+    private final BackendLifecycleManager backendLifecycleManager;
 
     @Inject
-    public HaGatewayResource(GatewayBackendManager haGatewayManager)
+    public HaGatewayResource(BackendLifecycleManager backendLifecycleManager)
     {
-        this.haGatewayManager = requireNonNull(haGatewayManager, "haGatewayManager is null");
+        this.backendLifecycleManager = requireNonNull(backendLifecycleManager, "backendLifecycleManager is null");
     }
 
     @Path("/add")
     @POST
     public Response addBackend(ProxyBackendConfiguration backend)
     {
-        ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
+        ProxyBackendConfiguration updatedBackend = backendLifecycleManager.addBackend(backend);
         return Response.ok(updatedBackend).build();
     }
 
@@ -51,7 +50,7 @@ public class HaGatewayResource
     @POST
     public Response updateBackend(ProxyBackendConfiguration backend)
     {
-        ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
+        ProxyBackendConfiguration updatedBackend = backendLifecycleManager.updateBackend(backend);
         return Response.ok(updatedBackend).build();
     }
 
@@ -59,7 +58,7 @@ public class HaGatewayResource
     @POST
     public Response removeBackend(String name)
     {
-        ((HaGatewayManager) haGatewayManager).deleteBackend(name);
+        backendLifecycleManager.deleteBackend(name);
         return Response.ok().build();
     }
 }

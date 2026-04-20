@@ -160,10 +160,23 @@ public abstract class BaseRoutingManager
     }
 
     @Override
+    public Optional<TrinoStatus> getBackEndHealth(String backendId)
+    {
+        return Optional.ofNullable(backendToStatus.get(backendId));
+    }
+
+    @Override
     public void updateBackEndHealth(String backendId, TrinoStatus value)
     {
         log.info("backend %s isHealthy %s", backendId, value);
         backendToStatus.put(backendId, value);
+    }
+
+    @Override
+    public void removeBackEndHealth(String backendId)
+    {
+        log.info("Removing backend %s from health tracking", backendId);
+        backendToStatus.remove(backendId);
     }
 
     @Override
