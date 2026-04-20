@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-final class TestPreserveForwardedHeadersDisabled
+final class TestForwardedHeadersDisabled
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private TrinoContainer trino;
@@ -56,7 +56,7 @@ final class TestPreserveForwardedHeadersDisabled
         postgresql.start();
 
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-preserve-forwarded-headers-disabled-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-forwarded-headers-disabled-template.yml");
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);

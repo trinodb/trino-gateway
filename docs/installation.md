@@ -119,7 +119,7 @@ To prevent Trino Gateway from sending `X-Forwarded-*` and `Forwarded` headers, a
 
 ```yaml
 routing:
-  preserveForwardedHeaders: false
+  forwardedHeadersEnabled: false
 ```
 
 Find more information in [the related Trino documentation](https://trino.io/docs/current/security/tls.html#use-a-load-balancer-to-terminate-tls-https).

@@ -90,7 +90,7 @@ public class ProxyRequestHandler
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
     private final boolean cookiesEnabled;
-    private final boolean preserveForwardedHeaders;
+    private final boolean forwardedHeadersEnabled;
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final ProxyResponseConfiguration proxyResponseConfiguration;
@@ -107,7 +107,7 @@ public class ProxyRequestHandler
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
-        preserveForwardedHeaders = haGatewayConfiguration.getRouting().isPreserveForwardedHeaders();
+        forwardedHeadersEnabled = haGatewayConfiguration.getRouting().isForwardedHeadersEnabled();
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
         proxyResponseConfiguration = haGatewayConfiguration.getProxyResponseConfiguration();
@@ -323,7 +323,7 @@ public class ProxyRequestHandler
 
         requestBuilder.addHeader(VIA, format("%s TrinoGateway", servletRequest.getProtocol()));
 
-        if (preserveForwardedHeaders) {
+        if (forwardedHeadersEnabled) {
             addForwardedHeaders(servletRequest, requestBuilder);
         }
     }
@@ -342,7 +342,7 @@ public class ProxyRequestHandler
                 return false;
             }
         }
-        if (isForwardedHeader(name) && !preserveForwardedHeaders) {
+        if (isForwardedHeader(name) && !forwardedHeadersEnabled) {
             return false;
         }
         return true;

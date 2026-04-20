@@ -19,7 +19,7 @@ Flow of request forwarding:
 1. Determine to which Trino cluster a query should be routed to.
 2. Prepare a request to send to Trino by adding `Via` headers. By default, most 
    headers are forwarded to Trino unmodified, and the Gateway appends its own 
-   `X-Forwarded-*` proxy headers. However, when `routing.preserveForwardedHeaders` 
+   `X-Forwarded-*` proxy headers. However, when `routing.forwardedHeadersEnabled` 
    is configured to `false` in `ProxyRequestHandler`, the Gateway explicitly 
    strips all client-provided legacy (`X-Forwarded-*`) and modern (`Forwarded`) 
    headers case-insensitively, and skips adding its own proxy headers. This 
