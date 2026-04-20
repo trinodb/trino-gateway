@@ -46,6 +46,8 @@ public class HaGatewayConfiguration
     private UIConfiguration uiConfiguration = new UIConfiguration();
     private DatabaseCacheConfiguration databaseCache = new DatabaseCacheConfiguration();
 
+    private DistributedCacheConfiguration distributedCacheConfiguration = new DistributedCacheConfiguration();
+
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
 
@@ -212,6 +214,16 @@ public class HaGatewayConfiguration
     public void setUiConfiguration(UIConfiguration uiConfiguration)
     {
         this.uiConfiguration = uiConfiguration;
+    }
+
+    public DistributedCacheConfiguration getDistributedCacheConfiguration()
+    {
+        return distributedCacheConfiguration;
+    }
+
+    public void setDistributedCacheConfiguration(DistributedCacheConfiguration distributedCacheConfiguration)
+    {
+        this.distributedCacheConfiguration = distributedCacheConfiguration;
     }
 
     public List<String> getModules()

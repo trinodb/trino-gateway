@@ -19,6 +19,9 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import io.airlift.http.client.HttpClient;
+import io.trino.gateway.ha.cache.DistributedCache;
+import io.trino.gateway.ha.cache.QueryCacheManager;
+import io.trino.gateway.ha.cache.ValkeyDistributedCache;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -35,6 +38,7 @@ import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.DistributedCacheConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
@@ -197,5 +201,41 @@ public class HaGatewayProviderModule
             case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
+    }
+
+    @Provides
+    @Singleton
+    public static DistributedCacheConfiguration getDistributedCacheConfiguration(HaGatewayConfiguration configuration)
+    {
+        return configuration.getDistributedCacheConfiguration();
+    }
+
+    @Provides
+    @Singleton
+    public static DistributedCache getDistributedCache(DistributedCacheConfiguration cacheConfig)
+    {
+        if (cacheConfig.isEnabled()) {
+            return new ValkeyDistributedCache(cacheConfig);
+        }
+        return new io.trino.gateway.ha.cache.NoopDistributedCache();
+    }
+
+    @Provides
+    @Singleton
+    public static QueryCacheManager getQueryCacheManager(DistributedCache distributedCache, QueryHistoryManager queryHistoryManager)
+    {
+        // Create a loader that fetches complete metadata from database
+        QueryCacheManager.QueryCacheLoader loader = queryId -> {
+            String backend = queryHistoryManager.getBackendForQueryId(queryId);
+            String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+            String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
+
+            // Return null if nothing found, otherwise return metadata (even if partially populated)
+            if (backend == null && routingGroup == null && externalUrl == null) {
+                return null;
+            }
+            return new io.trino.gateway.ha.cache.QueryMetadata(backend, routingGroup, externalUrl);
+        };
+        return new QueryCacheManager(distributedCache, loader);
     }
 }
