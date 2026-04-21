@@ -17,49 +17,48 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 
 public final class TestingJdbcConnectionManager
 {
     private TestingJdbcConnectionManager() {}
 
+    public static JdbcConnectionManager createTestingJdbcConnectionManager()
+    {
+        return createTestingJdbcConnectionManager(dataStoreConfig());
+    }
+
+    public static PostgreSQLContainer createTestingPostgresContainer()
+    {
+        PostgreSQLContainer postgres = createPostgreSqlContainer()
+                .withDatabaseName("testdb")
+                .withInitScript("gateway-ha-persistence-postgres.sql");
+        postgres.start();
+        return postgres;
+    }
+
+    public static DataStoreConfiguration dataStoreConfig(PostgreSQLContainer postgres)
+    {
+        return new DataStoreConfiguration(
+                postgres.getJdbcUrl(),
+                postgres.getUsername(),
+                postgres.getPassword(),
+                postgres.getDriverClassName(),
+                true,
+                4,
+                false);
+    }
+
     public static DataStoreConfiguration dataStoreConfig()
     {
-        File tempH2DbDir = Path.of(System.getProperty("java.io.tmpdir"), "h2db-" + System.currentTimeMillis()).toFile();
-        tempH2DbDir.deleteOnExit();
-        String jdbcUrl = "jdbc:h2:" + tempH2DbDir.getAbsolutePath() + ";NON_KEYWORDS=NAME,VALUE";
-        HaGatewayTestUtils.seedRequiredData(tempH2DbDir.getAbsolutePath());
-        return new DataStoreConfiguration(jdbcUrl, "sa", "sa", "org.h2.Driver", true, 4, false);
+        return dataStoreConfig(createTestingPostgresContainer());
     }
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)
     {
         Jdbi jdbi = HaGatewayProviderModule.createJdbi(config);
         return new JdbcConnectionManager(jdbi, config);
-    }
-
-    public static void destroyTestingDatabase(DataStoreConfiguration config)
-    {
-        String tempH2DbDirPath = config.getJdbcUrl().replace("jdbc:h2:", "").replace(";NON_KEYWORDS=NAME,VALUE", "");
-        File dbFile = Path.of(tempH2DbDirPath).toFile();
-        File parentDir = dbFile.getParentFile();
-
-        if (parentDir != null && parentDir.exists()) {
-            File[] files = parentDir.listFiles((dir, name) -> name.startsWith(dbFile.getName()));
-            if (files != null) {
-                for (File file : files) {
-                    try {
-                        Files.deleteIfExists(file.toPath());
-                    }
-                    catch (IOException e) {
-                        // Ignore deletion errors in test cleanup
-                    }
-                }
-            }
-        }
     }
 }
