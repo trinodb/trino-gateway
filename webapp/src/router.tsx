@@ -1,4 +1,4 @@
-import {IconIntro, IconPopover, IconScrollList, IconTree} from "@douyinfe/semi-icons-lab";
+import {IconIntro, IconTree} from "@douyinfe/semi-icons-lab";
 import {NavItemProps, NavItemPropsWithItems, SubNavProps} from "@douyinfe/semi-ui/lib/es/navigation";
 import styles from './components/layout.module.scss';
 import {RouteProps} from "react-router-dom";
@@ -6,8 +6,6 @@ import Locale from "./locales";
 import {Dashboard} from './components/dashboard';
 import {Cluster} from './components/cluster';
 import {History} from './components/history';
-import {Selector} from "./components/selector";
-import {ResourceGroup} from "./components/resource-group";
 import {AccessControlStore, Role} from "./store";
 import {IconHistory, IconList} from "@douyinfe/semi-icons";
 import {RoutingRules} from "./components/routing-rules.tsx";
@@ -53,26 +51,6 @@ export const routers: RouterItems = [
     routeProps: {
       path: '/cluster',
       element: < Cluster />
-    },
-  },
-  {
-    itemKey: 'resource-group',
-    text: Locale.Menu.Sider.ResourceGroup,
-    icon: <IconPopover className={styles.icon} />,
-    roles: [],
-    routeProps: {
-      path: '/resource-group',
-      element: < ResourceGroup />
-    },
-  },
-  {
-    itemKey: 'selector',
-    text: Locale.Menu.Sider.Selector,
-    icon: <IconScrollList className={styles.icon} />,
-    roles: [],
-    routeProps: {
-      path: '/selector',
-      element: < Selector />
     },
   },
   {
