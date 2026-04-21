@@ -136,7 +136,7 @@ Trino Gateway supports the following roles in regex string format:
 - api : Allows access to rest apis to configure the clusters
 
 Users with attributes next to the role will be giving those privileges the
-users. You can use the preset users defined in the yaml file. 
+users. You can use the preset users defined in the yaml file.
 LDAP Authorization is also supported by adding user attribute configs in file.
 An OAuth claim can be used by setting the `privilegesField` in the OAuth
 configuration.
@@ -172,27 +172,149 @@ The LDAP config file should have the following contents:
   poolTestOnBorrow: true
 ```
 
+## Role permissions reference
+
+Trino Gateway enforces three roles. A user can hold multiple roles simultaneously
+(e.g. granting both ADMIN and USER access).
+
+| Role | Purpose |
+|------|---------|
+| `ADMIN` | Manages cluster configuration and routing rules via the web UI and API |
+| `API` | Programmatic cluster management via REST API |
+| `USER` | Read access to query history, dashboards, and resource group management |
+
+### ADMIN role
+
+**Cluster management**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/webapp/saveBackend` | Add a new cluster |
+| POST | `/webapp/updateBackend` | Update an existing cluster |
+| POST | `/webapp/deleteBackend` | Delete a cluster |
+| GET  | `/webapp/getRoutingRules` | Retrieve routing rules |
+| POST | `/webapp/updateRoutingRules` | Update a routing rule |
+
+**Entity management**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET  | `/entity` | List available entity types |
+| POST | `/entity` | Create or update a gateway cluster, resource group, or selector |
+| GET  | `/entity/{entityType}` | List all entities of a given type |
+
+### API role
+
+**Gateway management**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET  | `/gateway` | Gateway health check |
+| GET  | `/gateway/backend/all` | List all clusters |
+| GET  | `/gateway/backend/active` | List active clusters |
+| POST | `/gateway/backend/deactivate/{name}` | Deactivate a cluster |
+| POST | `/gateway/backend/activate/{name}` | Activate a cluster |
+| POST | `/gateway/backend/modify/add` | Add a cluster |
+| POST | `/gateway/backend/modify/update` | Update a cluster |
+| POST | `/gateway/backend/modify/delete` | Delete a cluster |
+
+### USER role
+
+**Query history and clusters**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET  | `/trino-gateway/api/queryHistory` | List query history |
+| GET  | `/trino-gateway/api/activeBackends` | List active clusters |
+| GET  | `/trino-gateway/api/queryHistoryDistribution` | Query history distribution |
+| POST | `/webapp/getAllBackends` | Get all clusters |
+| POST | `/webapp/findQueryHistory` | Search query history |
+| POST | `/webapp/getDistribution` | Query distribution stats |
+
+Non-ADMIN users can only see their own queries when searching query history.
+
+**Resource group and selector management**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/webapp/saveResourceGroup` | Create a resource group |
+| POST | `/webapp/updateResourceGroup` | Update a resource group |
+| POST | `/webapp/deleteResourceGroup` | Delete a resource group |
+| POST | `/webapp/findResourceGroup` | Search resource groups |
+| POST | `/webapp/getResourceGroup` | Get a resource group |
+| POST | `/webapp/saveSelector` | Create a selector |
+| POST | `/webapp/updateSelector` | Update a selector |
+| POST | `/webapp/deleteSelector` | Delete a selector |
+| POST | `/webapp/findSelector` | Search selectors |
+| POST | `/webapp/getSelector` | Get a selector |
+| POST | `/webapp/saveGlobalProperty` | Create a global property |
+| POST | `/webapp/updateGlobalProperty` | Update a global property |
+| POST | `/webapp/deleteGlobalProperty` | Delete a global property |
+| POST | `/webapp/findGlobalProperty` | Search global properties |
+| POST | `/webapp/getGlobalProperty` | Get a global property |
+| POST | `/webapp/saveExactMatchSourceSelector` | Create exact-match selector |
+| POST | `/webapp/findExactMatchSourceSelector` | Get exact-match selectors |
+| POST | `/trino/resourcegroup/create` | Create a resource group |
+| GET  | `/trino/resourcegroup/read` | List all resource groups |
+| GET  | `/trino/resourcegroup/read/{resourceGroupId}` | Get resource group by ID |
+| POST | `/trino/resourcegroup/update` | Update a resource group |
+| POST | `/trino/resourcegroup/delete/{resourceGroupId}` | Delete a resource group |
+| POST | `/trino/selector/create` | Create a selector |
+| GET  | `/trino/selector/read` | List all selectors |
+| GET  | `/trino/selector/read/{resourceGroupId}` | Get selectors for a resource group |
+| POST | `/trino/selector/update` | Update a selector |
+| POST | `/trino/selector/delete/` | Delete a selector |
+| POST | `/trino/globalproperty/create` | Create a global property |
+| GET  | `/trino/globalproperty/read` | List all global properties |
+| GET  | `/trino/globalproperty/read/{name}` | Get a global property by name |
+| POST | `/trino/globalproperty/update` | Update a global property |
+| POST | `/trino/globalproperty/delete/{name}` | Delete a global property by name |
+
+**User info**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET  | `/webapp/getUIConfiguration` | Get UI configuration |
+| POST | `/userinfo` | Get info for the authenticated user |
+
 ## Web page permissions
 
-By default, all pages are accessible to all roles.
-To limit page access, you can set page permissions by pages 
-and `_` as separator field.
+The web UI enforces access control at two distinct layers:
 
-The following pages are available:
+### Sidebar tab visibility
+
+By default, all sidebar tabs are visible to all roles. To restrict which tabs
+appear for a given role, configure `pagePermissions` using the tab keys below
+with `_` as a separator.
+
+The following tabs are available:
 
 - `dashboard`
 - `cluster`
 - `resource-group`
 - `selector`
 - `history`
+- `routing-rules`
 
 ```yaml
-# admin/api can access all pages, while user can only access dashboard/history
+# ADMIN/API can access all tabs; USER can only access dashboard and history
 pagePermissions:
-  admin: 
-  user: dashboard_history 
-  api: 
+  admin:
+  user: dashboard_history
+  api:
 ```
+
+### Within-page controls
+
+Regardless of `pagePermissions` configuration, certain controls within specific
+pages are always restricted to the `ADMIN` role:
+
+- **Cluster page**: The Create, Edit, and Delete backend buttons are hidden for
+  non-ADMIN users. The Active toggle is also disabled.
+- **Routing Rules page**: The Edit and Save buttons are hidden for non-ADMIN
+  users.
+
+These restrictions cannot be changed through `pagePermissions` configuration.
 
 ## Extra: Self-signed certificate in Trino Gateway
 

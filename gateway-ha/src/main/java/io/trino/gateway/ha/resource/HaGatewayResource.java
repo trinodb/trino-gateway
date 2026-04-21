@@ -14,9 +14,13 @@
 package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.RoutingManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -32,11 +36,18 @@ import static java.util.Objects.requireNonNull;
 public class HaGatewayResource
 {
     private final GatewayBackendManager haGatewayManager;
+    private final RoutingManager routingManager;
+    private final BackendStateManager backendStateManager;
 
     @Inject
-    public HaGatewayResource(GatewayBackendManager haGatewayManager)
+    public HaGatewayResource(
+            GatewayBackendManager haGatewayManager,
+            RoutingManager routingManager,
+            BackendStateManager backendStateManager)
     {
         this.haGatewayManager = requireNonNull(haGatewayManager, "haGatewayManager is null");
+        this.routingManager = requireNonNull(routingManager, "routingManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
     }
 
     @Path("/add")
@@ -44,6 +55,7 @@ public class HaGatewayResource
     public Response addBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.addBackend(backend);
+        syncBackendHealth(updatedBackend.getName(), updatedBackend.isActive());
         return Response.ok(updatedBackend).build();
     }
 
@@ -52,6 +64,7 @@ public class HaGatewayResource
     public Response updateBackend(ProxyBackendConfiguration backend)
     {
         ProxyBackendConfiguration updatedBackend = haGatewayManager.updateBackend(backend);
+        syncBackendHealth(updatedBackend.getName(), updatedBackend.isActive());
         return Response.ok(updatedBackend).build();
     }
 
@@ -60,6 +73,14 @@ public class HaGatewayResource
     public Response removeBackend(String name)
     {
         ((HaGatewayManager) haGatewayManager).deleteBackend(name);
+        syncBackendHealth(name, false);
         return Response.ok().build();
+    }
+
+    private void syncBackendHealth(String name, boolean active)
+    {
+        TrinoStatus trinoStatus = active ? TrinoStatus.PENDING : TrinoStatus.UNHEALTHY;
+        routingManager.updateBackEndHealth(name, trinoStatus);
+        backendStateManager.updateStates(name, ClusterStats.builder(name).trinoStatus(trinoStatus).build());
     }
 }

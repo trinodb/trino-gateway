@@ -15,7 +15,11 @@ package io.trino.gateway.ha.resource;
 
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
+import io.trino.gateway.ha.router.RoutingManager;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -37,11 +41,18 @@ public class GatewayResource
     private static final Logger log = Logger.get(GatewayResource.class);
 
     private final GatewayBackendManager gatewayBackendManager;
+    private final RoutingManager routingManager;
+    private final BackendStateManager backendStateManager;
 
     @Inject
-    public GatewayResource(GatewayBackendManager gatewayBackendManager)
+    public GatewayResource(
+            GatewayBackendManager gatewayBackendManager,
+            RoutingManager routingManager,
+            BackendStateManager backendStateManager)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.routingManager = requireNonNull(routingManager, "routingManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
     }
 
     @GET
@@ -70,6 +81,8 @@ public class GatewayResource
     {
         try {
             this.gatewayBackendManager.deactivateBackend(name);
+            routingManager.updateBackEndHealth(name, TrinoStatus.UNHEALTHY);
+            backendStateManager.updateStates(name, ClusterStats.builder(name).trinoStatus(TrinoStatus.UNHEALTHY).build());
         }
         catch (Exception e) {
             log.error(e, e.getMessage());
@@ -84,6 +97,8 @@ public class GatewayResource
     {
         try {
             this.gatewayBackendManager.activateBackend(name);
+            routingManager.updateBackEndHealth(name, TrinoStatus.PENDING);
+            backendStateManager.updateStates(name, ClusterStats.builder(name).trinoStatus(TrinoStatus.PENDING).build());
         }
         catch (Exception e) {
             log.error(e, e.getMessage());

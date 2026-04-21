@@ -17,15 +17,82 @@ Existing cluster information can also be modified using the edit button.
 ![trino.gateway.io/entity](./assets/trinogateway_cluster_page.png)
 
 
+## Cluster configuration and health status
+
+Trino Gateway tracks cluster state at two separate layers, each serving a
+different purpose.
+
+### Database: source of truth for configuration
+
+All cluster configuration is stored persistently in a database. This includes
+each cluster's name, routing group, proxy URL, external URL, and whether it is
+marked active or inactive.
+
+Any change made through the API or the admin UI — adding, updating, activating,
+deactivating, or deleting a cluster — is written to the database immediately.
+The database represents **what you have configured**: the intended state of the
+system. It persists across restarts.
+
+### Health check cache: source of truth for routing
+
+In addition to the database, Trino Gateway maintains an in-memory record of
+each cluster's current health. This cache is separate from the database and is
+used to make all query routing decisions.
+
+Each cluster in the cache has one of four health statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `HEALTHY` | The cluster is reachable and accepting queries |
+| `UNHEALTHY` | The cluster failed its most recent health check |
+| `PENDING` | The cluster was recently added or changed and has not yet been health-checked |
+| `UNKNOWN` | Health status could not be determined |
+
+Only clusters with a `HEALTHY` status receive query traffic, regardless of
+whether the database marks them as active.
+
+The cache is updated by a background health check that runs at a configurable
+interval (default: every 1 minute, set via `monitor.taskDelay`). The health
+check mechanism itself is also configurable — by default it calls the `/v1/info`
+endpoint on each cluster, but JDBC, JMX, and Prometheus metrics are also
+supported.
+
+### How the two layers interact
+
+The database and health cache serve complementary roles:
+
+- **Database** — "what you configured"
+- **Health cache** — "what is actually reachable right now"
+
+When you make a change via the API or admin UI, both layers are updated
+immediately:
+
+| Action | Database | Health cache |
+|--------|----------|-------------|
+| Add a cluster | Written immediately | Set to `PENDING`; transitions to `HEALTHY` after the first successful health check |
+| Update a cluster | Written immediately | Reset to `PENDING` |
+| Activate a cluster | Written immediately | Set to `PENDING` |
+| Deactivate a cluster | Written immediately | Set to `UNHEALTHY`; excluded from routing immediately |
+| Delete a cluster | Removed immediately | Set to `UNHEALTHY`; excluded from routing immediately |
+
+A cluster that crashes or becomes unreachable after the last health check will
+remain active in the database but will be marked `UNHEALTHY` in the cache
+within one polling interval. During that window, in-flight queries already
+routed to that cluster may fail, but no new queries will be sent to it once the
+cache is updated.
+
+The health cache is not persisted — it is rebuilt from the database and
+repopulated by health checks each time Trino Gateway starts.
+
 ## Graceful shutdown
 
 Trino Gateway supports graceful shutdown of Trino clusters. Even when a cluster
 is deactivated, any submitted query states can still be retrieved based on the
 Query ID.
 
-To graceful shutdown a trino cluster without query losses, the steps are:
+To graceful shutdown a Trino cluster without query losses, the steps are:
 
-1. Deactivate the cluster by turning off the 'Active' switch. This ensures that no 
+1. Deactivate the cluster by turning off the 'Active' switch. This ensures that no
    new incoming queries are routed to the cluster.
 2. Poll the Trino cluster coordinator URL until the queued query count and the
    running query count are both zero.
@@ -37,20 +104,20 @@ more details.
 
 ## Query routing options
 
-- The default router selects the cluster randomly to route the queries. 
-- If you want to route the queries to the least loaded cluster for a user
-  so the cluster with the fewest running or queued queries,
-use `QueryCountBasedRouter`. You can enable it by adding the module name 
-to the `modules` section of the config file:
+- The default router selects the cluster randomly to route the queries.
+- If you want to route the queries to the least loaded cluster for a user,
+  i.e. the cluster with the fewest running or queued queries,
+  use `QueryCountBasedRouter`. You can enable it by adding the module name
+  to the `modules` section of the config file:
 
 ```yaml
 modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider
 ```
-- The router operates based on the stats it receives from the clusters, such as 
-the number of queued and running queries. These values are retrieved at regular 
-intervals. This interval can be configured by setting `taskDelay` under
-`monitor` section in the config file. The default interval is 1 minute
+- The router operates based on the stats it receives from the clusters, such as
+  the number of queued and running queries. These values are retrieved at regular
+  intervals. This interval can be configured by setting `taskDelay` under the
+  `monitor` section in the config file. The default interval is 1 minute:
 ```yaml
 monitor:
   taskDelay: 1m
