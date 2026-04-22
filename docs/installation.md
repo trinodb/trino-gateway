@@ -55,6 +55,13 @@ You can also disable query history recording to the database by setting
 `queryHistoryEnabled` to `false`. This can be useful in scenarios where you
 want to reduce database load or don't need query history tracking.
 
+If `maxPoolSize` is configured and greater than 0, Trino Gateway uses a
+connection pool for routing-group database connections.
+If `maxPoolSize` is not configured, Trino Gateway creates a new JDBC connection
+per request for routing-group databases.
+A value of `10` is a reasonable starting point for many deployments, but the
+optimal value depends on the database capacity and expected concurrency.
+
 For example:
 
 ```yaml
@@ -66,6 +73,7 @@ dataStore:
   queryHistoryHoursRetention: 24
   runMigrationsEnabled: false
   queryHistoryEnabled: true  # Set to false to disable query history recording
+  maxPoolSize: 10            # Optional: enables JDBC connection pooling (HikariCP) for routing-group databases
 ```
 
 `Flyway` uses a transactional lock in databases that support it such as 
