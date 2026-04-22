@@ -125,22 +125,13 @@ public class HaQueryHistoryManager
     public TableData<QueryDetail> findQueryHistory(QueryHistoryRequest query)
     {
         int start = getStart(query.page(), query.size());
-        String condition = "";
-        if (!Strings.isNullOrEmpty(query.user())) {
-            condition += " and user_name = '" + query.user() + "'";
-        }
-        if (!Strings.isNullOrEmpty(query.externalUrl())) {
-            condition += " and external_url = '" + query.externalUrl() + "'";
-        }
-        if (!Strings.isNullOrEmpty(query.queryId())) {
-            condition += " and query_id = '" + query.queryId() + "'";
-        }
-        if (!Strings.isNullOrEmpty(query.source())) {
-            condition += " and source = '" + query.source() + "'";
-        }
-        List<QueryHistory> histories = dao.pageQueryHistory(condition, query.size(), start);
+        String userName = Strings.emptyToNull(query.user());
+        String externalUrl = Strings.emptyToNull(query.externalUrl());
+        String queryId = Strings.emptyToNull(query.queryId());
+        String source = Strings.emptyToNull(query.source());
+        List<QueryHistory> histories = dao.pageQueryHistory(userName, externalUrl, queryId, source, query.size(), start, isOracleBackend);
         List<QueryDetail> rows = upcast(histories);
-        Long total = dao.count(condition);
+        Long total = dao.count(userName, externalUrl, queryId, source);
         return TableData.build(rows, total);
     }
 
