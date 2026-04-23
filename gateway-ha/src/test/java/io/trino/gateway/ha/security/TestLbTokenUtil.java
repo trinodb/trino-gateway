@@ -14,16 +14,15 @@
 package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.SelfSignKeyPairConfiguration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -44,39 +43,56 @@ final class TestLbTokenUtil
         lbKeyProvider = new LbKeyProvider(new SelfSignKeyPairConfiguration(
                 requireNonNull(getClass().getClassLoader().getResource(rsaPrivateKey)).getFile(),
                 requireNonNull(getClass().getClassLoader().getResource(rsaPublicKey)).getFile()));
-        Map<String, Object> headers = java.util.Map.of("alg", "RS256");
-        Algorithm algorithm = Algorithm.RSA256(lbKeyProvider.getRsaPublicKey(),
-                lbKeyProvider.getRsaPrivateKey());
         idToken = JWT.create()
-                .withHeader(headers)
+                .withHeader(ImmutableMap.of("alg", lbKeyProvider.jwtAlgorithmName()))
                 .withIssuer(SessionCookie.SELF_ISSUER_ID)
                 .withSubject("test")
                 .withAudience("test.com")
-                .sign(algorithm);
+                .sign(lbKeyProvider.signingAlgorithm());
         jwt = JWT.decode(idToken);
     }
 
     @Test
     void testAudiencesShouldPassIfNoAudiencesAreRequired()
     {
-        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.empty())).isTrue();
+        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.empty())).isTrue();
     }
 
     @Test
     void testAudiencesShouldPassIfAnAudienceIsRequired()
     {
-        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("test.com")))).isTrue();
+        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.of(ImmutableList.of("test.com")))).isTrue();
     }
 
     @Test
     void testAudiencesShouldFailIfAudienceDoesNotMatch()
     {
-        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("no_match.com")))).isFalse();
+        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.of(ImmutableList.of("no_match.com")))).isFalse();
     }
 
     @Test
     void testAudiencesShouldPassIfAnyAudienceIsMatched()
     {
-        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.getRsaPublicKey(), jwt.getIssuer(), Optional.of(List.of("test.com", "test1.com")))).isTrue();
+        assertThat(LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.of(ImmutableList.of("test.com", "test1.com")))).isTrue();
+    }
+
+    @Test
+    void testEcTokenValidationWithAudiences()
+    {
+        LbKeyProvider ecKeyProvider = new LbKeyProvider(new SelfSignKeyPairConfiguration(
+                "src/test/resources/auth/test_ec_private_key.pem",
+                "src/test/resources/auth/test_ec_public_key.pem"));
+        String ecToken = JWT.create()
+                .withHeader(ImmutableMap.of("alg", ecKeyProvider.jwtAlgorithmName()))
+                .withIssuer(SessionCookie.SELF_ISSUER_ID)
+                .withSubject("test")
+                .withAudience("test.com")
+                .sign(ecKeyProvider.signingAlgorithm());
+        DecodedJWT ecJwt = JWT.decode(ecToken);
+
+        assertThat(ecJwt.getAlgorithm()).isEqualTo("ES256");
+        assertThat(LbTokenUtil.validateToken(ecToken, ecKeyProvider.publicKey(), ecJwt.getIssuer(), Optional.empty())).isTrue();
+        assertThat(LbTokenUtil.validateToken(ecToken, ecKeyProvider.publicKey(), ecJwt.getIssuer(), Optional.of(ImmutableList.of("test.com")))).isTrue();
+        assertThat(LbTokenUtil.validateToken(ecToken, ecKeyProvider.publicKey(), ecJwt.getIssuer(), Optional.of(ImmutableList.of("no_match.com")))).isFalse();
     }
 }

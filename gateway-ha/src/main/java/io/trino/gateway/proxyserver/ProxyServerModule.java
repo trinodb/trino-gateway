@@ -13,21 +13,36 @@
  */
 package io.trino.gateway.proxyserver;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.security.ClientCertificateJwtRequestAuthenticator;
+import io.trino.gateway.ha.security.NoopProxyRequestAuthenticator;
+import io.trino.gateway.ha.security.ProxyRequestAuthenticator;
 
 import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 
 public class ProxyServerModule
-        implements Module
+        extends AbstractModule
 {
     @Override
-    public void configure(Binder binder)
+    protected void configure()
     {
-        jaxrsBinder(binder).bind(RouteToBackendResource.class);
-        jaxrsBinder(binder).bind(RouterPreMatchContainerRequestFilter.class);
-        jaxrsBinder(binder).bind(ProxyRequestHandler.class);
-        httpClientBinder(binder).bindHttpClient("proxy", ForProxy.class);
+        jaxrsBinder(binder()).bind(RouteToBackendResource.class);
+        jaxrsBinder(binder()).bind(RouterPreMatchContainerRequestFilter.class);
+        jaxrsBinder(binder()).bind(ProxyRequestHandler.class);
+        httpClientBinder(binder()).bindHttpClient("proxy", ForProxy.class);
+    }
+
+    @Provides
+    @Singleton
+    static ProxyRequestAuthenticator createProxyRequestAuthenticator(HaGatewayConfiguration configuration)
+    {
+        if (configuration.getClientCertificateJwtAuthentication() == null) {
+            return new NoopProxyRequestAuthenticator();
+        }
+        return new ClientCertificateJwtRequestAuthenticator(configuration);
     }
 }
