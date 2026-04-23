@@ -80,6 +80,9 @@ public class ProxyRequestHandler
 {
     private static final Logger log = Logger.get(ProxyRequestHandler.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final List<String> PRESERVED_HEADERS_TO_SKIP = List.of(
+            "Accept-Encoding",
+            "Host");
 
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
@@ -87,7 +90,7 @@ public class ProxyRequestHandler
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
     private final boolean cookiesEnabled;
-    private final boolean addXForwardedHeaders;
+    private final boolean forwardedHeadersEnabled;
     private final List<String> statementPaths;
     private final boolean includeClusterInfoInResponse;
     private final ProxyResponseConfiguration proxyResponseConfiguration;
@@ -104,7 +107,7 @@ public class ProxyRequestHandler
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
-        addXForwardedHeaders = haGatewayConfiguration.getRouting().isAddXForwardedHeaders();
+        forwardedHeadersEnabled = haGatewayConfiguration.getRouting().isForwardedHeadersEnabled();
         statementPaths = haGatewayConfiguration.getStatementPaths();
         this.includeClusterInfoInResponse = haGatewayConfiguration.isIncludeClusterHostInResponse();
         proxyResponseConfiguration = haGatewayConfiguration.getProxyResponseConfiguration();
@@ -174,20 +177,7 @@ public class ProxyRequestHandler
         URI remoteUri = routingDestination.clusterUri();
         requestBuilder.setUri(remoteUri);
 
-        for (String name : list(servletRequest.getHeaderNames())) {
-            for (String value : list(servletRequest.getHeaders(name))) {
-                // TODO: decide what should and shouldn't be forwarded
-                if (!name.equalsIgnoreCase("Accept-Encoding")
-                        && !name.equalsIgnoreCase("Host")
-                        && (addXForwardedHeaders || !name.startsWith("X-Forwarded"))) {
-                    requestBuilder.addHeader(HeaderName.of(name), value);
-                }
-            }
-        }
-        requestBuilder.addHeader(VIA, format("%s TrinoGateway", servletRequest.getProtocol()));
-        if (addXForwardedHeaders) {
-            addXForwardedHeaders(servletRequest, requestBuilder);
-        }
+        setupRequestHeaders(servletRequest, requestBuilder);
 
         ImmutableList.Builder<NewCookie> cookieBuilder = ImmutableList.builder();
         cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
@@ -321,7 +311,44 @@ public class ProxyRequestHandler
         return queryDetail;
     }
 
-    private void addXForwardedHeaders(HttpServletRequest servletRequest, Request.Builder requestBuilder)
+    private void setupRequestHeaders(HttpServletRequest servletRequest, Request.Builder requestBuilder)
+    {
+        for (String name : list(servletRequest.getHeaderNames())) {
+            if (shouldForwardHeader(name)) {
+                for (String value : list(servletRequest.getHeaders(name))) {
+                    requestBuilder.addHeader(HeaderName.of(name), value);
+                }
+            }
+        }
+
+        requestBuilder.addHeader(VIA, format("%s TrinoGateway", servletRequest.getProtocol()));
+
+        if (forwardedHeadersEnabled) {
+            addForwardedHeaders(servletRequest, requestBuilder);
+        }
+    }
+
+    private static boolean isForwardedHeader(String name)
+    {
+        return name.regionMatches(true, 0, "X-Forwarded-", 0, 12)
+                || name.equalsIgnoreCase("Forwarded");
+    }
+
+    // TODO: decide what else should and shouldn't be forwarded
+    private boolean shouldForwardHeader(String name)
+    {
+        for (String headerToSkip : PRESERVED_HEADERS_TO_SKIP) {
+            if (name.equalsIgnoreCase(headerToSkip)) {
+                return false;
+            }
+        }
+        if (isForwardedHeader(name) && !forwardedHeadersEnabled) {
+            return false;
+        }
+        return true;
+    }
+
+    private static void addForwardedHeaders(HttpServletRequest servletRequest, Request.Builder requestBuilder)
     {
         requestBuilder.addHeader(X_FORWARDED_FOR, servletRequest.getRemoteAddr());
         requestBuilder.addHeader(X_FORWARDED_PROTO, servletRequest.getScheme());

@@ -21,7 +21,7 @@ public class RoutingConfiguration
 {
     private Duration asyncTimeout = new Duration(2, MINUTES);
 
-    private boolean addXForwardedHeaders = true;
+    private boolean forwardedHeadersEnabled = true;
 
     private String defaultRoutingGroup = "adhoc";
 
@@ -35,14 +35,14 @@ public class RoutingConfiguration
         this.asyncTimeout = asyncTimeout;
     }
 
-    public boolean isAddXForwardedHeaders()
+    public boolean isForwardedHeadersEnabled()
     {
-        return addXForwardedHeaders;
+        return forwardedHeadersEnabled;
     }
 
-    public void setAddXForwardedHeaders(boolean addXForwardedHeaders)
+    public void setForwardedHeadersEnabled(boolean forwardedHeadersEnabled)
     {
-        this.addXForwardedHeaders = addXForwardedHeaders;
+        this.forwardedHeadersEnabled = forwardedHeadersEnabled;
     }
 
     public String getDefaultRoutingGroup()

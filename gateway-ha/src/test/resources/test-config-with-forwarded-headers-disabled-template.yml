@@ -27,4 +27,4 @@ oauth2GatewayCookieConfiguration:
     - "/custom/logout"
 
 routing:
-  addXForwardedHeaders: false
+  forwardedHeadersEnabled: false
