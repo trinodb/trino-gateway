@@ -244,7 +244,7 @@ final class TestOIDC
         sslContext.init(null, new TrustManager[] {trustAllCerts}, new SecureRandom());
 
         clientBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustAllCerts);
-        clientBuilder.hostnameVerifier((hostname, session) -> true);
+        clientBuilder.hostnameVerifier((_, _) -> true);
     }
 
     public static class BadCookieJar

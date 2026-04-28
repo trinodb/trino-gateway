@@ -159,7 +159,7 @@ public class GatewayWebAppResource
         List<ProxyBackendConfiguration> allBackends = gatewayBackendManager
                 .getAllBackends();
         Map<String, String> urlToNameMap = allBackends
-                .stream().collect(Collectors.toMap(ProxyBackendConfiguration::getProxyTo, ProxyBackendConfiguration::getName, (o, n) -> n));
+                .stream().collect(Collectors.toMap(ProxyBackendConfiguration::getProxyTo, ProxyBackendConfiguration::getName, (_, n) -> n));
         Map<Boolean, List<ProxyBackendConfiguration>> activeMap = allBackends.stream().collect(Collectors.groupingBy(ProxyBackendConfiguration::isActive));
         Map<Boolean, Integer> statusCounts = allBackends.stream()
                 .map(backendStateManager::getBackendState)

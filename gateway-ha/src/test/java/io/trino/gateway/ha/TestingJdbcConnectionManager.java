@@ -49,7 +49,7 @@ public final class TestingJdbcConnectionManager
         File parentDir = dbFile.getParentFile();
 
         if (parentDir != null && parentDir.exists()) {
-            File[] files = parentDir.listFiles((dir, name) -> name.startsWith(dbFile.getName()));
+            File[] files = parentDir.listFiles((_, name) -> name.startsWith(dbFile.getName()));
             if (files != null) {
                 for (File file : files) {
                     try {

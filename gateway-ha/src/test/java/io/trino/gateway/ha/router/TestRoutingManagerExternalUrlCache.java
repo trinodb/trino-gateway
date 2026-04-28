@@ -89,7 +89,7 @@ final class TestRoutingManagerExternalUrlCache
         String[] externalUrls = {
                 "https://gateway1.example.com",
                 "https://gateway2.example.com",
-                "https://gateway3.example.com"
+                "https://gateway3.example.com",
         };
 
         for (int i = 0; i < queryIds.length; i++) {
