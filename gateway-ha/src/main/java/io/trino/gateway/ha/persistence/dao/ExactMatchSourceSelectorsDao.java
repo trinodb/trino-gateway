@@ -14,14 +14,50 @@
 package io.trino.gateway.ha.persistence.dao;
 
 import io.trino.gateway.ha.router.ResourceGroupsManager;
+import org.jdbi.v3.core.mapper.ColumnMapper;
+import org.jdbi.v3.core.statement.StatementContext;
+import org.jdbi.v3.sqlobject.config.RegisterColumnMapper;
 import org.jdbi.v3.sqlobject.customizer.BindBean;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@RegisterColumnMapper(ExactMatchSourceSelectorsDao.TimestampColumnMapper.class)
 public interface ExactMatchSourceSelectorsDao
 {
+    class TimestampColumnMapper
+            implements ColumnMapper<String>
+    {
+        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        @Override
+        public String map(ResultSet result, int columnNumber, StatementContext ctx)
+                throws SQLException
+        {
+            String columnName = result.getMetaData().getColumnName(columnNumber);
+            if ("update_time".equals(columnName)) {
+                try {
+                    Timestamp timestamp = result.getTimestamp(columnNumber);
+                    return timestamp != null ? timestamp.toLocalDateTime().format(FORMATTER) : null;
+                }
+                catch (SQLException e) {
+                    // Fallback to current timestamp when database-specific timestamp retrieval fails.
+                    // This can occur with certain database drivers or when the timestamp column format
+                    // is incompatible with JDBC's getTimestamp() method. The fallback ensures the mapper
+                    // always returns a valid timestamp string instead of throwing an exception.
+                    return LocalDateTime.now(ZoneId.systemDefault()).format(FORMATTER);
+                }
+            }
+            return result.getString(columnNumber);
+        }
+    }
     @SqlQuery("""
             SELECT * FROM exact_match_source_selectors
             """)
@@ -30,7 +66,20 @@ public interface ExactMatchSourceSelectorsDao
     @SqlUpdate("""
             INSERT INTO exact_match_source_selectors
             (resource_group_id, update_time, source, environment, query_type)
-            VALUES (:resourceGroupId, :updateTime, :source, :environment, :queryType)
+            VALUES (:resourceGroupId,
+                    CASE
+                        WHEN :updateTime IS NULL OR :updateTime = ''
+                        THEN CURRENT_TIMESTAMP
+                        ELSE CAST(:updateTime AS TIMESTAMP)
+                    END,
+                    :source, :environment, :queryType)
             """)
     void insert(@BindBean ResourceGroupsManager.ExactSelectorsDetail exactSelectors);
+
+    @SqlUpdate("""
+            INSERT INTO exact_match_source_selectors
+            (resource_group_id, update_time, source, environment, query_type)
+            VALUES (:resourceGroupId, CURRENT_TIMESTAMP, :source, :environment, :queryType)
+            """)
+    void insertWithCurrentTimestamp(@BindBean ResourceGroupsManager.ExactSelectorsDetail exactSelectors);
 }
