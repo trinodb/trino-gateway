@@ -56,7 +56,8 @@ public class TestResourceGroupsManager
         resourceGroup.setMaxQueued(200);
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("80%");
-        ResourceGroupsDetail adminResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
+        ResourceGroupsDetail adminResourceGroup = resourceGroupManager.createResourceGroup(
+                resourceGroup,
                 null);
         assertThat(adminResourceGroup).isEqualTo(resourceGroup);
 
@@ -65,7 +66,8 @@ public class TestResourceGroupsManager
         resourceGroup.setMaxQueued(100);
         resourceGroup.setJmxExport(true);
         resourceGroup.setSoftMemoryLimit("50%");
-        ResourceGroupsDetail userResourceGroup = resourceGroupManager.createResourceGroup(resourceGroup,
+        ResourceGroupsDetail userResourceGroup = resourceGroupManager.createResourceGroup(
+                resourceGroup,
                 null);
         assertThat(userResourceGroup).isEqualTo(resourceGroup);
     }

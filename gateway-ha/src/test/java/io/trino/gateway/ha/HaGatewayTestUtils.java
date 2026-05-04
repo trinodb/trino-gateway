@@ -59,7 +59,9 @@ public class HaGatewayTestUtils
     private HaGatewayTestUtils() {}
 
     public static void prepareMockBackend(
-            MockWebServer backend, int customBackendPort, String expectedResponse)
+            MockWebServer backend,
+            int customBackendPort,
+            String expectedResponse)
             throws IOException
     {
         backend.start(customBackendPort);

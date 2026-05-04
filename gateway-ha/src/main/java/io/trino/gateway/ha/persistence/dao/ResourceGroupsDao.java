@@ -25,20 +25,23 @@ public interface ResourceGroupsDao
     @SqlQuery("SELECT * FROM resource_groups")
     List<ResourceGroups> findAll();
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM resource_groups
             WHERE resource_group_id = :resourceGroupId
             """)
     List<ResourceGroups> findById(long resourceGroupId);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM resource_groups
             WHERE resource_group_id = :resourceGroupId
             LIMIT 1
             """)
     ResourceGroups findFirstById(long resourceGroupId);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO resource_groups (
                 name,
                 parent,
@@ -68,7 +71,8 @@ public interface ResourceGroupsDao
             """)
     void create(@BindBean ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO resource_groups (
                 resource_group_id,
                 name,
@@ -100,7 +104,8 @@ public interface ResourceGroupsDao
             """)
     void insert(@BindBean ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             UPDATE resource_groups
             SET
                 name                   = :name,
@@ -120,7 +125,8 @@ public interface ResourceGroupsDao
             """)
     void update(@BindBean ResourceGroupsManager.ResourceGroupsDetail resourceGroupsDetail);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             DELETE FROM resource_groups
             WHERE resource_group_id = :resourceGroupId
             """)

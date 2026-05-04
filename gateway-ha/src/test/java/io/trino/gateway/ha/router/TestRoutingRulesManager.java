@@ -128,8 +128,7 @@ final class TestRoutingRulesManager
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-        executorService.submit(() ->
-        {
+        executorService.submit(() -> {
             try {
                 routingRulesManager.updateRoutingRule(routingRule1);
             }
@@ -138,8 +137,7 @@ final class TestRoutingRulesManager
             }
         });
 
-        executorService.submit(() ->
-        {
+        executorService.submit(() -> {
             try {
                 routingRulesManager.updateRoutingRule(routingRule2);
             }

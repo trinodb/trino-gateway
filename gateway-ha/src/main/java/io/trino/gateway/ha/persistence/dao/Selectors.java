@@ -22,6 +22,4 @@ public record Selectors(
         @ColumnName("source_regex") String sourceRegex,
         @ColumnName("query_type") String queryType,
         @ColumnName("client_tags") String clientTags,
-        @ColumnName("selector_resource_estimate") String selectorResourceEstimate)
-{
-}
+        @ColumnName("selector_resource_estimate") String selectorResourceEstimate) {}

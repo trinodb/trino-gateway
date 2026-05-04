@@ -21,7 +21,8 @@ public class NoopAuthorizer
         implements Authorizer
 {
     @Override
-    public boolean authorize(LbPrincipal principal,
+    public boolean authorize(
+            LbPrincipal principal,
             String role,
             @Nullable ContainerRequestContext ctx)
     {

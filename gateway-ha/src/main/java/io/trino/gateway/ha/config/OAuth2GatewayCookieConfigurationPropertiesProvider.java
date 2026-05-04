@@ -23,8 +23,7 @@ public class OAuth2GatewayCookieConfigurationPropertiesProvider
 
     private OAuth2GatewayCookieConfiguration oAuth2GatewayCookieConfiguration;
 
-    private OAuth2GatewayCookieConfigurationPropertiesProvider()
-    {}
+    private OAuth2GatewayCookieConfigurationPropertiesProvider() {}
 
     public static OAuth2GatewayCookieConfigurationPropertiesProvider getInstance()
     {

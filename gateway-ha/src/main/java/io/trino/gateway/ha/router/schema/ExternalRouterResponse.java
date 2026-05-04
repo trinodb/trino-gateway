@@ -31,7 +31,8 @@ public record ExternalRouterResponse(
         @Nullable Map<String, String> externalHeaders)
         implements RoutingGroupResponse
 {
-    public ExternalRouterResponse {
+    public ExternalRouterResponse
+    {
         externalHeaders = externalHeaders == null ? ImmutableMap.of() : ImmutableMap.copyOf(externalHeaders);
     }
 }

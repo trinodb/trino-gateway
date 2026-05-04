@@ -31,5 +31,4 @@ public record RoutingGroupExternalBody(
         HttpSession session,
         String remoteAddr,
         String remoteHost,
-        Map<String, String[]> parameters)
-{}
+        Map<String, String[]> parameters) {}

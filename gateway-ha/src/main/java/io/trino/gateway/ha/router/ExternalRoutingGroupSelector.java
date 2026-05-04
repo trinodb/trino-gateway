@@ -77,7 +77,8 @@ public class ExternalRoutingGroupSelector
 
         this.requestAnalyzerConfig = requestAnalyzerConfig;
         try {
-            this.uri = new URI(requireNonNull(rulesExternalConfiguration.getUrlPath(),
+            this.uri = new URI(requireNonNull(
+                    rulesExternalConfiguration.getUrlPath(),
                     "Invalid URL provided, using routing group header as default."));
         }
         catch (URISyntaxException e) {

@@ -20,5 +20,5 @@ public enum ClusterStatsMonitorType
     UI_API,
     JDBC,
     JMX,
-    METRICS
+    METRICS,
 }

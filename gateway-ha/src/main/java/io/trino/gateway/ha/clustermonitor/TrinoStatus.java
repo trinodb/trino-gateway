@@ -25,5 +25,5 @@ public enum TrinoStatus
     PENDING,
     HEALTHY,
     UNHEALTHY,
-    UNKNOWN
+    UNKNOWN,
 }

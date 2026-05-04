@@ -23,12 +23,13 @@ import java.util.Map;
     the Trino Gateway system.
 
  Implementations of this interface are used to:
-    * Specify the target routing group for a request
-    * Provide additional headers that should be added to the request
+ * Specify the target routing group for a request
+ * Provide additional headers that should be added to the request
  */
 public interface RoutingGroupResponse
 {
-    @Nullable String routingGroup();
+    @Nullable
+    String routingGroup();
 
     Map<String, String> externalHeaders();
 }

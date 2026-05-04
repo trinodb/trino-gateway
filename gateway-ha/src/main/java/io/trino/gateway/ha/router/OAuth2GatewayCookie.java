@@ -27,8 +27,7 @@ public class OAuth2GatewayCookie
 
     public OAuth2GatewayCookie(String backend)
     {
-        super(
-                NAME,
+        super(NAME,
                 null,
                 backend,
                 ImmutableList.copyOf(Streams.concat(Stream.of(OAUTH2_PATH), OAuth2GatewayCookieConfigurationPropertiesProvider.getInstance().getDeletePaths().stream()).toList()),

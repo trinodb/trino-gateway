@@ -25,14 +25,16 @@ import java.util.Map;
 
 public interface QueryHistoryDao
 {
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM query_history
             ORDER BY created DESC
             LIMIT 2000
             """)
     List<QueryHistory> findRecentQueries();
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM query_history
             ORDER BY created DESC
             FETCH FIRST 2000 ROWS ONLY
@@ -47,7 +49,8 @@ public interface QueryHistoryDao
         return findRecentQueries();
     }
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM query_history
             WHERE user_name = :userName
             ORDER BY created DESC
@@ -55,7 +58,8 @@ public interface QueryHistoryDao
             """)
     List<QueryHistory> findRecentQueriesByUserName(String userName);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM query_history
             WHERE user_name = :userName
             ORDER BY created DESC
@@ -71,25 +75,29 @@ public interface QueryHistoryDao
         return findRecentQueriesByUserName(userName);
     }
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT backend_url FROM query_history
             WHERE query_id = :queryId
             """)
     String findBackendUrlByQueryId(String queryId);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT routing_group FROM query_history
             WHERE query_id = :queryId
             """)
     String findRoutingGroupByQueryId(String queryId);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT external_url FROM query_history
             WHERE query_id = :queryId
             """)
     String findExternalUrlByQueryId(String queryId);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM query_history
             WHERE 1 = 1 <condition>
             ORDER BY created DESC
@@ -98,13 +106,15 @@ public interface QueryHistoryDao
             """)
     List<QueryHistory> pageQueryHistory(@Define("condition") String condition, @Bind("limit") int limit, @Bind("offset") int offset);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT count(1) FROM query_history
             WHERE 1 = 1 <condition>
             """)
     Long count(@Define("condition") String condition);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT FLOOR(created / 1000 / 60) AS minute,
                    backend_url AS backend_url,
                    COUNT(1) AS query_count
@@ -115,13 +125,15 @@ public interface QueryHistoryDao
     @UseRowMapper(MapMapper.class)
     List<Map<String, Object>> findDistribution(long created);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO query_history (query_id, query_text, backend_url, user_name, source, created, routing_group, external_url)
             VALUES (:queryId, :queryText, :backendUrl, :userName, :source, :created, :routingGroup, :externalUrl)
             """)
     void insertHistory(String queryId, String queryText, String backendUrl, String userName, String source, long created, String routingGroup, String externalUrl);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             DELETE FROM query_history
             WHERE created < :created
             """)

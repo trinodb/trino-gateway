@@ -166,14 +166,16 @@ public class QueryCountBasedRouter
     private int compareStats(LocalStats lhs, LocalStats rhs, String user)
     {
         // First check if the user has any queries queued
-        int compareUserQueue = Integer.compare(lhs.userQueuedCount().getOrDefault(user, 0),
+        int compareUserQueue = Integer.compare(
+                lhs.userQueuedCount().getOrDefault(user, 0),
                 rhs.userQueuedCount().getOrDefault(user, 0));
 
         if (compareUserQueue != 0) {
             return compareUserQueue;
         }
 
-        int compareClusterQueue = Integer.compare(lhs.queuedQueryCount(),
+        int compareClusterQueue = Integer.compare(
+                lhs.queuedQueryCount(),
                 rhs.queuedQueryCount());
 
         if (compareClusterQueue != 0) {

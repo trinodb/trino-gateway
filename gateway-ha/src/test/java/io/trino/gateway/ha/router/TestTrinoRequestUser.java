@@ -39,7 +39,8 @@ final class TestTrinoRequestUser
     void testJsonCreator()
     {
         JsonCodec<TrinoRequestUser> codec = JsonCodec.jsonCodec(TrinoRequestUser.class);
-        String userInfoJson = """
+        String userInfoJson =
+                """
                 {
                   "sub": "12345",
                   "name": "Usr McUsr",
@@ -67,7 +68,7 @@ final class TestTrinoRequestUser
 
         Algorithm algorithm = HMAC256("random");
 
-        Instant expiryTime =  Instant.now().plusSeconds(60);
+        Instant expiryTime = Instant.now().plusSeconds(60);
         String token = JWT.create()
                 .withIssuer("gateway")
                 .withClaim(claimUserName, claimUserValue)

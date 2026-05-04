@@ -68,7 +68,8 @@ public class ClusterStatsMetricsMonitor
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         retries = monitorConfiguration.getRetries();
         if (!isNullOrEmpty(backendStateConfiguration.getPassword())) {
-            identityHeader = new Header("Authorization",
+            identityHeader = new Header(
+                    "Authorization",
                     new BasicCredentials(backendStateConfiguration.getUsername(), backendStateConfiguration.getPassword()).getBasicAuthHeader());
         }
         else {

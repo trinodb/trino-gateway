@@ -76,8 +76,10 @@ public class QueryMetadataParser
             queryProps = new TrinoQueryProperties(requestContext, isClientsUseV2Format, maxBodySize);
         }
         catch (Exception ex) {
-            log.warn(ex, "Failed to parse query properties for query text: [%s]. Error: %s. Using empty properties.",
-                    getQueryTextForLogging(requestContext), ex.getMessage());
+            log.warn(ex,
+                    "Failed to parse query properties for query text: [%s]. Error: %s. Using empty properties.",
+                    getQueryTextForLogging(requestContext),
+                    ex.getMessage());
             queryProps = new TrinoQueryProperties();
         }
 

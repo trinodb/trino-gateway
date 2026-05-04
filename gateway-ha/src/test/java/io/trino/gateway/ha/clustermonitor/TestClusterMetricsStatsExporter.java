@@ -49,14 +49,16 @@ final class TestClusterMetricsStatsExporter
 
             verify(statsExporter.exporter()).exportWithGeneratedName(
                     argThat(stats -> stats instanceof ClusterMetricsStats clusterMetricsStats && clusterMetricsStats.getClusterName().equals(clusterName1)),
-                    eq(ClusterMetricsStats.class), eq(clusterName1));
+                    eq(ClusterMetricsStats.class),
+                    eq(clusterName1));
 
             // Wait for next update where cluster is added
             sleepUninterruptibly(2, SECONDS);
 
             verify(statsExporter.exporter()).exportWithGeneratedName(
                     argThat(stats -> stats instanceof ClusterMetricsStats clusterMetricsStats && clusterMetricsStats.getClusterName().equals(clusterName2)),
-                    eq(ClusterMetricsStats.class), eq(clusterName2));
+                    eq(ClusterMetricsStats.class),
+                    eq(clusterName2));
         }
     }
 
@@ -75,7 +77,8 @@ final class TestClusterMetricsStatsExporter
 
             verify(statsExporter.exporter()).exportWithGeneratedName(
                     argThat(stats -> stats instanceof ClusterMetricsStats clusterMetricsStats && clusterMetricsStats.getClusterName().equals(clusterName)),
-                    eq(ClusterMetricsStats.class), eq(clusterName));
+                    eq(ClusterMetricsStats.class),
+                    eq(clusterName));
 
             // Wait for next update where cluster is removed
             sleepUninterruptibly(2, SECONDS);

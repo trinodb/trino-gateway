@@ -31,7 +31,8 @@ public class LbAuthorizer
     }
 
     @Override
-    public boolean authorize(LbPrincipal principal,
+    public boolean authorize(
+            LbPrincipal principal,
             String role,
             @Nullable ContainerRequestContext ctx)
     {
@@ -53,7 +54,10 @@ public class LbAuthorizer
                 .isPresent();
         if (matched) {
             log.info("User '%s' with memberOf(%s) is identified as %s(%s)",
-                    principal.getName(), principal.getMemberOf(), role, regex);
+                    principal.getName(),
+                    principal.getMemberOf(),
+                    role,
+                    regex);
         }
         return matched;
     }

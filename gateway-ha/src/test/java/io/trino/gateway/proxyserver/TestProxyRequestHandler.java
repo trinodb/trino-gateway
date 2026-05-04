@@ -71,7 +71,8 @@ final class TestProxyRequestHandler
             throws Exception
     {
         prepareMockBackend(mockTrinoServer, customBackendPort, "default custom response");
-        mockTrinoServer.setDispatcher(new Dispatcher() {
+        mockTrinoServer.setDispatcher(new Dispatcher()
+        {
             @Override
             public MockResponse dispatch(RecordedRequest request)
             {
@@ -154,19 +155,20 @@ final class TestProxyRequestHandler
     void testGetQueryDetailsFromRequest()
     {
         // A sample query longer than 200 characters to test against truncation.
-        String longQuery = """
-        SELECT
-            c.customer_name,
-            c.customer_region,
-            COUNT(o.order_id) AS total_orders,
-            SUM(o.order_value) AS total_revenue
-        FROM
-            hive.sales_data.customers AS c
-        JOIN
-            hive.sales_data.orders AS o
-                ON c.customer_id = o.customer_id
-        WHERE
-            o.order_date >= date '2023-01-01'""";
+        String longQuery =
+                """
+                SELECT
+                    c.customer_name,
+                    c.customer_region,
+                    COUNT(o.order_id) AS total_orders,
+                    SUM(o.order_value) AS total_revenue
+                FROM
+                    hive.sales_data.customers AS c
+                JOIN
+                    hive.sales_data.orders AS o
+                        ON c.customer_id = o.customer_id
+                WHERE
+                o.order_date >= date '2023-01-01'""";
 
         io.airlift.http.client.Request request = preparePost()
                 .setUri(URI.create("http://localhost:" + routerPort + V1_STATEMENT_PATH))

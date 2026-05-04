@@ -107,8 +107,7 @@ public class QueryRequestMock
             }
 
             @Override
-            public void setReadListener(ReadListener readListener)
-            {}
+            public void setReadListener(ReadListener readListener) {}
 
             @Override
             public int read()

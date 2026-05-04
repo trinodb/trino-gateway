@@ -50,7 +50,8 @@ public class HaResourceGroupsManager
      * @return the created ResourceGroupDetail object
      */
     @Override
-    public ResourceGroupsDetail createResourceGroup(ResourceGroupsDetail resourceGroup,
+    public ResourceGroupsDetail createResourceGroup(
+            ResourceGroupsDetail resourceGroup,
             @Nullable String routingGroupDatabase)
     {
         getResourceGroupsDao(routingGroupDatabase).create(resourceGroup);
@@ -75,7 +76,8 @@ public class HaResourceGroupsManager
      * @return a specific resource group as a ResourceGroupDetail object
      */
     @Override
-    public List<ResourceGroupsDetail> readResourceGroup(long resourceGroupId,
+    public List<ResourceGroupsDetail> readResourceGroup(
+            long resourceGroupId,
             @Nullable String routingGroupDatabase)
     {
         List<ResourceGroups> resourceGroups = getResourceGroupsDao(routingGroupDatabase).findById(resourceGroupId);
@@ -88,7 +90,8 @@ public class HaResourceGroupsManager
      * @return the updated ResourceGroupDetail object
      */
     @Override
-    public ResourceGroupsDetail updateResourceGroup(ResourceGroupsDetail resourceGroup,
+    public ResourceGroupsDetail updateResourceGroup(
+            ResourceGroupsDetail resourceGroup,
             @Nullable String routingGroupDatabase)
     {
         ResourceGroupsDao dao = getResourceGroupsDao(routingGroupDatabase);
@@ -117,7 +120,8 @@ public class HaResourceGroupsManager
      * @return selector
      */
     @Override
-    public SelectorsDetail createSelector(SelectorsDetail selector,
+    public SelectorsDetail createSelector(
+            SelectorsDetail selector,
             @Nullable String routingGroupDatabase)
     {
         getSelectorsDao(routingGroupDatabase).insert(selector);
@@ -140,7 +144,8 @@ public class HaResourceGroupsManager
      * Retrieves the selector.
      */
     @Override
-    public List<SelectorsDetail> readSelector(long resourceGroupId,
+    public List<SelectorsDetail> readSelector(
+            long resourceGroupId,
             @Nullable String routingGroupDatabase)
     {
         List<Selectors> selectorList = getSelectorsDao(routingGroupDatabase).findByResourceGroupId(resourceGroupId);
@@ -151,7 +156,9 @@ public class HaResourceGroupsManager
      * Updates a selector given the specified selector and its updated version.
      */
     @Override
-    public SelectorsDetail updateSelector(SelectorsDetail selector, SelectorsDetail updatedSelector,
+    public SelectorsDetail updateSelector(
+            SelectorsDetail selector,
+            SelectorsDetail updatedSelector,
             @Nullable String routingGroupDatabase)
     {
         SelectorsDao dao = getSelectorsDao(routingGroupDatabase);
@@ -178,7 +185,8 @@ public class HaResourceGroupsManager
      * Create new global property with given parameters.
      */
     @Override
-    public GlobalPropertiesDetail createGlobalProperty(GlobalPropertiesDetail globalPropertyDetail,
+    public GlobalPropertiesDetail createGlobalProperty(
+            GlobalPropertiesDetail globalPropertyDetail,
             @Nullable String routingGroupDatabase)
     {
         getDao(routingGroupDatabase).insert(globalPropertyDetail.getName(), globalPropertyDetail.getValue());
@@ -200,7 +208,8 @@ public class HaResourceGroupsManager
      * Read specific global property based on the given name.
      */
     @Override
-    public List<GlobalPropertiesDetail> readGlobalProperty(String name,
+    public List<GlobalPropertiesDetail> readGlobalProperty(
+            String name,
             @Nullable String routingGroupDatabase)
     {
         List<ResourceGroupsGlobalProperties> globalPropertyList = getDao(routingGroupDatabase).findByName(name);
@@ -211,7 +220,8 @@ public class HaResourceGroupsManager
      * Updates a global property based on the given name.
      */
     @Override
-    public GlobalPropertiesDetail updateGlobalProperty(GlobalPropertiesDetail globalProperty,
+    public GlobalPropertiesDetail updateGlobalProperty(
+            GlobalPropertiesDetail globalProperty,
             @Nullable String routingGroupDatabase)
     {
         ResourceGroupsGlobalPropertiesDao dao = getDao(routingGroupDatabase);

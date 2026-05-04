@@ -45,7 +45,8 @@ final class TestLbTokenUtil
                 requireNonNull(getClass().getClassLoader().getResource(rsaPrivateKey)).getFile(),
                 requireNonNull(getClass().getClassLoader().getResource(rsaPublicKey)).getFile()));
         Map<String, Object> headers = java.util.Map.of("alg", "RS256");
-        Algorithm algorithm = Algorithm.RSA256(lbKeyProvider.getRsaPublicKey(),
+        Algorithm algorithm = Algorithm.RSA256(
+                lbKeyProvider.getRsaPublicKey(),
                 lbKeyProvider.getRsaPrivateKey());
         idToken = JWT.create()
                 .withHeader(headers)

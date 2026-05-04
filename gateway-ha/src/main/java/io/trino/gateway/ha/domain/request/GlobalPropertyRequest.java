@@ -25,6 +25,4 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GlobalPropertyRequest(
         @JsonProperty("useSchema") String useSchema,
-        @JsonProperty("data") ResourceGroupsManager.GlobalPropertiesDetail data)
-{
-}
+        @JsonProperty("data") ResourceGroupsManager.GlobalPropertiesDetail data) {}

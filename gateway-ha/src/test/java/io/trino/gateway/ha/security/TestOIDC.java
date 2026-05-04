@@ -133,17 +133,28 @@ final class TestOIDC
         GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
                 .withNetwork(network)
                 .dependsOn(hydra)
-                .withCommand("clients", "create",
-                        "--endpoint", "http://hydra:4445",
+                .withCommand(
+                        "clients",
+                        "create",
+                        "--endpoint",
+                        "http://hydra:4445",
                         "--skip-tls-verify",
-                        "--id", clientId,
-                        "--secret", clientSecret,
-                        "--audience", audience,
-                        "-g", "authorization_code,refresh_token,client_credentials",
-                        "-r", "token,code,id_token",
-                        "--scope", "openid,offline",
-                        "--token-endpoint-auth-method", tokenEndpointAuthMethod,
-                        "--callbacks", callbackUrl);
+                        "--id",
+                        clientId,
+                        "--secret",
+                        clientSecret,
+                        "--audience",
+                        audience,
+                        "-g",
+                        "authorization_code,refresh_token,client_credentials",
+                        "-r",
+                        "token,code,id_token",
+                        "--scope",
+                        "openid,offline",
+                        "--token-endpoint-auth-method",
+                        tokenEndpointAuthMethod,
+                        "--callbacks",
+                        callbackUrl);
         clientCreatingContainer.start();
 
         PostgreSQLContainer gatewayBackendDatabase = createPostgreSqlContainer();

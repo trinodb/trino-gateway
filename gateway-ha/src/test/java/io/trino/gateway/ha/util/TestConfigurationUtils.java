@@ -24,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 final class TestConfigurationUtils
 {
-    private static final String config = """
+    private static final String config =
+            """
             serverConfig:
                 http-server.https.keystore.path: certificate.pem
                 http-server.https.keystore.key: ${ENV:KEYSTORE_KEY}
@@ -33,7 +34,8 @@ final class TestConfigurationUtils
                 password: ${ENV:API_PASSWORD}
                 privileges: API
             """;
-    private static final String expected = """
+    private static final String expected =
+            """
             serverConfig:
                 http-server.https.keystore.path: certificate.pem
                 http-server.https.keystore.key: keystore_12345

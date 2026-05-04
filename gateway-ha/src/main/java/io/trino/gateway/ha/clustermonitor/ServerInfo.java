@@ -15,6 +15,4 @@ package io.trino.gateway.ha.clustermonitor;
 
 // based on https://github.com/trinodb/trino/blob/439/client/trino-client/src/main/java/io/trino/client/ServerInfo.java
 // without unused fields
-public record ServerInfo(boolean starting)
-{
-}
+public record ServerInfo(boolean starting) {}
