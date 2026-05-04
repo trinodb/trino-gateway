@@ -29,7 +29,8 @@ public class LbAuthenticator
     private final LbOAuthManager oauthManager;
     private final AuthorizationManager authorizationManager;
 
-    public LbAuthenticator(LbOAuthManager oauthManager,
+    public LbAuthenticator(
+            LbOAuthManager oauthManager,
             AuthorizationManager authorizationManager)
     {
         this.oauthManager = oauthManager;

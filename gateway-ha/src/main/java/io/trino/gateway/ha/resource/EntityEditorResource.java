@@ -90,7 +90,7 @@ public class EntityEditorResource
         try {
             switch (entityType) {
                 case GATEWAY_BACKEND -> {
-                    //TODO: make the gateway backend database sensitive
+                    // TODO: make the gateway backend database sensitive
                     ProxyBackendConfiguration backend =
                             OBJECT_MAPPER.readValue(jsonPayload, ProxyBackendConfiguration.class);
                     gatewayBackendManager.updateBackend(backend);
@@ -106,18 +106,22 @@ public class EntityEditorResource
                                     .build());
                 }
                 case RESOURCE_GROUP -> {
-                    ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(jsonPayload,
+                    ResourceGroupsDetail resourceGroupDetails = OBJECT_MAPPER.readValue(
+                            jsonPayload,
                             ResourceGroupsDetail.class);
                     resourceGroupsManager.updateResourceGroup(resourceGroupDetails, database);
                 }
                 case SELECTOR -> {
-                    SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(jsonPayload,
+                    SelectorsDetail selectorDetails = OBJECT_MAPPER.readValue(
+                            jsonPayload,
                             SelectorsDetail.class);
                     List<SelectorsDetail> oldSelectorDetails =
                             resourceGroupsManager.readSelector(selectorDetails.getResourceGroupId(), database);
                     if (oldSelectorDetails.size() >= 1) {
-                        resourceGroupsManager.updateSelector(oldSelectorDetails.get(0),
-                                selectorDetails, database);
+                        resourceGroupsManager.updateSelector(
+                                oldSelectorDetails.get(0),
+                                selectorDetails,
+                                database);
                     }
                     else {
                         resourceGroupsManager.createSelector(selectorDetails, database);

@@ -69,8 +69,7 @@ public class GatewayViewResource
     @RolesAllowed("USER")
     @Path("api/queryHistory")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext
-            securityContext)
+    public List<QueryHistoryManager.QueryDetail> getQueryHistory(@Context SecurityContext securityContext)
     {
         Optional<String> userName = getUserNameForQueryHistory(securityContext);
         return queryHistoryManager.fetchQueryHistory(userName);
@@ -89,8 +88,7 @@ public class GatewayViewResource
     @RolesAllowed("USER")
     @Path("api/queryHistoryDistribution")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext
-            securityContext)
+    public Map<String, Integer> getQueryHistoryDistribution(@Context SecurityContext securityContext)
     {
         Map<String, String> urlToNameMap = new HashMap<>();
         gatewayBackendManager

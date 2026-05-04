@@ -101,7 +101,7 @@ final class TestRoutingAPI
     void testUpdateRoutingRulesAPI()
             throws Exception
     {
-        //Update routing rules with a new rule
+        // Update routing rules with a new rule
         RoutingRule updatedRoutingRules = new RoutingRule("airflow", "if query from airflow, route to adhoc group", 0, List.of("result.put(\"routingGroup\", \"adhoc\")"), "request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
         RequestBody requestBody = RequestBody.create(OBJECT_MAPPER.writeValueAsString(updatedRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request = new Request.Builder()
@@ -113,7 +113,7 @@ final class TestRoutingAPI
 
         assertThat(response.code()).isEqualTo(200);
 
-        //Fetch the routing rules to see if the update was successful
+        // Fetch the routing rules to see if the update was successful
         Request request2 =
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + "/webapp/getRoutingRules")
@@ -135,7 +135,7 @@ final class TestRoutingAPI
         assertThat(routingRules[0].condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"JDBC\"");
         assertThat(routingRules[0].actions()).first().isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
 
-        //Revert back to old routing rules to avoid any test failures
+        // Revert back to old routing rules to avoid any test failures
         RoutingRule revertRoutingRules = new RoutingRule("airflow", "if query from airflow, route to etl group", 0, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"airflow\"");
         RequestBody requestBody3 = RequestBody.create(OBJECT_MAPPER.writeValueAsString(revertRoutingRules), MediaType.parse("application/json; charset=utf-8"));
         Request request3 = new Request.Builder()

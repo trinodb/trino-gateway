@@ -131,7 +131,8 @@ public class TrinoResource
     {
         try {
             SelectorsDetail selector = OBJECT_MAPPER.readValue(jsonPayload, SelectorsDetail.class);
-            SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(selector,
+            SelectorsDetail updatedSelector = this.resourceGroupsManager.createSelector(
+                    selector,
                     useSchema);
             return Response.ok(updatedSelector).build();
         }
@@ -155,7 +156,8 @@ public class TrinoResource
             @QueryParam("useSchema") String useSchema)
     {
         long resourceGroupId = Long.parseLong(resourceGroupIdStr);
-        List<SelectorsDetail> selectors = this.resourceGroupsManager.readSelector(resourceGroupId,
+        List<SelectorsDetail> selectors = this.resourceGroupsManager.readSelector(
+                resourceGroupId,
                 useSchema);
         return Response.ok(selectors).build();
     }

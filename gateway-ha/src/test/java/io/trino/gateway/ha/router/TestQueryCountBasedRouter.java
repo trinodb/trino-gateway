@@ -104,7 +104,7 @@ final class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy-" + routingGroup);
             cluster.proxyTo("http://c-unhealthy");
-            cluster.trinoStatus(TrinoStatus.UNHEALTHY); //This cluster should never show up to route
+            cluster.trinoStatus(TrinoStatus.UNHEALTHY); // This cluster should never show up to route
             cluster.routingGroup(routingGroup);
             cluster.runningQueryCount(5);
             cluster.queuedQueryCount(SAME_QUERY_COUNT);
@@ -116,7 +116,7 @@ final class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy2-" + routingGroup);
             cluster.proxyTo("http://c-unhealthy2");
-            cluster.trinoStatus(TrinoStatus.UNHEALTHY); //This cluster should never show up to route
+            cluster.trinoStatus(TrinoStatus.UNHEALTHY); // This cluster should never show up to route
 
             clustersBuilder.add(cluster.build());
         }
@@ -124,8 +124,8 @@ final class TestQueryCountBasedRouter
         {
             ClusterStats.Builder cluster = ClusterStats.builder("c-unhealthy3-" + routingGroup);
             cluster.proxyTo("http://c-messed-up");
-            //This is a scenrio when, something is really wrong
-            //We just get the cluster state as health but no stats
+            // This is a scenrio when, something is really wrong
+            // We just get the cluster state as health but no stats
             cluster.trinoStatus(TrinoStatus.HEALTHY);
             clustersBuilder.add(cluster.build());
         }
@@ -187,7 +187,7 @@ final class TestQueryCountBasedRouter
 
     private void populateData()
     {
-        //Have a adoc and an etl routing groups - 2 sets of clusters
+        // Have a adoc and an etl routing groups - 2 sets of clusters
         clusters = new ImmutableList.Builder<ClusterStats>()
                 .addAll(getClusterStatsList("adhoc"))
                 .addAll(getClusterStatsList("etl"))
@@ -206,9 +206,9 @@ final class TestQueryCountBasedRouter
         assertThat(proxyTo).isEqualTo(BACKEND_URL_3);
         assertThat(proxyTo).isNotEqualTo(BACKEND_URL_UNHEALTHY);
 
-        //After the above code is run, c3 cluster has 6 queued queries
-        //c1, c2 cluster will be with same original number of queued queries i.e. 5 each
-        //The next query should go to the c1 cluster, as it would have less number of cluster wide
+        // After the above code is run, c3 cluster has 6 queued queries
+        // c1, c2 cluster will be with same original number of queued queries i.e. 5 each
+        // The next query should go to the c1 cluster, as it would have less number of cluster wide
         QueryCountBasedRouter.LocalStats c3Stats = queryCountBasedRouter.clusterStats().values().stream()
                 .filter(c -> c.clusterId().equals("c3-etl") &&
                         c.routingGroup().equals("etl"))

@@ -267,7 +267,10 @@ public class ProxyRequestHandler
                         .build());
     }
 
-    private ProxyResponse recordBackendForQueryId(Request request, ProxyResponse response, Optional<String> username,
+    private ProxyResponse recordBackendForQueryId(
+            Request request,
+            ProxyResponse response,
+            Optional<String> username,
             RoutingDestination routingDestination)
     {
         log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());

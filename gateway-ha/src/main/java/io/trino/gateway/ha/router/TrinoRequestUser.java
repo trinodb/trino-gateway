@@ -178,7 +178,7 @@ public class TrinoRequestUser
 
         String token = header.substring(space + 1).trim();
 
-        if (token.split("\\.").length == 3) { //this is probably a JWS
+        if (token.split("\\.").length == 3) { // this is probably a JWS
             log.debug("Trying to extract from JWS");
             try {
                 DecodedJWT jwt = JWT.decode(token);

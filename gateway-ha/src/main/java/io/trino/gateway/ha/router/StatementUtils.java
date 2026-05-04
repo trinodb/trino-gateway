@@ -212,7 +212,8 @@ public final class StatementUtils
         private final Class<T> statementType;
         private final QueryType queryType;
 
-        private StatementTypeInfo(Class<T> statementType,
+        private StatementTypeInfo(
+                Class<T> statementType,
                 QueryType queryType)
         {
             this.statementType = requireNonNull(statementType, "statementType is null");

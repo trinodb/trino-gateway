@@ -118,48 +118,53 @@ final class TestQueryIdCachingProxyHandler
                 "system",
                 "runtime"))).isEmpty();
 
-        assertThat(extractQueryId(request("""
-                        --CALL kill_query('20200416_160256_03078_6b4yt', 'If he dies, he dies')
-                        SELECT 1
-                        """,
+        assertThat(extractQueryId(request(
+                """
+                --CALL kill_query('20200416_160256_03078_6b4yt', 'If he dies, he dies')
+                SELECT 1
+                """,
                 "system",
                 "runtime"))).isEmpty();
 
-        assertThat(extractQueryId(request("""
-                        /*
-                        CALL kill_query('20200416_160256_03078_6b4yt', 'If he dies, he dies')
-                        */
-                        SELECT 1
-                        """,
+        assertThat(extractQueryId(request(
+                """
+                /*
+                CALL kill_query('20200416_160256_03078_6b4yt', 'If he dies, he dies')
+                */
+                SELECT 1
+                """,
                 "system",
                 "runtime"))).isEmpty();
 
-        assertThat(extractQueryId(request("""
-                        CALL KILL_QUERY('20200416_160256_03078_6b4yt', 'If he dies, he dies')
-                        """,
+        assertThat(extractQueryId(request(
+                """
+                CALL KILL_QUERY('20200416_160256_03078_6b4yt', 'If he dies, he dies')
+                """,
                 "system",
                 "runtime"))).hasValue("20200416_160256_03078_6b4yt");
 
-        assertThat(extractQueryId(request("""
-                        CALL KILL_QUERY ('20200416_160256_03078_6b4yt', 'If he dies, he dies')
-                        """,
+        assertThat(extractQueryId(request(
+                """
+                CALL KILL_QUERY ('20200416_160256_03078_6b4yt', 'If he dies, he dies')
+                """,
                 "system",
                 "runtime"))).hasValue("20200416_160256_03078_6b4yt");
 
-        assertThat(extractQueryId(request("""
-                        CALL
-                        KILL_QUERY
-                        (
-                        -- this is a comment
-                        '20200416_160256_03078_6b4yt' --this is a trailing comment
-                        ,
-                        /*
-                        this is
-                        a multiline comment
-                        */
-                        'If he dies, he dies
-                        ')
-                        """,
+        assertThat(extractQueryId(request(
+                """
+                CALL
+                KILL_QUERY
+                (
+                -- this is a comment
+                '20200416_160256_03078_6b4yt' --this is a trailing comment
+                ,
+                /*
+                this is
+                a multiline comment
+                */
+                'If he dies, he dies
+                ')
+                """,
                 "system",
                 "runtime"))).hasValue("20200416_160256_03078_6b4yt");
 

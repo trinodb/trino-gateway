@@ -293,7 +293,8 @@ final class TestTrinoQueryProperties
     void testComplexJoinWithMultipleCatalogs()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 SELECT t1.name, t2.value, t3.description, t4.status
                 FROM catalog1.sales.customers t1
                 JOIN catalog1.sales.orders t2 ON t1.id = t2.customer_id
@@ -319,7 +320,8 @@ final class TestTrinoQueryProperties
     void testMixedQualifiedNamesInJoin()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 SELECT *
                 FROM catalog1.schema1.table1 t1
                 JOIN schema2.table2 t2 ON t1.id = t2.id
@@ -344,7 +346,8 @@ final class TestTrinoQueryProperties
     void testSubqueryJoinWithMultipleCatalogs()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 SELECT main.id, sub.total
                 FROM catalog1.sales.orders main
                 JOIN (
@@ -373,7 +376,8 @@ final class TestTrinoQueryProperties
     void testUnionWithMultipleCatalogs()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 SELECT name, 'active' as status FROM catalog1.users.active_users
                 UNION ALL
                 SELECT name, 'inactive' as status FROM catalog2.users.inactive_users
@@ -399,7 +403,8 @@ final class TestTrinoQueryProperties
     void testCTEWithMultipleCatalogs()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 WITH sales_summary AS (
                     SELECT customer_id, SUM(amount) as total_sales
                     FROM catalog1.sales.transactions
@@ -434,7 +439,8 @@ final class TestTrinoQueryProperties
     void testInsertSelectWithMultipleCatalogs()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 INSERT INTO catalog1.warehouse.inventory (product_id, quantity, location)
                 SELECT p.id, s.available_qty, w.default_location
                 FROM catalog2.products.items p
@@ -461,7 +467,8 @@ final class TestTrinoQueryProperties
     void testSameCatalogDifferentSchemas()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 SELECT o.order_id, c.name, p.price
                 FROM catalog1.sales.orders o
                 JOIN catalog1.customers.profiles c ON o.customer_id = c.id

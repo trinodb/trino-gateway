@@ -28,6 +28,4 @@ import io.trino.gateway.ha.router.ResourceGroupsManager;
 public record SelectorsRequest(
         @JsonProperty("useSchema") String useSchema,
         @JsonProperty("data") ResourceGroupsManager.SelectorsDetail data,
-        @JsonProperty("oldData") ResourceGroupsManager.SelectorsDetail oldData)
-{
-}
+        @JsonProperty("oldData") ResourceGroupsManager.SelectorsDetail oldData) {}

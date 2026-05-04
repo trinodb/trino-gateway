@@ -53,13 +53,15 @@ public class LbLdapClient
         if (trustStore != null && trustStorePassword != null) {
             connectionConfig.setTrustManagers(new LdapClientTrustStoreManager(
                     trustStore,
-                    trustStorePassword.toCharArray(), null, true));
+                    trustStorePassword.toCharArray(),
+                    null,
+                    true));
         }
 
         DefaultLdapConnectionFactory defaultFactory =
                 new DefaultLdapConnectionFactory(connectionConfig);
 
-        //A single connection and keep it alive
+        // A single connection and keep it alive
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setMaxIdle(ldapConfig.getPoolMaxIdle());
         poolConfig.setMaxTotal(ldapConfig.getPoolMaxTotal());
@@ -78,7 +80,8 @@ public class LbLdapClient
         try {
             String filter = config.getLdapUserSearch().replace("${USER}", user);
             PasswordWarning passwordWarning =
-                    ldapConnectionTemplate.authenticate(config.getLdapUserBaseDn(),
+                    ldapConnectionTemplate.authenticate(
+                            config.getLdapUserBaseDn(),
                             filter,
                             SearchScope.SUBTREE,
                             password.toCharArray());
@@ -101,7 +104,8 @@ public class LbLdapClient
         String filter = config.getLdapUserSearch().replace("${USER}", user);
 
         String[] attributes = new String[] {config.getLdapGroupMemberAttribute()};
-        List<UserRecord> list = ldapConnectionTemplate.search(config.getLdapUserBaseDn(),
+        List<UserRecord> list = ldapConnectionTemplate.search(
+                config.getLdapUserBaseDn(),
                 filter,
                 SearchScope.SUBTREE,
                 attributes,

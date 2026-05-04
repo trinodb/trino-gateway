@@ -46,7 +46,8 @@ public class LbFormAuthManager
     private final Map<String, String> pagePermissions;
     private final LbLdapClient lbLdapClient;
 
-    public LbFormAuthManager(FormAuthConfiguration configuration,
+    public LbFormAuthManager(
+            FormAuthConfiguration configuration,
             Map<String, UserConfiguration> presetUsers,
             Map<String, String> pagePermissions)
     {
@@ -119,7 +120,8 @@ public class LbFormAuthManager
         String token = "";
 
         try {
-            Algorithm algorithm = Algorithm.RSA256(lbKeyProvider.getRsaPublicKey(),
+            Algorithm algorithm = Algorithm.RSA256(
+                    lbKeyProvider.getRsaPublicKey(),
                     lbKeyProvider.getRsaPrivateKey());
 
             Map<String, Object> headers = Map.of("alg", "RS256");
@@ -141,7 +143,8 @@ public class LbFormAuthManager
     public boolean authenticate(BasicCredentials credentials)
     {
         if (lbLdapClient != null
-                && lbLdapClient.authenticate(credentials.username(),
+                && lbLdapClient.authenticate(
+                credentials.username(),
                 credentials.password())) {
             return true;
         }

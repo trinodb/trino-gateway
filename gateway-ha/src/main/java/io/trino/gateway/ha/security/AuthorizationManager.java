@@ -42,7 +42,7 @@ public class AuthorizationManager
 
     public Optional<String> getPrivileges(String username)
     {
-        //check the preset users
+        // check the preset users
         String privs = "";
 
         UserConfiguration user = presetUsers.get(username);

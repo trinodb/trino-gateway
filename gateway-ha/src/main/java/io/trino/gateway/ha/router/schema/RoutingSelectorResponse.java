@@ -26,7 +26,8 @@ import java.util.Map;
 public record RoutingSelectorResponse(@Nullable String routingGroup, Map<String, String> externalHeaders)
         implements RoutingGroupResponse
 {
-    public RoutingSelectorResponse {
+    public RoutingSelectorResponse
+    {
         externalHeaders = ImmutableMap.copyOf(externalHeaders);
     }
 

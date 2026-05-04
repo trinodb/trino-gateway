@@ -242,7 +242,8 @@ public class HaGatewayConfiguration
     public void setAdditionalStatementPaths(List<String> statementPaths)
     {
         // remove trailing slashes to ensure predictable behavior when splitting on "/"
-        this.statementPaths = Streams.concat(ImmutableList.of(V1_STATEMENT_PATH).stream(),
+        this.statementPaths = Streams.concat(
+                ImmutableList.of(V1_STATEMENT_PATH).stream(),
                 statementPaths.stream().peek(s -> validateStatementPath(s, statementPaths)).map(s -> s.replaceAll("/+$", ""))).toList();
     }
 

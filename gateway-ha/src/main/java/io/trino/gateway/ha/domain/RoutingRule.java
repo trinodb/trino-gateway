@@ -36,7 +36,8 @@ public record RoutingRule(
         List<String> actions,
         String condition)
 {
-    public RoutingRule {
+    public RoutingRule
+    {
         requireNonNull(name, "name is null");
         description = requireNonNullElse(description, "");
         priority = requireNonNullElse(priority, 0);

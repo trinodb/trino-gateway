@@ -17,5 +17,5 @@ public enum EntityType
 {
     GATEWAY_BACKEND,
     RESOURCE_GROUP,
-    SELECTOR
+    SELECTOR,
 }

@@ -148,8 +148,17 @@ public class TrinoQueryProperties
 
     public TrinoQueryProperties()
     {
-        this("", "", "", ImmutableList.of(), Optional.empty(), Optional.empty(),
-                ImmutableSet.of(), ImmutableSet.of(), ImmutableSet.of(), false, Optional.empty());
+        this("",
+                "",
+                "",
+                ImmutableList.of(),
+                Optional.empty(),
+                Optional.empty(),
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                false,
+                Optional.empty());
     }
 
     public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize)
@@ -187,8 +196,8 @@ public class TrinoQueryProperties
             if (nChars == maxBodySize) {
                 log.warn("Query length greater or equal to requestAnalyzerConfig.maxBodySize detected");
                 return;
-                //The body is truncated - there is a chance that it could still be syntactically valid SQL, for example if truncated on
-                //whitespace preceding a UNION. Exit out of caution
+                // The body is truncated - there is a chance that it could still be syntactically valid SQL, for example if truncated on
+                // whitespace preceding a UNION. Exit out of caution
             }
             body = String.valueOf(buffer, 0, nChars);
 
@@ -341,7 +350,9 @@ public class TrinoQueryProperties
         return new String(preparedStatement, UTF_8);
     }
 
-    private void visitNode(Node node, ImmutableSet.Builder<QualifiedName> tableBuilder,
+    private void visitNode(
+            Node node,
+            ImmutableSet.Builder<QualifiedName> tableBuilder,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
             ImmutableSet.Builder<String> catalogSchemaBuilder,
@@ -463,7 +474,9 @@ public class TrinoQueryProperties
         if (schemaOptional.isEmpty()) {
             schemaBuilder.add(defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier));
             catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-            catalogSchemaBuilder.add(format("%s.%s", defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier),
+            catalogSchemaBuilder.add(format(
+                    "%s.%s",
+                    defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier),
                     defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier)));
         }
         else {

@@ -44,7 +44,8 @@ public class OpenTracingCollector
         container.addEnv("COLLECTOR_OTLP_ENABLED", "true");
         container.addEnv("SPAN_STORAGE_TYPE", "badger"); // KV that stores spans to the disk
         container.addEnv("GOMAXPROCS", "2"); // limit number of threads used for goroutines
-        container.withCommand("--badger.ephemeral=false",
+        container.withCommand(
+                "--badger.ephemeral=false",
                 "--badger.span-store-ttl=15m",
                 "--badger.directory-key=/badger/data",
                 "--badger.directory-value=/badger/data",

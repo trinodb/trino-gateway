@@ -23,7 +23,8 @@ public class ApiAuthenticator
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
 
-    public ApiAuthenticator(LbFormAuthManager formAuthManager,
+    public ApiAuthenticator(
+            LbFormAuthManager formAuthManager,
             AuthorizationManager authorizationManager)
     {
         this.formAuthManager = formAuthManager;
@@ -34,7 +35,8 @@ public class ApiAuthenticator
             throws AuthenticationException
     {
         if (formAuthManager.authenticate(credentials)) {
-            return Optional.of(new LbPrincipal(credentials.username(),
+            return Optional.of(new LbPrincipal(
+                    credentials.username(),
                     authorizationManager.getPrivileges(credentials.username())));
         }
         return Optional.empty();
