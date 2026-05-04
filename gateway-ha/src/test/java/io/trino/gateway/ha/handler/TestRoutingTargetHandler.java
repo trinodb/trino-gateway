@@ -114,7 +114,8 @@ class TestRoutingTargetHandler
         // Initialize the handler with the configuration
         handler = new RoutingTargetHandler(
                 routingManager,
-                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
+                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()),
+                config);
     }
 
     @BeforeEach
@@ -342,6 +343,7 @@ class TestRoutingTargetHandler
         config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(true);
         return new RoutingTargetHandler(
                 routingManager,
-                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()), config);
+                RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()),
+                config);
     }
 }

@@ -131,8 +131,10 @@ final class TestRoutingManagerExternalUrlCache
     private static class TestRoutingManager
             extends StochasticRoutingManager
     {
-        private TestRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager,
-                                  RoutingConfiguration routingConfiguration)
+        private TestRoutingManager(
+                GatewayBackendManager gatewayBackendManager,
+                QueryHistoryManager queryHistoryManager,
+                RoutingConfiguration routingConfiguration)
         {
             super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
         }

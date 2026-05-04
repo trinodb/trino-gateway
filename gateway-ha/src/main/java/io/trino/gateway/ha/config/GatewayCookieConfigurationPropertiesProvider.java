@@ -20,8 +20,7 @@ public class GatewayCookieConfigurationPropertiesProvider
     private static final GatewayCookieConfigurationPropertiesProvider instance = new GatewayCookieConfigurationPropertiesProvider();
     private GatewayCookieConfiguration gatewayCookieConfiguration;
 
-    private GatewayCookieConfigurationPropertiesProvider()
-    {}
+    private GatewayCookieConfigurationPropertiesProvider() {}
 
     public void initialize(GatewayCookieConfiguration gatewayCookieConfiguration)
     {

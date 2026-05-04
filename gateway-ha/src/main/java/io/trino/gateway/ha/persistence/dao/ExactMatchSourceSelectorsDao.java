@@ -22,12 +22,14 @@ import java.util.List;
 
 public interface ExactMatchSourceSelectorsDao
 {
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM exact_match_source_selectors
             """)
     List<ExactMatchSourceSelectors> findAll();
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO exact_match_source_selectors
             (resource_group_id, update_time, source, environment, query_type)
             VALUES (:resourceGroupId, :updateTime, :source, :environment, :queryType)

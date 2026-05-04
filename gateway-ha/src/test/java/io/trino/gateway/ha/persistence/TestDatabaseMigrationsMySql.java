@@ -27,7 +27,8 @@ final class TestDatabaseMigrationsMySql
     @Override
     protected void createGatewaySchema()
     {
-        String gatewayBackendTable = """
+        String gatewayBackendTable =
+                """
                 CREATE TABLE gateway_backend (
                      name VARCHAR(256) PRIMARY KEY,
                      routing_group VARCHAR (256),
@@ -35,7 +36,8 @@ final class TestDatabaseMigrationsMySql
                      external_url VARCHAR (256),
                      active BOOLEAN
                 );""";
-        String queryHistoryTable = """
+        String queryHistoryTable =
+                """
                 CREATE TABLE query_history (
                      query_id VARCHAR(256) PRIMARY KEY,
                      query_text VARCHAR (256),
@@ -44,13 +46,15 @@ final class TestDatabaseMigrationsMySql
                      user_name VARCHAR(256),
                      source VARCHAR(256)
                 );""";
-        String propertiesTable = """
+        String propertiesTable =
+                """
                 CREATE TABLE resource_groups_global_properties (
                     name VARCHAR(128) NOT NULL PRIMARY KEY,
                     value VARCHAR(512) NULL,
                     CHECK (name in ('cpu_quota_period', 'a_name', 'a_value'))
                 );""";
-        String resourceGroupsTable = """
+        String resourceGroupsTable =
+                """
                 CREATE TABLE resource_groups (
                     resource_group_id BIGINT NOT NULL AUTO_INCREMENT,
                     name VARCHAR(250) NOT NULL,
@@ -68,7 +72,8 @@ final class TestDatabaseMigrationsMySql
                     PRIMARY KEY (resource_group_id),
                     FOREIGN KEY (parent) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE
                 );""";
-        String selectorsTable = """
+        String selectorsTable =
+                """
                 CREATE TABLE selectors (
                      resource_group_id BIGINT NOT NULL,
                      priority BIGINT NOT NULL,
@@ -79,7 +84,8 @@ final class TestDatabaseMigrationsMySql
                      selector_resource_estimate VARCHAR(1024),
                      FOREIGN KEY (resource_group_id) REFERENCES resource_groups (resource_group_id) ON DELETE CASCADE
                 );""";
-        String exactMatchSourceSelectorsTable = """
+        String exactMatchSourceSelectorsTable =
+                """
                 CREATE TABLE exact_match_source_selectors (
                     resource_group_id VARCHAR(256) NOT NULL,
                     update_time DATETIME NOT NULL,

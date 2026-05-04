@@ -22,6 +22,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RestLoginRequest(
         @JsonProperty("username") String username,
-        @JsonProperty("password") String password)
-{
-}
+        @JsonProperty("password") String password) {}

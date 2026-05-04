@@ -24,7 +24,8 @@ public class FormAuthenticator
     private final LbFormAuthManager formAuthManager;
     private final AuthorizationManager authorizationManager;
 
-    public FormAuthenticator(LbFormAuthManager formAuthManager,
+    public FormAuthenticator(
+            LbFormAuthManager formAuthManager,
             AuthorizationManager authorizationManager)
     {
         this.formAuthManager = formAuthManager;

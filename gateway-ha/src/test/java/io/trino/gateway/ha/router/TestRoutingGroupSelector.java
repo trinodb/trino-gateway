@@ -351,12 +351,12 @@ final class TestRoutingGroupSelector
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
                     """
-                            ---
-                            name: "airflow1"
-                            description: "original rule"
-                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
-                            actions:
-                              - "result.put(\\"routingGroup\\", \\"etl\\")\"""");
+                    ---
+                    name: "airflow1"
+                    description: "original rule"
+                    condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                    actions:
+                    - "result.put(\\"routingGroup\\", \\"etl\\")\"""");
         }
 
         Duration refreshPeriod = new Duration(1, MILLISECONDS);
@@ -374,12 +374,12 @@ final class TestRoutingGroupSelector
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
             writer.write(
                     """
-                            ---
-                            name: "airflow2"
-                            description: "updated rule"
-                            condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
-                            actions:
-                              - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
+                    ---
+                    name: "airflow2"
+                    description: "updated rule"
+                    condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                    actions:
+                    - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
         }
         Thread.sleep(2 * refreshPeriod.toMillis());
 
@@ -394,74 +394,90 @@ final class TestRoutingGroupSelector
     private Stream<Arguments> provideTableExtractionQueries()
     {
         return Stream.of(
-                Arguments.of("ALTER TABLE cat.schem.tbl ADD COLUMN extraInfo VARCHAR WITH (nullable = true, encoding = 'plain')",
+                Arguments.of(
+                        "ALTER TABLE cat.schem.tbl ADD COLUMN extraInfo VARCHAR WITH (nullable = true, encoding = 'plain')",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("ANALYZE cat.schem.tbl",
+                Arguments.of(
+                        "ANALYZE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
                 Arguments.of("CREATE CATALOG kat USING iceberg", ImmutableSet.of("kat"), ImmutableSet.of(), ImmutableSet.of()),
-                Arguments.of("CREATE MATERIALIZED VIEW cat.mvschem.mv AS SELECT c1, c2 from cat.schem.tbl",
+                Arguments.of(
+                        "CREATE MATERIALIZED VIEW cat.mvschem.mv AS SELECT c1, c2 from cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem", "mvschem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "mvschem", "mv"))),
                 Arguments.of("CREATE SCHEMA kat.schem", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("CREATE SCHEMA schem", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
-                Arguments.of("CREATE TABLE cat.schem.tbl(c1 varchar)",
+                Arguments.of(
+                        "CREATE TABLE cat.schem.tbl(c1 varchar)",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("CREATE VIEW cat.vwschem.vw AS SELECT c1, c2 from cat.schem.tbl",
+                Arguments.of(
+                        "CREATE VIEW cat.vwschem.vw AS SELECT c1, c2 from cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem", "vwschem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "vwschem", "vw"))),
-                Arguments.of("CREATE TABLE cat.schem2.tbl2 AS SELECT c1, c2 from cat.schem.tbl",
+                Arguments.of(
+                        "CREATE TABLE cat.schem2.tbl2 AS SELECT c1, c2 from cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem", "schem2"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "schem2", "tbl2"))),
                 Arguments.of("DROP CATALOG kat", ImmutableSet.of("kat"), ImmutableSet.of(), ImmutableSet.of()),
                 Arguments.of("DROP SCHEMA kat.schem", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("DROP SCHEMA schem", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
-                Arguments.of("DROP TABLE cat.schem.tbl",
+                Arguments.of(
+                        "DROP TABLE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("ALTER MATERIALIZED VIEW cat.mvschem.mv RENAME TO cat.mvschem2.mv2",
+                Arguments.of(
+                        "ALTER MATERIALIZED VIEW cat.mvschem.mv RENAME TO cat.mvschem2.mv2",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("mvschem", "mvschem2"),
                         ImmutableSet.of(QualifiedName.of("cat", "mvschem", "mv"), QualifiedName.of("cat", "mvschem2", "mv2"))),
                 Arguments.of("ALTER SCHEMA kat.schem RENAME TO schem2", ImmutableSet.of("kat"), ImmutableSet.of("schem", "schem2"), ImmutableSet.of()),
-                Arguments.of("ALTER TABLE cat.schem.tbl RENAME TO schem2.tbl2",
+                Arguments.of(
+                        "ALTER TABLE cat.schem.tbl RENAME TO schem2.tbl2",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem", "schem2"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "schem2", "tbl2"))),
-                Arguments.of("ALTER VIEW cat.schem.vw RENAME TO schem2.vw2",
+                Arguments.of(
+                        "ALTER VIEW cat.schem.vw RENAME TO schem2.vw2",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem", "schem2"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"), QualifiedName.of("cat", "schem2", "vw2"))),
-                Arguments.of("ALTER TABLE cat.schem.tbl SET PROPERTIES property_name = 'expression'",
+                Arguments.of(
+                        "ALTER TABLE cat.schem.tbl SET PROPERTIES property_name = 'expression'",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("DESCRIBE cat.schem.tbl",
+                Arguments.of(
+                        "DESCRIBE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("SHOW CREATE SCHEMA cat.schem",
+                Arguments.of(
+                        "SHOW CREATE SCHEMA cat.schem",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of()),
-                Arguments.of("SHOW CREATE SCHEMA schem",
+                Arguments.of(
+                        "SHOW CREATE SCHEMA schem",
                         ImmutableSet.of(DEFAULT_CATALOG),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of()),
-                Arguments.of("SHOW CREATE TABLE cat.schem.tbl",
+                Arguments.of(
+                        "SHOW CREATE TABLE cat.schem.tbl",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("SHOW CREATE VIEW cat.schem.vw",
+                Arguments.of(
+                        "SHOW CREATE VIEW cat.schem.vw",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"))),
@@ -471,19 +487,23 @@ final class TestRoutingGroupSelector
                 Arguments.of("SHOW TABLES", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of(DEFAULT_SCHEMA), ImmutableSet.of()),
                 Arguments.of("ALTER SCHEMA kat.schem SET AUTHORIZATION will", ImmutableSet.of("kat"), ImmutableSet.of("schem"), ImmutableSet.of()),
                 Arguments.of("ALTER SCHEMA schem SET AUTHORIZATION will", ImmutableSet.of(DEFAULT_CATALOG), ImmutableSet.of("schem"), ImmutableSet.of()),
-                Arguments.of("ALTER TABLE cat.schem.tbl SET AUTHORIZATION will",
+                Arguments.of(
+                        "ALTER TABLE cat.schem.tbl SET AUTHORIZATION will",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))),
-                Arguments.of("ALTER VIEW cat.schem.vw SET AUTHORIZATION will",
+                Arguments.of(
+                        "ALTER VIEW cat.schem.vw SET AUTHORIZATION will",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"))),
-                Arguments.of("SELECT * FROM TABLE(kat.system.funk(arg => 'expr'))",
+                Arguments.of(
+                        "SELECT * FROM TABLE(kat.system.funk(arg => 'expr'))",
                         ImmutableSet.of("kat"),
                         ImmutableSet.of("system"),
                         ImmutableSet.of(QualifiedName.of("kat", "system", "funk"))),
-                Arguments.of("EXECUTE IMMEDIATE 'SELECT * FROM cat.schem.tbl'",
+                Arguments.of(
+                        "EXECUTE IMMEDIATE 'SELECT * FROM cat.schem.tbl'",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"))));
@@ -511,13 +531,14 @@ final class TestRoutingGroupSelector
     void testWithQueryNameExcluded()
             throws IOException
     {
-        String query = """
+        String query =
+                """
                 WITH dos AS (SELECT c1 from cat.schem.tbl1),
                 uno as (SELECT c1 FROM dos)
                 SELECT c1 FROM uno, dos
                 """;
 
-        HttpServletRequest mockRequestNoDefaults  = new QueryRequestMock().query(query)
+        HttpServletRequest mockRequestNoDefaults = new QueryRequestMock().query(query)
                 .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, DEFAULT_CATALOG)
                 .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, DEFAULT_SCHEMA)
                 .requestAnalyzerConfig(requestAnalyzerConfig)
@@ -551,7 +572,7 @@ final class TestRoutingGroupSelector
     {
         String query = Files.readString(Path.of("src/test/resources/wide_select.sql"), UTF_8);
 
-        HttpServletRequest mockRequest  = new QueryRequestMock().query(query)
+        HttpServletRequest mockRequest = new QueryRequestMock().query(query)
                 .requestAnalyzerConfig(requestAnalyzerConfig)
                 .getHttpServletRequest();
 

@@ -78,7 +78,7 @@ abstract class BaseTestQueryHistoryManager
             queryHistoryManager.submitQueryDetail(queryDetail);
         }
 
-        //Add a query from other user
+        // Add a query from other user
         queryDetail.setUser("other-user");
         queryDetail.setQueryId(String.valueOf(System.currentTimeMillis()));
         queryDetail.setCaptureTime(System.currentTimeMillis());

@@ -211,7 +211,8 @@ class TestPathFilter
         HaGatewayConfiguration configuration = new HaGatewayConfiguration();
 
         assertThatThrownBy(() -> {
-            new PathFilter(null,
+            new PathFilter(
+                    null,
                     configuration.getExtraWhitelistPaths());
         }).isInstanceOf(NullPointerException.class);
     }

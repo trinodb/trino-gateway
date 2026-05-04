@@ -25,6 +25,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record QueryGlobalPropertyRequest(
         @JsonProperty("useSchema") String useSchema,
-        @JsonProperty("name") String name)
-{
-}
+        @JsonProperty("name") String name) {}

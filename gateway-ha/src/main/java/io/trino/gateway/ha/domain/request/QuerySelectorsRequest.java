@@ -25,6 +25,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record QuerySelectorsRequest(
         @JsonProperty("useSchema") String useSchema,
-        @JsonProperty("resourceGroupId") Long resourceGroupId)
-{
-}
+        @JsonProperty("resourceGroupId") Long resourceGroupId) {}

@@ -22,18 +22,21 @@ import java.util.List;
 
 public interface SelectorsDao
 {
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM selectors
             """)
     List<Selectors> findAll();
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM selectors
             WHERE resource_group_id = :resourceGroupId
             """)
     List<Selectors> findByResourceGroupId(long resourceGroupId);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM selectors
             WHERE
                 resource_group_id = :resourceGroupId
@@ -47,14 +50,16 @@ public interface SelectorsDao
             """)
     Selectors findFirst(@BindBean ResourceGroupsManager.SelectorsDetail selector);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO selectors
             (resource_group_id, priority, user_regex, source_regex, query_type, client_tags, selector_resource_estimate)
             VALUES (:resourceGroupId, :priority, :userRegex, :sourceRegex, :queryType, :clientTags, :selectorResourceEstimate)
             """)
     void insert(@BindBean ResourceGroupsManager.SelectorsDetail selector);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             UPDATE selectors
             SET
                 resource_group_id = :updatedSelector.resourceGroupId,
@@ -77,7 +82,8 @@ public interface SelectorsDao
             @BindBean("selector") ResourceGroupsManager.SelectorsDetail selector,
             @BindBean("updatedSelector") ResourceGroupsManager.SelectorsDetail updatedSelector);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             DELETE FROM selectors
             WHERE
                 resource_group_id = :resourceGroupId

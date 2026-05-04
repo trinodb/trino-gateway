@@ -20,38 +20,44 @@ import java.util.List;
 
 public interface ResourceGroupsGlobalPropertiesDao
 {
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM resource_groups_global_properties
             """)
     List<ResourceGroupsGlobalProperties> findAll();
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM resource_groups_global_properties
             WHERE name = :name
             """)
     List<ResourceGroupsGlobalProperties> findByName(String name);
 
-    @SqlQuery("""
+    @SqlQuery(
+            """
             SELECT * FROM resource_groups_global_properties
             WHERE name = :name
             LIMIT 1
             """)
     ResourceGroupsGlobalProperties findFirstByName(String name);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             INSERT INTO resource_groups_global_properties (name, value)
             VALUES (:name, :value)
             """)
     void insert(String name, String value);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             UPDATE resource_groups_global_properties
             SET value = :value
             WHERE name = :name
             """)
     void update(String name, String value);
 
-    @SqlUpdate("""
+    @SqlUpdate(
+            """
             DELETE FROM resource_groups_global_properties
             WHERE name = :name
             """)

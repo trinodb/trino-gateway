@@ -80,8 +80,8 @@ final class TestLbFilter
         Mockito
                 .when(requestContext.getCookies())
                 .thenReturn(
-                        Map.of(SessionCookie.OAUTH_ID_TOKEN,
-                                new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
+                        Map.of(
+                                SessionCookie.OAUTH_ID_TOKEN, new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
         Mockito
                 .when(requestContext.getHeaders())
                 .thenReturn(new MultivaluedHashMap());
