@@ -22,8 +22,9 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    private Integer maxPoolSize;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
+    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled, Integer maxPoolSize)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
@@ -32,6 +33,7 @@ public class DataStoreConfiguration
         this.queryHistoryEnabled = queryHistoryEnabled;
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
         this.runMigrationsEnabled = runMigrationsEnabled;
+        this.maxPoolSize = maxPoolSize;
     }
 
     public DataStoreConfiguration() {}
@@ -104,5 +106,15 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public Integer getMaxPoolSize()
+    {
+        return maxPoolSize;
+    }
+
+    public void setMaxPoolSize(Integer maxPoolSize)
+    {
+        this.maxPoolSize = maxPoolSize;
     }
 }
