@@ -489,13 +489,49 @@ final class TestTrinoQueryProperties
         assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
     }
 
+    @Test
+    void testQueryParsingWhenContentTypeHasNoCharset()
+            throws IOException
+    {
+        String query = "SELECT * FROM mycatalog.myschema.mytable";
+        ContainerRequestContext mockRequest = prepareMockRequest(query, MediaType.valueOf("application/json"));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        // Trino HTTP clients commonly omit the charset parameter; treat the body as UTF-8 so routing rules still see the parsed query.
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("mycatalog");
+        assertThat(trinoQueryProperties.getSchemas()).containsExactly("myschema");
+        assertThat(trinoQueryProperties.getTables()).hasSize(1);
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
+    @Test
+    void testQueryParsingSkippedForNonUtf8Charset()
+            throws IOException
+    {
+        String query = "SELECT * FROM mycatalog.myschema.mytable";
+        ContainerRequestContext mockRequest = prepareMockRequest(query, MediaType.valueOf("application/json; charset=ISO-8859-1"));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        // An explicit non-UTF-8 charset is still skipped, since the body bytes cannot be safely decoded as UTF-8.
+        assertThat(trinoQueryProperties.getBody()).isEmpty();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getSchemas()).isEmpty();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+    }
+
     private ContainerRequestContext prepareMockRequest(String query)
+    {
+        return prepareMockRequest(query, MediaType.valueOf("application/json; charset=UTF-8"));
+    }
+
+    private ContainerRequestContext prepareMockRequest(String query, MediaType mediaType)
     {
         ContainerRequestContext mockRequest = mock(ContainerRequestContext.class);
         when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
         when(mockRequest.hasEntity()).thenReturn(true);
 
-        MediaType mediaType = MediaType.valueOf("application/json; charset=UTF-8");
         when(mockRequest.getMediaType()).thenReturn(mediaType);
 
         InputStream entityStream = new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8));
