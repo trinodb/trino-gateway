@@ -15,8 +15,12 @@ package io.trino.gateway.ha.resource;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.audit.AuditContext;
+import io.trino.gateway.ha.audit.AuditLogDispatcher;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.AdminProxyBackendConfiguration;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
@@ -42,6 +46,7 @@ import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.ResourceGroupsManager;
 import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -70,6 +75,7 @@ import static java.util.Objects.requireNonNullElse;
 @Path("/webapp")
 public class GatewayWebAppResource
 {
+    private static final Logger log = Logger.get(GatewayWebAppResource.class);
     private static final LocalDateTime START_TIME = LocalDateTime.now(ZoneId.systemDefault());
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
@@ -81,6 +87,7 @@ public class GatewayWebAppResource
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
+    private final AuditLogDispatcher auditLogger;
 
     @Inject
     public GatewayWebAppResource(
@@ -89,7 +96,8 @@ public class GatewayWebAppResource
             BackendStateManager backendStateManager,
             ResourceGroupsManager resourceGroupsManager,
             RoutingRulesManager routingRulesManager,
-            HaGatewayConfiguration configuration)
+            HaGatewayConfiguration configuration,
+            AuditLogDispatcher auditLogger)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
@@ -100,6 +108,7 @@ public class GatewayWebAppResource
         RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
         isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
         ruleType = routingRules.getRulesType();
+        this.auditLogger = requireNonNull(auditLogger, "auditLogger is null");
     }
 
     @POST
@@ -203,10 +212,31 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/saveBackend")
-    public Response saveBackend(ProxyBackendConfiguration backend)
+    public Response saveBackend(
+            AdminProxyBackendConfiguration backend,
+            @Context SecurityContext securityContext,
+            @Context HttpServletRequest httpRequest)
     {
-        ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.addBackend(backend);
-        return Response.ok(Result.ok(proxyBackendConfiguration)).build();
+        boolean success = false;
+        try {
+            ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.addBackend(backend.getProxyBackendConfiguration());
+            success = true;
+            return Response.ok(Result.ok(proxyBackendConfiguration)).build();
+        }
+        catch (Exception e) {
+            log.error(e, "Error while saving backend: %s", backend.getName());
+            return throwError();
+        }
+        finally {
+            auditLogger.logAudit(
+                    securityContext.getUserPrincipal().getName(),
+                    httpRequest.getRemoteAddr(),
+                    backend.getName(),
+                    backend.getAction(),
+                    AuditContext.TRINO_GW_UI,
+                    success,
+                    backend.getComment());
+        }
     }
 
     @POST
@@ -214,10 +244,31 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/updateBackend")
-    public Response updateBackend(ProxyBackendConfiguration backend)
+    public Response updateBackend(
+            AdminProxyBackendConfiguration backend,
+            @Context SecurityContext securityContext,
+            @Context HttpServletRequest httpRequest)
     {
-        ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.updateBackend(backend);
-        return Response.ok(Result.ok(proxyBackendConfiguration)).build();
+        boolean success = false;
+        try {
+            ProxyBackendConfiguration proxyBackendConfiguration = gatewayBackendManager.updateBackend(backend.getProxyBackendConfiguration());
+            success = true;
+            return Response.ok(Result.ok(proxyBackendConfiguration)).build();
+        }
+        catch (Exception e) {
+            log.error(e, "Error while updating backend: %s", backend.getName());
+            return throwError();
+        }
+        finally {
+            auditLogger.logAudit(
+                    securityContext.getUserPrincipal().getName(),
+                    httpRequest.getRemoteAddr(),
+                    backend.getName(),
+                    backend.getAction(),
+                    AuditContext.TRINO_GW_UI,
+                    success,
+                    backend.getComment());
+        }
     }
 
     @POST
@@ -225,10 +276,31 @@ public class GatewayWebAppResource
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/deleteBackend")
-    public Response deleteBackend(ProxyBackendConfiguration backend)
+    public Response deleteBackend(
+            AdminProxyBackendConfiguration backend,
+            @Context SecurityContext securityContext,
+            @Context HttpServletRequest httpRequest)
     {
-        ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
-        return Response.ok(Result.ok(true)).build();
+        boolean success = false;
+        try {
+            ((HaGatewayManager) gatewayBackendManager).deleteBackend(backend.getName());
+            success = true;
+            return Response.ok(Result.ok(true)).build();
+        }
+        catch (Exception e) {
+            log.error(e, "Error while deleting backend: %s", backend.getName());
+            return throwError();
+        }
+        finally {
+            auditLogger.logAudit(
+                    securityContext.getUserPrincipal().getName(),
+                    httpRequest.getRemoteAddr(),
+                    backend.getName(),
+                    backend.getAction(),
+                    AuditContext.TRINO_GW_UI,
+                    success,
+                    backend.getComment());
+        }
     }
 
     @POST
@@ -488,5 +560,13 @@ public class GatewayWebAppResource
     public Response getUIConfiguration()
     {
         return Response.ok(Result.ok(uiConfiguration)).build();
+    }
+
+    private Response throwError()
+    {
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            .entity(Result.fail("Unsuccessful."))
+            .type(MediaType.APPLICATION_JSON)
+            .build();
     }
 }

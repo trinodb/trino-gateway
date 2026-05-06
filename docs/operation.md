@@ -16,6 +16,7 @@ Existing cluster information can also be modified using the edit button.
 
 ![trino.gateway.io/entity](./assets/trinogateway_cluster_page.png)
 
+**Note:** When adding or modifying a backend through the UI, a comment is required. Please provide a meaningful comment describing the reason for the change.
 
 ## Graceful shutdown
 
@@ -81,6 +82,12 @@ taking a long time for garbage collection.
 completed initialization and is ready to serve requests. This means the initial
 connection to the database and the first round of health check on Trino clusters
 are completed. Otherwise, status code 503 is returned.
+
+## Audit logging
+
+Trino Gateway provides the AuditLogger interface for recording admin backend update events 
+to different pluggable outputs/sinks. Currently, there's implementations for logs.info and to 
+a database table.
 
 ## Database cache configuration
 
