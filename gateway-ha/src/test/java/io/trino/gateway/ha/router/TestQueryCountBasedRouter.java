@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -195,6 +196,33 @@ final class TestQueryCountBasedRouter
         clusters.forEach(c -> backendManager.addBackend(createProxyBackendConfiguration(c)));
     }
 
+    private void updateRoutingMetrics(List<String> routingMetrics)
+    {
+        routingConfiguration.setRoutingMetrics(routingMetrics);
+        queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);
+        queryCountBasedRouter.updateClusterStats(clusters);
+    }
+
+    private static ClusterStats copyWithCustomMetrics(ClusterStats clusterStats, Map<String, Integer> customMetrics)
+    {
+        ClusterStats.Builder clusterBuilder = ClusterStats.builder(clusterStats.clusterId());
+        clusterBuilder.proxyTo(clusterStats.proxyTo());
+        clusterBuilder.externalUrl(clusterStats.externalUrl());
+        clusterBuilder.trinoStatus(clusterStats.trinoStatus());
+        clusterBuilder.routingGroup(clusterStats.routingGroup());
+        clusterBuilder.runningQueryCount(clusterStats.runningQueryCount());
+        clusterBuilder.queuedQueryCount(clusterStats.queuedQueryCount());
+        clusterBuilder.numWorkerNodes(clusterStats.numWorkerNodes());
+
+        if (clusterStats.userQueuedCount() != null) {
+            clusterBuilder.userQueuedCount(clusterStats.userQueuedCount());
+        }
+        if (customMetrics != null) {
+            clusterBuilder.customMetrics(customMetrics);
+        }
+        return clusterBuilder.build();
+    }
+
     @Test
     void testUserWithSameNoOfQueuedQueries()
     {
@@ -299,5 +327,80 @@ final class TestQueryCountBasedRouter
 
         assertThat(BACKEND_URL_5).isEqualTo(proxyTo);
         assertThat(BACKEND_URL_UNHEALTHY).isNotEqualTo(proxyTo);
+    }
+
+    @Test
+    void testCustomRoutingMetricHasPriority()
+    {
+        updateRoutingMetrics(List.of("STARTING"));
+
+        clusters = clusters.stream()
+                .map(cluster -> {
+                    if (!"adhoc".equals(cluster.routingGroup())) {
+                        return cluster;
+                    }
+                    if (BACKEND_URL_1.equals(cluster.proxyTo())) {
+                        return copyWithCustomMetrics(cluster, Map.of("STARTING", 100));
+                    }
+                    if (BACKEND_URL_2.equals(cluster.proxyTo())) {
+                        return copyWithCustomMetrics(cluster, Map.of("STARTING", 50));
+                    }
+                    if (BACKEND_URL_3.equals(cluster.proxyTo())) {
+                        return copyWithCustomMetrics(cluster, Map.of("STARTING", 1));
+                    }
+                    return cluster;
+                })
+                .collect(toImmutableList());
+
+        queryCountBasedRouter.updateClusterStats(clusters);
+
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("adhoc", "u3");
+        assertThat(proxyConfig.getProxyTo()).isEqualTo(BACKEND_URL_3);
+    }
+
+    @Test
+    void testCustomRoutingMetricFallsBackToExistingComparisonOnTie()
+    {
+        updateRoutingMetrics(List.of("STARTING"));
+
+        clusters = clusters.stream()
+                .map(cluster -> {
+                    if (!"adhoc".equals(cluster.routingGroup())) {
+                        return cluster;
+                    }
+                    if (BACKEND_URL_1.equals(cluster.proxyTo()) || BACKEND_URL_2.equals(cluster.proxyTo()) || BACKEND_URL_3.equals(cluster.proxyTo())) {
+                        return copyWithCustomMetrics(cluster, Map.of("STARTING", 10));
+                    }
+                    return cluster;
+                })
+                .collect(toImmutableList());
+
+        queryCountBasedRouter.updateClusterStats(clusters);
+
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("adhoc", "u2");
+        assertThat(proxyConfig.getProxyTo()).isEqualTo(BACKEND_URL_2);
+    }
+
+    @Test
+    void testMissingCustomRoutingMetricDefaultsToZero()
+    {
+        updateRoutingMetrics(List.of("FULLY_BLOCKED"));
+
+        clusters = clusters.stream()
+                .map(cluster -> {
+                    if (!"adhoc".equals(cluster.routingGroup())) {
+                        return cluster;
+                    }
+                    if (BACKEND_URL_1.equals(cluster.proxyTo())) {
+                        return copyWithCustomMetrics(cluster, Map.of("FULLY_BLOCKED", 3));
+                    }
+                    return cluster;
+                })
+                .collect(toImmutableList());
+
+        queryCountBasedRouter.updateClusterStats(clusters);
+
+        ProxyBackendConfiguration proxyConfig = queryCountBasedRouter.provideBackendConfiguration("adhoc", "u2");
+        assertThat(proxyConfig.getProxyTo()).isEqualTo(BACKEND_URL_2);
     }
 }

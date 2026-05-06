@@ -81,16 +81,17 @@ public class ClusterStatsJmxMonitor
     {
         try {
             Map<String, Integer> stats = response.attributes().stream()
-                    .filter(attribute -> {
-                        String attributeName = attribute.name();
-                        return "QueuedQueries".equals(attributeName) || "RunningQueries".equals(attributeName);
-                    })
                     .collect(Collectors.toMap(JmxAttribute::name, JmxAttribute::value));
 
             int queuedQueryCount = stats.getOrDefault("QueuedQueries", 0);
             clusterStats.queuedQueryCount(queuedQueryCount);
             int runningQueryCount = stats.getOrDefault("RunningQueries", 0);
             clusterStats.runningQueryCount(runningQueryCount);
+
+            Map<String, Integer> customMetrics = new java.util.HashMap<String, Integer>(stats);
+            customMetrics.remove("QueuedQueries");
+            customMetrics.remove("RunningQueries");
+            clusterStats.customMetrics(customMetrics);
 
             log.debug("Processed QueryManager: QueuedQueries = %d, RunningQueries = %d", queuedQueryCount, runningQueryCount);
         }

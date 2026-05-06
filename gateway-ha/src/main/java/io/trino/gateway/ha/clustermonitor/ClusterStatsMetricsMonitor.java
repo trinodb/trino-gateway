@@ -31,6 +31,8 @@ import io.trino.gateway.ha.security.util.BasicCredentials;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,6 +60,7 @@ public class ClusterStatsMetricsMonitor
     private final String metricsEndpoint;
     private final String runningQueriesMetricName;
     private final String queuedQueriesMetricName;
+    private final List<String> customRoutingMetricNames;
     private final ImmutableSet<String> metricNames;
     private final Map<String, Float> metricMinimumValues;
     private final Map<String, Float> metricMaximumValues;
@@ -78,10 +81,12 @@ public class ClusterStatsMetricsMonitor
         metricsEndpoint = monitorConfiguration.getMetricsEndpoint();
         runningQueriesMetricName = monitorConfiguration.getRunningQueriesMetricName();
         queuedQueriesMetricName = monitorConfiguration.getQueuedQueriesMetricName();
+        customRoutingMetricNames = List.copyOf(monitorConfiguration.getCustomRoutingMetricNames());
         metricMinimumValues = ImmutableMap.copyOf(monitorConfiguration.getMetricMinimumValues());
         metricMaximumValues = ImmutableMap.copyOf(monitorConfiguration.getMetricMaximumValues());
         metricNames = ImmutableSet.<String>builder()
                 .add(runningQueriesMetricName, queuedQueriesMetricName)
+                .addAll(customRoutingMetricNames)
                 .addAll(metricMinimumValues.keySet())
                 .addAll(metricMaximumValues.keySet())
                 .build();
@@ -123,10 +128,15 @@ public class ClusterStatsMetricsMonitor
                 return getUnhealthyStats(backend);
             }
         }
+
+        Map<String, Integer> customRoutingMetrics = new HashMap<String, Integer>();
+        customRoutingMetricNames.forEach(metricName -> customRoutingMetrics.put(metricName, parseMetricValue(metrics, metricName, backend.getName())));
+
         return ClusterStats.builder(backend.getName())
                 .trinoStatus(TrinoStatus.HEALTHY)
-                .runningQueryCount((int) Float.parseFloat(metrics.get(runningQueriesMetricName)))
-                .queuedQueryCount((int) Float.parseFloat(metrics.get(queuedQueriesMetricName)))
+                .runningQueryCount(parseMetricValue(metrics, runningQueriesMetricName, backend.getName()))
+                .queuedQueryCount(parseMetricValue(metrics, queuedQueriesMetricName, backend.getName()))
+                .customMetrics(customRoutingMetrics)
                 .proxyTo(backend.getProxyTo())
                 .externalUrl(backend.getExternalUrl())
                 .routingGroup(backend.getRoutingGroup())
@@ -166,6 +176,23 @@ public class ClusterStatsMetricsMonitor
             log.error(e, "Exception checking %s for health", request.getUri());
         }
         return ImmutableMap.of();
+    }
+
+    private int parseMetricValue(Map<String, String> metrics, String metricName, String clusterName)
+    {
+        String metricValue = metrics.get(metricName);
+        if (metricValue == null) {
+            log.warn("Missing custom routing metric %s for cluster %s; defaulting to 0", metricName, clusterName);
+            return 0;
+        }
+
+        try {
+            return (int) Float.parseFloat(metricValue);
+        }
+        catch (NumberFormatException e) {
+            log.warn(e, "Invalid custom routing metric %s=%s for cluster %s; defaulting to 0", metricName, metricValue, clusterName);
+            return 0;
+        }
     }
 
     private static class MetricsResponseHandler

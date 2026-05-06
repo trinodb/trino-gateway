@@ -28,10 +28,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Objects.requireNonNullElse;
+
 public class QueryCountBasedRouter
         extends BaseRoutingManager
 {
-    private ConcurrentHashMap<String, LocalStats> clusterStats;
+    private final List<String> routingMetrics;
+    private final ConcurrentHashMap<String, LocalStats> clusterStats;
 
     @VisibleForTesting
     synchronized Map<String, LocalStats> clusterStats()
@@ -48,6 +51,7 @@ public class QueryCountBasedRouter
         private String externalUrl;
         private String routingGroup;
         private String clusterId;
+        private Map<String, Integer> customMetrics;
         private Map<String, Integer> userQueuedCount;
 
         LocalStats(ClusterStats stats)
@@ -64,6 +68,12 @@ public class QueryCountBasedRouter
             }
             else {
                 userQueuedCount = new HashMap<String, Integer>();
+            }
+            if (stats.customMetrics() != null) {
+                customMetrics = ImmutableMap.copyOf(stats.customMetrics());
+            }
+            else {
+                customMetrics = ImmutableMap.of();
             }
         }
 
@@ -142,6 +152,11 @@ public class QueryCountBasedRouter
             this.userQueuedCount = userQueuedCount;
         }
 
+        public Map<String, Integer> customMetrics()
+        {
+            return customMetrics;
+        }
+
         ProxyBackendConfiguration backendConfiguration()
         {
             ProxyBackendConfiguration backendConfiguration = new ProxyBackendConfiguration();
@@ -160,11 +175,21 @@ public class QueryCountBasedRouter
             RoutingConfiguration routingConfiguration)
     {
         super(gatewayBackendManager, queryHistoryManager, routingConfiguration);
+        routingMetrics = List.copyOf(requireNonNullElse(routingConfiguration.getRoutingMetrics(), List.of()));
         clusterStats = new ConcurrentHashMap<>();
     }
 
     private int compareStats(LocalStats lhs, LocalStats rhs, String user)
     {
+        for (String metric : routingMetrics) {
+            int customMetricCompare = Integer.compare(
+                    lhs.customMetrics().getOrDefault(metric, 0),
+                    rhs.customMetrics().getOrDefault(metric, 0));
+            if (customMetricCompare != 0) {
+                return customMetricCompare;
+            }
+        }
+
         // First check if the user has any queries queued
         int compareUserQueue = Integer.compare(
                 lhs.userQueuedCount().getOrDefault(user, 0),

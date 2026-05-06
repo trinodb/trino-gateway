@@ -28,7 +28,8 @@ public record ClusterStats(
         String proxyTo,
         String externalUrl,
         String routingGroup,
-        Map<String, Integer> userQueuedCount)
+        Map<String, Integer> userQueuedCount,
+        Map<String, Integer> customMetrics)
 {
     public static Builder builder(String clusterId)
     {
@@ -46,6 +47,7 @@ public record ClusterStats(
         private String externalUrl;
         private String routingGroup;
         private Map<String, Integer> userQueuedCount;
+        private Map<String, Integer> customMetrics = ImmutableMap.of();
 
         private Builder(String clusterId)
         {
@@ -100,6 +102,12 @@ public record ClusterStats(
             return this;
         }
 
+        public Builder customMetrics(Map<String, Integer> customMetrics)
+        {
+            this.customMetrics = ImmutableMap.copyOf(customMetrics);
+            return this;
+        }
+
         public ClusterStats build()
         {
             return new ClusterStats(
@@ -111,7 +119,8 @@ public record ClusterStats(
                     proxyTo,
                     externalUrl,
                     routingGroup,
-                    userQueuedCount);
+                    userQueuedCount,
+                    customMetrics);
         }
     }
 }
