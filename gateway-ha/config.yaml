@@ -7,6 +7,42 @@ serverConfig:
 
 routingRules:
   rulesEngineEnabled: False
+  # rulesType: EXPLAIN
+  # explainRoutingConfiguration:
+  #   defaultRoutingGroup: small
+  #   fallbackRoutingGroup: small
+  #   smallRoutingGroup: small
+  #   largeRoutingGroup: large
+  #   cpuMetricName: trino_cluster_cpu_percent
+  #   memoryMetricName: trino_cluster_memory_percent
+  #   maxSmallClusterCpuPercent: 80
+  #   maxSmallClusterMemoryPercent: 80
+  #   explain:
+  #     endpoint: http://trino-coordinator:8080/v1/statement
+  #     trinoUserEnv: TRINO_ROUTER_USER
+  #     authorizationHeaderEnv: TRINO_ROUTER_AUTH_HEADER
+  #     type: DISTRIBUTED
+  #     format: JSON
+  #     timeoutSeconds: 10
+  #     pollIntervalSeconds: 0.2
+  #     maxPolls: 25
+  #     queryTypes:
+  #       - SELECT
+  #       - INSERT
+  #       - CREATE_TABLE_AS_SELECT
+  #       - MERGE
+  #   metricsThresholds:
+  #     minStageCount: 3
+  #     minNodeCount: 20
+  #     minJoinCount: 2
+  #     minTableScanCount: 3
+  #     minRemoteExchangeCount: 2
+  #     minAggregateCount: 2
+  #     minCpuCost: 1000000
+  #     minMemoryCost: 100000000
+  #     minNetworkCost: 100000000
+  #     minOutputRowCount: 1000000
+  #     minOutputSizeInBytes: 100000000
   # rulesConfigPath: "src/main/resources/rules/routing_rules.yml"
 
 dataStore:

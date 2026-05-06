@@ -23,6 +23,7 @@ package io.trino.gateway.ha.config;
  * <ul>
  *   <li><strong>FILE:</strong> Rules are specified in a configuration file.</li>
  *   <li><strong>EXTERNAL:</strong> Rules are fetched from an external service via an HTTP POST request.</li>
+ *   <li><strong>EXPLAIN:</strong> Rules are computed by running EXPLAIN and comparing expected usage with cluster metrics.</li>
  * </ul>
  */
 public enum RulesType
@@ -37,4 +38,9 @@ public enum RulesType
      * The service URL can implement dynamic rule changes.
      */
     EXTERNAL,
+
+    /**
+     * Routing rules computed internally from EXPLAIN statistics and live cluster metrics.
+     */
+    EXPLAIN,
 }

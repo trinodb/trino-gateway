@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import io.airlift.http.client.HttpClient;
 import io.airlift.units.Duration;
+import io.trino.gateway.ha.config.ExplainRoutingConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
@@ -55,6 +56,15 @@ public interface RoutingGroupSelector
             RequestAnalyzerConfig requestAnalyzerConfig)
     {
         return new ExternalRoutingGroupSelector(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+    }
+
+    /**
+     * Routing group selector that uses EXPLAIN statistics
+     * and cluster metrics to determine the right routing group.
+     */
+    static RoutingGroupSelector byExplainRouting(ExplainRoutingConfiguration explainRoutingConfiguration)
+    {
+        return new ExplainRoutingGroupSelector(explainRoutingConfiguration);
     }
 
     /**

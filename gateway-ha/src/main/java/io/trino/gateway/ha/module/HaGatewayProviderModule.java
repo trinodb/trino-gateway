@@ -43,6 +43,7 @@ import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.ExplainRoutingGroupSelector;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -91,6 +92,8 @@ public class HaGatewayProviderModule
         Multibinder<TrinoClusterStatsObserver> observers = newSetBinder(binder(), TrinoClusterStatsObserver.class);
         observers.addBinding().to(HealthCheckObserver.class).in(Scopes.SINGLETON);
         observers.addBinding().to(ClusterStatsObserver.class).in(Scopes.SINGLETON);
+        binder().bind(ExplainRoutingGroupSelector.class).in(Scopes.SINGLETON);
+        observers.addBinding().to(ExplainRoutingGroupSelector.class).in(Scopes.SINGLETON);
 
         if (configuration.getAuthentication() != null) {
             binder().bind(ContainerRequestFilter.class).to(ChainedAuthFilter.class).in(Scopes.SINGLETON);
@@ -154,7 +157,10 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
-    public static RoutingGroupSelector getRoutingGroupSelector(@ForRouter HttpClient httpClient, HaGatewayConfiguration configuration)
+    public static RoutingGroupSelector getRoutingGroupSelector(
+            @ForRouter HttpClient httpClient,
+            HaGatewayConfiguration configuration,
+            ExplainRoutingGroupSelector explainRoutingGroupSelector)
     {
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
         if (routingRulesConfig.isRulesEngineEnabled()) {
@@ -168,6 +174,7 @@ public class HaGatewayProviderModule
                         RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
                         yield RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
                     }
+                    case EXPLAIN -> explainRoutingGroupSelector;
                 };
             }
             catch (Exception e) {

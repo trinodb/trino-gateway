@@ -23,6 +23,7 @@ public class RoutingRulesConfiguration
     private RulesType rulesType = RulesType.FILE;
     private String rulesConfigPath;
     private RulesExternalConfiguration rulesExternalConfiguration;
+    private ExplainRoutingConfiguration explainRoutingConfiguration = new ExplainRoutingConfiguration();
 
     private Duration rulesRefreshPeriod = new Duration(1, MINUTES);
 
@@ -66,6 +67,16 @@ public class RoutingRulesConfiguration
     public void setRulesExternalConfiguration(RulesExternalConfiguration rulesExternalConfiguration)
     {
         this.rulesExternalConfiguration = rulesExternalConfiguration;
+    }
+
+    public ExplainRoutingConfiguration getExplainRoutingConfiguration()
+    {
+        return explainRoutingConfiguration;
+    }
+
+    public void setExplainRoutingConfiguration(ExplainRoutingConfiguration explainRoutingConfiguration)
+    {
+        this.explainRoutingConfiguration = explainRoutingConfiguration;
     }
 
     public Duration getRulesRefreshPeriod()
