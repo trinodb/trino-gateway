@@ -273,10 +273,10 @@ public class TrinoQueryProperties
 
         String charset = mediaType.getParameters().get("charset");
         if (charset == null) {
-            log.debug("charset is not set in the request");
-            return;
+            // RFC 7231 leaves the default charset to the recipient; Trino's coordinator
+            // decodes statement bodies as UTF-8, and most Trino clients omit the parameter.
+            charset = UTF_8.name();
         }
-
         if (!UTF_8.name().equalsIgnoreCase(charset)) {
             log.debug("Request charset is not UTF-8 (%s), skipping query parsing", charset);
             return;
