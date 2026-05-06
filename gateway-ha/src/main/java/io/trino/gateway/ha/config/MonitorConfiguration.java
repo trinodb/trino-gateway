@@ -16,6 +16,7 @@ package io.trino.gateway.ha.config;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.units.Duration;
 
+import java.util.List;
 import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -38,6 +39,8 @@ public class MonitorConfiguration
     private String runningQueriesMetricName = "trino_execution_name_QueryManager_RunningQueries";
 
     private String queuedQueriesMetricName = "trino_execution_name_QueryManager_QueuedQueries";
+
+    private List<String> customRoutingMetricNames = List.of();
 
     // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor
     private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 1f);
@@ -114,6 +117,16 @@ public class MonitorConfiguration
     public void setQueuedQueriesMetricName(String queuedQueriesMetricName)
     {
         this.queuedQueriesMetricName = queuedQueriesMetricName;
+    }
+
+    public List<String> getCustomRoutingMetricNames()
+    {
+        return customRoutingMetricNames;
+    }
+
+    public void setCustomRoutingMetricNames(List<String> customRoutingMetricNames)
+    {
+        this.customRoutingMetricNames = customRoutingMetricNames == null ? List.of() : List.copyOf(customRoutingMetricNames);
     }
 
     public Map<String, Float> getMetricMinimumValues()

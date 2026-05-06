@@ -30,6 +30,7 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
@@ -47,6 +48,7 @@ public class ClusterStatsJdbcMonitor
             + "FROM runtime.queries "
             + "WHERE user != ? AND date_diff('hour',created,now()) <= 1 "
             + "GROUP BY state";
+    private static final Set<String> DEFAULT_QUERY_STATE_KEYS = Set.of("QUEUED", "RUNNING");
 
     public ClusterStatsJdbcMonitor(BackendStateConfiguration backendStateConfiguration, MonitorConfiguration monitorConfiguration)
     {
@@ -92,12 +94,18 @@ public class ClusterStatsJdbcMonitor
             while (rs.next()) {
                 partialState.put(rs.getString("state"), rs.getInt("count"));
             }
+            Map<String, Integer> customMetrics = new HashMap<String, Integer>();
+            partialState.entrySet().stream()
+                    .filter(entry -> !DEFAULT_QUERY_STATE_KEYS.contains(entry.getKey()))
+                    .forEach(entry -> customMetrics.put(entry.getKey(), entry.getValue()));
+
             return clusterStats
                     // at this point we can set cluster to trinoStatus because otherwise
                     // it wouldn't have gotten worker stats
                     .trinoStatus(TrinoStatus.HEALTHY)
                     .queuedQueryCount(partialState.getOrDefault("QUEUED", 0))
                     .runningQueryCount(partialState.getOrDefault("RUNNING", 0))
+                    .customMetrics(customMetrics)
                     .build();
         }
         catch (TimeoutException e) {

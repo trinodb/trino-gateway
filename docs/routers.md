@@ -19,6 +19,11 @@ the most suitable cluster for each individual user. With is information it
 directs queries to the least loaded cluster for that user, optimizing the 
 likelihood of successful execution.
 
+It also supports optional custom routing metrics. You can configure an ordered
+list of metric names in `routing.routingMetrics` and the router evaluates those
+metrics first (lowest value wins), then falls back to the default user queue,
+cluster queue, and running query comparisons.
+
 ## Adding a routing mechanism
 
 To enhance Trino Gateway's capabilities, you can create and contribute new and
@@ -70,7 +75,22 @@ backendState:
   xForwardedProtoHeader: <false/true>
 
 clusterStatsConfiguration:
-  monitorType: UI_API
+  monitorType: METRICS
+
+monitor:
+  # Existing defaults
+  runningQueriesMetricName: trino_execution_name_QueryManager_RunningQueries
+  queuedQueriesMetricName: trino_execution_name_QueryManager_QueuedQueries
+  # Optional metrics to fetch and expose to QueryCountBasedRouter
+  customRoutingMetricNames:
+    - trino_execution_name_QueryManager_FullyBlockedQueries
+    - trino_execution_name_QueryManager_StartingQueries
+
+routing:
+  # Optional ordered metric priority used by QueryCountBasedRouter
+  routingMetrics:
+    - trino_execution_name_QueryManager_FullyBlockedQueries
+    - trino_execution_name_QueryManager_StartingQueries
 
 modules:
   - io.trino.gateway.ha.module.QueryCountBasedRouterProvider

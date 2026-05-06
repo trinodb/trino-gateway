@@ -71,11 +71,25 @@ public class ClusterStatsHttpMonitor
 
         try {
             HashMap<String, Object> result = OBJECT_MAPPER.readValue(response, new TypeReference<>() {});
-            int activeWorkers = (int) result.get("activeWorkers");
+            int activeWorkers = getIntMetric(result, "activeWorkers");
+            int queuedQueries = getIntMetric(result, "queuedQueries");
+            int runningQueries = getIntMetric(result, "runningQueries");
+            Map<String, Integer> customMetrics = new HashMap<String, Integer>();
+            result.forEach((key, value) -> {
+                if (!(value instanceof Number number)) {
+                    return;
+                }
+                if ("activeWorkers".equals(key) || "queuedQueries".equals(key) || "runningQueries".equals(key)) {
+                    return;
+                }
+                customMetrics.put(key, number.intValue());
+            });
+
             clusterStats
                     .numWorkerNodes(activeWorkers)
-                    .queuedQueryCount((int) result.get("queuedQueries"))
-                    .runningQueryCount((int) result.get("runningQueries"))
+                    .queuedQueryCount(queuedQueries)
+                    .runningQueryCount(runningQueries)
+                    .customMetrics(customMetrics)
                     .trinoStatus(activeWorkers > 0 ? TrinoStatus.HEALTHY : TrinoStatus.UNHEALTHY)
                     .proxyTo(backend.getProxyTo())
                     .externalUrl(backend.getExternalUrl())
@@ -165,5 +179,14 @@ public class ClusterStatsHttpMonitor
             log.warn(e, "Failed to fetch cluster stats");
         }
         return null;
+    }
+
+    private int getIntMetric(Map<String, Object> metrics, String key)
+    {
+        Object value = metrics.get(key);
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
     }
 }

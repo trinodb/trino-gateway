@@ -15,6 +15,8 @@ package io.trino.gateway.ha.config;
 
 import io.airlift.units.Duration;
 
+import java.util.List;
+
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class RoutingConfiguration
@@ -24,6 +26,8 @@ public class RoutingConfiguration
     private boolean forwardedHeadersEnabled = true;
 
     private String defaultRoutingGroup = "adhoc";
+
+    private List<String> routingMetrics = List.of();
 
     public Duration getAsyncTimeout()
     {
@@ -53,5 +57,15 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
+    }
+
+    public List<String> getRoutingMetrics()
+    {
+        return routingMetrics;
+    }
+
+    public void setRoutingMetrics(List<String> routingMetrics)
+    {
+        this.routingMetrics = routingMetrics == null ? List.of() : List.copyOf(routingMetrics);
     }
 }

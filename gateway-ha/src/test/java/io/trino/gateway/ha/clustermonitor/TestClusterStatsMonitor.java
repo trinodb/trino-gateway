@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.trino.TrinoContainer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -160,6 +161,24 @@ final class TestClusterStatsMonitor
                 new JettyHttpClient(new HttpClientConfig()),
                 backendStateConfiguration,
                 new MonitorConfiguration()));
+    }
+
+    @Test
+    void testMetricsMonitorWithCustomRoutingMetrics()
+    {
+        BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();
+        backendStateConfiguration.setUsername("test_user");
+
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setProxyTo("http://localhost:" + trino.getMappedPort(8080));
+        proxyBackend.setName("test_cluster");
+
+        MonitorConfiguration monitorConfiguration = new MonitorConfiguration();
+        monitorConfiguration.setCustomRoutingMetricNames(List.of("trino_execution_name_QueryManager_FullyBlockedQueries"));
+
+        ClusterStatsMonitor monitor = new ClusterStatsMetricsMonitor(new JettyHttpClient(new HttpClientConfig()), backendStateConfiguration, monitorConfiguration);
+        ClusterStats stats = monitor.monitor(proxyBackend);
+        assertThat(stats.customMetrics()).containsKey("trino_execution_name_QueryManager_FullyBlockedQueries");
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)

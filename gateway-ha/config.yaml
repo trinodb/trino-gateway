@@ -23,3 +23,13 @@ clusterStatsConfiguration:
 monitor:
   taskDelay: 1m
   clusterMetricsRegistryRefreshPeriod: 30s
+  # Optional custom metrics to fetch when monitorType is METRICS.
+  # customRoutingMetricNames:
+  #   - trino_execution_name_QueryManager_FullyBlockedQueries
+  #   - trino_execution_name_QueryManager_StartingQueries
+
+routing:
+  # Optional priority list used by QueryCountBasedRouterProvider.
+  # routingMetrics:
+  #   - trino_execution_name_QueryManager_FullyBlockedQueries
+  #   - trino_execution_name_QueryManager_StartingQueries
