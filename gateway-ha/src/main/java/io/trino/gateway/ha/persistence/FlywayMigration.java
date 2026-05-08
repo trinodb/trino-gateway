@@ -53,7 +53,7 @@ public class FlywayMigration
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .load();
-
+        flyway.repair();
         MigrateResult migrations = flyway.migrate();
         log.info("Performed %s migrations", migrations.migrationsExecuted);
     }

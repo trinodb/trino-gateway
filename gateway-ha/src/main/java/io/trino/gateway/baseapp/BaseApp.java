@@ -35,7 +35,6 @@ import io.trino.gateway.ha.resource.GatewayWebAppResource;
 import io.trino.gateway.ha.resource.HaGatewayResource;
 import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
-import io.trino.gateway.ha.resource.TrinoResource;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.RoutingRulesManager;
@@ -176,7 +175,6 @@ public class BaseApp
         jaxrsBinder(binder).bind(HaGatewayResource.class);
         jaxrsBinder(binder).bind(LoginResource.class);
         jaxrsBinder(binder).bind(PublicResource.class);
-        jaxrsBinder(binder).bind(TrinoResource.class);
         jaxrsBinder(binder).bind(WebUIStaticResource.class);
         jaxrsBinder(binder).bind(GatewayHealthCheckResource.class);
     }

@@ -61,7 +61,7 @@ public abstract class BaseTestDatabaseMigrations
     {
         DataStoreConfiguration config = dataStoreConfiguration();
         FlywayMigration.migrate(config);
-        verifyGatewaySchema(0);
+        verifyGatewaySchema();
 
         dropAllTables();
     }
@@ -76,7 +76,7 @@ public abstract class BaseTestDatabaseMigrations
         jdbiHandle.execute(t1Create);
         jdbiHandle.execute(t2Create);
         FlywayMigration.migrate(config);
-        verifyGatewaySchema(0);
+        verifyGatewaySchema();
         String t1Drop = "DROP TABLE t1";
         String t2Drop = "DROP TABLE t2";
         jdbiHandle.execute(t1Drop);
@@ -90,23 +90,16 @@ public abstract class BaseTestDatabaseMigrations
     public void testMigrationWithExistingGatewaySchema()
     {
         createGatewaySchema();
-        // add a row to one of the existing tables before migration
-        jdbi.withHandle(handle ->
-                handle.execute("INSERT INTO resource_groups_global_properties VALUES ('a_name', 'a_value')"));
         DataStoreConfiguration config = dataStoreConfiguration();
         FlywayMigration.migrate(config);
-        verifyGatewaySchema(1);
+        verifyGatewaySchema();
         dropAllTables();
     }
 
-    protected void verifyGatewaySchema(int expectedPropertiesCount)
+    protected void verifyGatewaySchema()
     {
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
         verifyResultSetCount("SELECT query_id FROM query_history", 0);
-        verifyResultSetCount("SELECT name FROM resource_groups_global_properties", expectedPropertiesCount);
-        verifyResultSetCount("SELECT name FROM resource_groups", 0);
-        verifyResultSetCount("SELECT user_regex FROM selectors", 0);
-        verifyResultSetCount("SELECT environment FROM exact_match_source_selectors", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
@@ -120,20 +113,12 @@ public abstract class BaseTestDatabaseMigrations
     {
         String gatewayBackendTable = "DROP TABLE IF EXISTS gateway_backend";
         String queryHistoryTable = "DROP TABLE IF EXISTS query_history";
-        String propertiesTable = "DROP TABLE IF EXISTS resource_groups_global_properties";
-        String resourceGroupsTable = "DROP TABLE IF EXISTS resource_groups";
-        String selectorsTable = "DROP TABLE IF EXISTS selectors";
-        String exactMatchTable = "DROP TABLE IF EXISTS exact_match_source_selectors";
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
         String sql = format("SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'", schema);
-        verifyResultSetCount(sql, 7);
+        verifyResultSetCount(sql, 3);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
-        jdbiHandle.execute(propertiesTable);
-        jdbiHandle.execute(selectorsTable);
-        jdbiHandle.execute(resourceGroupsTable);
-        jdbiHandle.execute(exactMatchTable);
         jdbiHandle.execute(flywayHistoryTable);
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
