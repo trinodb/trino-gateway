@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@douyinfe/semi-icons':
-        specifier: ^2.95.1
-        version: 2.95.1(react@18.2.0)
+        specifier: ^2.96.0
+        version: 2.96.0(react@18.2.0)
       '@douyinfe/semi-icons-lab':
         specifier: ^2.96.0
         version: 2.96.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -220,11 +220,6 @@ packages:
     peerDependencies:
       react: '>=16.0.0'
       react-dom: '>=16.0.0'
-
-  '@douyinfe/semi-icons@2.95.1':
-    resolution: {integrity: sha512-gX4afcDaKvoosbL8zRgnJs831FNabBgnMKLAxNz6ddHp244WGBXbnlCrtrRda3GjQ3AK2WIc1Wj9npGVeqAq7w==}
-    peerDependencies:
-      react: '>=16.0.0'
 
   '@douyinfe/semi-icons@2.96.0':
     resolution: {integrity: sha512-DMacIzTGN+JwWt6IOVOpLbnXSf8x7hkcP/Q3ezhXlX89Csk0lgR7XvN082qbcyeCx4nHDjFbEgFCnrpE7OUPhw==}
@@ -2504,11 +2499,6 @@ snapshots:
     dependencies:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-
-  '@douyinfe/semi-icons@2.95.1(react@18.2.0)':
-    dependencies:
-      classnames: 2.5.1
-      react: 18.2.0
 
   '@douyinfe/semi-icons@2.96.0(react@18.2.0)':
     dependencies:
