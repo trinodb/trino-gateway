@@ -25,9 +25,9 @@ Changes:
   directly.
   ([#656](https://github.com/trinodb/trino-gateway/issues/656))
 * [:warning: Breaking change:](#breaking) Rename routing configuration
-  `addXForwardedHeaders` to `addForwardedHeaders`.
+  `addXForwardedHeaders` to `forwardedHeadersEnabled`.
   ([#1005](https://github.com/trinodb/trino-gateway/pull/1005))
-* Fix HTTP header forwarding when `routing.addForwardedHeaders` is set to
+* Fix HTTP header forwarding when `routing.forwardedHeadersEnabled` is set to
   `false` to properly drop both the modern RFC 7239 `Forwarded` and the legacy
   `X-Forwarded-*` HTTP headers.
   ([#1005](https://github.com/trinodb/trino-gateway/pull/1005))
