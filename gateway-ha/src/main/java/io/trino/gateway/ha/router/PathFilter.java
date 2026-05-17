@@ -29,6 +29,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_INFO_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_NODE_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_SPOOLED_PATH;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -72,6 +73,7 @@ public class PathFilter
     {
         return statementPaths.stream().anyMatch(path::startsWith)
                 || path.startsWith(V1_QUERY_PATH)
+                || path.startsWith(V1_SPOOLED_PATH)
                 || path.startsWith(TRINO_UI_PATH)
                 || path.startsWith(V1_INFO_PATH)
                 || path.startsWith(V1_NODE_PATH)
