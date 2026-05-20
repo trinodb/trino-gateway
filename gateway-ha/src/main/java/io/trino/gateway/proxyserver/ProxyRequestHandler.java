@@ -70,7 +70,6 @@ import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
@@ -226,7 +225,7 @@ public class ProxyRequestHandler
 
     private static String getRemoteTarget(URI remoteUri)
     {
-        return format("%s://%s", remoteUri.getScheme(), remoteUri.getAuthority());
+        return "%s://%s".formatted(remoteUri.getScheme(), remoteUri.getAuthority());
     }
 
     private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie)
@@ -324,7 +323,7 @@ public class ProxyRequestHandler
             }
         }
 
-        requestBuilder.addHeader(VIA, format("%s TrinoGateway", servletRequest.getProtocol()));
+        requestBuilder.addHeader(VIA, "%s TrinoGateway".formatted(servletRequest.getProtocol()));
 
         if (forwardedHeadersEnabled) {
             addForwardedHeaders(servletRequest, requestBuilder);

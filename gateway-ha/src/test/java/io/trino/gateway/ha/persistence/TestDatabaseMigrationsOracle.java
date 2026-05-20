@@ -19,7 +19,6 @@ import org.jdbi.v3.core.Handle;
 import java.util.List;
 
 import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
-import static java.lang.String.format;
 
 final class TestDatabaseMigrationsOracle
         extends BaseTestDatabaseMigrations
@@ -50,7 +49,7 @@ final class TestDatabaseMigrationsOracle
          */
         List<String> tables = ImmutableList.of("gateway_backend", "query_history", "\"flyway_schema_history\"");
         Handle jdbiHandle = jdbi.open();
-        String sql = format("SELECT 1 FROM all_tables WHERE owner = '%s'", schema);
+        String sql = "SELECT 1 FROM all_tables WHERE owner = '%s'".formatted(schema);
         verifyResultSetCount(sql, 3);
         tables.forEach(table -> jdbiHandle.execute("DROP TABLE " + table));
         verifyResultSetCount(sql, 0);

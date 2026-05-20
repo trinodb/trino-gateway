@@ -26,7 +26,6 @@ import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -163,7 +162,7 @@ public class LbFormAuthManager
         for (String role : roles) {
             String value = pagePermissions.get(role);
             if (value == null) {
-                return Collections.emptyList();
+                return List.of();
             }
         }
         return roles.stream()

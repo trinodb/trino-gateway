@@ -50,7 +50,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -171,8 +170,8 @@ public class GatewayWebAppResource
         long totalQueryCount = distributionChart.stream().collect(Collectors.summarizingLong(DistributionResponse.DistributionChart::getQueryCount)).getSum();
         DistributionResponse distributionResponse = new DistributionResponse();
         distributionResponse.setTotalBackendCount(allBackends.size());
-        distributionResponse.setOfflineBackendCount(requireNonNullElse(activeMap.get(false), Collections.emptyList()).size());
-        distributionResponse.setOnlineBackendCount(requireNonNullElse(activeMap.get(true), Collections.emptyList()).size());
+        distributionResponse.setOfflineBackendCount(requireNonNullElse(activeMap.get(false), List.of()).size());
+        distributionResponse.setOnlineBackendCount(requireNonNullElse(activeMap.get(true), List.of()).size());
         distributionResponse.setHealthyBackendCount(statusCounts.getOrDefault(true, 0));
         distributionResponse.setUnhealthyBackendCount(statusCounts.getOrDefault(false, 0));
         distributionResponse.setLineChart(lineChartMap);

@@ -56,7 +56,6 @@ import java.util.Optional;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
-import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -129,7 +128,7 @@ final class TestOIDC
         String clientSecret = "trino_client_secret";
         String tokenEndpointAuthMethod = "client_secret_basic";
         String audience = "trino_client_id";
-        String callbackUrl = format("https://localhost:%s/oidc/callback", ROUTER_PORT);
+        String callbackUrl = "https://localhost:%s/oidc/callback".formatted(ROUTER_PORT);
         GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
                 .withNetwork(network)
                 .dependsOn(hydra)
@@ -223,7 +222,7 @@ final class TestOIDC
     private Request.Builder uiCall()
     {
         return new Request.Builder()
-                .url(format("https://localhost:%s/sso", ROUTER_PORT))
+                .url("https://localhost:%s/sso".formatted(ROUTER_PORT))
                 .post(RequestBody.create("", null));
     }
 

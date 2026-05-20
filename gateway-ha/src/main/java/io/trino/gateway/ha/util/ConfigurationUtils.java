@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.String.format;
 import static java.util.regex.Matcher.quoteReplacement;
 
 public final class ConfigurationUtils
@@ -39,7 +38,7 @@ public final class ConfigurationUtils
             String envName = matcher.group(1);
             String envValue = environment.get(envName);
             if (envValue == null) {
-                throw new IllegalArgumentException(format("Configuration references unset environment variable '%s'", envName));
+                throw new IllegalArgumentException("Configuration references unset environment variable '%s'".formatted(envName));
             }
             matcher.appendReplacement(result, quoteReplacement(envValue));
         }

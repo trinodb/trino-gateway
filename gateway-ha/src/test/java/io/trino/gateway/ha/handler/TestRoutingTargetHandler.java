@@ -136,7 +136,7 @@ class TestRoutingTargetHandler
                 "X-New-Header", "new-value");
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
-                Collections.emptyList(),
+                List.of(),
                 modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -160,7 +160,7 @@ class TestRoutingTargetHandler
                 "Cookie", "new-session");
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
-                Collections.emptyList(),
+                List.of(),
                 modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -181,7 +181,7 @@ class TestRoutingTargetHandler
         // Setup routing group selector response with no header modifications
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
-                Collections.emptyList(),
+                List.of(),
                 ImmutableMap.of());
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -203,7 +203,7 @@ class TestRoutingTargetHandler
                 "X-New-Header", "new-value");
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "test-group",
-                Collections.emptyList(),
+                List.of(),
                 modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
@@ -226,7 +226,7 @@ class TestRoutingTargetHandler
                 "X-Empty-Group-Header", "should-be-set");
         ExternalRouterResponse mockResponse = new ExternalRouterResponse(
                 "",
-                Collections.emptyList(),
+                List.of(),
                 modifiedHeaders);
         when(httpClient.execute(any(), any())).thenReturn(mockResponse);
 
