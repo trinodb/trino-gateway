@@ -46,7 +46,6 @@ import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static io.trino.gateway.ha.util.ConfigurationUtils.replaceEnvironmentVariables;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -175,7 +174,7 @@ public class HaGatewayTestUtils
             throws IOException
     {
         Request getBackendStateRequest = new Request.Builder()
-                .url(format("http://localhost:%s/api/public/backends/%s/state", port, name))
+                .url("http://localhost:%s/api/public/backends/%s/state".formatted(port, name))
                 .get()
                 .build();
 

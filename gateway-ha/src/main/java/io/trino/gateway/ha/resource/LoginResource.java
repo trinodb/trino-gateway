@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -157,7 +156,7 @@ public class LoginResource
             pagePermissions = oauthManager.processPagePermissions(roles);
         }
         else {
-            pagePermissions = Collections.emptyList();
+            pagePermissions = List.of();
         }
         Map<String, Object> resMap = Map.of(
                 "roles", roles,

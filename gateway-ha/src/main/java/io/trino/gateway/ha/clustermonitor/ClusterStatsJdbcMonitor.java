@@ -71,10 +71,9 @@ public class ClusterStatsJdbcMonitor
         String jdbcUrl;
         try {
             URL parsedUrl = URI.create(url).toURL();
-            jdbcUrl = String
-                    .format("jdbc:trino://%s:%s/system",
-                            parsedUrl.getHost(),
-                            parsedUrl.getPort() == -1 ? parsedUrl.getDefaultPort() : parsedUrl.getPort());
+            jdbcUrl = "jdbc:trino://%s:%s/system".formatted(
+                    parsedUrl.getHost(),
+                    parsedUrl.getPort() == -1 ? parsedUrl.getDefaultPort() : parsedUrl.getPort());
             // automatically set ssl config based on url protocol
             properties.setProperty("SSL", String.valueOf(parsedUrl.getProtocol().equals("https")));
         }

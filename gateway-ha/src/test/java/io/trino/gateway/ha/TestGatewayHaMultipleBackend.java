@@ -367,7 +367,7 @@ final class TestGatewayHaMultipleBackend
                 new Request.Builder()
                         .url("http://localhost:" + routerPort + oauthCallbackPath)
                         .post(requestBody)
-                        .addHeader("Cookie", String.format("%s=%s", tamperedCookie.getName(), tamperedCookie.getValue()))
+                        .addHeader("Cookie", "%s=%s".formatted(tamperedCookie.getName(), tamperedCookie.getValue()))
                         .build();
         Response callbackResponse = httpClient.newCall(callbackRequest).execute();
         assertThat(callbackResponse.code()).isEqualTo(500);

@@ -52,7 +52,6 @@ import java.util.List;
 import static com.google.inject.multibindings.OptionalBinder.newOptionalBinder;
 import static io.airlift.http.client.HttpClientBinder.httpClientBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
@@ -75,11 +74,11 @@ public class BaseApp
             // public Module constructor(HaGatewayConfiguration)
             Constructor<?>[] constructors = Class.forName(clazz).getConstructors();
             if (constructors.length != 1) {
-                throw new RuntimeException(format("Failed to load module [%s]. Multiple constructors exist.", clazz));
+                throw new RuntimeException("Failed to load module [%s]. Multiple constructors exist.".formatted(clazz));
             }
             Constructor<?> constructor = constructors[0];
             if (constructor.getParameterCount() != 1) {
-                throw new RuntimeException(format("Failed to load module [%s]. Unsupported constructor.", clazz));
+                throw new RuntimeException("Failed to load module [%s]. Unsupported constructor.".formatted(clazz));
             }
             Object module = constructor.newInstance(configuration);
             return ((Module) module);

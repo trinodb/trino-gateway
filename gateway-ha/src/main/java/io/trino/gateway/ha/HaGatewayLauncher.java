@@ -42,7 +42,6 @@ import java.util.List;
 
 import static io.trino.gateway.baseapp.BaseApp.addModules;
 import static io.trino.gateway.ha.util.ConfigurationUtils.replaceEnvironmentVariables;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElse;
 
 public class HaGatewayLauncher
@@ -101,7 +100,7 @@ public class HaGatewayLauncher
         }
         output.append("\n").append(type).append(":\n\n");
         for (int index = 0; index < messages.size(); index++) {
-            output.append(format("%s) %s\n", index + 1, messages.get(index)));
+            output.append("%s) %s\n".formatted(index + 1, messages.get(index)));
         }
     }
 

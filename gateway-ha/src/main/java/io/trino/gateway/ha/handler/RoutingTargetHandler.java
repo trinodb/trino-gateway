@@ -135,7 +135,7 @@ public class RoutingTargetHandler
         public Enumeration<String> getHeaders(String name)
         {
             if (customHeaders.containsKey(name)) {
-                return Collections.enumeration(Collections.singletonList(customHeaders.get(name)));
+                return Collections.enumeration(List.of(customHeaders.get(name)));
             }
             return super.getHeaders(name);
         }

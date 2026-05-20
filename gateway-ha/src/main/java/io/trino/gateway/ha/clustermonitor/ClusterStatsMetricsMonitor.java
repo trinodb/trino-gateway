@@ -42,7 +42,6 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.ResponseHandlerUtils.propagate;
 import static io.trino.gateway.ha.clustermonitor.MonitorUtils.shouldRetry;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
@@ -196,7 +195,7 @@ public class ClusterStatsMetricsMonitor
                         .collect(toImmutableMap(s -> s.split(" ")[0], s -> s.split(" ")[1]));
                 if (!metrics.keySet().containsAll(requiredKeys)) {
                     throw new UnexpectedResponseException(
-                            format("Request is missing required keys: \n%s\nin response: '%s'", String.join("\n", requiredKeys), responseBody),
+                            "Request is missing required keys: \n%s\nin response: '%s'".formatted(String.join("\n", requiredKeys), responseBody),
                             request,
                             response);
                 }

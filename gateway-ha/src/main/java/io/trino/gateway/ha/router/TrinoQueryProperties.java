@@ -87,7 +87,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.BaseEncoding.base64Url;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static java.lang.Math.toIntExact;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -243,7 +242,7 @@ public class TrinoQueryProperties
             schemaBuilder.addAll(tables.stream().map(q -> q.getParts().get(1)).iterator());
             schemas = schemaBuilder.build();
             catalogSchemaBuilder.addAll(
-                    tables.stream().map(qualifiedName -> format("%s.%s", qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
+                    tables.stream().map(qualifiedName -> "%s.%s".formatted(qualifiedName.getParts().getFirst(), qualifiedName.getParts().get(1))).iterator());
             catalogSchemas = catalogSchemaBuilder.build();
         }
         catch (IOException e) {
@@ -313,7 +312,7 @@ public class TrinoQueryProperties
             for (String preparedStatement : preparedStatementsArray) {
                 String[] nameValue = preparedStatement.split("=");
                 if (nameValue.length != 2) {
-                    throw new RequestParsingException(format("preparedStatement must be formatted as name=value, but is %s", preparedStatement));
+                    throw new RequestParsingException("preparedStatement must be formatted as name=value, but is %s".formatted(preparedStatement));
                 }
                 preparedStatementsMapBuilder.put(URLDecoder.decode(nameValue[0], UTF_8), URLDecoder.decode(decodePreparedStatementFromHeader(nameValue[1]), UTF_8));
             }
@@ -474,8 +473,7 @@ public class TrinoQueryProperties
         if (schemaOptional.isEmpty()) {
             schemaBuilder.add(defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier));
             catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-            catalogSchemaBuilder.add(format(
-                    "%s.%s",
+            catalogSchemaBuilder.add("%s.%s".formatted(
                     defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier),
                     defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier)));
         }
@@ -485,12 +483,12 @@ public class TrinoQueryProperties
                 case 1 -> {
                     schemaBuilder.add(schema.getParts().getFirst());
                     catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-                    catalogSchemaBuilder.add(format("%s.%s", defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), schema.getParts().getFirst()));
+                    catalogSchemaBuilder.add("%s.%s".formatted(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), schema.getParts().getFirst()));
                 }
                 case 2 -> {
                     schemaBuilder.add(schema.getParts().get(1));
                     catalogBuilder.add(schema.getParts().getFirst());
-                    catalogSchemaBuilder.add(format("%s.%s", schema.getParts().getFirst(), schema.getParts().getLast()));
+                    catalogSchemaBuilder.add("%s.%s".formatted(schema.getParts().getFirst(), schema.getParts().getLast()));
                 }
                 default -> log.error("Schema has >2 parts: %s", schema);
             }
@@ -557,7 +555,7 @@ public class TrinoQueryProperties
                 if (!inQuotes) {
                     if (i != start) {
                         log.error("Illegal position for first quote character in table name: %s", name);
-                        throw new ParsingException(format("Illegal position for first quote character in table name: %s", name), new NodeLocation(1, i));
+                        throw new ParsingException("Illegal position for first quote character in table name: %s".formatted(name), new NodeLocation(1, i));
                     }
                     start = start + 1;
                     partQuoted = true;
