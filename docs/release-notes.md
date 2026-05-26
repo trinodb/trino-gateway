@@ -2,6 +2,35 @@
 
 ## 2026
 
+### Trino Gateway 20 (25 Jun 2026) { id="20" }
+
+Artifacts:
+
+* [JAR file gateway-ha-20-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/20/gateway-ha-20-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:20`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/20.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/20.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.20.0`
+
+Changes:
+
+**General**
+
+* Fix runtime Jetty compression failures with the Docker image.
+  ([#1094](https://github.com/trinodb/trino-gateway/pull/1094))
+* Improve security of the `/webapp/findQueryHistory` endpoint.
+  ([#991](https://github.com/trinodb/trino-gateway/issues/991))
+* Prevent silent routing mistakes for `SHOW BRANCHES`, `CREATE`/`DROP BRANCH`,
+  `REFRESH VIEW`, and column `SET`/`DROP DEFAULT` statements.
+  ([#1121](https://github.com/trinodb/trino-gateway/pull/1121))
+
+More details and a list of all merged pull requests are [available in the
+milestone 20
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A20+is%3Aclosed)
+and the [GitHub release section for version
+20](https://github.com/trinodb/trino-gateway/releases/tag/20).
+
 ### Trino Gateway 19 (11 May 2026) { id="19" }
 
 Artifacts:
