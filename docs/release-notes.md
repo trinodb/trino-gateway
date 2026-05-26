@@ -2,6 +2,28 @@
 
 ## 2026
 
+### Trino Gateway 20 (Planned Date) { id="20" }
+
+Artifacts:
+
+* [JAR file gateway-ha-20-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/20/gateway-ha-20-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:20`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/20.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/20.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.20.0`
+
+Changes:
+
+**General**
+
+* Improve security of the `/webapp/findQueryHistory` endpoint.
+  ([#991](https://github.com/trinodb/trino-gateway/issues/991))
+
+**UI**
+
+More details and a list of all merged pull requests are [available in the milestone 20 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A20+is%3Aclosed).
+
 ### Trino Gateway 19 (11 May 2026) { id="19" }
 
 Artifacts:
