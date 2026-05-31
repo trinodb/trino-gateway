@@ -15,8 +15,8 @@ importers:
         specifier: ^2.97.0
         version: 2.97.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@douyinfe/semi-illustrations':
-        specifier: ^2.97.0
-        version: 2.97.0(react@18.2.0)
+        specifier: ^2.99.2
+        version: 2.99.2(react@18.2.0)
       '@douyinfe/semi-ui':
         specifier: ^2.97.0
         version: 2.97.0(@floating-ui/dom@1.7.6)(@tiptap/suggestion@3.19.0(@tiptap/core@3.23.6(@tiptap/pm@3.23.6))(@tiptap/pm@3.23.6))(@types/react-dom@18.2.15)(@types/react@18.2.37)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -228,6 +228,11 @@ packages:
 
   '@douyinfe/semi-illustrations@2.97.0':
     resolution: {integrity: sha512-X5lZ4r3H/8V/KRqKXNKGZq7FCXhIbP5+i6SYbsox2y6P92j4hcJ5wrzuxJDQonbgVSWxWs+sOZb1jPwh5rG5pQ==}
+    peerDependencies:
+      react: '>=16.0.0'
+
+  '@douyinfe/semi-illustrations@2.99.2':
+    resolution: {integrity: sha512-Ozla5vM9+tS5YQVEwO1IogBcxD+GE+NajZB2DIC3dEfxpPb2pyYg12sECbx2hq1jtLQ61CjZGOwWcohCm86Cig==}
     peerDependencies:
       react: '>=16.0.0'
 
@@ -2494,6 +2499,10 @@ snapshots:
       react: 18.2.0
 
   '@douyinfe/semi-illustrations@2.97.0(react@18.2.0)':
+    dependencies:
+      react: 18.2.0
+
+  '@douyinfe/semi-illustrations@2.99.2(react@18.2.0)':
     dependencies:
       react: 18.2.0
 
