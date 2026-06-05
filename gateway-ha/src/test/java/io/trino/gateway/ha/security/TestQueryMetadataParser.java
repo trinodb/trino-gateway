@@ -141,9 +141,13 @@ final class TestQueryMetadataParser
 
         ArgumentCaptor<TrinoQueryProperties> captor = ArgumentCaptor.forClass(TrinoQueryProperties.class);
         verify(requestContext).setProperty(eq(TRINO_QUERY_PROPERTIES), captor.capture());
-        TrinoQueryProperties queryProperties = (TrinoQueryProperties) requestContext.getProperty(TRINO_QUERY_PROPERTIES);
-        assertThat(queryProperties).isEqualTo(null);
+        TrinoQueryProperties queryProperties = captor.getValue();
+        assertThat(queryProperties.getBody()).isEqualTo(query);
+        assertThat(queryProperties.getQueryType()).isEqualTo("Query");
+        assertThat(queryProperties.getResourceGroupQueryType()).isEqualTo("SELECT");
+        assertThat(queryProperties.isQueryParsingSuccessful()).isTrue();
         verify((ContainerRequest) requestContext).bufferEntity();
+        verify(requestContext).getEntityStream();
     }
 
     @Test
@@ -176,8 +180,11 @@ final class TestQueryMetadataParser
         verify((ContainerRequest) requestContext).bufferEntity();
         verify(requestContext).getEntityStream();
 
-        TrinoQueryProperties queryProperties = (TrinoQueryProperties) requestContext.getProperty(TRINO_QUERY_PROPERTIES);
-        assertThat(queryProperties).isEqualTo(null);
+        TrinoQueryProperties queryProperties = captor.getValue();
+        assertThat(queryProperties.getBody()).isEmpty();
+        assertThat(queryProperties.getQueryType()).isEmpty();
+        assertThat(queryProperties.getResourceGroupQueryType()).isEmpty();
+        assertThat(queryProperties.isQueryParsingSuccessful()).isTrue();
     }
 
     @Test

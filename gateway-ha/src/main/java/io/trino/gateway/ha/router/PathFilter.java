@@ -70,7 +70,7 @@ public class PathFilter
      */
     public boolean isPathWhiteListed(String path)
     {
-        return statementPaths.stream().anyMatch(path::startsWith)
+        return isStatementPath(path)
                 || path.startsWith(V1_QUERY_PATH)
                 || path.startsWith(TRINO_UI_PATH)
                 || path.startsWith(V1_INFO_PATH)
@@ -78,5 +78,10 @@ public class PathFilter
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
                 || extraWhitelistPatterns.stream().anyMatch(pattern -> pattern.matcher(path).matches());
+    }
+
+    public boolean isStatementPath(String path)
+    {
+        return statementPaths.stream().anyMatch(path::startsWith);
     }
 }

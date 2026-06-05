@@ -72,11 +72,15 @@ class TestPathFilter
         assertThat(pathFilter.isPathWhiteListed(V1_STATEMENT_PATH)).isTrue();
         assertThat(pathFilter.isPathWhiteListed(V1_STATEMENT_PATH + "/executing")).isTrue();
         assertThat(pathFilter.isPathWhiteListed(V1_STATEMENT_PATH + "/queued")).isTrue();
+        assertThat(pathFilter.isStatementPath(V1_STATEMENT_PATH)).isTrue();
+        assertThat(pathFilter.isStatementPath(V1_STATEMENT_PATH + "/queued")).isTrue();
 
         // Test V2 statement path (from our configuration)
         assertThat(pathFilter.isPathWhiteListed("/v2/statement")).isTrue();
         assertThat(pathFilter.isPathWhiteListed("/v2/statement/query456")).isTrue();
         assertThat(pathFilter.isPathWhiteListed("/v2/statement/batch")).isTrue();
+        assertThat(pathFilter.isStatementPath("/v2/statement")).isTrue();
+        assertThat(pathFilter.isStatementPath("/v2/statement/batch")).isTrue();
     }
 
     @Test
@@ -102,6 +106,8 @@ class TestPathFilter
     void testNonWhitelistedPaths()
     {
         assertThat(pathFilter.isPathWhiteListed("/v3/statement")).isFalse(); // Not in our statement paths
+        assertThat(pathFilter.isStatementPath("/v3/statement")).isFalse(); // Not in our statement paths
+        assertThat(pathFilter.isStatementPath(V1_QUERY_PATH)).isFalse(); // Hardcoded non-statement path
         assertThat(pathFilter.isPathWhiteListed("/api/v2/custom/users")).isFalse(); // Doesn't match v1 pattern
         assertThat(pathFilter.isPathWhiteListed("/status")).isFalse(); // Not health/status
         assertThat(pathFilter.isPathWhiteListed("/metrics/extra")).isFalse(); // metrics is exact match only

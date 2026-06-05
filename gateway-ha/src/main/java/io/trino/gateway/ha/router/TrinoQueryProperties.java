@@ -154,6 +154,11 @@ public class TrinoQueryProperties
 
     public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize)
     {
+        this(requestContext, isClientsUseV2Format, maxBodySize, false);
+    }
+
+    public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize, boolean assumeUtf8WithoutExplicitCharset)
+    {
         requireNonNull(requestContext, "requestContext is null");
         this.isClientsUseV2Format = isClientsUseV2Format;
         this.maxBodySize = maxBodySize;
@@ -162,7 +167,7 @@ public class TrinoQueryProperties
         defaultSchema = Optional.ofNullable(requestContext.getHeaderString(TRINO_SCHEMA_HEADER_NAME));
         if (requestContext.getMethod().equals(HttpMethod.POST)) {
             isNewQuerySubmission = true;
-            processRequestBody(requestContext);
+            processRequestBody(requestContext, assumeUtf8WithoutExplicitCharset);
         }
     }
 
@@ -251,7 +256,7 @@ public class TrinoQueryProperties
         }
     }
 
-    private void processRequestBody(ContainerRequestContext requestContext)
+    private void processRequestBody(ContainerRequestContext requestContext, boolean assumeUtf8WithoutExplicitCharset)
     {
         if (!requestContext.hasEntity()) {
             return;
@@ -259,18 +264,25 @@ public class TrinoQueryProperties
 
         MediaType mediaType = requestContext.getMediaType();
         if (mediaType == null) {
-            return;
+            if (!assumeUtf8WithoutExplicitCharset) {
+                return;
+            }
+            log.debug("Content-Type is not set in the request, assuming UTF-8");
         }
+        else {
+            String charset = mediaType.getParameters().get("charset");
+            if (charset == null) {
+                if (!assumeUtf8WithoutExplicitCharset) {
+                    log.debug("charset is not set in the request");
+                    return;
+                }
+                log.debug("charset is not set in the request, assuming UTF-8");
+            }
 
-        String charset = mediaType.getParameters().get("charset");
-        if (charset == null) {
-            log.debug("charset is not set in the request");
-            return;
-        }
-
-        if (!UTF_8.name().equalsIgnoreCase(charset)) {
-            log.debug("Request charset is not UTF-8 (%s), skipping query parsing", charset);
-            return;
+            if (charset != null && !UTF_8.name().equalsIgnoreCase(charset)) {
+                log.debug("Request charset is not UTF-8 (%s), skipping query parsing", charset);
+                return;
+            }
         }
 
         InputStream entityStream = requestContext.getEntityStream();

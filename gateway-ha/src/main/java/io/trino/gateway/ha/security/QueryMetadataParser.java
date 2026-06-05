@@ -65,6 +65,7 @@ public class QueryMetadataParser
         if (path == null || !isAnalyzeRequest || !pathFilter.isPathWhiteListed(path)) {
             return;
         }
+        boolean isStatementPath = pathFilter.isStatementPath(path);
 
         log.debug("Processing query metadata for path: %s", path);
         // Buffer the entity (aka body of the request) for future reads during request processing
@@ -73,7 +74,7 @@ public class QueryMetadataParser
 
         TrinoQueryProperties queryProps;
         try {
-            queryProps = new TrinoQueryProperties(requestContext, isClientsUseV2Format, maxBodySize);
+            queryProps = new TrinoQueryProperties(requestContext, isClientsUseV2Format, maxBodySize, isStatementPath);
         }
         catch (Exception ex) {
             log.warn(ex, "Failed to parse query properties for query text: [%s]. Error: %s. Using empty properties.",

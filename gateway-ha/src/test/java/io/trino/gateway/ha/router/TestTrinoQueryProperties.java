@@ -482,13 +482,77 @@ final class TestTrinoQueryProperties
         assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
     }
 
+    @Test
+    void testStatementBodyWithoutContentTypeDefaultsToUtf8()
+    {
+        String query = "PREPARE my_query FROM SELECT 1";
+        ContainerRequestContext mockRequest = prepareMockRequest(query, null);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024, true);
+
+        assertThat(trinoQueryProperties.getBody()).isEqualTo(query);
+        assertThat(trinoQueryProperties.getQueryType()).isEqualTo("Prepare");
+        assertThat(trinoQueryProperties.getResourceGroupQueryType()).isEqualTo("DATA_DEFINITION");
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
+    @Test
+    void testStatementBodyWithoutCharsetDefaultsToUtf8()
+    {
+        String query = "DESCRIBE OUTPUT my_query";
+        MediaType mediaType = MediaType.valueOf("text/plain");
+        ContainerRequestContext mockRequest = prepareMockRequest(query, mediaType);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024, true);
+
+        assertThat(trinoQueryProperties.getBody()).isEqualTo(query);
+        assertThat(trinoQueryProperties.getQueryType()).isEqualTo("DescribeOutput");
+        assertThat(trinoQueryProperties.getResourceGroupQueryType()).isEqualTo("DESCRIBE");
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
+    @Test
+    void testStatementBodyWithExplicitNonUtf8CharsetSkipsParsing()
+    {
+        String query = "PREPARE my_query FROM SELECT 1";
+        MediaType mediaType = MediaType.valueOf("text/plain; charset=ISO-8859-1");
+        ContainerRequestContext mockRequest = prepareMockRequest(query, mediaType);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024, true);
+
+        assertThat(trinoQueryProperties.getBody()).isEmpty();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+        assertThat(trinoQueryProperties.getResourceGroupQueryType()).isEmpty();
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
+    @Test
+    void testMissingCharsetSkipsParsingWhenUtf8DefaultIsDisabled()
+    {
+        String query = "PREPARE my_query FROM SELECT 1";
+        MediaType mediaType = MediaType.valueOf("text/plain");
+        ContainerRequestContext mockRequest = prepareMockRequest(query, mediaType);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.getBody()).isEmpty();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+        assertThat(trinoQueryProperties.getResourceGroupQueryType()).isEmpty();
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
     private ContainerRequestContext prepareMockRequest(String query)
+    {
+        MediaType mediaType = MediaType.valueOf("application/json; charset=UTF-8");
+        return prepareMockRequest(query, mediaType);
+    }
+
+    private ContainerRequestContext prepareMockRequest(String query, MediaType mediaType)
     {
         ContainerRequestContext mockRequest = mock(ContainerRequestContext.class);
         when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
         when(mockRequest.hasEntity()).thenReturn(true);
 
-        MediaType mediaType = MediaType.valueOf("application/json; charset=UTF-8");
         when(mockRequest.getMediaType()).thenReturn(mediaType);
 
         InputStream entityStream = new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8));
