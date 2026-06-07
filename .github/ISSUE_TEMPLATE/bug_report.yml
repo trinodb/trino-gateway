@@ -1,0 +1,34 @@
+---
+name: Bug report 🐞
+description: Problems, bugs and issues with Trino Gateway
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        * Verify that the issue is not already reported, looking at the [currently open issues](https://github.com/trinodb/trino-gateway/issues), use the `Filter` field to narrow down your search.
+        * **Possible security vulnerabilities**: STOP here and contact `security@trino.io` instead!
+        * Do **NOT** share any sensitive information like passwords, security tokens, private URLs etc.
+
+  - type: input
+    attributes:
+      label: Trino Gateway version
+      description: Which Trino Gateway version are you using?
+      placeholder: "For example, 14 or a specific commit hash"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Trino version(s)
+      description: Which Trino server version(s) are routed by the gateway?
+      placeholder: "Run `SELECT version();` on a backend Trino cluster"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Please describe the bug
+      description: Describe the problem, minimal steps to reproduce, expected and actual behaviors. If something fails, include the stacktrace. You can include additional files by dragging and dropping them here.
+    validations:
+      required: true

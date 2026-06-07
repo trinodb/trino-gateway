@@ -1,0 +1,7 @@
+contact_links:
+  - name: Slack
+    url: https://trino.io/slack.html
+    about: Ask a question or get help in the #trino-gateway-dev channel on the Trino Slack
+  - name: Documentation
+    url: https://trinodb.github.io/trino-gateway
+    about: Read the Trino Gateway documentation
