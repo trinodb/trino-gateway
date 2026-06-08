@@ -14,7 +14,7 @@ body:
     attributes:
       label: Trino Gateway version
       description: Which Trino Gateway version are you using?
-      placeholder: "For example, 14 or a specific commit hash"
+      placeholder: "For example, 14"
     validations:
       required: true
 
@@ -24,7 +24,7 @@ body:
       description: Which Trino server version(s) are routed by the gateway?
       placeholder: "Run `SELECT version();` on a backend Trino cluster"
     validations:
-      required: false
+      required: true
 
   - type: textarea
     attributes:
