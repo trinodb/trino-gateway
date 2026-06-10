@@ -20,6 +20,9 @@ public class RequestAnalyzerConfig
     private int maxBodySize = 1_000_000;
 
     private boolean isClientsUseV2Format;
+    private String clientCertificateIdentityField = "CN";
+    private String clientCertificateUserMappingPattern;
+    private String clientCertificateUserMappingFile;
     private String tokenUserField = "email";
     private String oauthTokenInfoUrl;
     private boolean isAnalyzeRequest;
@@ -40,6 +43,36 @@ public class RequestAnalyzerConfig
     public String getTokenUserField()
     {
         return tokenUserField;
+    }
+
+    public String getClientCertificateIdentityField()
+    {
+        return clientCertificateIdentityField;
+    }
+
+    public void setClientCertificateIdentityField(String clientCertificateIdentityField)
+    {
+        this.clientCertificateIdentityField = clientCertificateIdentityField;
+    }
+
+    public String getClientCertificateUserMappingPattern()
+    {
+        return clientCertificateUserMappingPattern;
+    }
+
+    public void setClientCertificateUserMappingPattern(String clientCertificateUserMappingPattern)
+    {
+        this.clientCertificateUserMappingPattern = clientCertificateUserMappingPattern;
+    }
+
+    public String getClientCertificateUserMappingFile()
+    {
+        return clientCertificateUserMappingFile;
+    }
+
+    public void setClientCertificateUserMappingFile(String clientCertificateUserMappingFile)
+    {
+        this.clientCertificateUserMappingFile = clientCertificateUserMappingFile;
     }
 
     public void setTokenUserField(String tokenUserField)
