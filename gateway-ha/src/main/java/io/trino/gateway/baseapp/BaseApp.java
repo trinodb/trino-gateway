@@ -35,6 +35,7 @@ import io.trino.gateway.ha.resource.GatewayWebAppResource;
 import io.trino.gateway.ha.resource.HaGatewayResource;
 import io.trino.gateway.ha.resource.LoginResource;
 import io.trino.gateway.ha.resource.PublicResource;
+import io.trino.gateway.ha.router.BackendLifecycleManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.RoutingRulesManager;
@@ -140,6 +141,7 @@ public class BaseApp
                 .setDefault()
                 .to(StochasticRoutingManager.class)
                 .in(Scopes.SINGLETON);
+        binder.bind(BackendLifecycleManager.class).in(Scopes.SINGLETON);
     }
 
     private static void addManagedApps(HaGatewayConfiguration configuration, Binder binder)
