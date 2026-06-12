@@ -24,7 +24,7 @@
         <!-- dependency versions -->
         <dep.flyway.version>12.7.0</dep.flyway.version>
         <dep.mockito.version>5.23.0</dep.mockito.version>
-        <dep.okhttp3.version>5.3.2</dep.okhttp3.version>
+        <dep.okhttp3.version>5.4.0</dep.okhttp3.version>
         <dep.trino.version>481</dep.trino.version>
     </properties>
 
