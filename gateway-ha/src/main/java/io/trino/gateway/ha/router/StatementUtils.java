@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
 import io.trino.sql.tree.AddColumn;
@@ -20,6 +21,7 @@ import io.trino.sql.tree.Analyze;
 import io.trino.sql.tree.Call;
 import io.trino.sql.tree.Comment;
 import io.trino.sql.tree.Commit;
+import io.trino.sql.tree.CreateBranch;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateFunction;
 import io.trino.sql.tree.CreateMaterializedView;
@@ -33,8 +35,10 @@ import io.trino.sql.tree.Delete;
 import io.trino.sql.tree.Deny;
 import io.trino.sql.tree.DescribeInput;
 import io.trino.sql.tree.DescribeOutput;
+import io.trino.sql.tree.DropBranch;
 import io.trino.sql.tree.DropCatalog;
 import io.trino.sql.tree.DropColumn;
+import io.trino.sql.tree.DropDefaultValue;
 import io.trino.sql.tree.DropFunction;
 import io.trino.sql.tree.DropMaterializedView;
 import io.trino.sql.tree.DropNotNullConstraint;
@@ -44,6 +48,7 @@ import io.trino.sql.tree.DropTable;
 import io.trino.sql.tree.DropView;
 import io.trino.sql.tree.Explain;
 import io.trino.sql.tree.ExplainAnalyze;
+import io.trino.sql.tree.FastForwardBranch;
 import io.trino.sql.tree.Grant;
 import io.trino.sql.tree.GrantRoles;
 import io.trino.sql.tree.Insert;
@@ -51,6 +56,7 @@ import io.trino.sql.tree.Merge;
 import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.Query;
 import io.trino.sql.tree.RefreshMaterializedView;
+import io.trino.sql.tree.RefreshView;
 import io.trino.sql.tree.RenameColumn;
 import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
@@ -63,12 +69,14 @@ import io.trino.sql.tree.RevokeRoles;
 import io.trino.sql.tree.Rollback;
 import io.trino.sql.tree.SetAuthorizationStatement;
 import io.trino.sql.tree.SetColumnType;
+import io.trino.sql.tree.SetDefaultValue;
 import io.trino.sql.tree.SetPath;
 import io.trino.sql.tree.SetProperties;
 import io.trino.sql.tree.SetRole;
 import io.trino.sql.tree.SetSession;
 import io.trino.sql.tree.SetSessionAuthorization;
 import io.trino.sql.tree.SetTimeZone;
+import io.trino.sql.tree.ShowBranches;
 import io.trino.sql.tree.ShowCatalogs;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
@@ -88,6 +96,7 @@ import io.trino.sql.tree.Update;
 import io.trino.sql.tree.Use;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.trino.gateway.ha.router.QueryType.ALTER_TABLE_EXECUTE;
@@ -129,6 +138,7 @@ public final class StatementUtils
             .add(basicStatement(ShowSession.class, DESCRIBE))
             .add(basicStatement(ShowStats.class, DESCRIBE))
             .add(basicStatement(ShowTables.class, DESCRIBE))
+            .add(basicStatement(ShowBranches.class, DESCRIBE))
             // Table Procedure
             .add(basicStatement(TableExecute.class, ALTER_TABLE_EXECUTE))
             // DML
@@ -147,6 +157,7 @@ public final class StatementUtils
             .add(basicStatement(CreateMaterializedView.class, DATA_DEFINITION))
             .add(basicStatement(CreateCatalog.class, DATA_DEFINITION))
             .add(basicStatement(CreateFunction.class, DATA_DEFINITION))
+            .add(basicStatement(CreateBranch.class, DATA_DEFINITION))
             .add(basicStatement(CreateRole.class, DATA_DEFINITION))
             .add(basicStatement(CreateSchema.class, DATA_DEFINITION))
             .add(basicStatement(CreateTable.class, DATA_DEFINITION))
@@ -156,12 +167,15 @@ public final class StatementUtils
             .add(basicStatement(DropCatalog.class, DATA_DEFINITION))
             .add(basicStatement(DropColumn.class, DATA_DEFINITION))
             .add(basicStatement(DropFunction.class, DATA_DEFINITION))
+            .add(basicStatement(DropBranch.class, DATA_DEFINITION))
             .add(basicStatement(DropMaterializedView.class, DATA_DEFINITION))
             .add(basicStatement(DropRole.class, DATA_DEFINITION))
             .add(basicStatement(DropSchema.class, DATA_DEFINITION))
             .add(basicStatement(DropTable.class, DATA_DEFINITION))
             .add(basicStatement(DropView.class, DATA_DEFINITION))
             .add(basicStatement(TruncateTable.class, DATA_DEFINITION))
+            .add(basicStatement(FastForwardBranch.class, DATA_DEFINITION))
+            .add(basicStatement(RefreshView.class, DATA_DEFINITION))
             .add(basicStatement(Grant.class, DATA_DEFINITION))
             .add(basicStatement(GrantRoles.class, DATA_DEFINITION))
             .add(basicStatement(Prepare.class, DATA_DEFINITION))
@@ -176,6 +190,8 @@ public final class StatementUtils
             .add(basicStatement(RevokeRoles.class, DATA_DEFINITION))
             .add(basicStatement(Rollback.class, DATA_DEFINITION))
             .add(basicStatement(SetColumnType.class, DATA_DEFINITION))
+            .add(basicStatement(SetDefaultValue.class, DATA_DEFINITION))
+            .add(basicStatement(DropDefaultValue.class, DATA_DEFINITION))
             .add(basicStatement(DropNotNullConstraint.class, DATA_DEFINITION))
             .add(basicStatement(SetPath.class, DATA_DEFINITION))
             .add(basicStatement(SetRole.class, DATA_DEFINITION))
@@ -200,6 +216,12 @@ public final class StatementUtils
         }
         log.warn("Unsupported statement type: %s", statement.getClass());
         return "UNKNOWN";
+    }
+
+    @VisibleForTesting
+    static Set<Class<? extends Statement>> statementsWithKnownQueryType()
+    {
+        return STATEMENT_QUERY_TYPES.keySet();
     }
 
     private static <T extends Statement> StatementTypeInfo<T> basicStatement(Class<T> statementType, QueryType queryType)
