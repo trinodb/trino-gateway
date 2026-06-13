@@ -18,7 +18,8 @@ curl -X POST http://localhost:8080/gateway/backend/modify/add \
  -d '{  "name": "trino-3",
         "proxyTo": "http://localhost:8083",
         "active": true,
-        "routingGroup": "adhoc"
+        "routingGroup": "adhoc",
+        "tags": ["env:prod"]
     }'
 ```
 
@@ -33,7 +34,8 @@ curl -X POST http://localhost:8080/gateway/backend/modify/add \
         "proxyTo": "http://localhost:8083",
         "active": true,
         "routingGroup": "adhoc",
-        "externalUrl": "http://localhost:8084"
+        "externalUrl": "http://localhost:8084",
+        "tags": ["env:prod"]
     }'
 ```
 
@@ -46,7 +48,8 @@ curl -X POST http://localhost:8080/gateway/backend/modify/update \
         "proxyTo": "http://localhost:8083",
         "active": true,
         "routingGroup": "adhoc",
-        "externalUrl": "http://localhost:8084"
+        "externalUrl": "http://localhost:8084",
+        "tags": ["env:prod"]
     }'
 ```
 
@@ -65,7 +68,8 @@ Returns a JSON array of Trino cluster:
         "proxyTo": "http://localhost:8081",
         "active": true,
         "routingGroup": "adhoc",
-        "externalUrl": "http://localhost:8081"
+        "externalUrl": "http://localhost:8081",
+        "tags": ["env:prod"]
     },
     {
         "name": "trino-2",
@@ -79,7 +83,8 @@ Returns a JSON array of Trino cluster:
         "proxyTo": "http://localhost:8083",
         "active": true,
         "routingGroup": "adhoc",
-        "externalUrl": "http://localhost:8084"
+        "externalUrl": "http://localhost:8084",
+        "tags": []
     }
 ]
 ```
@@ -111,7 +116,8 @@ Returns a JSON array of active Trino clusters:
         "proxyTo": "http://localhost:8081",
         "active": true,
         "routingGroup": "adhoc",
-        "externalUrl": "http://localhost:8081"
+        "externalUrl": "http://localhost:8081",
+        "tags": ["env:prod"]
     }
 ]
 ```
