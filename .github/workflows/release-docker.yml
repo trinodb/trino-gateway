@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout source
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Determine version
         id: version
