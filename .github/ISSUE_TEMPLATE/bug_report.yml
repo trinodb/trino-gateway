@@ -29,6 +29,6 @@ body:
   - type: textarea
     attributes:
       label: Please describe the bug
-      description: Describe the problem, minimal steps to reproduce, expected and actual behaviors. If something fails, include the stacktrace. You can include additional files by dragging and dropping them here.
+      description: Describe the problem, minimal steps to reproduce, as well expected and actual behavior. If something fails, include a stacktrace.
     validations:
       required: true
