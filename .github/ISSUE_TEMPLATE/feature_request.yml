@@ -11,6 +11,6 @@ body:
   - type: textarea
     attributes:
       label: Feature Request / Improvement
-      description: Describe the requested feature and explain the use case.
+      description: Describe the requested feature or improvement, and explain the use case.
     validations:
       required: true
