@@ -21,7 +21,7 @@ body:
   - type: input
     attributes:
       label: Trino version(s)
-      description: Which Trino server version(s) are routed by the gateway?
+      description: Which Trino server version(s) are fronted by Trino Gateway?
       placeholder: "Run `SELECT version();` on a backend Trino cluster"
     validations:
       required: true
