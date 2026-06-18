@@ -1,12 +1,11 @@
 name: Feature request
-description: New features with Trino Gateway
+description: New features for Trino Gateway
 type: Feature
 body:
   - type: markdown
     attributes:
       value: |
         * Verify that the feature request is not already reported, looking at the [open and closed issues](https://github.com/trinodb/trino-gateway/issues), use the `Filter` field to narrow down your search.
-        * Do **NOT** share any sensitive information like passwords, security tokens, private URLs etc.
 
   - type: textarea
     attributes:

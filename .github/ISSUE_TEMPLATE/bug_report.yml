@@ -8,7 +8,6 @@ body:
       value: |
         * Verify that the issue is not already reported, looking at the [currently open issues](https://github.com/trinodb/trino-gateway/issues), use the `Filter` field to narrow down your search.
         * **Possible security vulnerabilities**: STOP and contact `security@trino.io` instead!
-        * Do **NOT** share any sensitive information like passwords, security tokens, private URLs etc.
 
   - type: input
     attributes:
