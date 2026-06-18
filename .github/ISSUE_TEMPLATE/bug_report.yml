@@ -1,6 +1,6 @@
 ---
 name: Bug report 🐞
-description: Problems, bugs and issues with Trino Gateway
+description: Problems, bugs, and issues with Trino Gateway
 type: Bug
 body:
   - type: markdown
