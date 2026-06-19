@@ -1,0 +1,15 @@
+name: Feature request
+description: New features for Trino Gateway
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        * Verify that the feature request is not already reported, looking at the [open and closed issues](https://github.com/trinodb/trino-gateway/issues), use the `Filter` field to narrow down your search.
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: Describe the requested feature or improvement, and explain the use case.
+    validations:
+      required: true
