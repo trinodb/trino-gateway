@@ -15,8 +15,8 @@ importers:
         specifier: ^2.99.3
         version: 2.99.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@douyinfe/semi-illustrations':
-        specifier: ^2.99.3
-        version: 2.99.3(react@18.2.0)
+        specifier: ^2.100.0
+        version: 2.100.0(react@18.2.0)
       '@douyinfe/semi-ui':
         specifier: ^2.99.3
         version: 2.99.3(@floating-ui/dom@1.7.6)(@tiptap/suggestion@3.19.0(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@types/react-dom@18.2.15)(@types/react@18.2.37)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -223,6 +223,11 @@ packages:
 
   '@douyinfe/semi-icons@2.99.3':
     resolution: {integrity: sha512-Pm5H3Ua/PDumUCCsnJWwN+znVoKiyFCqag6DJy9/cuF6OOdd1+QUnvi0NHNg6+0fx/LHH088UwKFoOiZRkbaSw==}
+    peerDependencies:
+      react: '>=16.0.0'
+
+  '@douyinfe/semi-illustrations@2.100.0':
+    resolution: {integrity: sha512-SN7plpE328WGBohLHOVpYe6FwWSO6RLS7Xf6LhqEdtarwK52ircr4C/b+OyRqIwcLOzRYMgIoqcWnAQGmowcUw==}
     peerDependencies:
       react: '>=16.0.0'
 
@@ -2493,6 +2498,10 @@ snapshots:
   '@douyinfe/semi-icons@2.99.3(react@18.2.0)':
     dependencies:
       classnames: 2.5.1
+      react: 18.2.0
+
+  '@douyinfe/semi-illustrations@2.100.0(react@18.2.0)':
+    dependencies:
       react: 18.2.0
 
   '@douyinfe/semi-illustrations@2.99.3(react@18.2.0)':
