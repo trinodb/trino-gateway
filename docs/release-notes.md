@@ -44,7 +44,10 @@ Changes:
   ([#1003](https://github.com/trinodb/trino-gateway/pull/1003))
 
 More details and a list of all merged pull requests are [available in the
-milestone 19 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A19+is%3Aclosed).
+milestone 19
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A19+is%3Aclosed)
+and the [GitHub release section for version
+19](https://github.com/trinodb/trino-gateway/releases/tag/19).
 
 ### Trino Gateway 18 (4 Mar 2026) { id="18" }
 
@@ -76,7 +79,10 @@ Changes:
   ([#805](https://github.com/trinodb/trino-gateway/pull/805))
 
 More details and a list of all merged pull requests are [available in the
-milestone 18 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A18+is%3Aclosed).
+milestone 18
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A18+is%3Aclosed)
+and the [GitHub release section for version
+18](https://github.com/trinodb/trino-gateway/releases/tag/18).
 
 ### Trino Gateway 17 (31 Jan 2026) { id="17" }
 
@@ -120,7 +126,10 @@ Changes:
   ([#788](https://github.com/trinodb/trino-gateway/pull/788))
 
 More details and a list of all merged pull requests are [available in the
-milestone 17 list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A17+is%3Aclosed).
+milestone 17
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A17+is%3Aclosed)
+and the [GitHub release section for version
+17](https://github.com/trinodb/trino-gateway/releases/tag/17).
 
 ## 2025
 
