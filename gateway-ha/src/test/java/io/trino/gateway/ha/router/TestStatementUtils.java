@@ -25,7 +25,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.Comparator;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static io.trino.gateway.ha.router.StatementUtils.getResourceGroupQueryType;
@@ -103,10 +105,22 @@ final class TestStatementUtils
         Set<Class<?>> unmapped = discovered.stream()
                 .filter(clazz -> !StatementUtils.statementsWithKnownQueryType().contains(clazz))
                 .filter(clazz -> !UNMAPPED_BY_DESIGN.contains(clazz))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(Class::getName))));
 
         assertThat(unmapped)
-                .as("Statement types missing from StatementUtils.STATEMENT_QUERY_TYPES (add them, or to UNMAPPED_BY_DESIGN if intentionally special-cased)")
+                .as(
+                        """
+                        io.trino.gateway.ha.router.StatementUtils is a hand-maintained copy of io.trino.util.StatementUtils, \
+                        kept in sync manually against dep.trino.version in gateway-ha/pom.xml. The Statement types below exist \
+                        in io.trino.sql.tree but StatementUtils doesn't classify them, so getResourceGroupQueryType() returns \
+                        "UNKNOWN" and routing rules matching on query type (e.g. "DATA_DEFINITION") silently miss them.
+
+                        This usually means dep.trino.version was bumped and Trino added new statements. For each type, copy the \
+                        query type from upstream io.trino.util.StatementUtils into StatementUtils.STATEMENT_QUERY_TYPES, or add \
+                        it to UNMAPPED_BY_DESIGN if it's intentionally special-cased.
+
+                        Unmapped types: %s""",
+                        unmapped)
                 .isEmpty();
     }
 
