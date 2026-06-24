@@ -15,20 +15,38 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.ClassPath;
 import io.airlift.json.JsonCodec;
+import io.trino.sql.parser.SqlParser;
+import io.trino.sql.tree.Call;
+import io.trino.sql.tree.DropFunction;
 import io.trino.sql.tree.QualifiedName;
+import io.trino.sql.tree.ResetSession;
+import io.trino.sql.tree.SetSession;
+import io.trino.sql.tree.Statement;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
+import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME;
@@ -535,6 +553,162 @@ final class TestTrinoQueryProperties
         assertThat(trinoQueryProperties.getSchemas()).containsExactly("myschema");
         assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("mycatalog", "myschema", "mytable"));
         assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+    }
+
+    // SQL sample for every io.trino.sql.tree statement that names an object (table/view/branch/schema) via a
+    // bare QualifiedName field — the kind visitNode()'s child recursion never reaches, so each needs an
+    // explicit switch case. This list is the single source of truth: testObjectNameStatementExtractsItsObject
+    // runs each sample through extraction (so removing a switch case fails), and the drift guard
+    // testEveryObjectNameStatementIsExtracted fails when a Trino upgrade adds a QualifiedName-bearing
+    // statement missing from it. Samples are fully qualified (c.s.t / c.s) so no request header defaults
+    // are needed.
+    private static final List<String> OBJECT_NAME_STATEMENT_SAMPLES = ImmutableList.<String>builder()
+            .add("ALTER TABLE c.s.t ADD COLUMN x bigint")                       // AddColumn
+            .add("ANALYZE c.s.t")                                              // Analyze
+            .add("COMMENT ON TABLE c.s.t IS 'x'")                              // Comment
+            .add("CREATE BRANCH b IN TABLE c.s.t")                            // CreateBranch
+            .add("CREATE MATERIALIZED VIEW c.s.t AS SELECT 1 x")             // CreateMaterializedView
+            .add("CREATE SCHEMA c.s")                                         // CreateSchema
+            .add("CREATE TABLE c.s.t (x bigint)")                            // CreateTable
+            .add("CREATE TABLE c.s.t AS SELECT 1 x")                         // CreateTableAsSelect
+            .add("CREATE VIEW c.s.t AS SELECT 1 x")                          // CreateView
+            .add("DROP BRANCH b IN TABLE c.s.t")                             // DropBranch
+            .add("ALTER TABLE c.s.t DROP COLUMN x")                          // DropColumn
+            .add("ALTER TABLE c.s.t ALTER COLUMN x DROP DEFAULT")            // DropDefaultValue
+            .add("DROP MATERIALIZED VIEW c.s.t")                            // DropMaterializedView
+            .add("ALTER TABLE c.s.t ALTER COLUMN x DROP NOT NULL")          // DropNotNullConstraint
+            .add("DROP SCHEMA c.s")                                         // DropSchema
+            .add("DROP TABLE c.s.t")                                        // DropTable
+            .add("DROP VIEW c.s.t")                                         // DropView
+            .add("ALTER BRANCH fb IN TABLE c.s.t FAST FORWARD TO tb")       // FastForwardBranch
+            .add("INSERT INTO c.s.t VALUES (1)")                            // Insert
+            .add("REFRESH MATERIALIZED VIEW c.s.t")                         // RefreshMaterializedView
+            .add("ALTER VIEW c.s.t REFRESH")                                // RefreshView
+            .add("ALTER TABLE c.s.t RENAME COLUMN a TO b")                  // RenameColumn
+            .add("ALTER MATERIALIZED VIEW c.s.t RENAME TO c.s.t2")          // RenameMaterializedView
+            .add("ALTER SCHEMA c.s RENAME TO s2")                           // RenameSchema
+            .add("ALTER TABLE c.s.t RENAME TO c.s.t2")                      // RenameTable
+            .add("ALTER VIEW c.s.t RENAME TO c.s.t2")                       // RenameView
+            .add("ALTER TABLE c.s.t SET AUTHORIZATION u")                   // SetAuthorizationStatement
+            .add("ALTER TABLE c.s.t ALTER COLUMN a SET DATA TYPE bigint")   // SetColumnType
+            .add("ALTER TABLE c.s.t ALTER COLUMN a SET DEFAULT 1")          // SetDefaultValue
+            .add("ALTER TABLE c.s.t SET PROPERTIES x = 1")                  // SetProperties
+            .add("SHOW BRANCHES FROM TABLE c.s.t")                          // ShowBranches
+            .add("SHOW COLUMNS FROM c.s.t")                                 // ShowColumns
+            .add("SHOW CREATE TABLE c.s.t")                                 // ShowCreate
+            .add("TRUNCATE TABLE c.s.t")                                    // TruncateTable
+            .build();
+
+    // QualifiedName-bearing statements whose name is not a routable table/catalog/schema object:
+    // Call (procedure), DropFunction (routine), SET/RESET SESSION (session property path).
+    private static final Set<Class<? extends Statement>> QUALIFIED_NAME_NOT_AN_OBJECT =
+            ImmutableSet.<Class<? extends Statement>>builder()
+                    .add(Call.class)
+                    .add(DropFunction.class)
+                    .add(ResetSession.class)
+                    .add(SetSession.class)
+                    .build();
+
+    private static final SqlParser SQL_PARSER = new SqlParser();
+
+    static Stream<String> objectNameStatementSamples()
+    {
+        return OBJECT_NAME_STATEMENT_SAMPLES.stream();
+    }
+
+    // Behavioral check: each sampled statement must actually expose its object to routing. Because the
+    // assertion runs the statement through extraction, removing or breaking its visitNode() case fails here
+    // (a parallel hand-maintained set would not).
+    @ParameterizedTest
+    @MethodSource("objectNameStatementSamples")
+    void testObjectNameStatementExtractsItsObject(@Language("sql") String sql)
+    {
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(sql), false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).as(sql).isTrue();
+        boolean extractedItsObject = properties.getTables().contains(QualifiedName.of("c", "s", "t"))
+                || properties.getSchemas().contains("s");
+        assertThat(extractedItsObject)
+                .as("'%s' did not expose its object to routing; visitNode() is likely missing this statement's case", sql)
+                .isTrue();
+    }
+
+    // Drift guard: discover every concrete Statement that carries a bare QualifiedName and fail if one is
+    // neither sampled (and therefore extracted) above nor explicitly excluded. This catches a Trino upgrade
+    // that adds a QualifiedName-bearing statement before it can silently misroute.
+    @Test
+    void testEveryObjectNameStatementIsExtracted()
+            throws IOException
+    {
+        Set<Class<? extends Statement>> sampledStatements = OBJECT_NAME_STATEMENT_SAMPLES.stream()
+                .map(sql -> SQL_PARSER.createStatement(sql).getClass())
+                .collect(Collectors.toSet());
+
+        Set<Class<?>> withQualifiedNameGetter = ClassPath.from(Statement.class.getClassLoader())
+                .getTopLevelClasses("io.trino.sql.tree").stream()
+                .map(ClassPath.ClassInfo::load)
+                .filter(Statement.class::isAssignableFrom)
+                .filter(clazz -> !Modifier.isAbstract(clazz.getModifiers()))
+                .filter(TestTrinoQueryProperties::hasQualifiedNameGetter)
+                .collect(Collectors.toSet());
+
+        // Fail-open guard: if the classpath scan cannot enumerate the package it returns empty and the check
+        // below would pass vacuously. Requiring it to rediscover every sampled statement proves it ran.
+        assertThat(withQualifiedNameGetter)
+                .as("classpath scan did not enumerate io.trino.sql.tree; the drift guard would pass vacuously")
+                .containsAll(sampledStatements);
+
+        Set<Class<?>> unhandled = withQualifiedNameGetter.stream()
+                .filter(clazz -> !sampledStatements.contains(clazz))
+                .filter(clazz -> !QUALIFIED_NAME_NOT_AN_OBJECT.contains(clazz))
+                .collect(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(Class::getName))));
+
+        assertThat(unhandled)
+                .as(
+                        """
+                        TrinoQueryProperties extracts table/catalog/schema names from each statement so routing rules \
+                        can match on them. The Statement types below expose a QualifiedName but have no visitNode() \
+                        case in TrinoQueryProperties, so their object name is silently dropped and the query can be \
+                        misrouted.
+
+                        This usually means dep.trino.version (gateway-ha/pom.xml) was bumped and Trino added new \
+                        QualifiedName-bearing statements. For each type, add a visitNode() case in TrinoQueryProperties \
+                        plus a sample query to OBJECT_NAME_STATEMENT_SAMPLES, or list it in QUALIFIED_NAME_NOT_AN_OBJECT \
+                        if its QualifiedName is not a routable object.
+
+                        Unextracted types: %s""",
+                        unhandled)
+                .isEmpty();
+    }
+
+    @Test
+    void testCommentOnSinglePartColumnIsExtractedWithoutError()
+    {
+        // The parser accepts a single-part column name; it has no table prefix, so nothing is extracted and
+        // extraction must not throw (it previously built an empty QualifiedName, throwing IllegalArgumentException).
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest("COMMENT ON COLUMN a IS 'x'"), false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getTables()).isEmpty();
+    }
+
+    @Test
+    void testCommentOnColumnExtractsTheColumnsTable()
+    {
+        // COMMENT ON COLUMN a.b targets column b of table a; the table prefix a resolves with header defaults.
+        ContainerRequestContext request = prepareMockRequest("COMMENT ON COLUMN a.b IS 'x'");
+        when(request.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("dc");
+        when(request.getHeaderString(TRINO_SCHEMA_HEADER_NAME)).thenReturn("ds");
+        TrinoQueryProperties properties = new TrinoQueryProperties(request, false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getTables()).containsExactly(QualifiedName.of("dc", "ds", "a"));
+    }
+
+    private static boolean hasQualifiedNameGetter(Class<?> clazz)
+    {
+        return Arrays.stream(clazz.getMethods())
+                .anyMatch(method -> method.getParameterCount() == 0 && method.getReturnType().equals(QualifiedName.class));
     }
 
     private ContainerRequestContext prepareMockRequest(String query)
