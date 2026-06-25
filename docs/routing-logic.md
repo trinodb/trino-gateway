@@ -9,7 +9,9 @@ Trino cluster that dealt with the earlier requests.
 If it is a new request, the Trino Gateway refers to [Routing rules](routing-rules.md) 
 to decide which group of clusters, called a 'Routing Group,' should handle it. 
 It then picks a cluster from that Routing Group to handle the request using 
-either an adaptive or round-robin strategy.
+either an adaptive or round-robin strategy. Only clusters that are currently
+healthy are eligible — see [Cluster configuration and health status](operation.md#cluster-configuration-and-health-status)
+for details on how health status is determined.
 
 ![Request Routing Flow](assets/gateway-routing-flow.svg)
 
