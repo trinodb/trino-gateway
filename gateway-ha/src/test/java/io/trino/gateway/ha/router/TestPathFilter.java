@@ -25,6 +25,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_INFO_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_NODE_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_QUERY_PATH;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_SPOOLED_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -99,6 +100,15 @@ class TestPathFilter
     }
 
     @Test
+    void testSpooledPaths()
+    {
+        // Spooled segment paths must be forwarded to the backend coordinator.
+        assertThat(pathFilter.isPathWhiteListed(V1_SPOOLED_PATH)).isTrue();
+        assertThat(pathFilter.isPathWhiteListed(V1_SPOOLED_PATH + "/ack/k57HZQqycuX7B_5QQnFtvR9yZ6zxt-SyPySruC9HMHI=")).isTrue();
+        assertThat(pathFilter.isPathWhiteListed(V1_SPOOLED_PATH + "/download/BknNfrjG9rI6GsNoAlSOKB9yZ6zxt-SyPySruC9HMHI=")).isTrue();
+    }
+
+    @Test
     void testNonWhitelistedPaths()
     {
         assertThat(pathFilter.isPathWhiteListed("/v3/statement")).isFalse(); // Not in our statement paths
@@ -145,6 +155,8 @@ class TestPathFilter
 
         // Should still allow hardcoded paths
         assertThat(emptyFilter.isPathWhiteListed(V1_QUERY_PATH)).isTrue();
+        assertThat(emptyFilter.isPathWhiteListed(V1_SPOOLED_PATH + "/ack/sometoken")).isTrue();
+        assertThat(emptyFilter.isPathWhiteListed(V1_SPOOLED_PATH + "/download/sometoken")).isTrue();
         assertThat(emptyFilter.isPathWhiteListed(TRINO_UI_PATH)).isTrue();
         assertThat(emptyFilter.isPathWhiteListed(V1_INFO_PATH)).isTrue();
         assertThat(emptyFilter.isPathWhiteListed(OAUTH_PATH)).isTrue();
@@ -199,6 +211,8 @@ class TestPathFilter
         assertThat(filter.isPathWhiteListed(V1_STATEMENT_PATH + "/executing")).isTrue();
         assertThat(filter.isPathWhiteListed(V1_STATEMENT_PATH + "/queued")).isTrue();
         assertThat(filter.isPathWhiteListed(V1_QUERY_PATH)).isTrue();
+        assertThat(filter.isPathWhiteListed(V1_SPOOLED_PATH + "/ack/k57HZQqycuX7B_5QQnFtvR9yZ6zxt-SyPySruC9HMHI=")).isTrue();
+        assertThat(filter.isPathWhiteListed(V1_SPOOLED_PATH + "/download/BknNfrjG9rI6GsNoAlSOKB9yZ6zxt-SyPySruC9HMHI=")).isTrue();
         assertThat(filter.isPathWhiteListed(TRINO_UI_PATH)).isTrue();
         assertThat(filter.isPathWhiteListed(OAUTH_PATH)).isTrue();
 

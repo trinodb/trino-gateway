@@ -17,6 +17,7 @@ public class HttpUtils
 {
     public static final String V1_STATEMENT_PATH = "/v1/statement";
     public static final String V1_QUERY_PATH = "/v1/query";
+    public static final String V1_SPOOLED_PATH = "/v1/spooled";
     public static final String V1_INFO_PATH = "/v1/info";
     public static final String V1_NODE_PATH = "/v1/node";
     public static final String UI_API_STATS_PATH = "/ui/api/stats";
