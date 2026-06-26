@@ -22,7 +22,7 @@
         <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
-        <dep.flyway.version>12.8.1</dep.flyway.version>
+        <dep.flyway.version>12.9.0</dep.flyway.version>
         <dep.mockito.version>5.23.0</dep.mockito.version>
         <dep.okhttp3.version>5.4.0</dep.okhttp3.version>
         <dep.trino.version>482</dep.trino.version>
