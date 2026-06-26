@@ -26,6 +26,8 @@ import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,10 +82,33 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
                     request);
-        }).orElseGet(() -> getRoutingTargetResponse(request));
+        }).orElseGet(() -> getRoutingTargetResponse(queryId, request));
 
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
+    }
+
+    /**
+     * Resolves the routing target when no sticky backend was found for the request.
+     *
+     * <p>A request that carries a query id targets an already-submitted query rather than creating a new one.
+     * Per the graceful-shutdown contract, deactivating a backend only stops <em>new</em> queries from being
+     * routed there; in-flight queries identified by their query id must keep resolving to the cluster that holds
+     * them, even when that cluster has been deactivated. The sticky lookup in {@link #getPreviousCluster} already
+     * searches all backends (including deactivated ones) for such a query, so reaching this method with a query id
+     * present means the query could not be located on any backend. In that case routing should surface a clean
+     * {@code 404 Not Found} instead of falling through to the new-query active-backend selection, which throws
+     * {@code IllegalStateException: Number of active backends found zero} and is reported to the client as an
+     * opaque {@code 500 Internal Server Error}.
+     */
+    private RoutingTargetResponse getRoutingTargetResponse(Optional<String> queryId, HttpServletRequest request)
+    {
+        if (queryId.isPresent()) {
+            throw new WebApplicationException(
+                    "Could not find any backend for query id: " + queryId.get(),
+                    Response.Status.NOT_FOUND);
+        }
+        return getRoutingTargetResponse(request);
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
