@@ -2,6 +2,37 @@
 
 ## 2026
 
+### Trino Gateway 21 (Planned Date) { id="21" }
+
+Artifacts:
+
+* [JAR file gateway-ha-21-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/21/gateway-ha-21-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:21`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/21.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/21.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.21.0`
+
+Changes:
+
+**General**
+
+* Fix parsing of SQL request bodies that omit the charset in the `Content-Type`
+  header.
+  ([#1164](https://github.com/trinodb/trino-gateway/issues/1164))
+* Fix Trino spooling client protocol use by routing spooled-result download and
+  acknowledgement requests to Trino coordinators.
+  ([#1033](https://github.com/trinodb/trino-gateway/issues/1033))
+* Prevent routing to stale or unverified backends by refreshing the backend
+  health state after API requests modify the backend configuration.
+  ([#1029](https://github.com/trinodb/trino-gateway/pull/1029))
+
+More details and a list of all merged pull requests are [available in the
+milestone 21
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A21+is%3Aclosed)
+and the [GitHub release section for version
+21](https://github.com/trinodb/trino-gateway/releases/tag/21).
+
 ### Trino Gateway 20 (25 Jun 2026) { id="20" }
 
 Artifacts:
