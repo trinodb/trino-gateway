@@ -16,6 +16,7 @@ package io.trino.gateway.ha.router;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.json.JsonCodec;
+import io.trino.sql.tree.QualifiedName;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
@@ -519,6 +520,21 @@ final class TestTrinoQueryProperties
         assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
         assertThat(trinoQueryProperties.getSchemas()).isEmpty();
         assertThat(trinoQueryProperties.getTables()).isEmpty();
+    }
+
+    @Test
+    void testWithoutMediaType()
+    {
+        String query = "SELECT * FROM mycatalog.myschema.mytable";
+        ContainerRequestContext mockRequest = prepareMockRequest(query, null);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        // Some Trino clients (e.g. dbt-trino) omit the media type
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("mycatalog");
+        assertThat(trinoQueryProperties.getSchemas()).containsExactly("myschema");
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("mycatalog", "myschema", "mytable"));
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
     }
 
     private ContainerRequestContext prepareMockRequest(String query)
