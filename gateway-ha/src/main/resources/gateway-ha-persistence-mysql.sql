@@ -16,6 +16,13 @@ source VARCHAR(256)
 );
 CREATE INDEX query_history_created_idx ON query_history(created);
 
+CREATE TABLE IF NOT EXISTS oauth2_routing (
+oauth_id VARCHAR(256) PRIMARY KEY,
+backend_url VARCHAR (256),
+created bigint
+);
+CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
+
 CREATE TABLE IF NOT EXISTS resource_groups (
     resource_group_id BIGINT NOT NULL AUTO_INCREMENT,
     name VARCHAR(250) NOT NULL UNIQUE,

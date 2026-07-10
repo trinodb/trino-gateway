@@ -92,4 +92,12 @@ public interface RoutingManager
      * @return the backend configuration for the selected cluster
      */
     ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user);
+
+    /**
+     * Whether {@code backendUrl} currently maps to an active, healthy backend.
+     *
+     * @param backendUrl the backend's proxy-to URL
+     * @return true if a backend with this URL is active and healthy
+     */
+    boolean isBackendActiveAndHealthy(String backendUrl);
 }

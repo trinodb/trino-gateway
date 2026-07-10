@@ -47,10 +47,10 @@ final class TestDatabaseMigrationsOracle
          * For this reason, if you remove the double quotes on flyway_schema_history,
          * you will get a table not found error.
          */
-        List<String> tables = ImmutableList.of("gateway_backend", "query_history", "\"flyway_schema_history\"");
+        List<String> tables = ImmutableList.of("gateway_backend", "query_history", "oauth2_routing", "\"flyway_schema_history\"");
         Handle jdbiHandle = jdbi.open();
         String sql = "SELECT 1 FROM all_tables WHERE owner = '%s'".formatted(schema);
-        verifyResultSetCount(sql, 3);
+        verifyResultSetCount(sql, 4);
         tables.forEach(table -> jdbiHandle.execute("DROP TABLE " + table));
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();

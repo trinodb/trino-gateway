@@ -46,7 +46,9 @@ import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.HaOAuth2RoutingStore;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
+import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -80,6 +82,7 @@ public class HaGatewayProviderModule
         jaxrsBinder(binder()).bind(ResourceSecurityDynamicFeature.class);
         binder().bind(GatewayBackendManager.class).to(HaGatewayManager.class).in(Scopes.SINGLETON);
         binder().bind(QueryHistoryManager.class).to(HaQueryHistoryManager.class).in(Scopes.SINGLETON);
+        binder().bind(OAuth2RoutingStore.class).to(HaOAuth2RoutingStore.class).in(Scopes.SINGLETON);
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
         binder().bind(JdbcConnectionManager.class).in(Scopes.SINGLETON);
         binder().bind(AuthorizationManager.class).in(Scopes.SINGLETON);
