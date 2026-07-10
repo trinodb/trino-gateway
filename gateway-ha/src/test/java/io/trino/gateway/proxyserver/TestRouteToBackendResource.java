@@ -28,6 +28,7 @@ import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -229,6 +230,7 @@ final class TestRouteToBackendResource
             super(unsupportedInterface(HttpClient.class),
                     unsupportedInterface(RoutingManager.class),
                     unsupportedInterface(QueryHistoryManager.class),
+                    unsupportedInterface(OAuth2RoutingStore.class),
                     new HaGatewayConfiguration());
         }
 
@@ -250,6 +252,7 @@ final class TestRouteToBackendResource
         private FixedRoutingTargetHandler(RoutingDestination destination)
         {
             super(unsupportedInterface(RoutingManager.class),
+                    unsupportedInterface(OAuth2RoutingStore.class),
                     (RoutingGroupSelector) _ -> null,
                     new HaGatewayConfiguration());
             this.destination = destination;

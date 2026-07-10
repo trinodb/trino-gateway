@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
 public class DataStoreConfiguration
 {
     private String jdbcUrl;
@@ -22,6 +24,11 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    // How long an OAuth2 pin is kept before the periodic DB cleanup may prune it. Pins only need to
+    // outlive an in-flight handshake (minutes), so an hour is ample. Note this is a lower bound: the
+    // cleanup sweep runs on its own fixed cadence, so a pin can linger until the next sweep after this
+    // period elapses.
+    private Duration oauth2RoutingRetention = Duration.valueOf("1h");
 
     public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
     {
@@ -104,5 +111,15 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public Duration getOauth2RoutingRetention()
+    {
+        return this.oauth2RoutingRetention;
+    }
+
+    public void setOauth2RoutingRetention(String oauth2RoutingRetention)
+    {
+        this.oauth2RoutingRetention = Duration.valueOf(oauth2RoutingRetention);
     }
 }
