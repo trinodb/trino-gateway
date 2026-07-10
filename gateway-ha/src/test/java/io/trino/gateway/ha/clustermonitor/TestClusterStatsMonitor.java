@@ -162,6 +162,54 @@ final class TestClusterStatsMonitor
                 new MonitorConfiguration()));
     }
 
+    @Test
+    void testPingMonitor()
+    {
+        // Trino has no /v1/ping endpoint, so point the ping path at /v1/info which returns 200
+        MonitorConfiguration monitorConfiguration = new MonitorConfiguration();
+        monitorConfiguration.setPingPath("/v1/info");
+        testClusterStatsMonitor(_ -> new ClusterStatsPingMonitor(new JettyHttpClient(new HttpClientConfig()), monitorConfiguration));
+    }
+
+    @Test
+    void testPingMonitorHealthy()
+    {
+        HttpClient client = new TestingHttpClient(_ -> TestingResponse
+                .mockResponse(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, "pong"));
+
+        assertThat(pingMonitorStatus(client)).isEqualTo(TrinoStatus.HEALTHY);
+    }
+
+    @Test
+    void testPingMonitorWithServerError()
+    {
+        HttpClient client = new TestingHttpClient(_ -> TestingResponse
+                .mockResponse(HttpStatus.INTERNAL_SERVER_ERROR, MediaType.PLAIN_TEXT_UTF_8, "Internal Server Error"));
+
+        assertThat(pingMonitorStatus(client)).isEqualTo(TrinoStatus.UNHEALTHY);
+    }
+
+    @Test
+    void testPingMonitorWithNetworkError()
+    {
+        HttpClient client = new TestingHttpClient(_ -> {
+            throw new RuntimeException("Network error");
+        });
+
+        assertThat(pingMonitorStatus(client)).isEqualTo(TrinoStatus.UNHEALTHY);
+    }
+
+    private static TrinoStatus pingMonitorStatus(HttpClient client)
+    {
+        ClusterStatsMonitor monitor = new ClusterStatsPingMonitor(client, new MonitorConfiguration());
+
+        ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
+        proxyBackend.setProxyTo("http://localhost:8080");
+        proxyBackend.setName("test_cluster");
+
+        return monitor.monitor(proxyBackend).trinoStatus();
+    }
+
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
     {
         BackendStateConfiguration backendStateConfiguration = new BackendStateConfiguration();

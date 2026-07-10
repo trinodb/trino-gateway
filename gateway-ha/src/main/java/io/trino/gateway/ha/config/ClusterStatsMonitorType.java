@@ -21,4 +21,5 @@ public enum ClusterStatsMonitorType
     JDBC,
     JMX,
     METRICS,
+    PING,
 }
