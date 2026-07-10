@@ -25,7 +25,19 @@ presetUsers:
     privileges: BAR_BAZ
 
 authentication:
-  defaultTypes: ["form"]
+  defaultTypes: ["oauth", "form"]
+  oauth:
+    issuer: http://localhost:4444/
+    clientId: trino_client_id
+    clientSecret: trino_client_secret
+    tokenEndpoint: http://localhost:4444/oauth2/token
+    authorizationEndpoint: http://localhost:4444/oauth2/auth
+    jwkEndpoint: http://localhost:4444/.well-known/jwks.json
+    redirectUrl: http://localhost:${ENV:REQUEST_ROUTER_PORT}/oidc/callback
+    redirectWebUrl: http://localhost:${ENV:REQUEST_ROUTER_PORT}/
+    userIdField: sub
+    scopes:
+      - openid
   form:
     selfSignKeyPair:
       privateKeyRsa: src/test/resources/auth/test_private_key.pem

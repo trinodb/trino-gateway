@@ -36,8 +36,8 @@ for more details.
 
 The authentication would happen on https protocol only. Add the
 `authentication:` section in the config file. The default authentication type is
-set using `defaultType: "form"` Following types of the authentications are
-supported.
+set using `defaultTypes: ["form"]`. The first authentication type in `defaultTypes` is prioritized and then falls back to following ones.
+Following types of the authentications are supported.
 
 ### OAuth/OpenIDConnect
 
@@ -45,7 +45,7 @@ It can be configured as below
 
 ```yaml
 authentication:
-  defaultType: "oauth"
+  defaultTypes: ["oauth"]
   oauth:
     issuer:
     clientId:
@@ -102,7 +102,7 @@ Also provide a random key pair in RSA format.
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultTypes: ["form"]
   form:
     selfSignKeyPair:
       privateKeyRsa: <private_key_path>
@@ -115,7 +115,7 @@ LDAP requires both random key pair and config path for LDAP
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultTypes: ["form"]
   form:
     ldapConfigPath: <ldap_config_path>
     selfSignKeyPair:
@@ -171,6 +171,30 @@ The LDAP config file should have the following contents:
   poolMinIdle: 0
   poolTestOnBorrow: true
 ```
+
+### Default privileges
+
+By default, a user who doesn't match a preset user, an LDAP group, or an OAuth
+`privilegesField` claim resolves to no privileges and is denied access. Set
+`defaultPrivilege` under `authorization:` to instead give every such user a
+baseline set of privileges. This is especially useful when `oauth` is used as
+(one of) the `defaultTypes` for authentication, since SSO users typically
+aren't individually preset but should still get at least `USER` access after
+logging in.
+
+```yaml
+authorization:
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
+  defaultPrivilege: "USER"
+```
+
+With the configuration above, any authenticated user not otherwise matched
+receives `USER` privileges (view access), while users explicitly listed in
+`presetUsers`, resolved via LDAP, or matched via an OAuth claim keep their own
+configured privileges instead. Omit `defaultPrivilege` (the default) to keep
+the previous behavior of denying access to unrecognized users.
 
 ## Web page permissions
 

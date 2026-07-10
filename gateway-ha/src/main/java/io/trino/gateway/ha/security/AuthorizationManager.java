@@ -26,12 +26,14 @@ public class AuthorizationManager
 {
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
+    private final AuthorizationConfiguration authorizationConfiguration;
 
     @Inject
     public AuthorizationManager(HaGatewayConfiguration config)
     {
         AuthorizationConfiguration authorizationConfig = config.getAuthorization();
         this.presetUsers = config.getPresetUsers();
+        this.authorizationConfiguration = authorizationConfig;
         if (authorizationConfig != null && authorizationConfig.getLdapConfigPath() != null) {
             lbLdapClient = new LbLdapClient(LdapConfiguration.load(authorizationConfig.getLdapConfigPath()));
         }
@@ -52,6 +54,13 @@ public class AuthorizationManager
         else if (lbLdapClient != null) {
             privs = lbLdapClient.getMemberOf(username);
         }
-        return Optional.ofNullable(privs);
+
+        if (privs == null || privs.trim().isEmpty()) {
+            if (authorizationConfiguration != null && authorizationConfiguration.getDefaultPrivilege() != null) {
+                return Optional.of(authorizationConfiguration.getDefaultPrivilege());
+            }
+            return Optional.empty(); // No default privilege if not configured
+        }
+        return Optional.of(privs);
     }
 }

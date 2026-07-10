@@ -55,26 +55,36 @@ public class ChainedAuthFilter
         requireNonNull(authorizer, "authorizer is null");
 
         ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
-        String defaultType = config.getAuthentication().getDefaultType();
-        if (oauthManager != null) {
-            authFilters.add(new LbFilter(
-                    new LbAuthenticator(oauthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-        }
+        List<String> authMethods = config.getAuthentication().getDefaultTypes();
+        if (authMethods != null) {
+            for (String authMethod : authMethods) {
+                switch (authMethod) {
+                    case "oauth" -> {
+                        if (oauthManager != null) {
+                            authFilters.add(new LbFilter(
+                                    new LbAuthenticator(oauthManager, authorizationManager),
+                                    authorizer,
+                                    "Bearer",
+                                    new LbUnauthorizedHandler("oauth")));
+                        }
+                    }
+                    case "form" -> {
+                        if (formAuthManager != null) {
+                            authFilters.add(new LbFilter(
+                                    new FormAuthenticator(formAuthManager, authorizationManager),
+                                    authorizer,
+                                    "Bearer",
+                                    new LbUnauthorizedHandler("form")));
 
-        if (formAuthManager != null) {
-            authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-
-            authFilters.add(new BasicAuthFilter(
-                    new ApiAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    new LbUnauthorizedHandler(defaultType)));
+                            authFilters.add(new BasicAuthFilter(
+                                    new ApiAuthenticator(formAuthManager, authorizationManager),
+                                    authorizer,
+                                    new LbUnauthorizedHandler("form")));
+                        }
+                    }
+                    default -> {}
+                }
+            }
         }
         this.filters = requireNonNull(authFilters.build());
     }
