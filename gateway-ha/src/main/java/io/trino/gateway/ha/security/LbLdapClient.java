@@ -18,6 +18,7 @@ import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.message.SearchRequest;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.LdapClientTrustStoreManager;
@@ -79,12 +80,9 @@ public class LbLdapClient
     {
         try {
             String filter = config.getLdapUserSearch().replace("${USER}", user);
+            SearchRequest searchRequest = newUserSearchRequest(filter);
             PasswordWarning passwordWarning =
-                    ldapConnectionTemplate.authenticate(
-                            config.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray());
+                    ldapConnectionTemplate.authenticate(searchRequest, password.toCharArray());
 
             if (passwordWarning != null) {
                 log.warn("password warning %s", passwordWarning);
@@ -104,12 +102,8 @@ public class LbLdapClient
         String filter = config.getLdapUserSearch().replace("${USER}", user);
 
         String[] attributes = new String[] {config.getLdapGroupMemberAttribute()};
-        List<UserRecord> list = ldapConnectionTemplate.search(
-                config.getLdapUserBaseDn(),
-                filter,
-                SearchScope.SUBTREE,
-                attributes,
-                userRecordEntryMapper);
+        SearchRequest searchRequest = newUserSearchRequest(filter, attributes);
+        List<UserRecord> list = ldapConnectionTemplate.search(searchRequest, userRecordEntryMapper);
 
         String memberOf = "";
         if (list != null && !list.isEmpty()) {
@@ -117,6 +111,23 @@ public class LbLdapClient
             log.debug("Member of %s", memberOf);
         }
         return memberOf;
+    }
+
+    private SearchRequest newUserSearchRequest(String filter, String... attributes)
+    {
+        SearchRequest searchRequest = ldapConnectionTemplate.newSearchRequest(
+                config.getLdapUserBaseDn(),
+                filter,
+                SearchScope.SUBTREE,
+                attributes);
+
+        switch (config.getLdapReferralPolicy()) {
+            case FOLLOW -> searchRequest.followReferrals();
+            case IGNORE -> searchRequest.ignoreReferrals();
+            case THROW -> {}
+        }
+
+        return searchRequest;
     }
 
     public static class UserRecord

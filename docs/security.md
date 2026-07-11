@@ -170,7 +170,12 @@ The LDAP config file should have the following contents:
   poolMaxTotal: 8
   poolMinIdle: 0
   poolTestOnBorrow: true
+  ldapReferralPolicy: THROW
 ```
+
+The `ldapReferralPolicy` setting controls how LDAP search referrals are handled.
+Supported values are `THROW`, `FOLLOW`, and `IGNORE`. The default is `THROW`,
+which preserves the previous behavior.
 
 ## Web page permissions
 

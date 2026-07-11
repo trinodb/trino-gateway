@@ -15,6 +15,8 @@ package io.trino.gateway.ha.security;
 
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.LdapConfiguration;
+import org.apache.directory.api.ldap.model.message.SearchRequest;
+import org.apache.directory.api.ldap.model.message.SearchRequestImpl;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
 import org.apache.directory.ldap.client.template.exception.PasswordException;
@@ -29,7 +31,6 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 
@@ -69,13 +70,20 @@ final class TestLbLdapClient
         String password = "pass1";
 
         String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
+        SearchRequest searchRequest = new SearchRequestImpl();
+
+        Mockito
+                .when(ldapConnectionTemplate.newSearchRequest(
+                        eq(ldapConfig.getLdapUserBaseDn()),
+                        eq(filter),
+                        eq(SearchScope.SUBTREE),
+                        any(String[].class)))
+                .thenReturn(searchRequest);
 
         Mockito
                 .when(ldapConnectionTemplate.authenticate(
-                        ldapConfig.getLdapUserBaseDn(),
-                        filter,
-                        SearchScope.SUBTREE,
-                        password.toCharArray()))
+                        eq(searchRequest),
+                        any(char[].class)))
                 .thenReturn(null);
 
         // Success case
@@ -83,10 +91,8 @@ final class TestLbLdapClient
 
         Mockito
                 .when(ldapConnectionTemplate.authenticate(
-                        ldapConfig.getLdapUserBaseDn(),
-                        filter,
-                        SearchScope.SUBTREE,
-                        password.toCharArray()))
+                        eq(searchRequest),
+                        any(char[].class)))
                 .thenReturn(new TestLbLdapClient.DummyPasswordWarning());
 
         // Warning case
@@ -94,23 +100,12 @@ final class TestLbLdapClient
 
         Mockito
                 .when(ldapConnectionTemplate.authenticate(
-                        ldapConfig.getLdapUserBaseDn(),
-                        filter,
-                        SearchScope.SUBTREE,
-                        password.toCharArray()))
+                        eq(searchRequest),
+                        any(char[].class)))
                 .thenThrow(PasswordException.class);
 
         // failure case
         assertThat(lbLdapClient.authenticate(user, password)).isFalse();
-
-        assertThatThrownBy(() -> Mockito
-                .when(ldapConnectionTemplate.authenticate(
-                        ldapConfig.getLdapUserBaseDn(),
-                        filter,
-                        SearchScope.SUBTREE,
-                        password.toCharArray()))
-                .thenReturn(null))
-                .isInstanceOf(PasswordException.class);
     }
 
     @Test
@@ -119,16 +114,22 @@ final class TestLbLdapClient
         String user = "user1";
         String[] attributes = new String[] {"memberOf"};
         String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
+        SearchRequest searchRequest = new SearchRequestImpl();
+
+        Mockito
+                .when(ldapConnectionTemplate.newSearchRequest(
+                        eq(ldapConfig.getLdapUserBaseDn()),
+                        eq(filter),
+                        eq(SearchScope.SUBTREE),
+                        eq(attributes)))
+                .thenReturn(searchRequest);
 
         java.util.ArrayList users = new java.util.ArrayList();
         users.add(new LbLdapClient.UserRecord("Admin,User"));
 
         Mockito
                 .when(ldapConnectionTemplate.search(
-                        eq(ldapConfig.getLdapUserBaseDn()),
-                        eq(filter),
-                        eq(SearchScope.SUBTREE),
-                        eq(attributes),
+                        eq(searchRequest),
                         any(LbLdapClient.UserEntryMapper.class)))
                 .thenReturn(users);
 
@@ -140,15 +141,55 @@ final class TestLbLdapClient
 
         org.mockito.Mockito
                 .when(ldapConnectionTemplate.search(
-                        eq(ldapConfig.getLdapUserBaseDn()),
-                        eq(filter),
-                        eq(SearchScope.SUBTREE),
-                        eq(attributes),
+                        eq(searchRequest),
                         any(LbLdapClient.UserEntryMapper.class)))
                 .thenReturn(null);
 
         // failure case
         assertThat(lbLdapClient.getMemberOf(user)).isNotEqualTo("Admin,User");
+    }
+
+    @Test
+    void testReferralPolicy()
+    {
+        String user = "user1";
+        String[] attributes = new String[] {"memberOf"};
+        String filter = ldapConfig.getLdapUserSearch().replace("${USER}", user);
+
+        SearchRequest defaultSearchRequest = getMemberOfSearchRequest(filter, attributes);
+        assertThat(defaultSearchRequest.isFollowReferrals()).isFalse();
+        assertThat(defaultSearchRequest.isIgnoreReferrals()).isFalse();
+
+        ldapConfig.setLdapReferralPolicy(LdapConfiguration.LdapReferralPolicy.FOLLOW);
+        SearchRequest followSearchRequest = getMemberOfSearchRequest(filter, attributes);
+        assertThat(followSearchRequest.isFollowReferrals()).isTrue();
+        assertThat(followSearchRequest.isIgnoreReferrals()).isFalse();
+
+        ldapConfig.setLdapReferralPolicy(LdapConfiguration.LdapReferralPolicy.IGNORE);
+        SearchRequest ignoreSearchRequest = getMemberOfSearchRequest(filter, attributes);
+        assertThat(ignoreSearchRequest.isFollowReferrals()).isFalse();
+        assertThat(ignoreSearchRequest.isIgnoreReferrals()).isTrue();
+    }
+
+    private SearchRequest getMemberOfSearchRequest(String filter, String[] attributes)
+    {
+        SearchRequest searchRequest = new SearchRequestImpl();
+        Mockito
+                .when(ldapConnectionTemplate.newSearchRequest(
+                        eq(ldapConfig.getLdapUserBaseDn()),
+                        eq(filter),
+                        eq(SearchScope.SUBTREE),
+                        eq(attributes)))
+                .thenReturn(searchRequest);
+        Mockito
+                .when(ldapConnectionTemplate.search(
+                        eq(searchRequest),
+                        any(LbLdapClient.UserEntryMapper.class)))
+                .thenReturn(null);
+
+        lbLdapClient.getMemberOf("user1");
+
+        return searchRequest;
     }
 
     static class DummyPasswordWarning

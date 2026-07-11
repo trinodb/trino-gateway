@@ -22,6 +22,13 @@ import java.nio.file.Path;
 
 public class LdapConfiguration
 {
+    public enum LdapReferralPolicy
+    {
+        THROW,
+        FOLLOW,
+        IGNORE,
+    }
+
     private static final Logger log = Logger.get(LdapConfiguration.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
     private String ldapHost;
@@ -39,6 +46,7 @@ public class LdapConfiguration
     private Integer poolMaxTotal;
     private Integer poolMinIdle;
     private boolean poolTestOnBorrow;
+    private LdapReferralPolicy ldapReferralPolicy = LdapReferralPolicy.THROW;
 
     public LdapConfiguration(
             String ldapHost,
@@ -237,5 +245,15 @@ public class LdapConfiguration
     public void setPoolTestOnBorrow(boolean poolTestOnBorrow)
     {
         this.poolTestOnBorrow = poolTestOnBorrow;
+    }
+
+    public LdapReferralPolicy getLdapReferralPolicy()
+    {
+        return ldapReferralPolicy;
+    }
+
+    public void setLdapReferralPolicy(LdapReferralPolicy ldapReferralPolicy)
+    {
+        this.ldapReferralPolicy = ldapReferralPolicy;
     }
 }
