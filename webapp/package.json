@@ -12,7 +12,7 @@
   "dependencies": {
     "@douyinfe/semi-icons": "^2.100.0",
     "@douyinfe/semi-icons-lab": "^2.100.0",
-    "@douyinfe/semi-illustrations": "^2.100.0",
+    "@douyinfe/semi-illustrations": "^2.101.0",
     "@douyinfe/semi-ui": "^2.100.0",
     "@vvo/tzdb": "^6.198.0",
     "echarts": "^5.4.3",
