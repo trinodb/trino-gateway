@@ -39,6 +39,13 @@ The authentication would happen on https protocol only. Add the
 set using `defaultTypes: ["form"]`. The first authentication type in `defaultTypes` is prioritized and then falls back to following ones.
 Following types of the authentications are supported.
 
+> **Migrating from `defaultType`:** Earlier releases configured a single string
+> `defaultType: "form"`. That property is deprecated but still honored — it is
+> mapped to a single-element `defaultTypes` list so existing configurations keep
+> booting. If both `defaultType` and `defaultTypes` are set, `defaultTypes` takes
+> precedence. Switch to `defaultTypes`, as `defaultType` may be removed in a
+> future release.
+
 ### OAuth/OpenIDConnect
 
 It can be configured as below

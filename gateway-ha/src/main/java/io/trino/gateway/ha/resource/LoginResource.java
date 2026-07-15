@@ -46,6 +46,7 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.security.LbOAuthManager.buildUnauthorizedResponse;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
+import static io.trino.gateway.ha.security.util.AuthenticationTypeResolver.resolveEffectiveTypes;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -177,7 +178,10 @@ public class LoginResource
     {
         List<String> loginTypes;
         if (haGatewayConfiguration.getAuthentication() != null) {
-            loginTypes = haGatewayConfiguration.getAuthentication().getDefaultTypes();
+            loginTypes = resolveEffectiveTypes(
+                    haGatewayConfiguration.getAuthentication().getDefaultTypes(),
+                    oauthManager != null,
+                    formAuthManager != null);
         }
         else {
             loginTypes = List.of("none");

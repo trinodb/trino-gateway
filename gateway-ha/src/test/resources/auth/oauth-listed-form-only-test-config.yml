@@ -1,0 +1,31 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: ${ENV:REQUEST_ROUTER_PORT}
+
+dataStore:
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
+  driver: org.postgresql.Driver
+
+authorization:
+  admin: .*FOO.*
+  user: .*BAR.*
+  api: .*BAZ.*
+
+presetUsers:
+  admin1:
+    password: admin1_password
+    privileges: FOO_BAR
+  user1:
+    password: password_user1
+    privileges: BAR_BAZ
+
+# "oauth" is listed first but has no matching oauth block configured below, so it
+# must be filtered out: /loginType should advertise only "form".
+authentication:
+  defaultTypes: ["oauth", "form"]
+  form:
+    selfSignKeyPair:
+      privateKeyRsa: src/test/resources/auth/test_private_key.pem
+      publicKeyRsa: src/test/resources/auth/test_public_key.pem
