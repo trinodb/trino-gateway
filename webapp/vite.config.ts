@@ -12,6 +12,13 @@ export default defineConfig((mode: ConfigEnv) => {
   return {
     base: `/trino-gateway/`,
     plugins: [react(), svgr()],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler',
+        },
+      },
+    },
     server: {
       proxy: {
         [proxyPath]: {
