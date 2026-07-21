@@ -7,13 +7,14 @@ import { queryHistoryApi } from "../api/webapp/history";
 import { HistoryData, HistoryDetail } from "../types/history";
 import { formatTimestamp } from "../utils/time";
 import { backendsApi } from "../api/webapp/cluster";
-import { Role, useAccessStore } from "../store";
+import { Role, useAccessStore, useUIConfigurationStore } from "../store";
 import { BackendData } from "../types/cluster";
 import { TimezoneContext } from "./TimezoneContext";
 
 export function History() {
   const { Text } = Typography;
   const access = useAccessStore();
+  const allowNonAdminToViewAllQueryHistory = useUIConfigurationStore((state) => state.allowNonAdminToViewAllQueryHistory);
   const timezone = useContext(TimezoneContext).timezone;
   const [backendData, setBackendData] = useState<BackendData[]>();
   const [historyData, setHistoryData] = useState<HistoryData>();
@@ -116,7 +117,7 @@ export function History() {
                   </Form.Select.Option>
                 ))}
               </Form.Select>
-              <Form.Input field='user' label='User' initValue={form.user} disabled={!access.hasRole(Role.ADMIN)} style={{ width: 150 }} showClear />
+              <Form.Input field='user' label='User' initValue={form.user} disabled={!access.hasRole(Role.ADMIN) && !allowNonAdminToViewAllQueryHistory} style={{ width: 150 }} showClear />
               <Form.Input field='queryId' label='QueryId' style={{ width: 260 }} showClear placeholder={Locale.History.QueryIdTip} />
               <Form.Input field='source' label='Source' style={{ width:150 }} showClear />
               <Button htmlType='submit' style={{ width: 70 }}>{Locale.UI.Query}</Button>
