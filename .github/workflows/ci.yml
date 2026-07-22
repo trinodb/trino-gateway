@@ -57,7 +57,7 @@ jobs:
         run: $MAVEN install ${MAVEN_FAST_INSTALL}
       - uses: docker/setup-qemu-action@v4.2.0
         with:
-          platforms: amd64,arm64,ppc64le
+          platforms: amd64,arm64
       - name: Build and Test Docker Image
         run: docker/build.sh
       - name: Set up Helm
