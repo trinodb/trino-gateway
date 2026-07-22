@@ -8,9 +8,6 @@ dataStore:
   password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
 
-extraWhitelistPaths:
-  - '/v1/custom.*'
-
 authorization:
   admin: .*FOO.*
   user: .*BAR.*
@@ -24,8 +21,10 @@ presetUsers:
     password: password_user1
     privileges: BAR_BAZ
 
+# "oauth" is listed first but has no matching oauth block configured below, so it
+# must be filtered out: /loginType should advertise only "form".
 authentication:
-  defaultTypes: ["form"]
+  defaultTypes: ["oauth", "form"]
   form:
     selfSignKeyPair:
       privateKeyRsa: src/test/resources/auth/test_private_key.pem

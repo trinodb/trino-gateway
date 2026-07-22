@@ -13,29 +13,53 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.google.common.collect.ImmutableList;
+import io.airlift.log.Logger;
+
+import java.util.List;
+
 public class AuthenticationConfiguration
 {
-    private String defaultType;
+    private static final Logger log = Logger.get(AuthenticationConfiguration.class);
+
+    private List<String> defaultTypes;
     private OAuthConfiguration oauth;
     private FormAuthConfiguration form;
 
-    public AuthenticationConfiguration(String defaultType, OAuthConfiguration oauth, FormAuthConfiguration form)
+    public AuthenticationConfiguration(List<String> defaultTypes, OAuthConfiguration oauth, FormAuthConfiguration form)
     {
-        this.defaultType = defaultType;
+        this.defaultTypes = defaultTypes;
         this.oauth = oauth;
         this.form = form;
     }
 
     public AuthenticationConfiguration() {}
 
-    public String getDefaultType()
+    public List<String> getDefaultTypes()
     {
-        return this.defaultType;
+        return this.defaultTypes;
     }
 
+    public void setDefaultTypes(List<String> defaultTypes)
+    {
+        this.defaultTypes = defaultTypes;
+    }
+
+    /**
+     * @deprecated Use {@code defaultTypes} instead. This setter is retained so existing
+     *         configurations that still use the scalar {@code defaultType} keep booting; it maps
+     *         the single value into a one-element {@code defaultTypes} list. When both properties
+     *         are set, {@code defaultTypes} takes precedence.
+     */
+    @Deprecated
     public void setDefaultType(String defaultType)
     {
-        this.defaultType = defaultType;
+        if (this.defaultTypes != null) {
+            log.warn("Both the deprecated \"authentication.defaultType\" and \"authentication.defaultTypes\" are set; ignoring \"defaultType\" and using \"defaultTypes\"=%s", this.defaultTypes);
+            return;
+        }
+        log.warn("Configuration property \"authentication.defaultType\" is deprecated; use the list property \"authentication.defaultTypes\" instead");
+        this.defaultTypes = ImmutableList.of(defaultType);
     }
 
     public OAuthConfiguration getOauth()
