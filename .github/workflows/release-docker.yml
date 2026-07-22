@@ -42,7 +42,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4.2.0
         with:
-          platforms: amd64,arm64,ppc64le
+          platforms: amd64,arm64
 
       - name: Install crane
         uses: imjasonh/setup-crane@v0.7

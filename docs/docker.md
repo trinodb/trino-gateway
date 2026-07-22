@@ -38,8 +38,8 @@ Then build the image for your desired processor architecture in the `docker` dir
 ./build.sh -a arm64
 ```
 
-By default, the scripts builds all valid processor architectures `amd64`,
-`arm64`, and `ppc64le`:
+By default, the scripts builds all valid processor architectures `amd64` and
+`arm64`:
 
 ```bash
 ./build.sh
@@ -52,7 +52,6 @@ number and`-yyy` is the processor architecture:
 ```bash
 $ docker images
 REPOSITORY            TAG                  IMAGE ID       CREATED          SIZE
-trino-gateway         6-SNAPSHOT-ppc64le   a72b750d2745   33 seconds ago   547MB
 trino-gateway         6-SNAPSHOT-arm64     bc5e8b0db63c   35 seconds ago   523MB
 trino-gateway         6-SNAPSHOT-amd64     6c066fa5b0c5   36 seconds ago   518MB
 ...

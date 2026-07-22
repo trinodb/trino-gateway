@@ -8,7 +8,7 @@ Usage: $0 [-h] [-a <ARCHITECTURES>] [-r <VERSION>]
 Builds the Trino Gateway Docker image
 
 -h       Display help
--a       Build the specified comma-separated architectures, defaults to amd64,arm64,ppc64le
+-a       Build the specified comma-separated architectures, defaults to amd64,arm64
 -r       Build the specified Trino Gateway release version, downloads all required artifacts
 -j       Build the Trino Gateway release with specified Temurin JDK release
 EOF
@@ -20,7 +20,7 @@ cd "${SCRIPT_DIR}" || exit 2
 
 SOURCE_DIR="${SCRIPT_DIR}/.."
 
-ARCHITECTURES=(amd64 arm64 ppc64le)
+ARCHITECTURES=(amd64 arm64)
 TRINO_GATEWAY_VERSION=
 JDK_RELEASE_NAME=$(cat "${SOURCE_DIR}/.java-version")
 # necessary to allow version parsing from the pom file
@@ -70,9 +70,6 @@ function temurin_jdk_link() {
     ;;
     amd64)
       echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/x64/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-    ppc64le)
-      echo "https://api.adoptium.net/v3/binary/version/${JDK_RELEASE_NAME}/linux/ppc64le/jdk/hotspot/normal/eclipse?project=jdk"
     ;;
   *)
     echo "${ARCH} is not supported for Docker image"
@@ -132,9 +129,6 @@ echo "🏃 Testing built images"
 source container-test.sh
 
 for arch in "${ARCHITECTURES[@]}"; do
-    # TODO: remove when https://github.com/multiarch/qemu-user-static/issues/128 is fixed
-    if [[ "$arch" != "ppc64le" ]]; then
-        test_container "${TAG_PREFIX}-$arch" "linux/$arch" "${SCRIPT_DIR}/docker-compose.yml" "trino-gateway" "postgres"
-    fi
+    test_container "${TAG_PREFIX}-$arch" "linux/$arch" "${SCRIPT_DIR}/docker-compose.yml" "trino-gateway" "postgres"
     docker image inspect -f '🚀 Built {{.RepoTags}} {{.Id}}' "${TAG_PREFIX}-$arch"
 done

@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 $SCRIPT_DIR/build.sh -r "$VERSION"
 
-architectures=(amd64 arm64 ppc64le)
+architectures=(amd64 arm64)
 
 # Create temp directory for digest references
 REFS_DIR=$(mktemp -d)
@@ -34,10 +34,8 @@ done
 # Create multi-arch manifests from the digest references
 crane index append -t "$TARGET" \
     -m "$(cat $REFS_DIR/amd64.ref)" \
-    -m "$(cat $REFS_DIR/arm64.ref)" \
-    -m "$(cat $REFS_DIR/ppc64le.ref)"
+    -m "$(cat $REFS_DIR/arm64.ref)"
 
 crane index append -t "$REPO:latest" \
     -m "$(cat $REFS_DIR/amd64.ref)" \
-    -m "$(cat $REFS_DIR/arm64.ref)" \
-    -m "$(cat $REFS_DIR/ppc64le.ref)"
+    -m "$(cat $REFS_DIR/arm64.ref)"
