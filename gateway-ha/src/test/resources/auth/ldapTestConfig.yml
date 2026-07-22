@@ -14,3 +14,4 @@ poolMaxIdle: 8
 poolMaxTotal: 8
 poolMinIdle: 0
 poolTestOnBorrow: true
+ldapAdDomainScopeControl: false
