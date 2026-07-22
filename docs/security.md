@@ -200,8 +200,23 @@ authorization:
 With the configuration above, any authenticated user not otherwise matched
 receives `USER` privileges (view access), while users explicitly listed in
 `presetUsers`, resolved via LDAP, or matched via an OAuth claim keep their own
-configured privileges instead. Omit `defaultPrivilege` (the default) to keep
-the previous behavior of denying access to unrecognized users.
+configured privileges instead.
+
+To deny access to every unrecognized user, either omit `defaultPrivilege`
+entirely (the default) or set it explicitly to `NONE`:
+
+```yaml
+authorization:
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
+  defaultPrivilege: "NONE"
+```
+
+`defaultPrivilege: "NONE"` (case-insensitive) resolves unrecognized users to no
+privileges, so they are denied access to everything regardless of the `admin`,
+`user`, and `api` regexes. This is equivalent to omitting `defaultPrivilege`,
+but makes the deny-by-default intent explicit in the configuration.
 
 ## Web page permissions
 

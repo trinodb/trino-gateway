@@ -47,6 +47,55 @@ public class TestAuthorizationManager
     }
 
     @Test
+    public void testDefaultPrivilegeNoneDeniesAll()
+    {
+        AuthorizationConfiguration authConfig = new AuthorizationConfiguration();
+        authConfig.setDefaultPrivilege(AuthorizationManager.DENY_ALL_PRIVILEGE);
+        AuthorizationManager authManager = createAuthorizationManager(authConfig, Map.of());
+
+        Optional<String> privileges = authManager.getPrivileges("newUser");
+        assertThat(privileges).isEmpty();
+    }
+
+    @Test
+    public void testDefaultPrivilegeNoneIsCaseInsensitive()
+    {
+        for (String noneValue : new String[] {"none", "None", " NONE "}) {
+            AuthorizationConfiguration authConfig = new AuthorizationConfiguration();
+            authConfig.setDefaultPrivilege(noneValue);
+            AuthorizationManager authManager = createAuthorizationManager(authConfig, Map.of());
+
+            Optional<String> privileges = authManager.getPrivileges("newUser");
+            assertThat(privileges).as("defaultPrivilege '%s' should deny all", noneValue).isEmpty();
+        }
+    }
+
+    @Test
+    public void testEmptyDefaultPrivilegeDeniesAll()
+    {
+        AuthorizationConfiguration authConfig = new AuthorizationConfiguration();
+        authConfig.setDefaultPrivilege("   ");
+        AuthorizationManager authManager = createAuthorizationManager(authConfig, Map.of());
+
+        Optional<String> privileges = authManager.getPrivileges("newUser");
+        assertThat(privileges).isEmpty();
+    }
+
+    @Test
+    public void testPresetUserKeepsPrivilegesWithNoneDefault()
+    {
+        UserConfiguration presetUser = new UserConfiguration("ADMIN", "password");
+        Map<String, UserConfiguration> presetUsers = Map.of("adminUser", presetUser);
+        AuthorizationConfiguration authConfig = new AuthorizationConfiguration();
+        authConfig.setDefaultPrivilege(AuthorizationManager.DENY_ALL_PRIVILEGE);
+        AuthorizationManager authManager = createAuthorizationManager(authConfig, presetUsers);
+
+        Optional<String> privileges = authManager.getPrivileges("adminUser");
+        assertThat(privileges).isPresent();
+        assertThat(privileges.orElseThrow()).isEqualTo("ADMIN");
+    }
+
+    @Test
     public void testOauthDefaultUserRoleEnabled()
     {
         AuthorizationConfiguration authConfig = new AuthorizationConfiguration();
