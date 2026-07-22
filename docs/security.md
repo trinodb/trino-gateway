@@ -170,7 +170,13 @@ The LDAP config file should have the following contents:
   poolMaxTotal: 8
   poolMinIdle: 0
   poolTestOnBorrow: true
+  ldapAdDomainScopeControl: false
 ```
+
+Set `ldapAdDomainScopeControl` to `true` when searching an Active Directory
+domain root such as `DC=example,DC=com` and you want to suppress subordinate
+referrals like `DomainDnsZones` and `ForestDnsZones` while still searching all
+users in the domain. The default is `false`.
 
 ## Web page permissions
 
