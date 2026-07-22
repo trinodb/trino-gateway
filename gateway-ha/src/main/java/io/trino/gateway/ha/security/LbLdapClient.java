@@ -16,10 +16,15 @@ package io.trino.gateway.ha.security;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.directory.api.ldap.codec.api.LdapApiService;
+import org.apache.directory.api.ldap.codec.controls.OpaqueControlFactory;
+import org.apache.directory.api.ldap.codec.standalone.StandaloneLdapApiService;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.message.SearchRequest;
 import org.apache.directory.api.ldap.model.message.SearchScope;
+import org.apache.directory.api.ldap.model.message.controls.OpaqueControl;
+import org.apache.directory.api.util.Strings;
 import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.LdapClientTrustStoreManager;
 import org.apache.directory.ldap.client.api.LdapConnectionConfig;
@@ -34,6 +39,8 @@ import java.util.List;
 
 public class LbLdapClient
 {
+    private static final String AD_DOMAIN_SCOPE_CONTROL_OID = "1.2.840.113556.1.4.1339";
+
     private static final Logger log = Logger.get(LbLdapClient.class);
     private final LdapConnectionTemplate ldapConnectionTemplate;
     private final LdapConfiguration config;
@@ -70,10 +77,12 @@ public class LbLdapClient
                     true));
         }
 
+        LdapApiService ldapApiService = createLdapApiService();
+        connectionConfig.setLdapApiService(ldapApiService);
         DefaultLdapConnectionFactory defaultFactory =
                 new DefaultLdapConnectionFactory(connectionConfig);
+        defaultFactory.setLdapApiService(ldapApiService);
 
-        // Configure the LDAP connection pool.
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setMaxIdle(ldapConfig.getPoolMaxIdle());
         poolConfig.setMaxTotal(ldapConfig.getPoolMaxTotal());
@@ -131,7 +140,33 @@ public class LbLdapClient
                 SearchScope.SUBTREE,
                 attributes);
 
+        if (config.isLdapAdDomainScopeControl()) {
+            addAdDomainScopeControl(searchRequest);
+        }
+
         return searchRequest;
+    }
+
+    private void addAdDomainScopeControl(SearchRequest searchRequest)
+    {
+        OpaqueControl control = new OpaqueControl(AD_DOMAIN_SCOPE_CONTROL_OID, false);
+        // Apache Directory's opaque control encoder requires an encoded value.
+        // The Active Directory Domain Scope control has no payload.
+        control.setEncodedValue(Strings.EMPTY_BYTES);
+        searchRequest.addControl(control);
+    }
+
+    static LdapApiService createLdapApiService()
+    {
+        try {
+            LdapApiService ldapApiService = new StandaloneLdapApiService();
+            ldapApiService.registerRequestControl(
+                    new OpaqueControlFactory(ldapApiService, AD_DOMAIN_SCOPE_CONTROL_OID));
+            return ldapApiService;
+        }
+        catch (Exception exception) {
+            throw new IllegalStateException("Failed to initialize LDAP codec service", exception);
+        }
     }
 
     public static class UserRecord
