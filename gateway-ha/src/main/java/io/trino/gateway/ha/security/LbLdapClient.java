@@ -19,6 +19,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
+import org.apache.directory.api.ldap.model.message.SearchRequest;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.api.ldap.model.name.Dn;
 import org.apache.directory.api.ldap.model.name.Rdn;
@@ -34,16 +35,33 @@ import org.apache.directory.ldap.client.template.exception.PasswordException;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class LbLdapClient
 {
     private static final Logger log = Logger.get(LbLdapClient.class);
-    private LdapConnectionTemplate ldapConnectionTemplate;
-    private LdapConfiguration config;
-    private UserEntryMapper userRecordEntryMapper;
+    private final LdapConnectionTemplate ldapConnectionTemplate;
+    private final LdapConfiguration config;
+    private final UserEntryMapper userRecordEntryMapper;
 
     public LbLdapClient(LdapConfiguration ldapConfig)
     {
-        config = ldapConfig;
+        this(ldapConfig, createLdapConnectionTemplate(ldapConfig));
+    }
+
+    LbLdapClient(LdapConfiguration ldapConfig, LdapConnectionTemplate ldapConnectionTemplate)
+    {
+        config = requireNonNull(ldapConfig, "ldapConfig is null");
+        this.ldapConnectionTemplate = requireNonNull(
+                ldapConnectionTemplate,
+                "ldapConnectionTemplate is null");
+        userRecordEntryMapper = new UserEntryMapper(config.getLdapGroupMemberAttribute());
+    }
+
+    private static LdapConnectionTemplate createLdapConnectionTemplate(LdapConfiguration ldapConfig)
+    {
+        requireNonNull(ldapConfig, "ldapConfig is null");
+
         LdapConnectionConfig connectionConfig = new LdapConnectionConfig();
         connectionConfig.setLdapHost(ldapConfig.getLdapHost());
         connectionConfig.setLdapPort(ldapConfig.getLdapPort());
@@ -64,7 +82,7 @@ public class LbLdapClient
         DefaultLdapConnectionFactory defaultFactory =
                 new DefaultLdapConnectionFactory(connectionConfig);
 
-        // A single connection and keep it alive
+        // Configure the LDAP connection pool.
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setMaxIdle(ldapConfig.getPoolMaxIdle());
         poolConfig.setMaxTotal(ldapConfig.getPoolMaxTotal());
@@ -74,8 +92,7 @@ public class LbLdapClient
         ValidatingPoolableLdapConnectionFactory validatingFactory =
                 new ValidatingPoolableLdapConnectionFactory(defaultFactory);
         LdapConnectionPool connectionPool = new LdapConnectionPool(validatingFactory, poolConfig);
-        ldapConnectionTemplate = new LdapConnectionTemplate(connectionPool);
-        userRecordEntryMapper = new UserEntryMapper(config.getLdapGroupMemberAttribute());
+        return new LdapConnectionTemplate(connectionPool);
     }
 
     public boolean authenticate(String user, String password)
@@ -101,12 +118,9 @@ public class LbLdapClient
             }
             else {
                 String filter = config.getLdapUserSearch().replace("${USER}", user);
+                SearchRequest searchRequest = newUserSearchRequest(filter);
                 passwordWarning =
-                        ldapConnectionTemplate.authenticate(
-                                config.getLdapUserBaseDn(),
-                                filter,
-                                SearchScope.SUBTREE,
-                                password.toCharArray());
+                        ldapConnectionTemplate.authenticate(searchRequest, password.toCharArray());
             }
 
             if (passwordWarning != null) {
@@ -130,25 +144,33 @@ public class LbLdapClient
     {
         String filter = config.getLdapUserSearch().replace("${USER}", user);
 
-        String[] attributes = new String[] {config.getLdapGroupMemberAttribute()};
-        List<UserRecord> list = ldapConnectionTemplate.search(
-                config.getLdapUserBaseDn(),
+        SearchRequest searchRequest = newUserSearchRequest(
                 filter,
-                SearchScope.SUBTREE,
-                attributes,
-                userRecordEntryMapper);
+                config.getLdapGroupMemberAttribute());
+        List<UserRecord> list = ldapConnectionTemplate.search(searchRequest, userRecordEntryMapper);
 
         String memberOf = "";
         if (list != null && !list.isEmpty()) {
-            memberOf = list.listIterator().next().getMemberOf();
+            memberOf = list.getFirst().getMemberOf();
             log.debug("Member of %s", memberOf);
         }
         return memberOf;
     }
 
+    private SearchRequest newUserSearchRequest(String filter, String... attributes)
+    {
+        SearchRequest searchRequest = ldapConnectionTemplate.newSearchRequest(
+                config.getLdapUserBaseDn(),
+                filter,
+                SearchScope.SUBTREE,
+                attributes);
+
+        return searchRequest;
+    }
+
     public static class UserRecord
     {
-        String memberOf;
+        private final String memberOf;
 
         public UserRecord(String memberOf)
         {
@@ -164,18 +186,20 @@ public class LbLdapClient
     public static class UserEntryMapper
             implements EntryMapper<UserRecord>
     {
-        String memberOf;
+        private final String memberOfAttribute;
 
-        public UserEntryMapper(String memberOfAttr)
+        public UserEntryMapper(String memberOfAttribute)
         {
-            memberOf = memberOfAttr;
+            this.memberOfAttribute = requireNonNull(
+                    memberOfAttribute,
+                    "memberOfAttribute is null");
         }
 
         @Override
         public UserRecord map(Entry entry)
                 throws LdapException
         {
-            return new UserRecord(entry.get(memberOf).toString());
+            return new UserRecord(entry.get(memberOfAttribute).toString());
         }
     }
 }
