@@ -159,6 +159,55 @@ dataStore:
 
 Find more information in the [routing rules documentation](routing-rules.md).
 
+### Configure OAuth2 token-exchange routing
+
+Trino's OAuth2 token-exchange handshake spans two HTTP clients that share only
+an `authId`: the driver/CLI poll loop (`GET /oauth2/token/{authId}`) and the
+browser (`GET /oauth2/token/initiate/{authIdHash}`, returning from the identity
+provider to `GET /oauth2/callback`). Only the coordinator that issued the
+original `401` challenge holds the in-memory exchange state for that `authId`,
+so in a multi-coordinator deployment normal routing can send these requests to
+a different backend and stall the login. This is separate from the existing
+cookie-based browser routing (see
+[Routing logic](routing-logic.md#routing-based-on-cookies)), which cannot help
+on its own since the driver and browser are different HTTP clients.
+
+Enable pinning of OAuth2 token-exchange requests to the coordinator that
+minted the `authId` with:
+
+```yaml
+routing:
+  oauth2RoutingEnabled: true   # default false
+```
+
+Pins are recorded in the `oauth2_routing` table so they are shared across
+gateway instances. This table is created automatically by the database
+migrations run on startup (see [Backend database](#backend-database)), so no
+separate database or manual setup is required. For reference, the DDL
+(identical for MySQL and PostgreSQL; Oracle uses `NUMBER` for the `created`
+column) is:
+
+```sql
+CREATE TABLE IF NOT EXISTS oauth2_routing (
+oauth_id VARCHAR(256) PRIMARY KEY,
+backend_url VARCHAR (256),
+created bigint
+);
+CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
+```
+
+If the pinned coordinator becomes unhealthy or inactive, the pin is dropped
+and the client is forced to re-authenticate, since the handshake cannot be
+recovered on another backend.
+
+Stored pins are retained for 1 hour by default, and are pruned automatically.
+The retention period can be adjusted with:
+
+```yaml
+dataStore:
+  oauth2RoutingHoursRetention: 1
+```
+
 ### Configure logging <a name="logging">
 
 To configure the logging level for various classes, specify the path to the 

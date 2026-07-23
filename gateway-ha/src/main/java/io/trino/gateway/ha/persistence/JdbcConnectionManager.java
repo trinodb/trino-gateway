@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.Jdbi;
@@ -109,6 +110,18 @@ public class JdbcConnectionManager
                     log.info("Performing query history cleanup task");
                     long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
                     jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
+
+                    // Isolated in its own try-catch: a failure here (e.g. the table not yet created
+                    // during a rolling deploy) must not propagate out of the scheduled task, since
+                    // scheduleWithFixedDelay silently suppresses all future runs once a task throws.
+                    try {
+                        log.info("Performing OAuth2 routing cleanup task");
+                        long oauthCutoff = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getOauth2RoutingHoursRetention());
+                        jdbi.onDemand(OAuth2RoutingDao.class).deleteOldOAuth2Pins(oauthCutoff);
+                    }
+                    catch (RuntimeException e) {
+                        log.warn(e, "OAuth2 routing cleanup failed; will retry on next run");
+                    }
                 },
                 1,
                 120,
