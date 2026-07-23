@@ -31,30 +31,45 @@ import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AddColumn;
 import io.trino.sql.tree.Analyze;
 import io.trino.sql.tree.Call;
+import io.trino.sql.tree.Comment;
+import io.trino.sql.tree.CreateBranch;
 import io.trino.sql.tree.CreateCatalog;
 import io.trino.sql.tree.CreateMaterializedView;
 import io.trino.sql.tree.CreateSchema;
 import io.trino.sql.tree.CreateTable;
 import io.trino.sql.tree.CreateTableAsSelect;
 import io.trino.sql.tree.CreateView;
+import io.trino.sql.tree.DropBranch;
 import io.trino.sql.tree.DropCatalog;
+import io.trino.sql.tree.DropColumn;
+import io.trino.sql.tree.DropDefaultValue;
+import io.trino.sql.tree.DropMaterializedView;
+import io.trino.sql.tree.DropNotNullConstraint;
 import io.trino.sql.tree.DropSchema;
 import io.trino.sql.tree.DropTable;
+import io.trino.sql.tree.DropView;
 import io.trino.sql.tree.Execute;
 import io.trino.sql.tree.ExecuteImmediate;
 import io.trino.sql.tree.Expression;
+import io.trino.sql.tree.FastForwardBranch;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Insert;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Query;
+import io.trino.sql.tree.RefreshMaterializedView;
+import io.trino.sql.tree.RefreshView;
+import io.trino.sql.tree.RenameColumn;
 import io.trino.sql.tree.RenameMaterializedView;
 import io.trino.sql.tree.RenameSchema;
 import io.trino.sql.tree.RenameTable;
 import io.trino.sql.tree.RenameView;
 import io.trino.sql.tree.SetAuthorizationStatement;
+import io.trino.sql.tree.SetColumnType;
+import io.trino.sql.tree.SetDefaultValue;
 import io.trino.sql.tree.SetProperties;
+import io.trino.sql.tree.ShowBranches;
 import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
 import io.trino.sql.tree.ShowSchemas;
@@ -63,6 +78,7 @@ import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.Table;
 import io.trino.sql.tree.TableFunctionInvocation;
+import io.trino.sql.tree.TruncateTable;
 import io.trino.sql.tree.WithQuery;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -440,6 +456,38 @@ public class TrinoQueryProperties
                 }
             }
             case TableFunctionInvocation s -> tableBuilder.add(qualifyName(s.getName()));
+            case TruncateTable s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case DropView s -> tableBuilder.add(qualifyName(s.getName()));
+            case DropMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
+            case RefreshMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
+            case RefreshView s -> tableBuilder.add(qualifyName(s.getName()));
+            // ALTER TABLE ... column operations: the modified table is what routing cares about
+            case DropColumn s -> tableBuilder.add(qualifyName(s.getTable()));
+            case RenameColumn s -> tableBuilder.add(qualifyName(s.getTable()));
+            case SetColumnType s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case SetDefaultValue s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case DropDefaultValue s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case DropNotNullConstraint s -> tableBuilder.add(qualifyName(s.getTable()));
+            // Branch DDL operates on a table
+            case CreateBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case DropBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case FastForwardBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case ShowBranches s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case Comment s -> {
+                if (s.getType() == Comment.Type.COLUMN) {
+                    // For a column comment the QualifiedName is the column path (...schema.table.column);
+                    // the table it belongs to is its prefix. The parser accepts a single-part column name,
+                    // which has no prefix, so there is nothing to extract (and getPrefix() avoids building
+                    // an empty QualifiedName, which would throw).
+                    Optional<QualifiedName> tableName = s.getName().getPrefix();
+                    if (tableName.isPresent()) {
+                        tableBuilder.add(qualifyName(tableName.get()));
+                    }
+                }
+                else {
+                    tableBuilder.add(qualifyName(s.getName()));
+                }
+            }
             default -> {}
         }
 
