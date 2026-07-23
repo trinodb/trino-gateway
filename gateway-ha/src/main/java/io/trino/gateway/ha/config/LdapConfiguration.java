@@ -39,6 +39,7 @@ public class LdapConfiguration
     private Integer poolMaxTotal;
     private Integer poolMinIdle;
     private boolean poolTestOnBorrow;
+    private boolean ldapAdDomainScopeControl;
 
     public LdapConfiguration(
             String ldapHost,
@@ -237,5 +238,15 @@ public class LdapConfiguration
     public void setPoolTestOnBorrow(boolean poolTestOnBorrow)
     {
         this.poolTestOnBorrow = poolTestOnBorrow;
+    }
+
+    public boolean isLdapAdDomainScopeControl()
+    {
+        return this.ldapAdDomainScopeControl;
+    }
+
+    public void setLdapAdDomainScopeControl(boolean ldapAdDomainScopeControl)
+    {
+        this.ldapAdDomainScopeControl = ldapAdDomainScopeControl;
     }
 }
