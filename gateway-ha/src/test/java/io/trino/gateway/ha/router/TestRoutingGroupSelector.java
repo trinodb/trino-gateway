@@ -346,9 +346,10 @@ final class TestRoutingGroupSelector
     void testByRoutingRulesEngineFileChange()
             throws Exception
     {
-        File file = File.createTempFile("routing_rules", ".yml");
+        Path tempPath = Files.createTempFile("routing_rules", ".yml");
+        File file = tempPath.toFile();
 
-        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(tempPath, UTF_8)) {
             writer.write(
                     """
                     ---
@@ -371,7 +372,7 @@ final class TestRoutingGroupSelector
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("etl");
 
-        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), UTF_8)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(tempPath, UTF_8)) {
             writer.write(
                     """
                     ---

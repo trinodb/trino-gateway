@@ -101,7 +101,7 @@ public class HaGatewayTestUtils
                 .buildOrThrow();
         String configStr = replaceEnvironmentVariables(getResourceFileContent(configFile), vars);
 
-        File target = File.createTempFile("config-" + System.currentTimeMillis(), "config.yaml");
+        File target = Files.createTempFile("config-" + System.currentTimeMillis(), "config.yaml").toFile();
 
         try (BufferedWriter writer = Files.newBufferedWriter(target.toPath(), UTF_8)) {
             writer.append(configStr);
