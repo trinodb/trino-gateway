@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.handler;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.CharStreams;
 import io.airlift.http.client.HeaderName;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.router.TrinoQueryProperties;
@@ -74,7 +73,7 @@ public final class ProxyUtils
         }
         String queryText;
         try {
-            queryText = CharStreams.toString(new InputStreamReader(request.getInputStream(), UTF_8));
+            queryText = new InputStreamReader(request.getInputStream(), UTF_8).readAllAsString();
         }
         catch (IOException e) {
             throw new RuntimeException("Error reading request body", e);
