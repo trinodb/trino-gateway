@@ -16,14 +16,22 @@ package io.trino.gateway.ha.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.airlift.log.Logger;
+import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
+import org.apache.directory.api.ldap.model.name.Dn;
+import org.apache.directory.api.ldap.model.name.Rdn;
 
 import java.io.IOException;
 import java.nio.file.Path;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class LdapConfiguration
 {
     private static final Logger log = Logger.get(LdapConfiguration.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final String USER_PLACEHOLDER = "${USER}";
+    // Stand-in login name used to check that the pattern resolves to a parseable DN
+    private static final String VALIDATION_USER = "validation-user";
     private String ldapHost;
     private Integer ldapPort;
     private boolean useTls;
@@ -31,6 +39,7 @@ public class LdapConfiguration
     private String ldapAdminBindDn;
     private String ldapUserBaseDn;
     private String ldapUserSearch;
+    private String ldapUserDnPattern;
     private String ldapGroupMemberAttribute;
     private String ldapAdminPassword;
     private String ldapTrustStorePath;
@@ -48,6 +57,7 @@ public class LdapConfiguration
             String ldapAdminBindDn,
             String ldapUserBaseDn,
             String ldapUserSearch,
+            String ldapUserDnPattern,
             String ldapGroupMemberAttribute,
             String ldapAdminPassword,
             String ldapTrustStorePath,
@@ -64,6 +74,7 @@ public class LdapConfiguration
         this.ldapAdminBindDn = ldapAdminBindDn;
         this.ldapUserBaseDn = ldapUserBaseDn;
         this.ldapUserSearch = ldapUserSearch;
+        this.ldapUserDnPattern = ldapUserDnPattern;
         this.ldapGroupMemberAttribute = ldapGroupMemberAttribute;
         this.ldapAdminPassword = ldapAdminPassword;
         this.ldapTrustStorePath = ldapTrustStorePath;
@@ -86,7 +97,34 @@ public class LdapConfiguration
             log.error(e, "Error loading configuration file");
             throw new RuntimeException(e);
         }
+        configuration.validate();
         return configuration;
+    }
+
+    /**
+     * Rejects values that cannot work at authentication time, so that a bad configuration
+     * fails while the gateway starts instead of failing every login attempt.
+     */
+    public void validate()
+    {
+        if (ldapUserDnPattern == null || ldapUserDnPattern.isEmpty()) {
+            return;
+        }
+        checkArgument(
+                ldapUserDnPattern.contains(USER_PLACEHOLDER),
+                "ldapUserDnPattern must contain the %s placeholder, otherwise every login binds as the same DN: %s",
+                USER_PLACEHOLDER,
+                ldapUserDnPattern);
+        // Resolve the pattern the same way authentication does, so an unparseable template
+        // is caught here rather than when the first user tries to log in
+        String resolved = ldapUserDnPattern.replace(USER_PLACEHOLDER, Rdn.escapeValue(VALIDATION_USER));
+        try {
+            new Dn(resolved);
+        }
+        catch (LdapInvalidDnException e) {
+            throw new IllegalArgumentException(
+                    "ldapUserDnPattern does not resolve to a valid DN: %s".formatted(ldapUserDnPattern), e);
+        }
     }
 
     public String getLdapHost()
@@ -157,6 +195,22 @@ public class LdapConfiguration
     public void setLdapUserSearch(String ldapUserSearch)
     {
         this.ldapUserSearch = ldapUserSearch;
+    }
+
+    /**
+     * Template used to derive a user DN directly from the login name, for example
+     * {@code uid=${USER},ou=people,dc=example,dc=com}. When set, authentication binds
+     * as that DN without first searching for the user entry. When unset, the
+     * {@link #getLdapUserSearch() search} based flow is used instead.
+     */
+    public String getLdapUserDnPattern()
+    {
+        return ldapUserDnPattern;
+    }
+
+    public void setLdapUserDnPattern(String ldapUserDnPattern)
+    {
+        this.ldapUserDnPattern = ldapUserDnPattern;
     }
 
     public String getLdapGroupMemberAttribute()

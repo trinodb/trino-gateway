@@ -18,7 +18,10 @@ import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
 import org.apache.directory.api.ldap.model.message.SearchScope;
+import org.apache.directory.api.ldap.model.name.Dn;
+import org.apache.directory.api.ldap.model.name.Rdn;
 import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.LdapClientTrustStoreManager;
 import org.apache.directory.ldap.client.api.LdapConnectionConfig;
@@ -77,14 +80,34 @@ public class LbLdapClient
 
     public boolean authenticate(String user, String password)
     {
+        // A bind with an empty password is an unauthenticated bind, which some directory
+        // servers answer with success. Reject it before it reaches the server.
+        if (password == null || password.isEmpty()) {
+            log.error("Rejected authentication attempt with an empty password");
+            return false;
+        }
+
         try {
-            String filter = config.getLdapUserSearch().replace("${USER}", user);
-            PasswordWarning passwordWarning =
-                    ldapConnectionTemplate.authenticate(
-                            config.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray());
+            PasswordWarning passwordWarning;
+            String userDnPattern = config.getLdapUserDnPattern();
+
+            if (userDnPattern != null && !userDnPattern.isEmpty()) {
+                // The user name is interpolated into a DN, so it needs DN escaping rather
+                // than search filter escaping. Without it a name such as "x,ou=admins"
+                // would change which DN gets bound.
+                Dn userDn = new Dn(userDnPattern.replace("${USER}", Rdn.escapeValue(user)));
+                passwordWarning =
+                        ldapConnectionTemplate.authenticate(userDn, password.toCharArray());
+            }
+            else {
+                String filter = config.getLdapUserSearch().replace("${USER}", user);
+                passwordWarning =
+                        ldapConnectionTemplate.authenticate(
+                                config.getLdapUserBaseDn(),
+                                filter,
+                                SearchScope.SUBTREE,
+                                password.toCharArray());
+            }
 
             if (passwordWarning != null) {
                 log.warn("password warning %s", passwordWarning);
@@ -93,6 +116,10 @@ public class LbLdapClient
         }
         catch (PasswordException exception) {
             log.error("Failed to authenticate %s", exception.getResultCode());
+            return false;
+        }
+        catch (LdapInvalidDnException exception) {
+            log.error(exception, "ldapUserDnPattern did not produce a valid DN");
             return false;
         }
         log.info("Authenticated successfully");

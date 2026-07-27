@@ -162,6 +162,7 @@ The LDAP config file should have the following contents:
   ldapAdminBindDn: <>
   ldapUserBaseDn: <>
   ldapUserSearch: <>
+  ldapUserDnPattern: <optional, enables direct bind>
   ldapGroupMemberAttribute: <>
   ldapAdminPassword: <>
   ldapTrustStorePath: <for a secure ldap connectivity>
@@ -171,6 +172,37 @@ The LDAP config file should have the following contents:
   poolMinIdle: 0
   poolTestOnBorrow: true
 ```
+
+### Direct bind
+
+By default the gateway authenticates a user in two steps. It binds with
+`ldapAdminBindDn` and `ldapAdminPassword`, searches for the user entry under
+`ldapUserBaseDn` with `ldapUserSearch`, and then binds as the DN it found.
+
+If the user DN can be derived from the login name, set `ldapUserDnPattern` to
+skip the search and bind directly:
+
+```yaml
+  ldapUserDnPattern: 'uid=${USER},ou=people,dc=example,dc=com'
+```
+
+The `${USER}` placeholder is replaced with the login name, escaped according to
+the DN escaping rules. A bind with an empty password is rejected before it
+reaches the server, because some directory servers treat it as an anonymous
+unauthenticated bind and answer with success.
+
+The pattern is validated while the configuration is loaded. It must contain the
+`${USER}` placeholder, otherwise every login would bind as the same DN, and it
+must resolve to a valid DN. An invalid pattern fails the startup instead of
+failing every login attempt.
+
+When `ldapUserDnPattern` is not set, the search based flow is used, so existing
+configurations are unaffected.
+
+LDAP authorization still performs a search to read
+`ldapGroupMemberAttribute`, and therefore still requires `ldapAdminBindDn`.
+Direct bind removes the need for an admin account only when LDAP authorization
+is not used.
 
 ## Web page permissions
 
