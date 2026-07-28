@@ -16,6 +16,9 @@ package io.trino.gateway.ha.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.AuthenticationConfiguration;
+import io.trino.gateway.ha.config.AuthenticationType;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -45,6 +48,7 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.security.LbOAuthManager.buildUnauthorizedResponse;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
+import static io.trino.gateway.ha.security.util.AuthenticationTypeResolver.resolveEffectiveTypes;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,13 +56,18 @@ public class LoginResource
 {
     private static final Logger log = Logger.get(LoginResource.class);
     public static final String CALLBACK_ENDPOINT = "oidc/callback";
+    // UI sentinel returned by /loginType when no authentication is configured; it is not a
+    // configurable authentication type (see AuthenticationType) and maps to the passwordless form.
+    private static final String NO_AUTHENTICATION_TYPE = "none";
 
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
+    private final HaGatewayConfiguration haGatewayConfiguration;
 
     @Inject
-    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
+    public LoginResource(HaGatewayConfiguration haGatewayConfiguration, @Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
     {
+        this.haGatewayConfiguration = haGatewayConfiguration;
         this.oauthManager = oauthManager;
         this.formAuthManager = formAuthManager;
     }
@@ -172,16 +181,23 @@ public class LoginResource
     @Produces(MediaType.APPLICATION_JSON)
     public Response loginType()
     {
-        String loginType;
-        if (formAuthManager != null) {
-            loginType = "form";
-        }
-        else if (oauthManager != null) {
-            loginType = "oauth";
+        List<String> loginTypes;
+        AuthenticationConfiguration authentication = haGatewayConfiguration.getAuthentication();
+        if (authentication != null) {
+            List<AuthenticationType> resolvedTypes = resolveEffectiveTypes(
+                    authentication.getDefaultTypes(),
+                    oauthManager != null,
+                    formAuthManager != null);
+            if (authentication.isShowFirstTypeOnly()) {
+                resolvedTypes = List.of(resolvedTypes.getFirst());
+            }
+            loginTypes = resolvedTypes.stream()
+                    .map(AuthenticationType::value)
+                    .toList();
         }
         else {
-            loginType = "none";
+            loginTypes = List.of(NO_AUTHENTICATION_TYPE);
         }
-        return Response.ok(Result.ok("Ok", loginType)).build();
+        return Response.ok(Result.ok("Ok", loginTypes)).build();
     }
 }
