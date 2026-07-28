@@ -19,13 +19,17 @@ public class AuthorizationConfiguration
     private String user;
     private String api;
     private String ldapConfigPath;
+    private String defaultPrivilege;
+    private boolean enableDefaultPrivilege;
 
-    public AuthorizationConfiguration(String admin, String user, String api, String ldapConfigPath)
+    public AuthorizationConfiguration(String admin, String user, String api, String ldapConfigPath, String defaultPrivilege, boolean enableDefaultPrivilege)
     {
         this.admin = admin;
         this.user = user;
         this.api = api;
         this.ldapConfigPath = ldapConfigPath;
+        this.defaultPrivilege = defaultPrivilege;
+        this.enableDefaultPrivilege = enableDefaultPrivilege;
     }
 
     public AuthorizationConfiguration() {}
@@ -68,5 +72,31 @@ public class AuthorizationConfiguration
     public void setLdapConfigPath(String ldapConfigPath)
     {
         this.ldapConfigPath = ldapConfigPath;
+    }
+
+    public String getDefaultPrivilege()
+    {
+        return this.defaultPrivilege;
+    }
+
+    public void setDefaultPrivilege(String defaultPrivilege)
+    {
+        this.defaultPrivilege = defaultPrivilege;
+    }
+
+    /**
+     * Whether the {@code defaultPrivilege} fallback is enabled. When {@code false} (the default),
+     * {@code defaultPrivilege} is ignored and any user who isn't a preset user or resolved via LDAP
+     * is denied. When {@code true}, such users fall back to {@code defaultPrivilege} — useful for
+     * SSO/OAuth users who aren't individually preset but should still get baseline access.
+     */
+    public boolean isEnableDefaultPrivilege()
+    {
+        return this.enableDefaultPrivilege;
+    }
+
+    public void setEnableDefaultPrivilege(boolean enableDefaultPrivilege)
+    {
+        this.enableDefaultPrivilege = enableDefaultPrivilege;
     }
 }

@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.interfaces.Claim;
+import io.trino.gateway.ha.config.AuthenticationType;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -95,7 +96,7 @@ final class TestLbFilter
                 authenticator,
                 authorizer,
                 "Bearer",
-                new LbUnauthorizedHandler(""));
+                new LbUnauthorizedHandler(AuthenticationType.FORM));
         ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
                 .forClass(SecurityContext.class);
 
@@ -136,7 +137,7 @@ final class TestLbFilter
                 authenticator,
                 authorizer,
                 "Bearer",
-                new LbUnauthorizedHandler(""));
+                new LbUnauthorizedHandler(AuthenticationType.FORM));
         ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
                 .forClass(SecurityContext.class);
 
@@ -173,7 +174,7 @@ final class TestLbFilter
                     authenticator,
                     authorizer,
                     "Bearer",
-                    new LbUnauthorizedHandler(""));
+                    new LbUnauthorizedHandler(AuthenticationType.FORM));
 
             // Exception is thrown when the authentication fails
             lbFilter.filter(requestContext);
