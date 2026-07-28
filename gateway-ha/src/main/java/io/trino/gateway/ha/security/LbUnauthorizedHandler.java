@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.security;
 
+import io.trino.gateway.ha.config.AuthenticationType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
@@ -21,9 +22,9 @@ public class LbUnauthorizedHandler
 {
     private final String redirectPath;
 
-    public LbUnauthorizedHandler(String authenticationType)
+    public LbUnauthorizedHandler(AuthenticationType authenticationType)
     {
-        if (authenticationType.equals("oauth")) {
+        if (authenticationType == AuthenticationType.OAUTH) {
             this.redirectPath = "/sso";
         }
         else {

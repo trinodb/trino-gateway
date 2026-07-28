@@ -8,9 +8,6 @@ dataStore:
   password: ${ENV:POSTGRESQL_PASSWORD}
   driver: org.postgresql.Driver
 
-extraWhitelistPaths:
-  - '/v1/custom.*'
-
 authorization:
   admin: .*FOO.*
   user: .*BAR.*
@@ -24,8 +21,12 @@ presetUsers:
     password: password_user1
     privileges: BAR_BAZ
 
+# The scalar defaultType names only "oauth" (bound as a one-element list), but no oauth block is
+# configured while a form block is. The listed method is unusable, so the login page falls back
+# to the configured form method and the gateway still boots — the backward-compatibility
+# guarantee that a configured method is always accepted.
 authentication:
-  defaultType: ["form"]
+  defaultType: "oauth"
   form:
     selfSignKeyPair:
       privateKey: src/test/resources/auth/test_private_key.pem
