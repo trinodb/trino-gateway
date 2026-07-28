@@ -55,28 +55,33 @@ public class ChainedAuthFilter
         requireNonNull(authorizer, "authorizer is null");
 
         ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
-        String defaultType = config.getAuthentication().getDefaultType();
-        if (oauthManager != null) {
-            authFilters.add(new LbFilter(
-                    new LbAuthenticator(oauthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-        }
+        List<String> authMethods = AuthenticationTypeResolver.resolveEffectiveTypes(
+                config.getAuthentication().getDefaultTypes(),
+                oauthManager != null,
+                formAuthManager != null);
+        for (String authMethod : authMethods) {
+            switch (authMethod) {
+                case "oauth" -> authFilters.add(new LbFilter(
+                        new LbAuthenticator(requireNonNull(oauthManager), authorizationManager),
+                        authorizer,
+                        "Bearer",
+                        new LbUnauthorizedHandler("oauth")));
+                case "form" -> {
+                    authFilters.add(new LbFilter(
+                            new FormAuthenticator(requireNonNull(formAuthManager), authorizationManager),
+                            authorizer,
+                            "Bearer",
+                            new LbUnauthorizedHandler("form")));
 
-        if (formAuthManager != null) {
-            authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-
-            authFilters.add(new BasicAuthFilter(
-                    new ApiAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    new LbUnauthorizedHandler(defaultType)));
+                    authFilters.add(new BasicAuthFilter(
+                            new ApiAuthenticator(requireNonNull(formAuthManager), authorizationManager),
+                            authorizer,
+                            new LbUnauthorizedHandler("form")));
+                }
+                default -> throw new IllegalStateException("Unexpected authentication type: " + authMethod);
+            }
         }
-        this.filters = requireNonNull(authFilters.build());
+        this.filters = authFilters.build();
     }
 
     @Override

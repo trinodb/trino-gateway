@@ -24,14 +24,20 @@ import java.util.Optional;
 
 public class AuthorizationManager
 {
+    // Sentinel value for defaultPrivilege that explicitly denies all access to
+    // users who aren't a preset user, resolved via LDAP, or matched by an OAuth claim.
+    public static final String DENY_ALL_PRIVILEGE = "NONE";
+
     private final Map<String, UserConfiguration> presetUsers;
     private final LbLdapClient lbLdapClient;
+    private final AuthorizationConfiguration authorizationConfiguration;
 
     @Inject
     public AuthorizationManager(HaGatewayConfiguration config)
     {
         AuthorizationConfiguration authorizationConfig = config.getAuthorization();
         this.presetUsers = config.getPresetUsers();
+        this.authorizationConfiguration = authorizationConfig;
         if (authorizationConfig != null && authorizationConfig.getLdapConfigPath() != null) {
             lbLdapClient = new LbLdapClient(LdapConfiguration.load(authorizationConfig.getLdapConfigPath()));
         }
@@ -52,6 +58,27 @@ public class AuthorizationManager
         else if (lbLdapClient != null) {
             privs = lbLdapClient.getMemberOf(username);
         }
-        return Optional.ofNullable(privs);
+
+        if (privs == null || privs.trim().isEmpty()) {
+            return defaultPrivileges();
+        }
+        return Optional.of(privs);
+    }
+
+    private Optional<String> defaultPrivileges()
+    {
+        if (authorizationConfiguration == null) {
+            return Optional.empty();
+        }
+        String defaultPrivilege = authorizationConfiguration.getDefaultPrivilege();
+        // A missing, empty, or "NONE" (case-insensitive) default privilege denies all
+        // access to users who aren't a preset user, resolved via LDAP, or matched by an
+        // OAuth claim. This keeps deny-by-default behavior and lets it be set explicitly.
+        if (defaultPrivilege == null
+                || defaultPrivilege.trim().isEmpty()
+                || defaultPrivilege.trim().equalsIgnoreCase(DENY_ALL_PRIVILEGE)) {
+            return Optional.empty();
+        }
+        return Optional.of(defaultPrivilege);
     }
 }
