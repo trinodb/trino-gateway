@@ -180,9 +180,46 @@ for more details.
 ## Authentication
 
 The authentication would happen on https protocol only. Add the
-`authentication:` section in the config file. The default authentication type is
-set using `defaultType: "form"` Following types of the authentications are
-supported.
+`authentication:` section in the config file and configure one or more method
+blocks (`oauth` and/or `form`) — configuring a block is what enables that method.
+The `defaultType` property then sets the order the methods are tried in and which
+appear on the login page; it accepts either a single value (`defaultType: "form"`)
+or a list (`defaultType: ["oauth", "form"]`), where the first entry is the primary
+(pre-selected) method on the login page and the rest are fallbacks.
+Following types of the authentications are supported.
+
+> **What `defaultType` controls (and what it doesn't):** Configuring an `oauth`
+> or `form` block is what makes that method *accepted* by the gateway — the
+> authentication chain always accepts every configured method, so a configured
+> method can never be dropped by leaving it out of `defaultType`. `defaultType`
+> only sets two things: the order methods are tried in (fallback priority) and
+> which method(s) the login page advertises. A configured method that is not
+> listed in `defaultType` is still accepted by the API; it is simply not shown on
+> the login page. This is what lets humans sign in through the primary method
+> (for example `oauth`) while automation keeps using form/basic auth.
+
+> **Login page vs. API fallback:** By default the login page offers every
+> configured *and listed* authentication method (the first is pre-selected, and
+> any additional methods are shown as options to switch between). Set
+> `showFirstTypeOnly: true` to restrict the login page to only the first such
+> method. This affects the login page only — the authentication chain still
+> accepts every configured method, so API clients keep their multi-method
+> fallback (for example, form/basic auth for automation even when `oauth` is
+> listed first and shown on the login page):
+>
+> ```yaml
+> authentication:
+>   defaultType: ["oauth", "form"]
+>   showFirstTypeOnly: true  # login page shows only oauth; API still accepts form/basic
+> ```
+
+> **Migrating from the scalar `defaultType`:** Earlier releases configured a
+> single string `defaultType: "form"`. That form still works unchanged — a scalar
+> is bound as a one-element list — so existing configurations keep booting without
+> edits. Use the list form (`defaultType: ["oauth", "form"]`) to choose which
+> configured methods the login page shows and in what order (the first entry is
+> the primary method). Listing a method does not enable it; each method is enabled
+> by its own `oauth`/`form` block.
 
 ### OAuth/OpenIDConnect
 
@@ -190,7 +227,7 @@ It can be configured as below
 
 ```yaml
 authentication:
-  defaultType: "oauth"
+  defaultType: ["oauth"]
   oauth:
     issuer:
     clientId:
@@ -247,7 +284,7 @@ Also provide a signing key pair in RSA or EC format.
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultType: ["form"]
   form:
     selfSignKeyPair:
       privateKey: <private_key_path>
@@ -260,7 +297,7 @@ LDAP requires both random key pair and config path for LDAP
 
 ```yaml
 authentication:
-  defaultType: "form"
+  defaultType: ["form"]
   form:
     ldapConfigPath: <ldap_config_path>
     selfSignKeyPair:
@@ -348,6 +385,56 @@ LDAP authorization still performs a search to read
 `ldapGroupMemberAttribute`, and therefore still requires `ldapAdminBindDn`.
 Direct bind removes the need for an admin account only when LDAP authorization
 is not used.
+
+### Default privileges
+
+By default, a user who doesn't match a preset user, an LDAP group, or an OAuth
+`privilegesField` claim resolves to no privileges and is denied access. To instead
+give every such user a baseline set of privileges, set `enableDefaultPrivilege: true`
+under `authorization:` and configure the baseline in `defaultPrivilege`. This is
+especially useful when `oauth` is used as (one of) the `defaultType` for
+authentication, since SSO users typically aren't individually preset but should
+still get at least `USER` access after logging in.
+
+```yaml
+authorization:
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
+  enableDefaultPrivilege: true
+  defaultPrivilege: "USER"
+```
+
+With the configuration above, any authenticated user not otherwise matched
+receives `USER` privileges (view access), while users explicitly listed in
+`presetUsers`, resolved via LDAP, or matched via an OAuth claim keep their own
+configured privileges instead.
+
+> **LDAP is authoritative when configured.** `defaultPrivilege` only applies to
+> users that aren't preset and aren't resolved through LDAP — typically OAuth/SSO
+> (or passwordless) users. When `authorization.ldapConfigPath` is set, a user that
+> LDAP resolves with no groups (an empty search result) is denied access rather
+> than falling back to `defaultPrivilege`, so a misconfigured LDAP search (wrong
+> base DN, member attribute, etc.) cannot silently widen access. Preset users with
+> empty privileges still fall back to `defaultPrivilege`.
+
+To deny access to every unrecognized user, leave `enableDefaultPrivilege` unset
+(it defaults to `false`), in which case `defaultPrivilege` is ignored entirely and
+unmatched users get no privileges:
+
+```yaml
+authorization:
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
+  enableDefaultPrivilege: false   # the default; unmatched users are denied
+```
+
+Even with `enableDefaultPrivilege: true`, a `defaultPrivilege` that is missing,
+empty, or `NONE` (case-insensitive) resolves unrecognized users to no privileges,
+so they are denied access regardless of the `admin`, `user`, and `api` regexes.
+This makes the deny-by-default intent explicit while the feature is otherwise
+enabled.
 
 ## Web page permissions
 
