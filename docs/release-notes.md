@@ -2,6 +2,55 @@
 
 ## 2026
 
+### Trino Gateway 21 (25 Aug 2026) { id="21" }
+
+Artifacts:
+
+* [JAR file gateway-ha-21-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/21/gateway-ha-21-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:21`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/21.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/21.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.21.0`
+
+Changes:
+
+**General**
+
+* Support direct LDAP bind without a user search.
+  ([#1205](https://github.com/trinodb/trino-gateway/pull/1205))
+* Add support for client certificate authentication with a JWT bridge that
+  forwards the mapped user identity to the backend clusters as a signed token.
+  ([#1022](https://github.com/trinodb/trino-gateway/pull/1022))
+* Add support for elliptic curve key pairs for JWT signing in addition to RSA
+  key pairs.
+  ([#1022](https://github.com/trinodb/trino-gateway/pull/1022))
+* [:warning: Breaking change:](#breaking) Rename the `selfSignKeyPair`
+  configuration properties `privateKeyRsa` and `publicKeyRsa` to `privateKey`
+  and `publicKey`.
+  ([#1022](https://github.com/trinodb/trino-gateway/pull/1022))
+* Fix parsing of SQL request bodies that omit the charset in the `Content-Type`
+  header.
+  ([#1164](https://github.com/trinodb/trino-gateway/issues/1164))
+* Fix Trino spooling client protocol use by routing spooled-result download and
+  acknowledgement requests to Trino coordinators.
+  ([#1033](https://github.com/trinodb/trino-gateway/issues/1033))
+* Prevent routing to stale or unverified backends by refreshing the backend
+  health state after API requests modify the backend configuration.
+  ([#1029](https://github.com/trinodb/trino-gateway/pull/1029))
+* Fix content-based routing for additional SQL statements by extracting their
+  table, catalog, and schema references.
+  ([#1145](https://github.com/trinodb/trino-gateway/pull/1145))
+* [:warning: Breaking change:](#breaking) Stop building, testing, and shipping
+  container images for PowerPC (ppc64le) processors.
+  ([#1198](https://github.com/trinodb/trino-gateway/pull/1198))
+
+More details and a list of all merged pull requests are [available in the
+milestone 21
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A21+is%3Aclosed)
+and the [GitHub release section for version
+21](https://github.com/trinodb/trino-gateway/releases/tag/21).
+
 ### Trino Gateway 20 (25 Jun 2026) { id="20" }
 
 Artifacts:
