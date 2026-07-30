@@ -22,13 +22,18 @@ import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.TrinoRequestUser;
 import io.trino.gateway.ha.security.util.GatewayFilterPriorities;
 import jakarta.annotation.Priority;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
 
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 
 /**
  * A filter which parses and extracts Trino user identity from incoming request headers
@@ -42,16 +47,24 @@ public class QueryUserInfoParser
         implements ContainerRequestFilter
 {
     private static final Logger log = Logger.get(QueryUserInfoParser.class);
-    private final String tokenUserField;
-    private final String oauthTokenInfoUrl;
+    @Context
+    private HttpServletRequest servletRequest;
+    private final RequestAnalyzerConfig requestAnalyzerConfig;
+    private final ClientCertificateUserResolver clientCertificateUserResolver;
+    private final TrinoRequestUser.TrinoRequestUserProvider trinoRequestUserProvider;
     private final PathFilter pathFilter;
 
     @Inject
     public QueryUserInfoParser(HaGatewayConfiguration config, PathFilter pathFilter)
     {
-        RequestAnalyzerConfig requestAnalyzerConfig = config.getRequestAnalyzerConfig();
-        this.tokenUserField = requestAnalyzerConfig.getTokenUserField();
-        this.oauthTokenInfoUrl = requestAnalyzerConfig.getOauthTokenInfoUrl();
+        this.requestAnalyzerConfig = config.getRequestAnalyzerConfig();
+        if (config.getClientCertificateJwtAuthentication() != null) {
+            this.clientCertificateUserResolver = new ClientCertificateUserResolver(this.requestAnalyzerConfig);
+        }
+        else {
+            this.clientCertificateUserResolver = null;
+        }
+        this.trinoRequestUserProvider = new TrinoRequestUser.TrinoRequestUserProvider(this.requestAnalyzerConfig, this.clientCertificateUserResolver);
         this.pathFilter = pathFilter;
     }
 
@@ -59,17 +72,38 @@ public class QueryUserInfoParser
     public void filter(ContainerRequestContext requestContext)
             throws IOException
     {
+        filter(requestContext, servletRequest);
+    }
+
+    void filter(ContainerRequestContext requestContext, HttpServletRequest servletRequest)
+            throws IOException
+    {
         String path = requestContext.getUriInfo().getRequestUri().getPath();
         if (!pathFilter.isPathWhiteListed(path)) {
             return;
         }
 
-        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
-        requestAnalyzerConfig.setTokenUserField(tokenUserField);
-        requestAnalyzerConfig.setOauthTokenInfoUrl(oauthTokenInfoUrl);
+        if (clientCertificateUserResolver != null && servletRequest != null) {
+            try {
+                clientCertificateUserResolver.resolveMappedUser(servletRequest);
+            }
+            catch (UserMappingException e) {
+                throw unauthorized(e.getMessage());
+            }
+        }
 
-        TrinoRequestUser user = new TrinoRequestUser.TrinoRequestUserProvider(requestAnalyzerConfig).getInstance(requestContext);
+        TrinoRequestUser user = trinoRequestUserProvider.getInstance(requestContext, servletRequest);
+
         requestContext.setProperty(TRINO_REQUEST_USER, user);
         log.debug("Parsed user %s", user.getUser().orElse("None"));
+    }
+
+    private static WebApplicationException unauthorized(String message)
+    {
+        return new WebApplicationException(
+                Response.status(Response.Status.UNAUTHORIZED)
+                        .type(TEXT_PLAIN_TYPE)
+                        .entity(message)
+                        .build());
     }
 }
