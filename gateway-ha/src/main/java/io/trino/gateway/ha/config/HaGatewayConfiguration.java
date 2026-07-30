@@ -15,13 +15,16 @@ package io.trino.gateway.ha.config;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import io.trino.gateway.ha.security.UserMapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
+import static io.trino.gateway.ha.security.ClientCertificateIdentityExtractor.SUBJECT_DN_FIELD;
 
 public class HaGatewayConfiguration
 {
@@ -45,6 +48,7 @@ public class HaGatewayConfiguration
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
     private UIConfiguration uiConfiguration = new UIConfiguration();
     private DatabaseCacheConfiguration databaseCache = new DatabaseCacheConfiguration();
+    private ClientCertificateJwtAuthenticationConfiguration clientCertificateJwtAuthentication;
 
     // List of Modules with FQCN (Fully Qualified Class Name)
     private List<String> modules;
@@ -201,6 +205,7 @@ public class HaGatewayConfiguration
 
     public void setRequestAnalyzerConfig(RequestAnalyzerConfig requestAnalyzerConfig)
     {
+        validateClientCertificateUserMapping(requestAnalyzerConfig);
         this.requestAnalyzerConfig = requestAnalyzerConfig;
     }
 
@@ -277,6 +282,44 @@ public class HaGatewayConfiguration
         this.databaseCache = databaseCache;
     }
 
+    public ClientCertificateJwtAuthenticationConfiguration getClientCertificateJwtAuthentication()
+    {
+        return clientCertificateJwtAuthentication;
+    }
+
+    public void setClientCertificateJwtAuthentication(ClientCertificateJwtAuthenticationConfiguration clientCertificateJwtAuthentication)
+    {
+        this.clientCertificateJwtAuthentication = clientCertificateJwtAuthentication;
+    }
+
+    // Cross-field check on the final state; must run after full deserialization since Jackson calls
+    // setters in document order and checking inside a setter would depend on which field is set first.
+    public void validate()
+    {
+        if (clientCertificateJwtAuthentication == null) {
+            // Nothing reads these without the bridge block, so accepting them would silently do nothing
+            if (optionalNonBlank(requestAnalyzerConfig.getClientCertificateIdentityField()).isPresent()
+                    || optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingPattern()).isPresent()
+                    || optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingFile()).isPresent()) {
+                throw new HaGatewayConfigurationException("requestAnalyzerConfig client certificate settings have no effect without a clientCertificateJwtAuthentication block");
+            }
+            return;
+        }
+        String identityField = optionalNonBlank(requestAnalyzerConfig.getClientCertificateIdentityField())
+                .orElseThrow(() -> new HaGatewayConfigurationException("clientCertificateIdentityField must be set when client certificate authentication is configured"));
+
+        // A deny rule written against a whole DN never matches an extracted field, so refuse the combination
+        if (!identityField.equalsIgnoreCase(SUBJECT_DN_FIELD)
+                && UserMapping.createUserMapping(
+                        optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingPattern()),
+                        optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingFile()))
+                .hasDenyRules()) {
+            throw new HaGatewayConfigurationException(
+                    "clientCertificateUserMappingFile contains \"allow\": false rules, which are matched against the whole certificate subject DN. " +
+                            "Set clientCertificateIdentityField to " + SUBJECT_DN_FIELD + " so those rules apply, or rewrite them to match the extracted '" + identityField + "' value");
+        }
+    }
+
     private void validateStatementPath(String statementPath, List<String> statementPaths)
     {
         if (statementPath.startsWith(V1_STATEMENT_PATH) ||
@@ -286,6 +329,23 @@ public class HaGatewayConfiguration
         if (!statementPath.startsWith("/")) {
             throw new HaGatewayConfigurationException("Statement paths must be absolute");
         }
+    }
+
+    private void validateClientCertificateUserMapping(RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        try {
+            UserMapping.createUserMapping(
+                    optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingPattern()),
+                    optionalNonBlank(requestAnalyzerConfig.getClientCertificateUserMappingFile()));
+        }
+        catch (RuntimeException e) {
+            throw new HaGatewayConfigurationException("Invalid client certificate user mapping configuration: " + e.getMessage());
+        }
+    }
+
+    private static Optional<String> optionalNonBlank(String value)
+    {
+        return Optional.ofNullable(value).filter(v -> !v.isBlank());
     }
 
     public static class HaGatewayConfigurationException

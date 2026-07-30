@@ -17,6 +17,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 
+import java.net.URI;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -38,6 +41,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class PathFilter
 {
+    private static final Pattern PATH_SEPARATOR = Pattern.compile("/");
+
     private final Set<String> statementPaths;
     private final List<Pattern> extraWhitelistPatterns;
 
@@ -80,5 +85,56 @@ public class PathFilter
                 || path.startsWith(UI_API_STATS_PATH)
                 || path.startsWith(OAUTH_PATH)
                 || extraWhitelistPatterns.stream().anyMatch(pattern -> pattern.matcher(path).matches());
+    }
+
+    // Complement of an exemption list, so anything else routed to a backend fails closed
+    public boolean requiresBackendAuthentication(String path)
+    {
+        if (path == null) {
+            return true;
+        }
+        try {
+            return !isExemptFromBackendAuthentication(normalize(path));
+        }
+        catch (IllegalArgumentException e) {
+            return true;
+        }
+    }
+
+    // Browser and health endpoints, which cannot present a client certificate
+    private static boolean isExemptFromBackendAuthentication(String path)
+    {
+        return matchesPathBoundary(path, TRINO_UI_PATH)
+                || matchesPathBoundary(path, OAUTH_PATH)
+                || matchesPathBoundary(path, V1_INFO_PATH)
+                || matchesPathBoundary(path, V1_NODE_PATH);
+    }
+
+    // Decodes percent-encoding and drops matrix parameters and dot segments, so this agrees with what the backend resolves the path to
+    @VisibleForTesting
+    static String normalize(String path)
+    {
+        Deque<String> segments = new ArrayDeque<>();
+        for (String rawSegment : PATH_SEPARATOR.split(decodePath(path))) {
+            int matrixParameter = rawSegment.indexOf(';');
+            String segment = matrixParameter < 0 ? rawSegment : rawSegment.substring(0, matrixParameter);
+            switch (segment) {
+                case "", "." -> {}
+                case ".." -> segments.pollLast();
+                default -> segments.addLast(segment);
+            }
+        }
+        return "/" + String.join("/", segments);
+    }
+
+    private static String decodePath(String path)
+    {
+        String absolutePath = path.startsWith("/") ? path : "/" + path;
+        return URI.create("http://localhost" + absolutePath).getPath();
+    }
+
+    private static boolean matchesPathBoundary(String path, String prefix)
+    {
+        return path.equals(prefix) || path.startsWith(prefix + "/");
     }
 }
