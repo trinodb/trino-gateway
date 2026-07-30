@@ -113,6 +113,7 @@ public class HaGatewayLauncher
         }
         String config = Files.readString(Path.of(args[0]));
         HaGatewayConfiguration haGatewayConfiguration = objectMapper.readValue(replaceEnvironmentVariables(config), HaGatewayConfiguration.class);
+        haGatewayConfiguration.validate();
         FlywayMigration.migrate(haGatewayConfiguration.getDataStore());
         List<Module> modules = addModules(haGatewayConfiguration);
         new HaGatewayLauncher().start(modules, haGatewayConfiguration);
