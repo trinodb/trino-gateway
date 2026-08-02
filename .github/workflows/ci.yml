@@ -20,6 +20,20 @@ env:
   MAVEN_FAST_INSTALL: "-B -V -T 1C -DskipTests -Dmaven.source.skip=true -Dair.check.skip-all"
 
 jobs:
+  check-commit-messages:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: airlift/github-actions/check-commit-messages@1652e24519f5c7cec59d841070bf9beffadabdf9 # v1
+        with:
+          base_ref: ${{ github.event.pull_request.base.ref }}
+
   maven-build:
     runs-on: ubuntu-latest
     strategy:
