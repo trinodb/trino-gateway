@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import parseSpdxExpression from 'spdx-expression-parse';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webappDirectory = path.resolve(scriptDirectory, '..');
@@ -15,10 +16,15 @@ function readAllowedLicenses()
         .filter((line) => line && !line.startsWith('#')));
 }
 
-function packageLicense(packageJson)
+export function packageLicense(packageJson)
 {
     if (typeof packageJson.license === 'string' && packageJson.license.trim()) {
         return packageJson.license.trim();
+    }
+
+    if (packageJson.license && typeof packageJson.license === 'object' &&
+        typeof packageJson.license.type === 'string' && packageJson.license.type.trim()) {
+        return packageJson.license.type.trim();
     }
 
     if (Array.isArray(packageJson.licenses)) {
@@ -33,6 +39,38 @@ function packageLicense(packageJson)
     }
 
     return undefined;
+}
+
+function isParsedLicenseAllowed(expression, allowedLicenses)
+{
+    if (expression.license) {
+        const license = expression.exception
+            ? `${expression.license} WITH ${expression.exception}`
+            : expression.license;
+        return allowedLicenses.has(license);
+    }
+
+    if (expression.conjunction === 'or') {
+        return isParsedLicenseAllowed(expression.left, allowedLicenses) ||
+            isParsedLicenseAllowed(expression.right, allowedLicenses);
+    }
+
+    if (expression.conjunction === 'and') {
+        return isParsedLicenseAllowed(expression.left, allowedLicenses) &&
+            isParsedLicenseAllowed(expression.right, allowedLicenses);
+    }
+
+    return false;
+}
+
+export function isLicenseAllowed(license, allowedLicenses)
+{
+    try {
+        return isParsedLicenseAllowed(parseSpdxExpression(license), allowedLicenses);
+    }
+    catch {
+        return false;
+    }
 }
 // Read package manifests because pnpm-lock.yaml does not record licenses.
 function packageJsonFiles()
@@ -82,7 +120,7 @@ function checkLicenses()
         if (!license) {
             missingLicenses.push(packageName);
         }
-        else if (!allowedLicenses.has(license)) {
+        else if (!isLicenseAllowed(license, allowedLicenses)) {
             disallowedLicenses.push(`${packageName}: ${license}`);
         }
     }
@@ -102,4 +140,6 @@ function checkLicenses()
     console.log(`Verified licenses for ${packages.size} Web UI dependencies.`);
 }
 
-checkLicenses();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    checkLicenses();
+}
