@@ -60,6 +60,50 @@ contribution process for next steps.
 Want to help build Trino Gateway? Check out our [contributing
 documentation](https://github.com/trinodb/trino-gateway/blob/main/.github/CONTRIBUTING.md)
 
+## Commit messages
+
+Trino Gateway follows the commit message conventions shared across Trino and
+airlift, which are based on the [Chris Beams style for git commit
+messages](https://cbea.ms/git-commit/). The `check-commit-messages` job in the
+CI workflow enforces the conventions on every pull request with the
+[check-commit-messages action from
+airlift](https://github.com/airlift/github-actions/tree/main/check-commit-messages):
+
+* Subjects must use imperative mood, must not start with a lowercase letter or
+  end with a period, and must not exceed 60 characters. Aim for 50 characters.
+* Description lines must not exceed 79 characters, and should wrap at 72.
+  URLs, trailers, quoted text, fenced code blocks, and other long, unwrappable
+  content are exempt.
+* `Assisted-by` and `Co-authored-by` trailers must not credit AI models or
+  coding tools. Attribution of people remains allowed.
+
+### Dependabot commit messages
+
+Dependabot writes its own commit messages and offers no setting for subject
+length, so some dependency updates fail the check and block the pull request.
+The `Reword Dependabot commits` workflow amends the commit message on those
+pull requests and force pushes the result back onto the branch. Only messages
+that break the rules are changed. Shortened subjects lose no detail, because
+Dependabot repeats the full name and both versions in the description and in
+its updated-dependencies metadata.
+
+The workflow needs a token with `Contents: read and write` on the repository,
+either a fine-grained personal access token or a GitHub App installation
+token. Store it as a Dependabot secret named `REWORD_PAT` under Settings,
+Secrets and variables, Dependabot. Actions secrets do not work, because
+workflows triggered by Dependabot can only read Dependabot secrets. A separate
+token is required because pushes made with the automatic `GITHUB_TOKEN` do not
+start new workflow runs, and CI therefore never runs against the amended
+commit. Until the secret exists, the workflow logs a notice and stops without
+blocking any pull request.
+
+Use `--dry-run` to check the effect of the rewording on any commit without
+amending it:
+
+```shell
+.github/scripts/reword-dependabot-commit.py --dry-run
+```
+
 ## Maintainers
 
 The following Trino and Trino Gateway maintainers are involved in Trino
