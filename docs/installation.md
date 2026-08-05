@@ -589,7 +589,7 @@ the only metric populated is:
 ```yaml
 monitor:
     metricMinimumValues:
-        trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
+        trino_node_name_CoordinatorNodeManager_ActiveNodeCount: 1
 ```
 
 This requires the cluster to have at least one active worker node in order to be considered
@@ -600,10 +600,29 @@ Collections, set
 ```yaml
 monitor:
     metricMinimumValues:
-        trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 10
+        trino_node_name_CoordinatorNodeManager_ActiveNodeCount: 10
     metricMaximumValues:
         io_airlift_stats_name_GcMonitor_MajorGc_FiveMinutes_count: 2
 ```
+
+Trino 477 renamed the active node count metric from
+`trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount` to
+`trino_node_name_CoordinatorNodeManager_ActiveNodeCount`. The default uses the
+current name. If any backend cluster runs Trino 476 or earlier, configure the
+previous name explicitly:
+
+```yaml
+monitor:
+    metricMinimumValues:
+        trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount: 1
+```
+
+Because this configuration applies to every backend, a Trino Gateway fronting a
+mix of Trino releases across that boundary cannot satisfy both names at once.
+Each configured metric must be present on every cluster, so listing both names
+marks every cluster as unhealthy.
+See [Trino version compatibility](#trino-version-compatibility) for the full
+picture.
 
 #### JDBC
 
@@ -635,6 +654,16 @@ Other timeout parameters are not applicable to the JDBC connection.
 The monitor type `JMX` can be used as an alternative to collect cluster information, 
 which is required for the `QueryCountBasedRouterProvider`. This uses the `v1/jmx/mbean` 
 endpoint on Trino clusters.
+
+> **This monitor does not work with Trino 480 and later.** The `v1/jmx/mbean`
+> endpoint it depends on is not present in those releases, and it is not part of
+> the documented [Trino JMX interface](https://trino.io/docs/current/admin/jmx.html),
+> which covers RMI access only. Use the `METRICS` monitor, which reads the
+> OpenMetrics endpoint of each cluster, instead. To check other MBean values,
+> export them on that endpoint with the `openmetrics.jmx-object-names` property
+> of each Trino cluster, and set limits for them with `metricMinimumValues` and
+> `metricMaximumValues`. See
+> [Trino version compatibility](#trino-version-compatibility).
 
 To enable this:
 
@@ -682,11 +711,56 @@ queued queries, and worker nodes information.
 
 #### UI_API
 
-This pulls cluster information from the `ui/api/stats` REST endpoint. This is
-supported for legacy reasons and may be deprecated in the future. It is only 
+This pulls cluster information from the `ui/api/stats` REST endpoint. It is only
 supported for backend clusters with `web-ui.authentication.type=FORM`. Set
 a username and password using `backendState` as with the `JDBC` option.
+
+The monitor detects the Web UI login resource of each backend cluster. It first
+posts a JSON request body to `/ui/auth/login`, the login resource of the Web UI
+in Trino 483 and later. When that returns no session cookie, it posts a form
+encoded request body to `/ui/login`, the login resource in Trino 482 and
+earlier. The monitor remembers the login resource that works for each cluster,
+so one configuration monitors clusters on different Trino versions, for example
+during an upgrade of one cluster at a time.
+
+The monitor does not use `/ui/legacy/login`, which belongs to the previous Web
+UI in Trino 483 and later.
 
 #### NOOP
 
 This option disables health checks.
+
+### Trino version compatibility
+
+The monitor types depend on different Trino interfaces, and some of those
+interfaces changed in recent Trino releases. The following table summarizes
+which monitor types work against which Trino versions.
+
+| Monitor type | Trino 476 and earlier | 477 to 479 | 480 to 482 | 483 and later |
+|---|---|---|---|---|
+| `INFO_API` | Yes | Yes | Yes | Yes |
+| `JDBC` | Yes | Yes | Yes | Yes |
+| `METRICS` | Yes, with the previous metric name configured | Yes | Yes | Yes |
+| `JMX` | Yes | Yes | No | No |
+| `UI_API` | Yes | Yes | Yes | Yes |
+| `NOOP` | Not applicable | Not applicable | Not applicable | Not applicable |
+
+The causes are:
+
+- Trino 477 renamed the active node count metric used by the `METRICS` monitor,
+  so the default only matches Trino 477 and later. Configure
+  `metricMinimumValues` explicitly for older clusters.
+- Trino 480 removed the `v1/jmx/mbean` endpoint that the `JMX` monitor depends
+  on. That endpoint was never part of the documented Trino JMX interface.
+- Trino 483 replaced the previous Web UI with the preview Web UI, which changed
+  the login resource that the `UI_API` monitor uses. The monitor detects the
+  login resource of each cluster.
+
+`INFO_API`, `JDBC`, and `UI_API` work with clusters on any of these Trino
+versions in the same deployment. `INFO_API` and `JDBC` use stable, documented
+Trino interfaces. Note that the `QueryCountBasedRouter` requires either
+`METRICS` or `JDBC`.
+
+Monitor configuration applies to all backends. A deployment with clusters on
+both sides of Trino 477 needs a monitor type other than `METRICS`, and a
+deployment with clusters on Trino 480 or later cannot use `JMX`.
