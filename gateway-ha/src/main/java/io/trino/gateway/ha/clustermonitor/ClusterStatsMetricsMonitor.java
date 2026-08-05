@@ -31,6 +31,7 @@ import io.trino.gateway.ha.security.util.BasicCredentials;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,6 +51,16 @@ public class ClusterStatsMetricsMonitor
 {
     private static final Logger log = Logger.get(ClusterStatsMetricsMonitor.class);
 
+    static final String ACTIVE_NODE_COUNT_METRIC = "trino_node_name_CoordinatorNodeManager_ActiveNodeCount";
+    // The name of the active node count metric in Trino 476 and earlier
+    static final String LEGACY_ACTIVE_NODE_COUNT_METRIC = "trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount";
+
+    // Metrics that Trino renamed. A configured metric is also satisfied by its other name, so one
+    // configuration monitors clusters on both sides of the rename.
+    private static final Map<String, String> METRIC_ALIASES = ImmutableMap.of(
+            ACTIVE_NODE_COUNT_METRIC, LEGACY_ACTIVE_NODE_COUNT_METRIC,
+            LEGACY_ACTIVE_NODE_COUNT_METRIC, ACTIVE_NODE_COUNT_METRIC);
+
     private final HttpClient httpClient;
     private final int retries;
     private final MetricsResponseHandler metricsResponseHandler;
@@ -58,6 +69,7 @@ public class ClusterStatsMetricsMonitor
     private final String runningQueriesMetricName;
     private final String queuedQueriesMetricName;
     private final ImmutableSet<String> metricNames;
+    private final ImmutableSet<String> requestedMetricNames;
     private final Map<String, Float> metricMinimumValues;
     private final Map<String, Float> metricMaximumValues;
     private final boolean xForwardedProtoHeader;
@@ -83,6 +95,13 @@ public class ClusterStatsMetricsMonitor
                 .add(runningQueriesMetricName, queuedQueriesMetricName)
                 .addAll(metricMinimumValues.keySet())
                 .addAll(metricMaximumValues.keySet())
+                .build();
+        requestedMetricNames = ImmutableSet.<String>builder()
+                .addAll(metricNames)
+                .addAll(metricNames.stream()
+                        .filter(METRIC_ALIASES::containsKey)
+                        .map(METRIC_ALIASES::get)
+                        .toList())
                 .build();
         metricsResponseHandler = new MetricsResponseHandler(metricNames);
         xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
@@ -135,7 +154,7 @@ public class ClusterStatsMetricsMonitor
     private Map<String, String> getMetrics(String baseUrl, int retriesRemaining)
     {
         HttpUriBuilder uri = uriBuilderFrom(URI.create(baseUrl)).appendPath(metricsEndpoint);
-        for (String metric : metricNames) {
+        for (String metric : requestedMetricNames) {
             uri.addParameter("name[]", metric);
         }
 
@@ -190,16 +209,22 @@ public class ClusterStatsMetricsMonitor
         {
             try {
                 String responseBody = new String(response.getInputStream().readAllBytes(), UTF_8);
-                Map<String, String> metrics = Arrays.stream(responseBody.split("\n"))
+                Map<String, String> metrics = new HashMap<>(Arrays.stream(responseBody.split("\n"))
                         .filter(line -> !line.startsWith("#"))
-                        .collect(toImmutableMap(s -> s.split(" ")[0], s -> s.split(" ")[1]));
+                        .collect(toImmutableMap(s -> s.split(" ")[0], s -> s.split(" ")[1])));
+                for (String key : requiredKeys) {
+                    String alias = METRIC_ALIASES.get(key);
+                    if (!metrics.containsKey(key) && alias != null && metrics.containsKey(alias)) {
+                        metrics.put(key, metrics.get(alias));
+                    }
+                }
                 if (!metrics.keySet().containsAll(requiredKeys)) {
                     throw new UnexpectedResponseException(
                             "Request is missing required keys: \n%s\nin response: '%s'".formatted(String.join("\n", requiredKeys), responseBody),
                             request,
                             response);
                 }
-                return metrics;
+                return ImmutableMap.copyOf(metrics);
             }
             catch (IOException e) {
                 throw new UnexpectedResponseException(request, response);
