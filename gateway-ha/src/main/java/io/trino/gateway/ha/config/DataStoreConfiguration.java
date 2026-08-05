@@ -29,8 +29,11 @@ public class DataStoreConfiguration
     // cleanup sweep runs on its own fixed cadence, so a pin can linger until the next sweep after this
     // period elapses.
     private Duration oauth2RoutingRetention = Duration.valueOf("1h");
+    private Integer maxPoolSize;
+    private Duration keepaliveTime;
+    private Duration maxLifetime;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
+    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled, Integer maxPoolSize)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
@@ -39,6 +42,7 @@ public class DataStoreConfiguration
         this.queryHistoryEnabled = queryHistoryEnabled;
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
         this.runMigrationsEnabled = runMigrationsEnabled;
+        this.maxPoolSize = maxPoolSize;
     }
 
     public DataStoreConfiguration() {}
@@ -121,5 +125,35 @@ public class DataStoreConfiguration
     public void setOauth2RoutingRetention(String oauth2RoutingRetention)
     {
         this.oauth2RoutingRetention = Duration.valueOf(oauth2RoutingRetention);
+    }
+
+    public Integer getMaxPoolSize()
+    {
+        return maxPoolSize;
+    }
+
+    public void setMaxPoolSize(Integer maxPoolSize)
+    {
+        this.maxPoolSize = maxPoolSize;
+    }
+
+    public Duration getKeepaliveTime()
+    {
+        return keepaliveTime;
+    }
+
+    public void setKeepaliveTime(Duration keepaliveTime)
+    {
+        this.keepaliveTime = keepaliveTime;
+    }
+
+    public Duration getMaxLifetime()
+    {
+        return maxLifetime;
+    }
+
+    public void setMaxLifetime(Duration maxLifetime)
+    {
+        this.maxLifetime = maxLifetime;
     }
 }

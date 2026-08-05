@@ -43,7 +43,8 @@ public final class TestingJdbcConnectionManager
                 postgres.getDriverClassName(),
                 true,
                 4,
-                true);
+                true,
+                null);
         FlywayMigration.migrate(config);
         return config;
     }
