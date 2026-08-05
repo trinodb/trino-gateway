@@ -30,11 +30,12 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.trino.TrinoContainer;
 
@@ -51,9 +52,11 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestGatewayHaMultipleBackend
 {
@@ -64,9 +67,16 @@ final class TestGatewayHaMultipleBackend
 
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
 
-    private TrinoContainer adhocTrino;
-    private TrinoContainer scheduledTrino;
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final TrinoContainer ADHOC_TRINO = createTrinoContainer()
+            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+
+    @Container
+    private static final TrinoContainer SCHEDULED_TRINO = createTrinoContainer()
+            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     public static String oauthInitiatePath = OAuth2GatewayCookie.OAUTH2_PATH;
     public static String oauthCallbackPath = oauthInitiatePath + "/callback";
@@ -84,16 +94,8 @@ final class TestGatewayHaMultipleBackend
     void setup()
             throws Exception
     {
-        adhocTrino = new TrinoContainer("trinodb/trino");
-        adhocTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-        adhocTrino.start();
-        scheduledTrino = new TrinoContainer("trinodb/trino");
-        scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-        scheduledTrino.start();
-        postgresql.start();
-
-        int backend1Port = adhocTrino.getMappedPort(8080);
-        int backend2Port = scheduledTrino.getMappedPort(8080);
+        int backend1Port = ADHOC_TRINO.getMappedPort(8080);
+        int backend2Port = SCHEDULED_TRINO.getMappedPort(8080);
 
         HaGatewayTestUtils.prepareMockBackend(customBackend, customBackendPort, "default custom response");
         customBackend.setDispatcher(new Dispatcher()
@@ -119,7 +121,7 @@ final class TestGatewayHaMultipleBackend
         });
 
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "test-config-template.yml");
 
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
@@ -410,12 +412,5 @@ final class TestGatewayHaMultipleBackend
         String body = response.body().string();
         assertThat(body).contains("trino1_TrinoStatusHealthy");
         assertThat(body).contains("trino2_TrinoStatusHealthy");
-    }
-
-    @AfterAll
-    void cleanup()
-    {
-        adhocTrino.stop();
-        scheduledTrino.stop();
     }
 }

@@ -27,6 +27,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
@@ -35,12 +37,14 @@ import java.io.IOException;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaGatewayResource
 {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
     private final OkHttpClient httpClient = new OkHttpClient();
     final int routerPort = 23001 + (int) (Math.random() * 1000);
 
@@ -48,9 +52,8 @@ final class TestHaGatewayResource
     void setup()
             throws Exception
     {
-        postgresql.start();
         File configFile = HaGatewayTestUtils.buildGatewayConfig(
-                postgresql, routerPort, "test-config-no-monitor-template.yml");
+                POSTGRESQL, routerPort, "test-config-no-monitor-template.yml");
         HaGatewayLauncher.main(new String[] {configFile.getAbsolutePath()});
         addBackend("update-to-active-test", false);
         addBackend("update-to-inactive-test", true);

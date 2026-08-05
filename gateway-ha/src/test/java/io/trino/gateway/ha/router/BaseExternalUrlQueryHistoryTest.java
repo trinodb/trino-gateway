@@ -16,11 +16,12 @@ package io.trino.gateway.ha.router;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,17 +30,21 @@ import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbc
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class BaseExternalUrlQueryHistoryTest
 {
     private final JdbcDatabaseContainer<?> container;
-    private final QueryHistoryManager queryHistoryManager;
+    private QueryHistoryManager queryHistoryManager;
 
     protected BaseExternalUrlQueryHistoryTest(JdbcDatabaseContainer<?> container)
     {
         this.container = requireNonNull(container, "container is null");
-        this.container.start();
+    }
 
+    @BeforeAll
+    void setUp()
+    {
         DataStoreConfiguration config = new DataStoreConfiguration(
                 container.getJdbcUrl(),
                 container.getUsername(),
@@ -52,12 +57,6 @@ abstract class BaseExternalUrlQueryHistoryTest
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
         queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
-    }
-
-    @AfterAll
-    public final void close()
-    {
-        container.close();
     }
 
     @Test

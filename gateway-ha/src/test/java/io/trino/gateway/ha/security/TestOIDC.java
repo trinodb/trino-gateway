@@ -36,6 +36,8 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import javax.net.ssl.SSLContext;
@@ -59,6 +61,7 @@ import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlConta
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TestOIDC
 {
@@ -69,101 +72,105 @@ final class TestOIDC
     private static final String DSN = "postgres://hydra:mysecretpassword@hydra-db:5432/hydra?sslmode=disable";
     private static final int ROUTER_PORT = 21001 + (int) (Math.random() * 1000);
 
+    private static final String CLIENT_ID = "trino_client_id";
+    private static final String CLIENT_SECRET = "trino_client_secret";
+    private static final String TOKEN_ENDPOINT_AUTH_METHOD = "client_secret_basic";
+    private static final String AUDIENCE = "trino_client_id";
+    private static final String CALLBACK_URL = "https://localhost:%s/oidc/callback".formatted(ROUTER_PORT);
+
+    private static final Network NETWORK = Network.newNetwork();
+
+    @Container
+    private static final PostgreSQLContainer DATABASE_CONTAINER = createPostgreSqlContainer()
+            .withNetwork(NETWORK)
+            .withNetworkAliases("hydra-db")
+            .withUsername("hydra")
+            .withPassword("mysecretpassword")
+            .withDatabaseName("hydra");
+
+    @Container
+    private static final GenericContainer MIGRATION_CONTAINER = new GenericContainer(HYDRA_IMAGE)
+            .withNetwork(NETWORK)
+            .withCommand("migrate", "sql", "--yes", DSN)
+            .dependsOn(DATABASE_CONTAINER)
+            .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
+
+    @Container
+    private static final FixedHostPortGenericContainer<?> HYDRA_CONSENT = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
+            .withFixedExposedPort(3000, 3000)
+            .withNetwork(NETWORK)
+            .withNetworkAliases("hydra-consent")
+            .withExposedPorts(3000)
+            .withCopyFileToContainer(forClasspathResource("auth/login_and_consent_server.py"), "/")
+            .withCommand("python", "/login_and_consent_server.py")
+            .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
+
+    @Container
+    private static final FixedHostPortGenericContainer<?> HYDRA = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
+            .withFixedExposedPort(4444, 4444)
+            .withFixedExposedPort(4445, 4445)
+            .withNetwork(NETWORK)
+            .withNetworkAliases("hydra")
+            .withEnv("LOG_LEVEL", "debug")
+            .withEnv("LOG_LEAK_SENSITIVE_VALUES", "true")
+            .withEnv("OAUTH2_EXPOSE_INTERNAL_ERRORS", "1")
+            .withEnv("GODEBUG", "http2debug=1")
+            .withEnv("DSN", DSN)
+            .withEnv("URLS_SELF_ISSUER", "http://localhost:4444/")
+            .withEnv("URLS_CONSENT", "http://localhost:3000/consent")
+            .withEnv("URLS_LOGIN", "http://localhost:3000/login")
+            .withEnv("STRATEGIES_ACCESS_TOKEN", "jwt")
+            .withEnv("TTL_ACCESS_TOKEN", TTL_ACCESS_TOKEN_IN_SECONDS + "s")
+            .withEnv("TTL_REFRESH_TOKEN", TTL_REFRESH_TOKEN_IN_SECONDS + "s")
+            .withEnv("OAUTH2_ALLOWED_TOP_LEVEL_CLAIMS", "groups")
+            .withCommand("serve", "all", "--dangerous-force-http")
+            .dependsOn(HYDRA_CONSENT, MIGRATION_CONTAINER)
+            .waitingFor(new WaitAllStrategy()
+                    .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
+                    .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
+            .withStartupTimeout(java.time.Duration.ofMinutes(3));
+
+    // Started by the Testcontainers extension, which reads the field reflectively
+    @SuppressWarnings("UnusedVariable")
+    @Container
+    private static final GenericContainer CLIENT_CREATING_CONTAINER = new GenericContainer(HYDRA_IMAGE)
+            .withNetwork(NETWORK)
+            .dependsOn(HYDRA)
+            .withCommand(
+                    "clients",
+                    "create",
+                    "--endpoint",
+                    "http://hydra:4445",
+                    "--skip-tls-verify",
+                    "--id",
+                    CLIENT_ID,
+                    "--secret",
+                    CLIENT_SECRET,
+                    "--audience",
+                    AUDIENCE,
+                    "-g",
+                    "authorization_code,refresh_token,client_credentials",
+                    "-r",
+                    "token,code,id_token",
+                    "--scope",
+                    "openid,offline",
+                    "--token-endpoint-auth-method",
+                    TOKEN_ENDPOINT_AUTH_METHOD,
+                    "--callbacks",
+                    CALLBACK_URL);
+
+    @Container
+    private static final PostgreSQLContainer GATEWAY_BACKEND_DATABASE = createPostgreSqlContainer();
+
     @BeforeAll
     void setup()
             throws Exception
     {
-        Network network = Network.newNetwork();
-
-        PostgreSQLContainer databaseContainer = createPostgreSqlContainer()
-                .withNetwork(network)
-                .withNetworkAliases("hydra-db")
-                .withUsername("hydra")
-                .withPassword("mysecretpassword")
-                .withDatabaseName("hydra");
-        databaseContainer.start();
-
-        GenericContainer migrationContainer = new GenericContainer(HYDRA_IMAGE)
-                .withNetwork(network)
-                .withCommand("migrate", "sql", "--yes", DSN)
-                .dependsOn(databaseContainer)
-                .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
-        migrationContainer.start();
-
-        FixedHostPortGenericContainer<?> hydraConsent = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
-                .withFixedExposedPort(3000, 3000)
-                .withNetwork(network)
-                .withNetworkAliases("hydra-consent")
-                .withExposedPorts(3000)
-                .withCopyFileToContainer(forClasspathResource("auth/login_and_consent_server.py"), "/")
-                .withCommand("python", "/login_and_consent_server.py")
-                .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
-        hydraConsent.start();
-
-        FixedHostPortGenericContainer<?> hydra = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
-                .withFixedExposedPort(4444, 4444)
-                .withFixedExposedPort(4445, 4445)
-                .withNetwork(network)
-                .withNetworkAliases("hydra")
-                .withEnv("LOG_LEVEL", "debug")
-                .withEnv("LOG_LEAK_SENSITIVE_VALUES", "true")
-                .withEnv("OAUTH2_EXPOSE_INTERNAL_ERRORS", "1")
-                .withEnv("GODEBUG", "http2debug=1")
-                .withEnv("DSN", DSN)
-                .withEnv("URLS_SELF_ISSUER", "http://localhost:4444/")
-                .withEnv("URLS_CONSENT", "http://localhost:3000/consent")
-                .withEnv("URLS_LOGIN", "http://localhost:3000/login")
-                .withEnv("STRATEGIES_ACCESS_TOKEN", "jwt")
-                .withEnv("TTL_ACCESS_TOKEN", TTL_ACCESS_TOKEN_IN_SECONDS + "s")
-                .withEnv("TTL_REFRESH_TOKEN", TTL_REFRESH_TOKEN_IN_SECONDS + "s")
-                .withEnv("OAUTH2_ALLOWED_TOP_LEVEL_CLAIMS", "groups")
-                .withCommand("serve", "all", "--dangerous-force-http")
-                .dependsOn(hydraConsent, migrationContainer)
-                .waitingFor(new WaitAllStrategy()
-                        .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
-                        .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
-                .withStartupTimeout(java.time.Duration.ofMinutes(3));
-
-        String clientId = "trino_client_id";
-        String clientSecret = "trino_client_secret";
-        String tokenEndpointAuthMethod = "client_secret_basic";
-        String audience = "trino_client_id";
-        String callbackUrl = "https://localhost:%s/oidc/callback".formatted(ROUTER_PORT);
-        GenericContainer clientCreatingContainer = new GenericContainer(HYDRA_IMAGE)
-                .withNetwork(network)
-                .dependsOn(hydra)
-                .withCommand(
-                        "clients",
-                        "create",
-                        "--endpoint",
-                        "http://hydra:4445",
-                        "--skip-tls-verify",
-                        "--id",
-                        clientId,
-                        "--secret",
-                        clientSecret,
-                        "--audience",
-                        audience,
-                        "-g",
-                        "authorization_code,refresh_token,client_credentials",
-                        "-r",
-                        "token,code,id_token",
-                        "--scope",
-                        "openid,offline",
-                        "--token-endpoint-auth-method",
-                        tokenEndpointAuthMethod,
-                        "--callbacks",
-                        callbackUrl);
-        clientCreatingContainer.start();
-
-        PostgreSQLContainer gatewayBackendDatabase = createPostgreSqlContainer();
-        gatewayBackendDatabase.start();
-
         URL resource = HaGatewayTestUtils.class.getClassLoader().getResource("auth/localhost.jks");
         Map<String, String> additionalVars = ImmutableMap.<String, String>builder()
                 .put("REQUEST_ROUTER_PORT", String.valueOf(ROUTER_PORT))
                 .put("LOCALHOST_JKS", Path.of(resource.toURI()).toString())
-                .putAll(buildPostgresVars(gatewayBackendDatabase))
+                .putAll(buildPostgresVars(GATEWAY_BACKEND_DATABASE))
                 .buildOrThrow();
         File testConfigFile =
                 HaGatewayTestUtils.buildGatewayConfig("auth/oauth-test-config.yml", additionalVars);
