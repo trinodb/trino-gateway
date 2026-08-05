@@ -27,6 +27,7 @@ import io.trino.gateway.ha.clustermonitor.ClusterStatsJmxMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMetricsMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsObserver;
+import io.trino.gateway.ha.clustermonitor.ClusterStatsPingMonitor;
 import io.trino.gateway.ha.clustermonitor.ForMonitor;
 import io.trino.gateway.ha.clustermonitor.HealthCheckObserver;
 import io.trino.gateway.ha.clustermonitor.NoopClusterStatsMonitor;
@@ -67,6 +68,7 @@ import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.NOOP;
+import static io.trino.gateway.ha.config.ClusterStatsMonitorType.PING;
 import static java.util.Objects.requireNonNull;
 
 public class HaGatewayProviderModule
@@ -182,7 +184,7 @@ public class HaGatewayProviderModule
         if (clusterStatsConfig == null) {
             return new ClusterStatsInfoApiMonitor(httpClient, configuration.getMonitor());
         }
-        if (!(clusterStatsConfig.getMonitorType() == INFO_API || clusterStatsConfig.getMonitorType() == NOOP)
+        if (!(clusterStatsConfig.getMonitorType() == INFO_API || clusterStatsConfig.getMonitorType() == NOOP || clusterStatsConfig.getMonitorType() == PING)
                 && configuration.getBackendState() == null) {
             throw new IllegalArgumentException("BackendStateConfiguration is required for monitor type: " + clusterStatsConfig.getMonitorType());
         }
@@ -192,6 +194,7 @@ public class HaGatewayProviderModule
             case JDBC -> new ClusterStatsJdbcMonitor(configuration.getBackendState(), configuration.getMonitor());
             case JMX -> new ClusterStatsJmxMonitor(httpClient, configuration.getBackendState());
             case METRICS -> new ClusterStatsMetricsMonitor(httpClient, configuration.getBackendState(), configuration.getMonitor());
+            case PING -> new ClusterStatsPingMonitor(httpClient, configuration.getMonitor());
             case NOOP -> new NoopClusterStatsMonitor();
         };
     }
