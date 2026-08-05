@@ -25,7 +25,7 @@ presetUsers:
     privileges: FOO_BAR
 
 authentication:
-  defaultType: "oauth"
+  defaultTypes: ["oauth"]
   oauth:
     issuer: http://localhost:4444/
     clientId: trino_client_id
