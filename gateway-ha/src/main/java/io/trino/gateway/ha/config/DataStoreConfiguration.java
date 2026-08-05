@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
 public class DataStoreConfiguration
 {
     private String jdbcUrl;
@@ -22,8 +24,11 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    private Integer maxPoolSize;
+    private Duration keepaliveTime;
+    private Duration maxLifetime;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
+    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled, Integer maxPoolSize)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
@@ -32,6 +37,7 @@ public class DataStoreConfiguration
         this.queryHistoryEnabled = queryHistoryEnabled;
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
         this.runMigrationsEnabled = runMigrationsEnabled;
+        this.maxPoolSize = maxPoolSize;
     }
 
     public DataStoreConfiguration() {}
@@ -104,5 +110,35 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public Integer getMaxPoolSize()
+    {
+        return maxPoolSize;
+    }
+
+    public void setMaxPoolSize(Integer maxPoolSize)
+    {
+        this.maxPoolSize = maxPoolSize;
+    }
+
+    public Duration getKeepaliveTime()
+    {
+        return keepaliveTime;
+    }
+
+    public void setKeepaliveTime(Duration keepaliveTime)
+    {
+        this.keepaliveTime = keepaliveTime;
+    }
+
+    public Duration getMaxLifetime()
+    {
+        return maxLifetime;
+    }
+
+    public void setMaxLifetime(Duration maxLifetime)
+    {
+        this.maxLifetime = maxLifetime;
     }
 }
