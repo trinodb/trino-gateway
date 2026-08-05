@@ -14,14 +14,15 @@
 package io.trino.gateway.ha.persistence;
 
 import org.jdbi.v3.core.Handle;
-import org.testcontainers.mysql.MySQLContainer;
+
+import static io.trino.gateway.ha.util.TestcontainersUtils.createMySqlContainer;
 
 final class TestDatabaseMigrationsMySql
         extends BaseTestDatabaseMigrations
 {
     public TestDatabaseMigrationsMySql()
     {
-        super(new MySQLContainer("mysql:8.0.36"), "test");
+        super(createMySqlContainer(), "test");
     }
 
     @Override
