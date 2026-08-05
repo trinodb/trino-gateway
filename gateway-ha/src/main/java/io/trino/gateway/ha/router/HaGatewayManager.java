@@ -24,6 +24,7 @@ import io.airlift.stats.CounterStat;
 import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.GatewayBackend;
 import io.trino.gateway.ha.persistence.dao.GatewayBackendDao;
 import org.jdbi.v3.core.Jdbi;
@@ -51,6 +52,11 @@ public class HaGatewayManager
     private final CounterStat backendLookupFailures = new CounterStat();
 
     @Inject
+    public HaGatewayManager(JdbcConnectionManager connectionManager, RoutingConfiguration routingConfiguration, DatabaseCacheConfiguration databaseCacheConfiguration)
+    {
+        this(requireNonNull(connectionManager, "connectionManager is null").getJdbi(), routingConfiguration, databaseCacheConfiguration);
+    }
+
     public HaGatewayManager(Jdbi jdbi, RoutingConfiguration routingConfiguration, DatabaseCacheConfiguration databaseCacheConfiguration)
     {
         this(jdbi, routingConfiguration, databaseCacheConfiguration, Ticker.systemTicker());
