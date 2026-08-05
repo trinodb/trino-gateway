@@ -28,6 +28,7 @@ final class TestDataStoreConfiguration
         assertThat(dataStoreConfiguration.getPassword()).isNull();
         assertThat(dataStoreConfiguration.getDriver()).isNull();
         assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isTrue();
+        assertThat(dataStoreConfiguration.getMaxPoolSize()).isNull();
     }
 
     @Test
@@ -49,5 +50,8 @@ final class TestDataStoreConfiguration
 
         dataStoreConfiguration.setQueryHistoryEnabled(false);
         assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isFalse();
+
+        dataStoreConfiguration.setMaxPoolSize(10);
+        assertThat(dataStoreConfiguration.getMaxPoolSize()).isEqualTo(10);
     }
 }
