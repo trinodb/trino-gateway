@@ -16,9 +16,16 @@ package io.trino.gateway.ha.security;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.directory.api.ldap.codec.api.LdapApiService;
+import org.apache.directory.api.ldap.codec.controls.OpaqueControlFactory;
+import org.apache.directory.api.ldap.codec.standalone.StandaloneLdapApiService;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.filter.FilterEncoder;
+import org.apache.directory.api.ldap.model.message.SearchRequest;
 import org.apache.directory.api.ldap.model.message.SearchScope;
+import org.apache.directory.api.ldap.model.message.controls.OpaqueControl;
+import org.apache.directory.api.util.Strings;
 import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.LdapClientTrustStoreManager;
 import org.apache.directory.ldap.client.api.LdapConnectionConfig;
@@ -31,16 +38,35 @@ import org.apache.directory.ldap.client.template.exception.PasswordException;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class LbLdapClient
 {
+    private static final String AD_DOMAIN_SCOPE_CONTROL_OID = "1.2.840.113556.1.4.1339";
+
     private static final Logger log = Logger.get(LbLdapClient.class);
-    private LdapConnectionTemplate ldapConnectionTemplate;
-    private LdapConfiguration config;
-    private UserEntryMapper userRecordEntryMapper;
+    private final LdapConnectionTemplate ldapConnectionTemplate;
+    private final LdapConfiguration config;
+    private final UserEntryMapper userRecordEntryMapper;
 
     public LbLdapClient(LdapConfiguration ldapConfig)
     {
-        config = ldapConfig;
+        this(ldapConfig, createLdapConnectionTemplate(ldapConfig));
+    }
+
+    LbLdapClient(LdapConfiguration ldapConfig, LdapConnectionTemplate ldapConnectionTemplate)
+    {
+        config = requireNonNull(ldapConfig, "ldapConfig is null");
+        this.ldapConnectionTemplate = requireNonNull(
+                ldapConnectionTemplate,
+                "ldapConnectionTemplate is null");
+        userRecordEntryMapper = new UserEntryMapper(config.getLdapGroupMemberAttribute());
+    }
+
+    private static LdapConnectionTemplate createLdapConnectionTemplate(LdapConfiguration ldapConfig)
+    {
+        requireNonNull(ldapConfig, "ldapConfig is null");
+
         LdapConnectionConfig connectionConfig = new LdapConnectionConfig();
         connectionConfig.setLdapHost(ldapConfig.getLdapHost());
         connectionConfig.setLdapPort(ldapConfig.getLdapPort());
@@ -58,10 +84,18 @@ public class LbLdapClient
                     true));
         }
 
+        LdapApiService ldapApiService;
+        try {
+            ldapApiService = createLdapApiService();
+        }
+        catch (Exception exception) {
+            throw new IllegalStateException("Failed to initialize LDAP client", exception);
+        }
+        connectionConfig.setLdapApiService(ldapApiService);
         DefaultLdapConnectionFactory defaultFactory =
                 new DefaultLdapConnectionFactory(connectionConfig);
+        defaultFactory.setLdapApiService(ldapApiService);
 
-        // A single connection and keep it alive
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setMaxIdle(ldapConfig.getPoolMaxIdle());
         poolConfig.setMaxTotal(ldapConfig.getPoolMaxTotal());
@@ -71,20 +105,16 @@ public class LbLdapClient
         ValidatingPoolableLdapConnectionFactory validatingFactory =
                 new ValidatingPoolableLdapConnectionFactory(defaultFactory);
         LdapConnectionPool connectionPool = new LdapConnectionPool(validatingFactory, poolConfig);
-        ldapConnectionTemplate = new LdapConnectionTemplate(connectionPool);
-        userRecordEntryMapper = new UserEntryMapper(config.getLdapGroupMemberAttribute());
+        return new LdapConnectionTemplate(connectionPool);
     }
 
     public boolean authenticate(String user, String password)
     {
         try {
-            String filter = config.getLdapUserSearch().replace("${USER}", user);
+            String filter = createUserSearchFilter(user);
+            SearchRequest searchRequest = newUserSearchRequest(filter);
             PasswordWarning passwordWarning =
-                    ldapConnectionTemplate.authenticate(
-                            config.getLdapUserBaseDn(),
-                            filter,
-                            SearchScope.SUBTREE,
-                            password.toCharArray());
+                    ldapConnectionTemplate.authenticate(searchRequest, password.toCharArray());
 
             if (passwordWarning != null) {
                 log.warn("password warning %s", passwordWarning);
@@ -101,27 +131,63 @@ public class LbLdapClient
 
     public String getMemberOf(String user)
     {
-        String filter = config.getLdapUserSearch().replace("${USER}", user);
+        String filter = createUserSearchFilter(user);
 
-        String[] attributes = new String[] {config.getLdapGroupMemberAttribute()};
-        List<UserRecord> list = ldapConnectionTemplate.search(
-                config.getLdapUserBaseDn(),
+        SearchRequest searchRequest = newUserSearchRequest(
                 filter,
-                SearchScope.SUBTREE,
-                attributes,
-                userRecordEntryMapper);
+                config.getLdapGroupMemberAttribute());
+        List<UserRecord> list = ldapConnectionTemplate.search(searchRequest, userRecordEntryMapper);
 
         String memberOf = "";
         if (list != null && !list.isEmpty()) {
-            memberOf = list.listIterator().next().getMemberOf();
+            memberOf = list.getFirst().getMemberOf();
             log.debug("Member of %s", memberOf);
         }
         return memberOf;
     }
 
+    private String createUserSearchFilter(String user)
+    {
+        return config.getLdapUserSearch()
+                .replace("${USER}", FilterEncoder.encodeFilterValue(user));
+    }
+
+    private SearchRequest newUserSearchRequest(String filter, String... attributes)
+    {
+        SearchRequest searchRequest = ldapConnectionTemplate.newSearchRequest(
+                config.getLdapUserBaseDn(),
+                filter,
+                SearchScope.SUBTREE,
+                attributes);
+
+        if (config.isLdapAdDomainScopeControl()) {
+            searchRequest.addControl(createAdDomainScopeControl());
+        }
+
+        return searchRequest;
+    }
+
+    private static OpaqueControl createAdDomainScopeControl()
+    {
+        OpaqueControl control = new OpaqueControl(AD_DOMAIN_SCOPE_CONTROL_OID, false);
+        // Apache Directory's opaque control encoder requires an encoded value,
+        // while the Active Directory Domain Scope control has no payload.
+        control.setEncodedValue(Strings.EMPTY_BYTES);
+        return control;
+    }
+
+    static LdapApiService createLdapApiService()
+            throws Exception
+    {
+        LdapApiService ldapApiService = new StandaloneLdapApiService();
+        ldapApiService.registerRequestControl(
+                new OpaqueControlFactory(ldapApiService, AD_DOMAIN_SCOPE_CONTROL_OID));
+        return ldapApiService;
+    }
+
     public static class UserRecord
     {
-        String memberOf;
+        private final String memberOf;
 
         public UserRecord(String memberOf)
         {
@@ -137,18 +203,20 @@ public class LbLdapClient
     public static class UserEntryMapper
             implements EntryMapper<UserRecord>
     {
-        String memberOf;
+        private final String memberOfAttribute;
 
-        public UserEntryMapper(String memberOfAttr)
+        public UserEntryMapper(String memberOfAttribute)
         {
-            memberOf = memberOfAttr;
+            this.memberOfAttribute = requireNonNull(
+                    memberOfAttribute,
+                    "memberOfAttribute is null");
         }
 
         @Override
         public UserRecord map(Entry entry)
                 throws LdapException
         {
-            return new UserRecord(entry.get(memberOf).toString());
+            return new UserRecord(entry.get(memberOfAttribute).toString());
         }
     }
 }
