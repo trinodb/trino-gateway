@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node --test scripts/check-licenses.test.js && node scripts/check-licenses.js && tsc && vite build",
+    "check:licenses": "node scripts/check-licenses.js",
+    "test:licenses": "node --test scripts/check-licenses.test.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -33,6 +35,7 @@
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
+    "spdx-expression-parse": "5.0.0",
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vite-plugin-svgr": "^4.5.0",
