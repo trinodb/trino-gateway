@@ -19,9 +19,11 @@ import io.airlift.http.client.HttpStatus;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.UiLoginType;
 import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -37,7 +39,6 @@ import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_QUEUED_LIST_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
-import static io.trino.gateway.ha.handler.HttpUtils.UI_LOGIN_PATH;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsHttpMonitor
@@ -46,16 +47,21 @@ public class ClusterStatsHttpMonitor
     private static final Logger log = Logger.get(ClusterStatsHttpMonitor.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String SESSION_USER = "sessionUser";
+    private static final String AUTH_API_LOGIN_PATH = "/ui/auth/login";
+    private static final String FORM_LOGIN_PATH = "/ui/login";
+    private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
 
     private final String username;
     private final String password;
     private final boolean xForwardedProtoHeader;
+    private final UiLoginType uiLoginType;
 
     public ClusterStatsHttpMonitor(BackendStateConfiguration backendStateConfiguration)
     {
         username = backendStateConfiguration.getUsername();
         password = backendStateConfiguration.getPassword();
         xForwardedProtoHeader = backendStateConfiguration.getXForwardedProtoHeader();
+        uiLoginType = backendStateConfiguration.getUiLoginType();
     }
 
     @Override
@@ -105,17 +111,38 @@ public class ClusterStatsHttpMonitor
         return clusterStats.userQueuedCount(clusterUserStats).build();
     }
 
+    private String loginPath()
+    {
+        return switch (uiLoginType) {
+            case AUTH_API -> AUTH_API_LOGIN_PATH;
+            case FORM -> FORM_LOGIN_PATH;
+        };
+    }
+
+    private RequestBody loginBody()
+    {
+        return switch (uiLoginType) {
+            // The login resource of the Web UI in Trino 483 and later rejects a form encoded body
+            case AUTH_API -> RequestBody.create(
+                    OBJECT_MAPPER.createObjectNode()
+                            .put("username", username)
+                            .put("password", password)
+                            .toString(),
+                    JSON_MEDIA_TYPE);
+            case FORM -> new FormBody.Builder()
+                    .add("username", username)
+                    .add("password", password)
+                    .build();
+        };
+    }
+
     private OkHttpClient acquireClientWithCookie(String loginUrl)
     {
         UiApiCookieJar cookieJar = new UiApiCookieJar();
         OkHttpClient client = new OkHttpClient.Builder().cookieJar(cookieJar).build();
-        RequestBody formBody = new FormBody.Builder()
-                .add("username", username)
-                .add("password", password)
-                .build();
         Request loginRequest = new Request.Builder()
                 .url(HttpUrl.parse(loginUrl))
-                .post(formBody)
+                .post(loginBody())
                 .build();
 
         Call call = client.newCall(loginRequest);
@@ -132,7 +159,7 @@ public class ClusterStatsHttpMonitor
 
     private String queryCluster(ProxyBackendConfiguration backend, String path)
     {
-        String loginUrl = backend.getProxyTo() + UI_LOGIN_PATH;
+        String loginUrl = backend.getProxyTo() + loginPath();
         OkHttpClient client = acquireClientWithCookie(loginUrl);
         if (client == null) {
             log.error("Client received is null");
