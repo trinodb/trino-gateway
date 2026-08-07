@@ -25,6 +25,7 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.config.UiLoginType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,11 @@ import static org.testcontainers.utility.MountableFile.forClasspathResource;
 @TestInstance(PER_CLASS)
 final class TestClusterStatsMonitor
 {
+    // The active node count metric name used by Trino 476 and earlier, which is the version the
+    // container below is pinned to. Trino 477 renamed it, and the renamed metric is the default in
+    // MonitorConfiguration.
+    private static final String LEGACY_ACTIVE_NODE_COUNT_METRIC = "trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount";
+
     private TrinoContainer trino;
 
     @BeforeAll
@@ -63,7 +69,12 @@ final class TestClusterStatsMonitor
     @Test
     void testHttpMonitor()
     {
-        testClusterStatsMonitor(ClusterStatsHttpMonitor::new);
+        // The container runs Trino 476, which serves the Web UI login resource at the location used
+        // before Trino 483, so the default UiLoginType.AUTH_API does not apply here
+        testClusterStatsMonitor(backendStateConfiguration -> {
+            backendStateConfiguration.setUiLoginType(UiLoginType.FORM);
+            return new ClusterStatsHttpMonitor(backendStateConfiguration);
+        });
     }
 
     @Test
@@ -156,10 +167,15 @@ final class TestClusterStatsMonitor
     @Test
     void testMetricsMonitor()
     {
+        // The container runs Trino 476, which still uses the metric name from before Trino 477, so
+        // the default value of metricMinimumValues does not apply here. Once the container moves to
+        // a current Trino release, this override can go and the default is exercised instead.
+        MonitorConfiguration monitorConfiguration = new MonitorConfiguration();
+        monitorConfiguration.setMetricMinimumValues(ImmutableMap.of(LEGACY_ACTIVE_NODE_COUNT_METRIC, 1f));
         testClusterStatsMonitor(backendStateConfiguration -> new ClusterStatsMetricsMonitor(
                 new JettyHttpClient(new HttpClientConfig()),
                 backendStateConfiguration,
-                new MonitorConfiguration()));
+                monitorConfiguration));
     }
 
     private void testClusterStatsMonitor(Function<BackendStateConfiguration, ClusterStatsMonitor> monitorFactory)
@@ -181,16 +197,16 @@ final class TestClusterStatsMonitor
     void testMetricsRanges()
     {
         // Active node count should always be 1.0 for this test
-        Map<String, Float> metricMinimumsFail = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 100f);
+        Map<String, Float> metricMinimumsFail = ImmutableMap.of(LEGACY_ACTIVE_NODE_COUNT_METRIC, 100f);
         testMetricsWithRange(metricMinimumsFail, ImmutableMap.of(), TrinoStatus.UNHEALTHY);
 
-        Map<String, Float> metricMaximumsFail = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 0.5f);
+        Map<String, Float> metricMaximumsFail = ImmutableMap.of(LEGACY_ACTIVE_NODE_COUNT_METRIC, 0.5f);
         testMetricsWithRange(ImmutableMap.of(), metricMaximumsFail, TrinoStatus.UNHEALTHY);
 
-        Map<String, Float> metricMinimumsPass = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 0.5f);
+        Map<String, Float> metricMinimumsPass = ImmutableMap.of(LEGACY_ACTIVE_NODE_COUNT_METRIC, 0.5f);
         testMetricsWithRange(metricMinimumsPass, ImmutableMap.of(), TrinoStatus.HEALTHY);
 
-        Map<String, Float> metricMaximumsPass = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 100f);
+        Map<String, Float> metricMaximumsPass = ImmutableMap.of(LEGACY_ACTIVE_NODE_COUNT_METRIC, 100f);
         testMetricsWithRange(ImmutableMap.of(), metricMaximumsPass, TrinoStatus.HEALTHY);
     }
 
