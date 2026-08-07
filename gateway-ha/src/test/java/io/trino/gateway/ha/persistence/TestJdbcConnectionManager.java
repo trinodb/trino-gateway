@@ -25,20 +25,6 @@ import static org.mockito.Mockito.when;
 final class TestJdbcConnectionManager
 {
     @Test
-    void testBuildJdbcUrlWithH2AndNoRoutingGroupDatabase()
-    {
-        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:h2:/mydb");
-        assertThat(connectionManager.buildJdbcUrl(null)).isEqualTo("jdbc:h2:/mydb");
-    }
-
-    @Test
-    void testBuildJdbcUrlWithH2AndRoutingGroupDatabase()
-    {
-        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:h2:/mydb");
-        assertThat(connectionManager.buildJdbcUrl("newdb")).isEqualTo("jdbc:h2:/newdb");
-    }
-
-    @Test
     void testBuildJdbcUrlWithMySQLAndNoRoutingGroupDatabase()
     {
         JdbcConnectionManager connectionManager = createConnectionManager("jdbc:mysql://localhost:3306/mydb");
@@ -108,7 +94,7 @@ final class TestJdbcConnectionManager
         DataStoreConfiguration dataStoreConfiguration = Mockito.mock(DataStoreConfiguration.class);
         when(dataStoreConfiguration.getJdbcUrl()).thenReturn(null);
 
-        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create("jdbc:h2:/mydb", "sa", "sa"), dataStoreConfiguration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create("jdbc:postgresql://localhost:5432/mydb", "postgres", "postgres"), dataStoreConfiguration);
         assertThatThrownBy(() -> connectionManager.buildJdbcUrl(null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("JDBC URL cannot be null");
@@ -117,10 +103,10 @@ final class TestJdbcConnectionManager
     @Test
     void testBuildJdbcUrlWithNoSlashThrowsException()
     {
-        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:h2:mem:test");
+        JdbcConnectionManager connectionManager = createConnectionManager("jdbc:postgresql:mydb");
         assertThatThrownBy(() -> connectionManager.buildJdbcUrl("newdb"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Invalid JDBC URL: no '/' found in jdbc:h2:mem:test");
+                .hasMessage("Invalid JDBC URL: no '/' found in jdbc:postgresql:mydb");
     }
 
     private static JdbcConnectionManager createConnectionManager(String jdbcUrl)
