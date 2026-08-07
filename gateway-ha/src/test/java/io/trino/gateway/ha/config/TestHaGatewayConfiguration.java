@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TestHaGatewayConfiguration
 {
+    private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+
     @Test
     void testDefaultStatementPaths()
     {
@@ -56,5 +60,18 @@ class TestHaGatewayConfiguration
         assertThatThrownBy(() -> haGatewayConfiguration.setAdditionalStatementPaths(ImmutableList.of("/api/v2", "/api/v2/statement")))
                 .isInstanceOf(HaGatewayConfiguration.HaGatewayConfigurationException.class)
                 .hasMessage("Statement paths cannot be prefixes of other statement paths");
+    }
+
+    @Test
+    void testUIConfigurationAllowsViewingAllQueryHistoryWhenEnabled()
+            throws Exception
+    {
+        UIConfiguration uiConfiguration = YAML_OBJECT_MAPPER.readValue(
+                """
+                allowNonAdminToViewAllQueryHistory: true
+                """,
+                UIConfiguration.class);
+
+        assertThat(uiConfiguration.isAllowNonAdminToViewAllQueryHistory()).isTrue();
     }
 }
