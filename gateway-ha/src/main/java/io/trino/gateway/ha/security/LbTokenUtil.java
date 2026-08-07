@@ -19,7 +19,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import io.airlift.log.Logger;
 
-import java.security.interfaces.RSAPublicKey;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +33,7 @@ public final class LbTokenUtil
 
     private LbTokenUtil() {}
 
-    public static boolean validateToken(String idToken, RSAPublicKey publicKey, String issuer, Optional<List<String>> audiences)
+    public static boolean validateToken(String idToken, PublicKey publicKey, String issuer, Optional<List<String>> audiences)
     {
         try {
             if (log.isDebugEnabled()) {
@@ -42,8 +42,11 @@ public final class LbTokenUtil
                         (key, value) -> log.debug("JWT %s : %s", key, value));
             }
 
-            Algorithm algorithm = Algorithm.RSA256(publicKey, null);
-            Verification verification = JWT.require(algorithm).withIssuer(issuer);
+            Algorithm algorithm = LbKeyProvider.verificationAlgorithm(publicKey);
+            Verification verification = JWT.require(algorithm);
+            if (issuer != null && !issuer.isBlank()) {
+                verification.withIssuer(issuer);
+            }
 
             audiences.ifPresent(auds -> verification.withAnyOfAudience(auds.toArray(new String[0])));
 

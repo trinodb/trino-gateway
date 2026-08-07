@@ -3,7 +3,98 @@
 Trino Gateway has its own security with its own authentication and authorization.
 These features are used only to authenticate and authorize its user interface and
 the APIs. All Trino-related requests are passed through to the Trino cluster
-without any authentication or authorization check in Trino Gateway.
+without any authentication or authorization check in Trino Gateway, unless the
+optional client-certificate JWT bridge is configured.
+
+## Client certificate JWT bridge
+
+For environments where clients authenticate to Trino with mTLS certificates,
+Trino Gateway can bridge validated client certificate identity to backend Trino
+by minting a short-lived signed JWT and forwarding the request with
+`Authorization: Bearer <token>`.
+
+This mode is opt-in and currently applies to Trino query protocol paths such as
+`/v1/statement` and `/v1/query`. The bridge is active when the
+`clientCertificateJwtAuthentication` block is present in the config.
+
+```yaml
+requestAnalyzerConfig:
+  # Required when client certificate authentication is configured (mapping
+  # pattern/file, or the clientCertificateJwtAuthentication block). No
+  # default; common values are CN or SUBJECT_DN.
+  clientCertificateIdentityField: CN
+  # Optional. Mutually exclusive with clientCertificateUserMappingFile.
+  clientCertificateUserMappingPattern:
+  # Optional. Mutually exclusive with clientCertificateUserMappingPattern.
+  clientCertificateUserMappingFile:
+
+clientCertificateJwtAuthentication:
+  # Optional. Defaults to sub.
+  jwtPrincipalClaim: sub
+  # Optional. Configure only if backend Trino validates audience.
+  jwtAudiences:
+    - trino
+  # Optional. Configure only if backend Trino validates issuer.
+  jwtIssuer:
+  # Optional. Configure only if JWT verification uses a key id.
+  jwtKeyId:
+  # Required.
+  jwtSigningKeyPair:
+    privateKey: <private_key_path>
+    publicKey: <public_key_path>
+  # Optional. Defaults to false. When true, requests to the Trino query
+  # protocol paths are rejected with 401 if no client certificate identity
+  # could be resolved, instead of being forwarded unauthenticated by the
+  # bridge. This does not affect the HTTPS listener's TLS handshake, which
+  # always requests but never requires a client certificate (see below), so
+  # the UI and other authentication methods on the gateway are unaffected.
+  clientCertificateRequired: false
+```
+
+When using this bridge:
+
+- the gateway requests, but does not require, client certificates on its
+  HTTPS listener (`ClientCertificate.REQUESTED`, not `NEED`); this is
+  intentional, since the listener is shared with the gateway's own UI and
+  API, which do not authenticate with client certificates, and enforcing a
+  mandatory client certificate at the TLS layer would block them
+- to require a client certificate specifically for Trino query traffic, set
+  `clientCertificateRequired: true` under `clientCertificateJwtAuthentication`
+  rather than trying to make the TLS listener mandatory
+- configure TLS on Trino Gateway to require and validate client certificates
+- the certificate identity selected by `requestAnalyzerConfig` can be mapped
+  with Trino-style user-mapping rules before the JWT is created
+- configure Trino with JWT authentication using the matching public key
+- the signing key pair can be RSA or EC; the gateway selects the matching JWT
+  algorithm automatically
+
+### Impersonation
+
+The bridge only replaces the `Authorization` header; it does not strip or
+overwrite an `X-Trino-User` header the client sends. If a client presents a
+certificate mapped to `alice` but also sends `X-Trino-User: bob`, Trino
+receives a JWT authenticating the principal as `alice` and a session user of
+`bob`. Trino resolves this the same way it would for a direct mTLS
+connection: it checks whether the principal is allowed to run queries as the
+session user (impersonation), and grants it unless the cluster's system
+access control says otherwise. With no `access-control.properties`
+configured, Trino's default `AllowAllSystemAccessControl` permits any
+principal to impersonate any user, so `alice`'s certificate would let her run
+queries on the backend cluster as `bob`. This is independent of the gateway's
+own routing and query-history records, which use the certificate identity
+(`alice`) once the client certificate is present - it is specifically the
+backend Trino cluster's session user, and whatever query history and
+row/column access control it drives, that is affected.
+
+The certificate-to-JWT bridge on its own does not close this off - the
+identity guarantee it provides is about authentication (who the client is),
+not authorization (who they're allowed to act as). To restrict impersonation,
+configure Trino's file-based system access control
+(`access-control.name=file`) on the backend cluster and add impersonation
+rules to its rules file restricting which principals may run queries as which
+users. See the [Trino system access control
+documentation](https://trino.io/docs/current/security/file-system-access-control.html)
+for details.
 
 ## TLS configuration
 
@@ -98,15 +189,15 @@ presetUsers:
     privileges: API
 ```
 
-Also provide a random key pair in RSA format.
+Also provide a signing key pair in RSA or EC format.
 
 ```yaml
 authentication:
   defaultType: "form"
   form:
     selfSignKeyPair:
-      privateKeyRsa: <private_key_path>
-      publicKeyRsa: <public_key_path>
+      privateKey: <private_key_path>
+      publicKey: <public_key_path>
 ```
 
 ### Form/LDAP
@@ -119,8 +210,8 @@ authentication:
   form:
     ldapConfigPath: <ldap_config_path>
     selfSignKeyPair:
-      privateKeyRsa: <private_key_path>
-      publicKeyRsa: <public_key_path>
+      privateKey: <private_key_path>
+      publicKey: <public_key_path>
 ```
 
 
