@@ -213,6 +213,7 @@ public abstract class BaseRoutingManager
                                     conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(5));
                                     conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
                                     conn.setRequestMethod(HttpMethod.HEAD);
+                                    conn.setRequestProperty("X-Trino-User", "trino-gateway");
                                     return conn.getResponseCode();
                                 });
                 responseCodes.put(backend.getProxyTo(), call);
