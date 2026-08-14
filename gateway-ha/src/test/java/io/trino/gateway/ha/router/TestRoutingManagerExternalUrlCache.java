@@ -21,6 +21,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -106,11 +107,56 @@ final class TestRoutingManagerExternalUrlCache
     void testEmptyStringExternalUrl()
     {
         String queryId = "empty-url-test";
-        String emptyUrl = "";
-        routingManager.setExternalUrlForQueryId(queryId, emptyUrl);
+        String expectedFallbackUrl = "https://fallback-after-empty.example.com";
+
+        when(queryHistoryManager.getExternalUrlForQueryId(queryId)).thenReturn(expectedFallbackUrl);
+
+        routingManager.setExternalUrlForQueryId(queryId, "");
         String retrievedUrl = routingManager.findExternalUrlForQueryId(queryId);
 
-        assertThat(retrievedUrl).isEqualTo(emptyUrl);
+        assertThat(retrievedUrl).isEqualTo(expectedFallbackUrl);
+        Mockito.verify(queryHistoryManager).getExternalUrlForQueryId(queryId);
+    }
+
+    @Test
+    void testNullExternalUrlDoesNotThrowAndFallsBackToQueryHistory()
+    {
+        String queryId = "null-external-url-query";
+        String expectedFallbackUrl = "https://fallback-after-null.example.com";
+
+        when(queryHistoryManager.getExternalUrlForQueryId(queryId)).thenReturn(expectedFallbackUrl);
+
+        assertThatCode(() -> routingManager.setExternalUrlForQueryId(queryId, null))
+                .doesNotThrowAnyException();
+
+        String retrievedUrl = routingManager.findExternalUrlForQueryId(queryId);
+
+        assertThat(retrievedUrl).isEqualTo(expectedFallbackUrl);
+        Mockito.verify(queryHistoryManager).getExternalUrlForQueryId(queryId);
+    }
+
+    @Test
+    void testEmptyExternalUrlDoesNotThrowAndFallsBackToQueryHistory()
+    {
+        String queryId = "empty-external-url-query";
+        String expectedFallbackUrl = "https://fallback-after-empty.example.com";
+
+        when(queryHistoryManager.getExternalUrlForQueryId(queryId)).thenReturn(expectedFallbackUrl);
+
+        assertThatCode(() -> routingManager.setExternalUrlForQueryId(queryId, ""))
+                .doesNotThrowAnyException();
+
+        String retrievedUrl = routingManager.findExternalUrlForQueryId(queryId);
+
+        assertThat(retrievedUrl).isEqualTo(expectedFallbackUrl);
+        Mockito.verify(queryHistoryManager).getExternalUrlForQueryId(queryId);
+    }
+
+    @Test
+    void testNullQueryIdDoesNotThrowForExternalUrlCacheSet()
+    {
+        assertThatCode(() -> routingManager.setExternalUrlForQueryId(null, "https://external-url.example.com"))
+                .doesNotThrowAnyException();
     }
 
     @Test
