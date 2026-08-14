@@ -17,6 +17,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
@@ -34,6 +35,7 @@ import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
@@ -200,7 +202,7 @@ public class HaGatewayManager
         validateBackendConfiguration(backend);
         String backendProxyTo = removeTrailingSlash(backend.getProxyTo());
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
-        dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+        dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive(), tagsToString(backend.getTags()));
         invalidateBackendCache();
         return backend;
     }
@@ -213,10 +215,10 @@ public class HaGatewayManager
         String backendExternalUrl = removeTrailingSlash(backend.getExternalUrl());
         GatewayBackend model = dao.findFirstByName(backend.getName());
         if (model == null) {
-            dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            dao.create(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive(), tagsToString(backend.getTags()));
         }
         else {
-            dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive());
+            dao.update(backend.getName(), backend.getRoutingGroup(), backendProxyTo, backendExternalUrl, backend.isActive(), tagsToString(backend.getTags()));
             logActivationStatusChange(backend.getName(), backend.isActive(), model.active());
         }
         invalidateBackendCache();
@@ -229,6 +231,10 @@ public class HaGatewayManager
         checkArgument(backend.getProxyTo() != null, "Backend proxyTo URL cannot be null");
         checkArgument(backend.getRoutingGroup() != null, "Backend routing group cannot be null");
         checkArgument(backend.getExternalUrl() != null, "Backend external url cannot be null");
+        for (String tag : backend.getTags()) {
+            checkArgument(tag != null && !tag.isBlank(), "Backend tag cannot be null or blank");
+            checkArgument(!tag.contains(","), "Backend tag cannot contain ',' character: %s", tag);
+        }
     }
 
     public void deleteBackend(String name)
@@ -247,9 +253,28 @@ public class HaGatewayManager
             backendConfig.setProxyTo(model.backendUrl());
             backendConfig.setExternalUrl(model.externalUrl());
             backendConfig.setName(model.name());
+            backendConfig.setTags(tagsFromString(model.tags()));
             proxyBackendConfigurations.add(backendConfig);
         }
         return proxyBackendConfigurations;
+    }
+
+    @VisibleForTesting
+    static String tagsToString(List<String> tags)
+    {
+        if (tags == null || tags.isEmpty()) {
+            return null;
+        }
+        return String.join(",", tags);
+    }
+
+    @VisibleForTesting
+    static List<String> tagsFromString(String tags)
+    {
+        if (isNullOrEmpty(tags)) {
+            return List.of();
+        }
+        return Splitter.on(',').trimResults().omitEmptyStrings().splitToList(tags);
     }
 
     public static String removeTrailingSlash(String url)
