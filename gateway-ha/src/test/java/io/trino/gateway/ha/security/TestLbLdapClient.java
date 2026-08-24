@@ -33,11 +33,17 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 final class TestLbLdapClient
 {
+    private static final String SPECIAL_USER = "user*)(uid=*)\\test";
+    private static final String SPECIAL_USER_FILTER =
+            "(&(objectclass=user)(sAMAccountName=user\\2A\\29\\28uid=\\2A\\29\\5Ctest))";
+
     @Mock
     private LdapConnectionTemplate ldapConnectionTemplate;
 
@@ -78,6 +84,30 @@ final class TestLbLdapClient
         when(ldapConnectionTemplate.authenticate(eq(searchRequest), any(char[].class)))
                 .thenThrow(PasswordException.class);
         assertThat(lbLdapClient.authenticate(user, password)).isFalse();
+    }
+
+    @Test
+    void testAuthenticateEscapesFilterValue()
+            throws Exception
+    {
+        SearchRequest searchRequest = mock(SearchRequest.class);
+
+        when(ldapConnectionTemplate.newSearchRequest(
+                eq(ldapConfig.getLdapUserBaseDn()),
+                eq(SPECIAL_USER_FILTER),
+                eq(SearchScope.SUBTREE),
+                any(String[].class)))
+                .thenReturn(searchRequest);
+        when(ldapConnectionTemplate.authenticate(eq(searchRequest), any(char[].class)))
+                .thenReturn(null);
+
+        assertThat(lbLdapClient.authenticate(SPECIAL_USER, "pass1")).isTrue();
+
+        verify(ldapConnectionTemplate).newSearchRequest(
+                eq(ldapConfig.getLdapUserBaseDn()),
+                eq(SPECIAL_USER_FILTER),
+                eq(SearchScope.SUBTREE),
+                any(String[].class));
     }
 
     @Test
@@ -204,6 +234,32 @@ final class TestLbLdapClient
                 any(LbLdapClient.UserEntryMapper.class)))
                 .thenReturn(List.of());
         assertThat(lbLdapClient.getMemberOf(user)).isEmpty();
+    }
+
+    @Test
+    void testGetMemberOfEscapesFilterValue()
+    {
+        String[] attributes = new String[] {"memberOf"};
+        SearchRequest searchRequest = mock(SearchRequest.class);
+
+        when(ldapConnectionTemplate.newSearchRequest(
+                eq(ldapConfig.getLdapUserBaseDn()),
+                eq(SPECIAL_USER_FILTER),
+                eq(SearchScope.SUBTREE),
+                eq(attributes)))
+                .thenReturn(searchRequest);
+        when(ldapConnectionTemplate.search(
+                eq(searchRequest),
+                any(LbLdapClient.UserEntryMapper.class)))
+                .thenReturn(List.of(new LbLdapClient.UserRecord("Admin,User")));
+
+        assertThat(lbLdapClient.getMemberOf(SPECIAL_USER)).isEqualTo("Admin,User");
+
+        verify(ldapConnectionTemplate).newSearchRequest(
+                eq(ldapConfig.getLdapUserBaseDn()),
+                eq(SPECIAL_USER_FILTER),
+                eq(SearchScope.SUBTREE),
+                eq(attributes));
     }
 
     static class DummyPasswordWarning

@@ -19,6 +19,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.exception.LdapInvalidDnException;
+import org.apache.directory.api.ldap.model.filter.FilterEncoder;
 import org.apache.directory.api.ldap.model.message.SearchRequest;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.api.ldap.model.name.Dn;
@@ -117,7 +118,7 @@ public class LbLdapClient
                         ldapConnectionTemplate.authenticate(userDn, password.toCharArray());
             }
             else {
-                String filter = config.getLdapUserSearch().replace("${USER}", user);
+                String filter = createUserSearchFilter(user);
                 SearchRequest searchRequest = newUserSearchRequest(filter);
                 passwordWarning =
                         ldapConnectionTemplate.authenticate(searchRequest, password.toCharArray());
@@ -142,7 +143,7 @@ public class LbLdapClient
 
     public String getMemberOf(String user)
     {
-        String filter = config.getLdapUserSearch().replace("${USER}", user);
+        String filter = createUserSearchFilter(user);
 
         SearchRequest searchRequest = newUserSearchRequest(
                 filter,
@@ -155,6 +156,12 @@ public class LbLdapClient
             log.debug("Member of %s", memberOf);
         }
         return memberOf;
+    }
+
+    private String createUserSearchFilter(String user)
+    {
+        return config.getLdapUserSearch()
+                .replace("${USER}", FilterEncoder.encodeFilterValue(user));
     }
 
     private SearchRequest newUserSearchRequest(String filter, String... attributes)
