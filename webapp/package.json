@@ -20,7 +20,7 @@
     "moment": "^2.30.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.30.4",
+    "react-router-dom": "^6.30.6",
     "sass": "^1.102.0",
     "zustand": "^4.5.7"
   },
