@@ -44,6 +44,12 @@ Changes:
 * [:warning: Breaking change:](#breaking) Stop building, testing, and shipping
   container images for PowerPC (ppc64le) processors.
   ([#1198](https://github.com/trinodb/trino-gateway/pull/1198))
+* [:warning: Breaking change:](#breaking) Fail startup when the
+  `http-server.http.port` configuration property is set while
+  `http-server.http.enabled` is `false`, since the port is no longer read when
+  the HTTP listener is disabled. Remove the property from `serverConfig` in
+  HTTPS-only deployments.
+  ([#1245](https://github.com/trinodb/trino-gateway/pull/1245))
 
 More details and a list of all merged pull requests are [available in the
 milestone 21
