@@ -9,11 +9,29 @@ const nodeModulesDirectory = path.join(webappDirectory, 'node_modules', '.pnpm')
 const allowedLicensesPath = path.join(webappDirectory, 'allowed-licenses.txt');
 
 function readAllowedLicenses()
-{
-    return new Set(fs.readFileSync(allowedLicensesPath, 'utf8')
+    {//allowlist validation once read
+    const licenses = fs.readFileSync(allowedLicensesPath, 'utf8')
         .split(/\r?\n/)
         .map((line) => line.trim())
-        .filter((line) => line && !line.startsWith('#')));
+        .filter((line) => line && !line.startsWith('#'));
+
+    const invalid = licenses.filter((license) => {
+        try {
+            parseSpdxExpression(license);
+            return false;
+        }
+        catch {
+            return true;
+        }
+    });
+    //throws if allowlist entry invalid
+    if (invalid.length) {
+        throw new Error(
+            `Invalid SPDX identifiers in allowed-licenses.txt: ${invalid.join(', ')}`
+        );
+    }
+
+    return new Set(licenses);
 }
 
 export function packageLicense(packageJson)
