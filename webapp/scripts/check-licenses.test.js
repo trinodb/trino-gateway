@@ -16,10 +16,10 @@ test('allows valid SPDX expressions composed of allowed licenses', () => {
     assert.equal(isLicenseAllowed('MIT OR ISC', allowedLicenses), true);
     assert.equal(isLicenseAllowed('Apache-2.0 AND MIT', allowedLicenses), true);
     assert.equal(isLicenseAllowed('(MIT OR CC0-1.0)', allowedLicenses), true);
+    assert.equal(isLicenseAllowed('Zlib OR ISC', allowedLicenses), true);
 });
 
 test('rejects expressions containing required disallowed licenses', () => {
     assert.equal(isLicenseAllowed('MIT AND Zlib', allowedLicenses), false);
-    assert.equal(isLicenseAllowed('Zlib OR ISC', allowedLicenses), true);
     assert.equal(isLicenseAllowed('not an SPDX expression', allowedLicenses), false);
 });

@@ -9,23 +9,14 @@ const nodeModulesDirectory = path.join(webappDirectory, 'node_modules', '.pnpm')
 const allowedLicensesPath = path.join(webappDirectory, 'allowed-licenses.txt');
 
 function readAllowedLicenses()
-    {
-        //validate allowlist once read
+{
     const licenses = fs.readFileSync(allowedLicensesPath, 'utf8')
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter((line) => line && !line.startsWith('#'));
 
-    const invalid = licenses.filter((license) => {
-        try {
-            parseSpdxExpression(license);
-            return false;
-        }
-        catch {
-            return true;
-        }
-    });
-    //throws if allowlist entry invalid
+    const invalid = licenses.filter((license) => !parseLicense(license));
+
     if (invalid.length) {
         throw new Error(
             `Invalid SPDX identifiers in allowed-licenses.txt: ${invalid.join(', ')}`
@@ -82,15 +73,23 @@ function isParsedLicenseAllowed(expression, allowedLicenses)
     return false;
 }
 
-export function isLicenseAllowed(license, allowedLicenses)
+export function parseLicense(license)
 {
     try {
-        return isParsedLicenseAllowed(parseSpdxExpression(license), allowedLicenses);
+        return parseSpdxExpression(license);
     }
     catch {
-        return false;
+        return undefined;
     }
 }
+
+export function isLicenseAllowed(license, allowedLicenses)
+{
+    const expression = parseLicense(license);
+    return expression ? isParsedLicenseAllowed(expression, allowedLicenses) : false;
+}
+
+
 // Read package manifests because pnpm-lock.yaml does not record licenses.
 function packageJsonFiles()
 {
@@ -121,15 +120,7 @@ function packageJsonFiles()
         .filter((packageJsonPath) => fs.existsSync(packageJsonPath));
 }
 
-function parseLicense(license)
-{
-    try {
-        return parseSpdxExpression(license);
-    }
-    catch {
-        return undefined;
-    }
-}
+
 
 function checkLicenses()
 {
