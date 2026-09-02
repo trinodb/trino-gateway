@@ -158,6 +158,8 @@ function checkLicenses()
     console.log(`Verified licenses for ${packages.size} Web UI dependencies.`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const scriptPath = fileURLToPath(import.meta.url);
+
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === scriptPath) {
     checkLicenses();
 }
