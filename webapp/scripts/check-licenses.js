@@ -9,7 +9,8 @@ const nodeModulesDirectory = path.join(webappDirectory, 'node_modules', '.pnpm')
 const allowedLicensesPath = path.join(webappDirectory, 'allowed-licenses.txt');
 
 function readAllowedLicenses()
-    {//allowlist validation once read
+    {
+        //validate allowlist once read
     const licenses = fs.readFileSync(allowedLicensesPath, 'utf8')
         .split(/\r?\n/)
         .map((line) => line.trim())
@@ -120,6 +121,16 @@ function packageJsonFiles()
         .filter((packageJsonPath) => fs.existsSync(packageJsonPath));
 }
 
+function parseLicense(license)
+{
+    try {
+        return parseSpdxExpression(license);
+    }
+    catch {
+        return undefined;
+    }
+}
+
 function checkLicenses()
 {
     const allowedLicenses = readAllowedLicenses();
@@ -133,25 +144,36 @@ function checkLicenses()
 
     const missingLicenses = [];
     const disallowedLicenses = [];
+    const invalidLicenses = []; 
 
     for (const [packageName, license] of [...packages.entries()].sort()) {
         if (!license) {
             missingLicenses.push(packageName);
+        }
+        else if (!parseLicense(license)) {
+            invalidLicenses.push(`${packageName}: ${license}`);
         }
         else if (!isLicenseAllowed(license, allowedLicenses)) {
             disallowedLicenses.push(`${packageName}: ${license}`);
         }
     }
 
-    if (missingLicenses.length || disallowedLicenses.length) {
+    if (missingLicenses.length || invalidLicenses.length || disallowedLicenses.length) {
         if (missingLicenses.length) {
             console.error('Packages without license metadata:');
             console.error(missingLicenses.join('\n'));
         }
+
+        if (invalidLicenses.length) {
+            console.error('Packages with invalid SPDX license expressions:');
+            console.error(invalidLicenses.join('\n'));
+        }
+
         if (disallowedLicenses.length) {
             console.error('Packages with licenses not listed in allowed-licenses.txt:');
             console.error(disallowedLicenses.join('\n'));
         }
+
         process.exit(1);
     }
 
