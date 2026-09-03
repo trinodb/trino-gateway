@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
 import org.jdbi.v3.core.Jdbi;
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcConnectionManager
+        implements AutoCloseable
 {
     private static final Logger log = Logger.get(JdbcConnectionManager.class);
 
@@ -106,12 +108,36 @@ public class JdbcConnectionManager
     {
         executorService.scheduleWithFixedDelay(
                 () -> {
-                    log.info("Performing query history cleanup task");
-                    long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
-                    jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
+                    // Each cleanup is isolated in its own try-catch: scheduleWithFixedDelay silently
+                    // suppresses all future runs once a task throws, so a failure in one cleanup (e.g. a
+                    // table not yet created during a rolling deploy) must neither skip the other cleanup
+                    // nor propagate out of the scheduled task.
+                    try {
+                        log.info("Performing query history cleanup task");
+                        long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
+                        jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
+                    }
+                    catch (RuntimeException e) {
+                        log.warn(e, "Query history cleanup failed; will retry on next run");
+                    }
+
+                    try {
+                        log.info("Performing OAuth2 routing cleanup task");
+                        long oauthCutoff = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getOauth2RoutingHoursRetention());
+                        jdbi.onDemand(OAuth2RoutingDao.class).deleteOldOAuth2Pins(oauthCutoff);
+                    }
+                    catch (RuntimeException e) {
+                        log.warn(e, "OAuth2 routing cleanup failed; will retry on next run");
+                    }
                 },
                 1,
                 120,
                 TimeUnit.MINUTES);
+    }
+
+    @Override
+    public void close()
+    {
+        executorService.shutdownNow();
     }
 }
