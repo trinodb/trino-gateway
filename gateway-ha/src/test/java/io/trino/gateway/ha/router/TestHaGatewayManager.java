@@ -23,13 +23,14 @@ import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.destroyTestingDatabase;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -93,9 +94,12 @@ final class TestHaGatewayManager
         adhoc.setExternalUrl("adhoc2.trino.gateway.io");
         haGatewayManager.updateBackend(adhoc);
         assertThat(haGatewayManager.getActiveBackends("adhoc")).isEmpty();
+        // Do not assert on the order here. The query behind getAllBackends has no ORDER BY, so the
+        // order is up to the database. PostgreSQL writes an updated row as a new tuple at the end of
+        // the table, which moves the backend updated above to the end of the result.
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
-                .containsExactly("etl", "adhoc");
+                .containsExactlyInAnyOrder("etl", "adhoc");
 
         // Delete a backend
         haGatewayManager.deleteBackend("adhoc1");
@@ -117,7 +121,8 @@ final class TestHaGatewayManager
     @Test
     void testGatewayManagerCacheExpire()
     {
-        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
+        PostgreSQLContainer postgres = createTestingPostgresContainer();
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         DatabaseCacheConfiguration cacheConfiguration = new DatabaseCacheConfiguration();
         cacheConfiguration.setEnabled(true);
@@ -138,7 +143,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Test read from cache when DB is not available
-        destroyTestingDatabase(dataStoreConfig);
+        postgres.stop();
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Failed to refresh from DB, but still read from cache
