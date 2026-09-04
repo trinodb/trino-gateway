@@ -16,6 +16,9 @@ package io.trino.gateway.ha.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.AuthenticationConfiguration;
+import io.trino.gateway.ha.config.AuthenticationType;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -43,8 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.gateway.ha.security.LbOAuthManager.buildUnauthorizedResponse;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
+import static io.trino.gateway.ha.security.util.AuthenticationTypeResolver.resolveEffectiveTypes;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,15 +57,23 @@ public class LoginResource
 {
     private static final Logger log = Logger.get(LoginResource.class);
     public static final String CALLBACK_ENDPOINT = "oidc/callback";
+    // UI sentinel returned by /loginType when no authentication is configured; it is not a
+    // configurable authentication type (see AuthenticationType) and maps to the passwordless form.
+    private static final String NO_AUTHENTICATION_TYPE = "none";
 
     private final LbOAuthManager oauthManager;
     private final LbFormAuthManager formAuthManager;
+    private final List<String> loginTypes;
 
     @Inject
-    public LoginResource(@Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
+    public LoginResource(HaGatewayConfiguration haGatewayConfiguration, @Nullable LbOAuthManager oauthManager, @Nullable LbFormAuthManager formAuthManager)
     {
         this.oauthManager = oauthManager;
         this.formAuthManager = formAuthManager;
+        // Resolve the authentication methods advertised by /loginType once, at startup: the
+        // list is derived purely from static configuration, so recomputing it on every request
+        // would only risk per-request log spam and 500s instead of failing fast at boot.
+        this.loginTypes = resolveLoginTypes(haGatewayConfiguration.getAuthentication(), oauthManager != null, formAuthManager != null);
     }
 
     @GET
@@ -172,16 +185,23 @@ public class LoginResource
     @Produces(MediaType.APPLICATION_JSON)
     public Response loginType()
     {
-        String loginType;
-        if (formAuthManager != null) {
-            loginType = "form";
+        return Response.ok(Result.ok("Ok", loginTypes)).build();
+    }
+
+    private static List<String> resolveLoginTypes(@Nullable AuthenticationConfiguration authentication, boolean oauthConfigured, boolean formConfigured)
+    {
+        if (authentication == null) {
+            return ImmutableList.of(NO_AUTHENTICATION_TYPE);
         }
-        else if (oauthManager != null) {
-            loginType = "oauth";
+        List<AuthenticationType> resolvedTypes = resolveEffectiveTypes(
+                authentication.getDefaultType(),
+                oauthConfigured,
+                formConfigured);
+        if (authentication.isShowFirstTypeOnly()) {
+            resolvedTypes = List.of(resolvedTypes.getFirst());
         }
-        else {
-            loginType = "none";
-        }
-        return Response.ok(Result.ok("Ok", loginType)).build();
+        return resolvedTypes.stream()
+                .map(AuthenticationType::value)
+                .collect(toImmutableList());
     }
 }
