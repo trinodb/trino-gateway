@@ -13,13 +13,13 @@
  */
 package io.trino.gateway.ha.router;
 
-import org.testcontainers.mysql.MySQLContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createMySqlContainer;
 
 public class TestExternalUrlQueryHistoryMySql
         extends BaseExternalUrlQueryHistoryTest
 {
     public TestExternalUrlQueryHistoryMySql()
     {
-        super(new MySQLContainer("mysql:8.0.36"));
+        super(createMySqlContainer());
     }
 }
