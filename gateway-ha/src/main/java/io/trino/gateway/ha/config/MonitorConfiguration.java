@@ -39,8 +39,10 @@ public class MonitorConfiguration
 
     private String queuedQueriesMetricName = "trino_execution_name_QueryManager_QueuedQueries";
 
-    // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor
-    private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount", 1f);
+    // Require 1 node for health by default. This configuration only applies to the ClusterStatsMetricsMonitor.
+    // Trino 477 renamed this metric from trino_metadata_name_DiscoveryNodeManager_ActiveNodeCount. Clusters
+    // running Trino 476 or earlier need the previous name configured explicitly.
+    private Map<String, Float> metricMinimumValues = ImmutableMap.of("trino_node_name_CoordinatorNodeManager_ActiveNodeCount", 1f);
 
     private Map<String, Float> metricMaximumValues = ImmutableMap.of();
 
