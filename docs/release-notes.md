@@ -2,6 +2,61 @@
 
 ## 2026
 
+### Trino Gateway 22 (Planned Date) { id="22" }
+
+Artifacts:
+
+* [JAR file gateway-ha-22-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/22/gateway-ha-22-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:22`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.22.0`
+
+Changes:
+
+**General**
+
+* Add support for multiple authentication methods with fallback and an
+  ordered list in the `authentication.defaultType` configuration property.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Add the `authorization.enableDefaultPrivilege` and
+  `authorization.defaultPrivilege` configuration properties to grant a baseline
+  privilege to authenticated users.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Add optional support for the Microsoft Active Directory Domain Scope LDAP
+  control to avoid subordinate referrals when searching from the domain root.
+  ([#1173](https://github.com/trinodb/trino-gateway/issues/1173))
+* Add the `routing.oauth2RoutingEnabled` configuration property to pin all
+  requests of a Trino OAuth2 token exchange to the coordinator that minted the
+  handshake. This fixes slow and failing OAuth2 logins from the Trino CLI and
+  the JDBC driver with routing groups that contain multiple coordinators. Use
+  the `dataStore.oauth2RoutingRetention` configuration property to adjust how
+  long the routing information is retained.
+  ([#631](https://github.com/trinodb/trino-gateway/issues/631) and
+  [#892](https://github.com/trinodb/trino-gateway/issues/892))
+* Add support for connection pooling for the database with the
+  `dataStore.maxPoolSize`, `dataStore.keepaliveTime`, and
+  `dataStore.maxLifetime` configuration properties.
+  ([#377](https://github.com/trinodb/trino-gateway/issues/377))
+* Stop creating the unused resource group tables in the database
+  initialization scripts.
+  ([#656](https://github.com/trinodb/trino-gateway/issues/656))
+
+**UI**
+
+* Show an authentication method selector on the login page. Add the
+  `authentication.showFirstTypeOnly` configuration property to show only the
+  first available authentication method.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Confirm cluster deletion in a modal that names the cluster to delete.
+  ([#1280](https://github.com/trinodb/trino-gateway/pull/1280))
+
+More details and a list of all merged pull requests are [available in the milestone 22
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A22+is%3Aclosed)
+and the [GitHub release section for version
+22](https://github.com/trinodb/trino-gateway/releases/tag/22).
+
 ### Trino Gateway 21 (25 Aug 2026) { id="21" }
 
 Artifacts:
