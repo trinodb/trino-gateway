@@ -51,6 +51,7 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -84,10 +85,10 @@ final class TestGatewayHaMultipleBackend
     void setup()
             throws Exception
     {
-        adhocTrino = new TrinoContainer("trinodb/trino");
+        adhocTrino = createTrinoContainer();
         adhocTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         adhocTrino.start();
-        scheduledTrino = new TrinoContainer("trinodb/trino");
+        scheduledTrino = createTrinoContainer();
         scheduledTrino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         scheduledTrino.start();
         postgresql.start();

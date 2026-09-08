@@ -42,13 +42,21 @@ import static org.testcontainers.utility.MountableFile.forClasspathResource;
 @TestInstance(PER_CLASS)
 final class TestClusterStatsMonitor
 {
+    // Deliberately pinned instead of using TestcontainersUtils.createTrinoContainer, because the
+    // cluster stats monitors do not work against Trino 477 and later. The JMX monitor breaks
+    // because Trino 477 removed the DiscoveryNodeManager MBean, see
+    // https://github.com/trinodb/trino-gateway/issues/773, the metrics monitor looks for a metric
+    // of the same name, see https://github.com/trinodb/trino-gateway/issues/1155, and the HTTP
+    // monitor fails as well. Switch to createTrinoContainer once the monitors are fixed.
+    // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
+    private static final String PINNED_TRINO_IMAGE = "trinodb/trino:476";
+
     private TrinoContainer trino;
 
     @BeforeAll
     void setUp()
     {
-        // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
-        trino = new TrinoContainer("trinodb/trino:476");
+        trino = new TrinoContainer(PINNED_TRINO_IMAGE);
         trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
         trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
         trino.start();

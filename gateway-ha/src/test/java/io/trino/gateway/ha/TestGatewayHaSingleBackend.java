@@ -35,6 +35,7 @@ import java.io.File;
 import java.util.List;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
@@ -49,7 +50,7 @@ final class TestGatewayHaSingleBackend
     void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino");
+        trino = createTrinoContainer();
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
 
