@@ -22,6 +22,8 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
+    // OAuth2 pins only need to outlive an in-flight handshake (minutes); keep them an hour.
+    private Integer oauth2RoutingHoursRetention = 1;
 
     public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
     {
@@ -104,5 +106,15 @@ public class DataStoreConfiguration
     public void setRunMigrationsEnabled(boolean runMigrationsEnabled)
     {
         this.runMigrationsEnabled = runMigrationsEnabled;
+    }
+
+    public Integer getOauth2RoutingHoursRetention()
+    {
+        return this.oauth2RoutingHoursRetention;
+    }
+
+    public void setOauth2RoutingHoursRetention(Integer oauth2RoutingHoursRetention)
+    {
+        this.oauth2RoutingHoursRetention = oauth2RoutingHoursRetention;
     }
 }

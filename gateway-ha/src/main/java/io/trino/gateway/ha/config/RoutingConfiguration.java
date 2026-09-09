@@ -25,6 +25,14 @@ public class RoutingConfiguration
 
     private String defaultRoutingGroup = "adhoc";
 
+    // Off (default, opt-in dark launch): when on, the gateway pins every request of a Trino
+    // OAuth2 token-exchange handshake (the driver's /oauth2/token/{authId} poll loop and the
+    // browser's /oauth2/token/initiate/{authIdHash} redirect) to the coordinator that minted the
+    // authId. Only that coordinator holds the in-memory token-exchange state, so without pinning a
+    // multi-coordinator deployment routes the poll loop stochastically and the handshake stalls.
+    // See OAuth2RoutingUtils.
+    private boolean oauth2RoutingEnabled;
+
     public Duration getAsyncTimeout()
     {
         return asyncTimeout;
@@ -53,5 +61,15 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
+    }
+
+    public boolean isOauth2RoutingEnabled()
+    {
+        return oauth2RoutingEnabled;
+    }
+
+    public void setOauth2RoutingEnabled(boolean oauth2RoutingEnabled)
+    {
+        this.oauth2RoutingEnabled = oauth2RoutingEnabled;
     }
 }

@@ -109,6 +109,14 @@ public abstract class BaseRoutingManager
         return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
     }
 
+    @Override
+    public boolean isBackendActiveAndHealthy(String backendUrl)
+    {
+        return gatewayBackendManager.getAllActiveBackends().stream()
+                .filter(backend -> backend.getProxyTo().equals(backendUrl))
+                .anyMatch(backend -> isBackendHealthy(backend.getName()));
+    }
+
     /**
      * Performs cache look up, if a backend not found, it checks with all backends and tries to find
      * out which backend has info about given query id.
