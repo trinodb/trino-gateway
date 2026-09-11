@@ -1,4 +1,4 @@
-import { Form, Button, Toast, Spin } from '@douyinfe/semi-ui';
+import { Form, Button, Toast, Spin, RadioGroup, Radio } from '@douyinfe/semi-ui';
 import styles from './login.module.scss';
 import Locale from "../locales";
 import { useEffect, useState } from 'react';
@@ -10,13 +10,29 @@ export function Login() {
   const access = useAccessStore();
   const [formApi, setFormApi] = useState<FormApi<any>>();
   const [loginBo, setLoginBo] = useState<Record<string, any>>({});
-  const [loginType, setLoginType] = useState<'form' | 'oauth' | 'none'>();
+  const [loginTypes, setLoginTypes] = useState<string[]>([]);
+  const [loginType, setLoginType] = useState<string>();
 
   useEffect(() => {
     loginTypeApi().then(data => {
-      setLoginType(data);
+      const types: string[] = Array.isArray(data) ? data : (data ? [data] : []);
+      if (types.length > 0) {
+        setLoginTypes(types);
+        setLoginType(types[0]);
+      }
     }).catch(() => { });
   }, [])
+
+  const authMethodLabel = (type: string) => {
+    switch (type) {
+      case 'oauth':
+        return Locale.Auth.OAuthMethod;
+      case 'form':
+        return Locale.Auth.FormMethod;
+      default:
+        return type;
+    }
+  }
 
   const submitForm = () => {
     if (formApi) {
@@ -52,6 +68,23 @@ export function Login() {
             </p>
           </div>
         </div>
+        {loginTypes.length > 1 && (
+          <div className={styles.methodSwitch}>
+            <RadioGroup
+              type="button"
+              buttonSize="large"
+              value={loginType}
+              onChange={event => setLoginType(event.target.value)}
+              aria-label={Locale.Auth.SelectMethod}
+            >
+              {loginTypes.map(type => (
+                <Radio key={type} value={type}>
+                  {authMethodLabel(type)}
+                </Radio>
+              ))}
+            </RadioGroup>
+          </div>
+        )}
         {loginType == 'form' && (
           <div className={styles.form}>
             <Form className={styles.inputs} getFormApi={setFormApi} onValueChange={values => setLoginBo(values)}>

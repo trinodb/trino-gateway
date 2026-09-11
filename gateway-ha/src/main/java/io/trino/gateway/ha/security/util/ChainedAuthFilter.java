@@ -15,6 +15,8 @@ package io.trino.gateway.ha.security.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.AuthenticationType;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.security.ApiAuthenticator;
 import io.trino.gateway.ha.security.AuthorizationManager;
@@ -41,6 +43,8 @@ import static java.util.Objects.requireNonNull;
 public class ChainedAuthFilter
         implements ContainerRequestFilter
 {
+    private static final Logger log = Logger.get(ChainedAuthFilter.class);
+
     private final List<ContainerRequestFilter> filters;
 
     @Inject
@@ -55,28 +59,33 @@ public class ChainedAuthFilter
         requireNonNull(authorizer, "authorizer is null");
 
         ImmutableList.Builder<ContainerRequestFilter> authFilters = ImmutableList.builder();
-        String defaultType = config.getAuthentication().getDefaultType();
-        if (oauthManager != null) {
-            authFilters.add(new LbFilter(
-                    new LbAuthenticator(oauthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-        }
+        List<AuthenticationType> authMethods = AuthenticationTypeResolver.resolveChainTypes(
+                config.getAuthentication().getDefaultType(),
+                oauthManager != null,
+                formAuthManager != null);
+        log.info("Authentication chain accepts these methods, in fallback order: %s", authMethods);
+        for (AuthenticationType authMethod : authMethods) {
+            switch (authMethod) {
+                case OAUTH -> authFilters.add(new LbFilter(
+                        new LbAuthenticator(requireNonNull(oauthManager), authorizationManager),
+                        authorizer,
+                        "Bearer",
+                        new LbUnauthorizedHandler(AuthenticationType.OAUTH)));
+                case FORM -> {
+                    authFilters.add(new LbFilter(
+                            new FormAuthenticator(requireNonNull(formAuthManager), authorizationManager),
+                            authorizer,
+                            "Bearer",
+                            new LbUnauthorizedHandler(AuthenticationType.FORM)));
 
-        if (formAuthManager != null) {
-            authFilters.add(new LbFilter(
-                    new FormAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    "Bearer",
-                    new LbUnauthorizedHandler(defaultType)));
-
-            authFilters.add(new BasicAuthFilter(
-                    new ApiAuthenticator(formAuthManager, authorizationManager),
-                    authorizer,
-                    new LbUnauthorizedHandler(defaultType)));
+                    authFilters.add(new BasicAuthFilter(
+                            new ApiAuthenticator(requireNonNull(formAuthManager), authorizationManager),
+                            authorizer,
+                            new LbUnauthorizedHandler(AuthenticationType.FORM)));
+                }
+            }
         }
-        this.filters = requireNonNull(authFilters.build());
+        this.filters = authFilters.build();
     }
 
     @Override

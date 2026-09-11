@@ -1,10 +1,6 @@
 serverConfig:
   node.environment: test
-  http-server.http.port: 8080
-  http-server.https.enabled: true
-  http-server.https.port: ${ENV:REQUEST_ROUTER_PORT}
-  http-server.https.keystore.path: ${ENV:LOCALHOST_JKS}
-  http-server.https.keystore.key: 123456
+  http-server.http.port: ${ENV:REQUEST_ROUTER_PORT}
 
 dataStore:
   jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
@@ -21,11 +17,15 @@ authorization:
   api: .*BAZ.*
 
 presetUsers:
-  foo@bar.com:
+  admin1:
+    password: admin1_password
     privileges: FOO_BAR
+  user1:
+    password: password_user1
+    privileges: BAR_BAZ
 
 authentication:
-  defaultType: ["oauth"]
+  defaultType: ["oauth", "form"]
   oauth:
     issuer: http://localhost:4444/
     clientId: trino_client_id
@@ -33,8 +33,12 @@ authentication:
     tokenEndpoint: http://localhost:4444/oauth2/token
     authorizationEndpoint: http://localhost:4444/oauth2/auth
     jwkEndpoint: http://localhost:4444/.well-known/jwks.json
-    redirectUrl: https://localhost:${ENV:REQUEST_ROUTER_PORT}/oidc/callback
-    redirectWebUrl: https://localhost:${ENV:REQUEST_ROUTER_PORT}/
+    redirectUrl: http://localhost:${ENV:REQUEST_ROUTER_PORT}/oidc/callback
+    redirectWebUrl: http://localhost:${ENV:REQUEST_ROUTER_PORT}/
     userIdField: sub
     scopes:
       - openid
+  form:
+    selfSignKeyPair:
+      privateKey: src/test/resources/auth/test_private_key.pem
+      publicKey: src/test/resources/auth/test_public_key.pem

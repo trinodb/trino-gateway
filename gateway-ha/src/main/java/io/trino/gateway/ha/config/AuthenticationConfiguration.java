@@ -13,13 +13,30 @@
  */
 package io.trino.gateway.ha.config;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.util.List;
+
 public class AuthenticationConfiguration
 {
-    private String defaultType;
+    /**
+     * The authentication methods in priority order: this sets the order the
+     * {@code ChainedAuthFilter} tries them and which method(s) the login page shows. Accepts
+     * either a single scalar (for example {@code defaultType: "form"}) or a list
+     * ({@code defaultType: ["oauth", "form"]}); a scalar is bound as a one-element list, so
+     * pre-existing single-value configurations keep working unchanged.
+     *
+     * <p>This property never decides which methods are accepted: any configured
+     * {@code oauth}/{@code form} block is always accepted (see {@code AuthenticationTypeResolver}),
+     * and a listed method with no configured block is skipped.
+     */
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    private List<String> defaultType;
     private OAuthConfiguration oauth;
     private FormAuthConfiguration form;
+    private boolean showFirstTypeOnly;
 
-    public AuthenticationConfiguration(String defaultType, OAuthConfiguration oauth, FormAuthConfiguration form)
+    public AuthenticationConfiguration(List<String> defaultType, OAuthConfiguration oauth, FormAuthConfiguration form)
     {
         this.defaultType = defaultType;
         this.oauth = oauth;
@@ -28,12 +45,12 @@ public class AuthenticationConfiguration
 
     public AuthenticationConfiguration() {}
 
-    public String getDefaultType()
+    public List<String> getDefaultType()
     {
         return this.defaultType;
     }
 
-    public void setDefaultType(String defaultType)
+    public void setDefaultType(List<String> defaultType)
     {
         this.defaultType = defaultType;
     }
@@ -56,5 +73,24 @@ public class AuthenticationConfiguration
     public void setForm(FormAuthConfiguration form)
     {
         this.form = form;
+    }
+
+    /**
+     * Whether the login page should offer only the first available authentication method
+     * (the first {@code defaultType} entry that has a configured manager) instead of every
+     * available method. This affects the login page only: regardless of
+     * this flag, the {@code ChainedAuthFilter} still accepts any configured method, so API
+     * clients keep their multi-method fallback (for example, form/basic auth for automation
+     * even when {@code oauth} is listed first). Defaults to {@code false}, so the login page
+     * shows every available method.
+     */
+    public boolean isShowFirstTypeOnly()
+    {
+        return this.showFirstTypeOnly;
+    }
+
+    public void setShowFirstTypeOnly(boolean showFirstTypeOnly)
+    {
+        this.showFirstTypeOnly = showFirstTypeOnly;
     }
 }
