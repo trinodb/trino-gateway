@@ -47,7 +47,8 @@ abstract class BaseExternalUrlQueryHistoryTest
                 container.getDriverClassName(),
                 true,
                 4,
-                true);
+                true,
+                null);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
         queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);

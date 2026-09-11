@@ -54,7 +54,8 @@ abstract class BaseTestQueryHistoryManager
                 container.getDriverClassName(),
                 true,
                 4,
-                true);
+                true,
+                null);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
         jdbi = jdbcConnectionManager.getJdbi();
