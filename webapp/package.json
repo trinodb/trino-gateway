@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.102.0",
-    "@douyinfe/semi-icons-lab": "^2.102.0",
-    "@douyinfe/semi-illustrations": "^2.102.0",
-    "@douyinfe/semi-ui": "^2.102.0",
+    "@douyinfe/semi-icons": "^2.103.0",
+    "@douyinfe/semi-icons-lab": "^2.103.0",
+    "@douyinfe/semi-illustrations": "^2.103.0",
+    "@douyinfe/semi-ui": "^2.103.0",
     "@vvo/tzdb": "^6.198.0",
     "echarts": "^5.6.0",
     "js-cookie": "^3.0.8",
@@ -21,7 +21,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.6",
-    "sass": "^1.103.1",
+    "sass": "^1.104.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-react-refresh": "^0.5.5",
+    "eslint-plugin-react-refresh": "^0.5.6",
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vite-plugin-svgr": "^4.5.0",
