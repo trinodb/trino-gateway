@@ -69,7 +69,7 @@ jobs:
           distribution: 'temurin'
       - name: Maven Build
         run: $MAVEN install ${MAVEN_FAST_INSTALL}
-      - uses: docker/setup-qemu-action@v4.2.0
+      - uses: docker/setup-qemu-action@v4.3.0
         with:
           platforms: amd64,arm64
       - name: Build and Test Docker Image
