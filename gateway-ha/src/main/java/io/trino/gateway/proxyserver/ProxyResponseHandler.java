@@ -23,8 +23,9 @@ import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public class ProxyResponseHandler
@@ -47,7 +48,15 @@ public class ProxyResponseHandler
     public ProxyResponse handle(Request request, Response response)
     {
         try {
-            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), new String(response.getInputStream().readNBytes((int) responseSize.toBytes()), StandardCharsets.UTF_8));
+            InputStream inputStream = response.getInputStream();
+            byte[] body = inputStream.readNBytes((int) responseSize.toBytes());
+            if (inputStream.read() != -1) {
+                // Forwarding a truncated body together with the backend's status would silently hand the client corrupt data
+                throw new ProxyException(
+                        "Response from remote Trino server %s exceeds the configured proxyResponseConfiguration.responseSize of %s. Increase it to at least the largest response the backend can return, such as protocol.spooling.max-segment-size for spooled results"
+                                .formatted(request.getUri(), responseSize));
+            }
+            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), body);
         }
         catch (IOException e) {
             throw new ProxyException("Failed reading response from remote Trino server", e);
@@ -57,11 +66,17 @@ public class ProxyResponseHandler
     public record ProxyResponse(
             int statusCode,
             ListMultimap<HeaderName, String> headers,
-            String body)
+            byte[] body)
     {
         public ProxyResponse
         {
             requireNonNull(headers, "headers is null");
+            requireNonNull(body, "body is null");
+        }
+
+        public String bodyAsString()
+        {
+            return new String(body, UTF_8);
         }
     }
 }

@@ -48,11 +48,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
+import static io.airlift.http.client.HeaderNames.CONTENT_LENGTH;
+import static io.airlift.http.client.HeaderNames.TRANSFER_ENCODING;
 import static io.airlift.http.client.HeaderNames.VIA;
 import static io.airlift.http.client.HeaderNames.X_FORWARDED_FOR;
 import static io.airlift.http.client.HeaderNames.X_FORWARDED_HOST;
@@ -82,6 +85,8 @@ public class ProxyRequestHandler
     private static final List<String> PRESERVED_HEADERS_TO_SKIP = List.of(
             "Accept-Encoding",
             "Host");
+    // The gateway buffers the backend body and emits a new entity, so the backend's framing headers no longer describe what is sent to the client
+    private static final Set<HeaderName> RESPONSE_HEADERS_TO_SKIP = Set.of(CONTENT_LENGTH, TRANSFER_ENCODING);
 
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
@@ -231,7 +236,11 @@ public class ProxyRequestHandler
     private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie)
     {
         Response.ResponseBuilder builder = Response.status(response.statusCode()).entity(response.body());
-        response.headers().forEach((headerName, value) -> builder.header(headerName.toString(), value));
+        response.headers().forEach((headerName, value) -> {
+            if (!RESPONSE_HEADERS_TO_SKIP.contains(headerName)) {
+                builder.header(headerName.toString(), value);
+            }
+        });
         cookie.forEach(builder::cookie);
         return builder.build();
     }
@@ -272,7 +281,9 @@ public class ProxyRequestHandler
             Optional<String> username,
             RoutingDestination routingDestination)
     {
-        log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
+        if (log.isDebugEnabled()) {
+            log.debug("For Request [%s] got Response [%s]", request.getUri(), response.bodyAsString());
+        }
 
         QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
@@ -288,11 +299,11 @@ public class ProxyRequestHandler
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
+                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.bodyAsString(), response.statusCode());
             }
         }
         else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
+            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.bodyAsString(), response.statusCode(), username.orElse(null));
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
