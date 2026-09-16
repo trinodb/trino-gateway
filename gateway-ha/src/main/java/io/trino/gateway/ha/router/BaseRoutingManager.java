@@ -35,10 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -48,6 +50,7 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
+    private static final long BACKEND_SEARCH_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(5);
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
@@ -230,19 +233,36 @@ public abstract class BaseRoutingManager
                                 });
                 responseCodes.put(backend.getProxyTo(), call);
             }
+            // The probes run concurrently, so wait for them against a single shared budget
+            // rather than per future: the executor is a fixed pool, so with more backends
+            // than threads a per-future timeout would compound.
+            long deadline = System.nanoTime() + BACKEND_SEARCH_TIMEOUT_NANOS;
             for (Map.Entry<String, Future<Integer>> entry : responseCodes.entrySet()) {
-                if (entry.getValue().isDone()) {
-                    int responseCode = entry.getValue().get();
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    log.warn("Timed out searching backends for query [%s]", queryId);
+                    break;
+                }
+                try {
+                    int responseCode = entry.getValue().get(remaining, TimeUnit.NANOSECONDS);
                     if (responseCode == 200) {
                         log.info("Found query [%s] on backend [%s]", queryId, entry.getKey());
                         setBackendForQueryId(queryId, entry.getKey());
                         return entry.getKey();
                     }
                 }
+                catch (ExecutionException | TimeoutException e) {
+                    log.debug(e, "Could not check backend [%s] for query [%s]", entry.getKey(), queryId);
+                }
             }
         }
         catch (Exception e) {
             log.warn("Query id [%s] not found", queryId);
+        }
+        finally {
+            // Nothing reads the remaining probes, and the executor is shared, so do not
+            // leave them occupying its threads.
+            responseCodes.values().forEach(future -> future.cancel(true));
         }
         // Fallback on first active backend if queryId mapping not found.
         return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
