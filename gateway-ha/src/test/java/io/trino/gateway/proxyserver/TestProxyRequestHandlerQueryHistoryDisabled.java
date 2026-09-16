@@ -34,6 +34,7 @@ import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterrup
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -50,7 +51,7 @@ final class TestProxyRequestHandlerQueryHistoryDisabled
     TestProxyRequestHandlerQueryHistoryDisabled()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino:476");
+        trino = createTrinoContainer();
         trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino.start();
 

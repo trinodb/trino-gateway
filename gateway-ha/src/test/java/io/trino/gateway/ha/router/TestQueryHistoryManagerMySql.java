@@ -14,7 +14,8 @@
 package io.trino.gateway.ha.router;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.mysql.MySQLContainer;
+
+import static io.trino.gateway.ha.util.TestcontainersUtils.createMySqlContainer;
 
 public class TestQueryHistoryManagerMySql
         extends BaseTestQueryHistoryManager
@@ -22,7 +23,7 @@ public class TestQueryHistoryManagerMySql
     @Override
     protected final JdbcDatabaseContainer<?> startContainer()
     {
-        JdbcDatabaseContainer<?> container = new MySQLContainer("mysql:8.0.36");
+        JdbcDatabaseContainer<?> container = createMySqlContainer();
         container.start();
         return container;
     }
