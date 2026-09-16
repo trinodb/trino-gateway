@@ -15,20 +15,27 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
 import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcConnectionManager
@@ -39,27 +46,39 @@ public class JdbcConnectionManager
     private final DataStoreConfiguration configuration;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledFuture<?> cleanupTask;
+
+    private final Map<String, HikariDataSource> pools = new ConcurrentHashMap<>();
 
     @Inject
     public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
         this.jdbi = requireNonNull(jdbi, "jdbi is null");
-        this.configuration = configuration;
-        startCleanUps();
+        this.configuration = requireNonNull(configuration, "configuration is null");
+        cleanupTask = startCleanUps();
     }
 
     public Jdbi getJdbi()
     {
-        return jdbi;
+        return getJdbi(null);
     }
 
     public Jdbi getJdbi(@Nullable String routingGroupDatabase)
     {
-        if (routingGroupDatabase == null) {
+        Jdbi result;
+        Integer maxPoolSize = configuration.getMaxPoolSize();
+        if (maxPoolSize != null) {
+            HikariDataSource dataSource = getOrCreateDataSource(routingGroupDatabase, maxPoolSize);
+            result = Jdbi.create(dataSource);
+        }
+        else if (routingGroupDatabase == null) {
             return jdbi;
         }
+        else {
+            result = Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword());
+        }
 
-        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword())
+        return result
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
@@ -102,16 +121,65 @@ public class JdbcConnectionManager
                 uri.getFragment());
     }
 
-    private void startCleanUps()
+    private ScheduledFuture<?> startCleanUps()
     {
-        executorService.scheduleWithFixedDelay(
+        return executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
                     long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
-                    jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
+                    getJdbi().onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
                 120,
                 TimeUnit.MINUTES);
+    }
+
+    private HikariDataSource getOrCreateDataSource(@Nullable String routingGroupDatabase, int maxPoolSize)
+    {
+        checkArgument(maxPoolSize > 0, "maxPoolSize must be greater than 0");
+        String jdbcUrl = buildJdbcUrl(routingGroupDatabase);
+        return pools.compute(jdbcUrl, (_, existing) -> {
+            if (existing != null && !existing.isClosed()) {
+                return existing;
+            }
+
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setJdbcUrl(jdbcUrl);
+            hikariConfig.setUsername(configuration.getUser());
+            hikariConfig.setPassword(configuration.getPassword());
+            if (configuration.getDriver() != null) {
+                hikariConfig.setDriverClassName(configuration.getDriver());
+            }
+            hikariConfig.setMaximumPoolSize(maxPoolSize);
+            if (configuration.getKeepaliveTime() != null) {
+                hikariConfig.setKeepaliveTime(configuration.getKeepaliveTime().toMillis());
+            }
+            if (configuration.getMaxLifetime() != null) {
+                hikariConfig.setMaxLifetime(configuration.getMaxLifetime().toMillis());
+            }
+            hikariConfig.setPoolName(routingGroupDatabase == null ? "gateway-ha-default" : "gateway-ha-" + routingGroupDatabase);
+
+            return new HikariDataSource(hikariConfig);
+        });
+    }
+
+    @PreDestroy
+    public void close()
+    {
+        cleanupTask.cancel(true);
+        executorService.shutdownNow();
+
+        for (Map.Entry<String, HikariDataSource> entry : pools.entrySet()) {
+            HikariDataSource dataSource = entry.getValue();
+            if (!dataSource.isClosed()) {
+                try {
+                    dataSource.close();
+                }
+                catch (RuntimeException exception) {
+                    log.warn(exception, "Failed to close datasource for key: %s", entry.getKey());
+                }
+            }
+        }
+        pools.clear();
     }
 }
