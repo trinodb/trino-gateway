@@ -30,7 +30,7 @@ import jakarta.ws.rs.HttpMethod;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,9 +48,11 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
-    // Upper bound for waiting on a single backend query probe. Slightly above the probe's combined connect
-    // and read timeouts (5s each) so a slow or stuck backend cannot block resolution of an in-flight query.
-    private static final long QUERY_PROBE_TIMEOUT_SECONDS = 12;
+    private static final long PROBE_CONNECT_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
+    private static final long PROBE_READ_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
+    // Overall bound for locating a query id across all backends. Slightly above the probe's combined
+    // connect and read timeouts so a slow or stuck backend cannot hold the request thread indefinitely.
+    private static final long QUERY_SEARCH_TIMEOUT_MILLIS = PROBE_CONNECT_TIMEOUT_MILLIS + PROBE_READ_TIMEOUT_MILLIS + 2_000;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
@@ -216,7 +218,7 @@ public abstract class BaseRoutingManager
     {
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getAllBackends();
 
-        Map<String, Future<Integer>> responseCodes = new HashMap<>();
+        Map<String, Future<Integer>> responseCodes = new LinkedHashMap<>();
         for (ProxyBackendConfiguration backend : backends) {
             String target = backend.getProxyTo() + "/v1/query/" + queryId;
 
@@ -225,37 +227,45 @@ public abstract class BaseRoutingManager
                             () -> {
                                 URL url = URI.create(target).toURL();
                                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                                conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(5));
-                                conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
+                                conn.setConnectTimeout((int) PROBE_CONNECT_TIMEOUT_MILLIS);
+                                conn.setReadTimeout((int) PROBE_READ_TIMEOUT_MILLIS);
                                 conn.setRequestMethod(HttpMethod.HEAD);
                                 return conn.getResponseCode();
                             });
             responseCodes.put(backend.getProxyTo(), call);
         }
         try {
+            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(QUERY_SEARCH_TIMEOUT_MILLIS);
             for (Map.Entry<String, Future<Integer>> entry : responseCodes.entrySet()) {
                 // Wait for each probe (rather than only inspecting already-completed ones) so a backend that
                 // holds the query is reliably found instead of being skipped because its probe had not completed
                 // yet. This matters during graceful shutdown: the holding backend may be deactivated (and
                 // therefore excluded from the active-backend fallback below) but still healthy, so the only way
-                // an in-flight query keeps resolving is by locating it here. Each wait is bounded just above the
-                // connect/read timeouts so a single slow or stuck backend cannot block the search, and a failure
-                // probing one backend must not abort the search for the remaining ones.
+                // an in-flight query keeps resolving is by locating it here. All waits share an overall deadline
+                // derived from the probe connect and read timeouts so a slow or stuck backend cannot hold the
+                // request thread beyond that bound, and a failure probing one backend must not abort the search
+                // for the remaining ones.
                 try {
-                    int responseCode = entry.getValue().get(QUERY_PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    int responseCode = entry.getValue().get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
                     if (responseCode == 200) {
                         log.info("Found query [%s] on backend [%s]", queryId, entry.getKey());
                         setBackendForQueryId(queryId, entry.getKey());
                         return entry.getKey();
                     }
                 }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.warn("Interrupted while searching for query id [%s]", queryId);
+                    break;
+                }
                 catch (Exception e) {
-                    log.warn("Query id [%s] not found on backend [%s]: %s", queryId, entry.getKey(), e.getLocalizedMessage());
+                    log.debug("Query id [%s] not found on backend [%s]: %s", queryId, entry.getKey(), e.getLocalizedMessage());
                 }
             }
         }
         finally {
-            // Stop probing once the search is over (a match was found or no backend had the query).
+            // Stop probing once the search is over. Note that cancel() only prevents queued probes from
+            // starting; a probe already blocked in HttpURLConnection runs until its own timeout expires.
             responseCodes.values().forEach(future -> future.cancel(true));
         }
         // Fallback on first active backend if queryId mapping not found.

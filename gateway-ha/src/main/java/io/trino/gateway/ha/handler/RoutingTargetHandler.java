@@ -41,6 +41,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -105,8 +106,10 @@ public class RoutingTargetHandler
     {
         if (queryId.isPresent()) {
             throw new WebApplicationException(
-                    "Could not find any backend for query id: " + queryId.get(),
-                    Response.Status.NOT_FOUND);
+                    Response.status(Response.Status.NOT_FOUND)
+                            .type(TEXT_PLAIN_TYPE)
+                            .entity("Could not find any backend for query id: " + queryId.get())
+                            .build());
         }
         return getRoutingTargetResponse(request);
     }
