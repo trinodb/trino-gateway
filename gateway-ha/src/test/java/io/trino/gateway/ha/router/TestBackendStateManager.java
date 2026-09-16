@@ -45,7 +45,7 @@ final class TestBackendStateManager
     @AfterEach
     void tearDown()
     {
-        exporter.unexportAll();
+        exporter.destroy();
     }
 
     @Test
