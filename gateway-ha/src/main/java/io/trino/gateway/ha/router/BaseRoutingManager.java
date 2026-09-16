@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,6 +108,33 @@ public abstract class BaseRoutingManager
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
         return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
+    }
+
+    @Override
+    public boolean isBackendActiveAndHealthy(String backendUrl)
+    {
+        // The OAuth2 pin is a scheme://authority string: the proxy target without any path
+        // (see ProxyRequestHandler#getRemoteTarget). Match each backend on the same shape, case
+        // insensitively, so a proxyTo that carries a base path or differs in host case still matches
+        // its own pin instead of being treated as a stale backend and forcing a needless re-auth.
+        String target = schemeAndAuthority(backendUrl);
+        return gatewayBackendManager.getAllActiveBackends().stream()
+                .filter(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target))
+                .anyMatch(backend -> isBackendHealthy(backend.getName()));
+    }
+
+    private static String schemeAndAuthority(String url)
+    {
+        try {
+            URI uri = URI.create(url);
+            if (uri.getScheme() != null && uri.getAuthority() != null) {
+                return (uri.getScheme() + "://" + uri.getAuthority()).toLowerCase(Locale.ROOT);
+            }
+        }
+        catch (IllegalArgumentException e) {
+            // Not a parseable URL (e.g. a bare host); fall back to a case-insensitive literal match.
+        }
+        return url.toLowerCase(Locale.ROOT);
     }
 
     /**
