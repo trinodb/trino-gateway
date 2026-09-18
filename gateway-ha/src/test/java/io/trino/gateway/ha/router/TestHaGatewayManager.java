@@ -111,12 +111,9 @@ final class TestHaGatewayManager
         adhoc.setExternalUrl("adhoc2.trino.gateway.io");
         haGatewayManager.updateBackend(adhoc);
         assertThat(haGatewayManager.getActiveBackends("adhoc")).isEmpty();
-        // Do not assert on the order here. The query behind getAllBackends has no ORDER BY, so the
-        // order is up to the database. PostgreSQL writes an updated row as a new tuple at the end of
-        // the table, which moves the backend updated above to the end of the result.
         assertThat(haGatewayManager.getAllBackends())
                 .extracting(ProxyBackendConfiguration::getRoutingGroup)
-                .containsExactlyInAnyOrder("etl", "adhoc");
+                .containsExactly("etl", "adhoc");
 
         // Delete a backend
         haGatewayManager.deleteBackend("adhoc1");
