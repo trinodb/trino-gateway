@@ -7,4 +7,5 @@ export interface BackendData {
   queued: number;
   running: number;
   status: string;
+  tags: string[];
 }
