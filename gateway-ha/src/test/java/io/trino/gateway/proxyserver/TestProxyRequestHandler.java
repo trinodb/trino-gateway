@@ -14,6 +14,11 @@
 package io.trino.gateway.proxyserver;
 
 import io.trino.gateway.ha.HaGatewayLauncher;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -47,6 +52,8 @@ import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlConta
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
 final class TestProxyRequestHandler
@@ -184,5 +191,79 @@ final class TestProxyRequestHandler
         assertThat(queryDetail.getUser()).isEqualTo(username.get());
         assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
         assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
+    }
+
+    @Test
+    void testInactiveUnhealthyBackendIsExpectedlyUnavailable()
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("dead-cluster");
+        backend.setProxyTo("http://dead-cluster.trino:8889");
+        backend.setActive(false);
+
+        GatewayBackendManager mockBackendManager = mock(GatewayBackendManager.class);
+        when(mockBackendManager.getBackendByName("dead-cluster")).thenReturn(Optional.of(backend));
+
+        BackendStateManager mockStateManager = mock(BackendStateManager.class);
+        when(mockStateManager.getBackendState(backend))
+                .thenReturn(ClusterStats.builder("dead-cluster").trinoStatus(TrinoStatus.UNHEALTHY).build());
+
+        assertThat(ProxyRequestHandler.isExpectedlyUnavailable("dead-cluster", mockBackendManager, mockStateManager)).isTrue();
+    }
+
+    @Test
+    void testActiveBackendIsNotExpectedlyUnavailable()
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("active-cluster");
+        backend.setProxyTo("http://active-cluster.trino:8889");
+        backend.setActive(true);
+
+        GatewayBackendManager mockBackendManager = mock(GatewayBackendManager.class);
+        when(mockBackendManager.getBackendByName("active-cluster")).thenReturn(Optional.of(backend));
+
+        BackendStateManager mockStateManager = mock(BackendStateManager.class);
+        when(mockStateManager.getBackendState(backend))
+                .thenReturn(ClusterStats.builder("active-cluster").trinoStatus(TrinoStatus.HEALTHY).build());
+
+        assertThat(ProxyRequestHandler.isExpectedlyUnavailable("active-cluster", mockBackendManager, mockStateManager)).isFalse();
+    }
+
+    @Test
+    void testInactiveUnknownBackendIsExpectedlyUnavailable()
+    {
+        // UNKNOWN is the default state before any health check runs (e.g. after gateway restart)
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("dead-cluster");
+        backend.setProxyTo("http://dead-cluster.trino:8889");
+        backend.setActive(false);
+
+        GatewayBackendManager mockBackendManager = mock(GatewayBackendManager.class);
+        when(mockBackendManager.getBackendByName("dead-cluster")).thenReturn(Optional.of(backend));
+
+        BackendStateManager mockStateManager = mock(BackendStateManager.class);
+        when(mockStateManager.getBackendState(backend))
+                .thenReturn(ClusterStats.builder("dead-cluster").trinoStatus(TrinoStatus.UNKNOWN).build());
+
+        assertThat(ProxyRequestHandler.isExpectedlyUnavailable("dead-cluster", mockBackendManager, mockStateManager)).isTrue();
+    }
+
+    @Test
+    void testInactiveButStillHealthyBackendIsNotExpectedlyUnavailable()
+    {
+        // Transition window: cluster deactivated but health check hasn't caught up yet → still 502
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("transitioning-cluster");
+        backend.setProxyTo("http://transitioning-cluster.trino:8889");
+        backend.setActive(false);
+
+        GatewayBackendManager mockBackendManager = mock(GatewayBackendManager.class);
+        when(mockBackendManager.getBackendByName("transitioning-cluster")).thenReturn(Optional.of(backend));
+
+        BackendStateManager mockStateManager = mock(BackendStateManager.class);
+        when(mockStateManager.getBackendState(backend))
+                .thenReturn(ClusterStats.builder("transitioning-cluster").trinoStatus(TrinoStatus.HEALTHY).build());
+
+        assertThat(ProxyRequestHandler.isExpectedlyUnavailable("transitioning-cluster", mockBackendManager, mockStateManager)).isFalse();
     }
 }
