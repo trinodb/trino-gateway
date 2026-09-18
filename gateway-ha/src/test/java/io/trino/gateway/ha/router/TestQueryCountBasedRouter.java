@@ -21,17 +21,23 @@ import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestInstance(Lifecycle.PER_CLASS)
 final class TestQueryCountBasedRouter
 {
     static final String BACKEND_URL_1 = "http://c1";
@@ -43,6 +49,11 @@ final class TestQueryCountBasedRouter
 
     static final int LEAST_QUEUED_COUNT = 1;
     static final int SAME_QUERY_COUNT = 5;
+
+    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
+    private final DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
+    private final JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
     QueryCountBasedRouter queryCountBasedRouter;
@@ -173,11 +184,20 @@ final class TestQueryCountBasedRouter
         return proxyBackend;
     }
 
+    @AfterAll
+    public final void close()
+    {
+        postgres.close();
+    }
+
     @BeforeEach
     public void init()
     {
-        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+        // The container is shared by every test in this class, so start each one from an empty database
+        connectionManager.getJdbi().useHandle(handle -> {
+            handle.execute("DELETE FROM query_history");
+            handle.execute("DELETE FROM gateway_backend");
+        });
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());
         historyManager = new HaQueryHistoryManager(connectionManager.getJdbi(), dataStoreConfig);
         queryCountBasedRouter = new QueryCountBasedRouter(backendManager, historyManager, routingConfiguration);

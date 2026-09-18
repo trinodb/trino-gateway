@@ -20,16 +20,20 @@ import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import org.jdbi.v3.core.Jdbi;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.destroyTestingDatabase;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,21 +41,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaGatewayManager
 {
+    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
+    private final Jdbi jdbi = createTestingJdbcConnectionManager(dataStoreConfig(postgres)).getJdbi();
+
+    @AfterAll
+    public final void close()
+    {
+        postgres.close();
+    }
+
+    @BeforeEach
+    void cleanUp()
+    {
+        // The container is shared by every test in this class, so start each one from an empty table
+        jdbi.useHandle(handle -> handle.execute("DELETE FROM gateway_backend"));
+    }
+
     @Test
     void testGatewayManagerWithCache()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
         DatabaseCacheConfiguration cacheConfiguration = new DatabaseCacheConfiguration();
         cacheConfiguration.setEnabled(true);
         cacheConfiguration.setRefreshAfterWrite(new Duration(5, SECONDS));
-        testGatewayManager(new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), cacheConfiguration));
+        testGatewayManager(new HaGatewayManager(jdbi, new RoutingConfiguration(), cacheConfiguration));
     }
 
     @Test
     void testGatewayManagerWithoutCache()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
-        testGatewayManager(new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration()));
+        testGatewayManager(new HaGatewayManager(jdbi, new RoutingConfiguration(), new DatabaseCacheConfiguration()));
     }
 
     static void testGatewayManager(HaGatewayManager haGatewayManager)
@@ -117,7 +135,9 @@ final class TestHaGatewayManager
     @Test
     void testGatewayManagerCacheExpire()
     {
-        DataStoreConfiguration dataStoreConfig = dataStoreConfig();
+        // This test stops the database, so it needs a container of its own
+        PostgreSQLContainer postgres = createTestingPostgresContainer();
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         DatabaseCacheConfiguration cacheConfiguration = new DatabaseCacheConfiguration();
         cacheConfiguration.setEnabled(true);
@@ -138,7 +158,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Test read from cache when DB is not available
-        destroyTestingDatabase(dataStoreConfig);
+        postgres.stop();
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Failed to refresh from DB, but still read from cache
@@ -153,8 +173,7 @@ final class TestHaGatewayManager
     @Test
     void testRemoveTrailingSlashInUrl()
     {
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig());
-        HaGatewayManager haGatewayManager = new HaGatewayManager(connectionManager.getJdbi(), new RoutingConfiguration(), new DatabaseCacheConfiguration());
+        HaGatewayManager haGatewayManager = new HaGatewayManager(jdbi, new RoutingConfiguration(), new DatabaseCacheConfiguration());
 
         ProxyBackendConfiguration etl = new ProxyBackendConfiguration();
         etl.setActive(false);

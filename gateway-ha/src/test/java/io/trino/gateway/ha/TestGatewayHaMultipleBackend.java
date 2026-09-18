@@ -274,9 +274,10 @@ final class TestGatewayHaMultipleBackend
         assertThat(backendConfiguration[0].isActive()).isTrue();
         assertThat(backendConfiguration[1].isActive()).isTrue();
         assertThat(backendConfiguration[2].isActive()).isTrue();
-        assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("adhoc");
-        assertThat(backendConfiguration[1].getRoutingGroup()).isEqualTo("scheduled");
-        assertThat(backendConfiguration[2].getRoutingGroup()).isEqualTo("custom");
+        // Backends are returned ordered by name, so custom, then trino1, then trino2
+        assertThat(backendConfiguration[0].getRoutingGroup()).isEqualTo("custom");
+        assertThat(backendConfiguration[1].getRoutingGroup()).isEqualTo("adhoc");
+        assertThat(backendConfiguration[2].getRoutingGroup()).isEqualTo("scheduled");
         assertThat(backendConfiguration[0].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[1].getExternalUrl()).isEqualTo("externalUrl");
         assertThat(backendConfiguration[2].getExternalUrl()).isEqualTo("externalUrl");

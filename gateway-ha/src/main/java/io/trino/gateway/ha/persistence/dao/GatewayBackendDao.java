@@ -20,7 +20,11 @@ import java.util.List;
 
 public interface GatewayBackendDao
 {
-    @SqlQuery("SELECT * FROM gateway_backend")
+    @SqlQuery(
+            """
+            SELECT * FROM gateway_backend
+            ORDER BY name
+            """)
     List<GatewayBackend> findAll();
 
     @SqlQuery(
