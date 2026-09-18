@@ -2,6 +2,26 @@
 
 ## 2026
 
+### Trino Gateway 22 (Planned Date) { id="22" }
+
+Artifacts:
+
+* [JAR file gateway-ha-22-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/22/gateway-ha-22-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:22`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.22.0`
+
+Changes:
+
+**General**
+
+More details and a list of all merged pull requests are [available in the milestone 22
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A22+is%3Aclosed)
+and the [GitHub release section for version
+22](https://github.com/trinodb/trino-gateway/releases/tag/22).
+
 ### Trino Gateway 21 (25 Aug 2026) { id="21" }
 
 Artifacts:
