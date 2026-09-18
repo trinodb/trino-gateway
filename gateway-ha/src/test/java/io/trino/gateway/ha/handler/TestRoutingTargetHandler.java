@@ -28,6 +28,7 @@ import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -333,6 +334,51 @@ class TestRoutingTargetHandler
         // Fallback routing would throw (no backends for the routing group)
         when(routingManager.provideBackendConfiguration(any(), any()))
                 .thenThrow(new IllegalStateException("Number of active backends found zero"));
+
+        RoutingTargetResponse response = handler.resolveRouting(uiRequest);
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+    }
+
+    @Test // regression test for https://github.com/trinodb/trino-gateway/issues/943
+    void testResolveRoutingForExistingQueryWithNoActiveBackendsReturnsNotFound()
+    {
+        // A request that polls an already-submitted query (query id present) whose owning cluster
+        // has been deactivated for graceful shutdown, and whose sticky lookup can no longer locate
+        // the backend. This must not surface the new-query "Number of active backends found zero"
+        // failure (HTTP 500); it should resolve to a clean 404 Not Found instead.
+        String queryId = "20240101_000000_00002_bbbbb";
+
+        HttpServletRequest uiRequest = Mockito.mock(HttpServletRequest.class);
+        when(uiRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(uiRequest.getRequestURI()).thenReturn("/ui/query.html");
+        when(uiRequest.getQueryString()).thenReturn(queryId);
+
+        // Sticky lookup cannot locate the backend for the query id.
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(null);
+
+        assertThatThrownBy(() -> handler.resolveRouting(uiRequest))
+                .isInstanceOf(WebApplicationException.class)
+                .satisfies(thrown -> assertThat(((WebApplicationException) thrown).getResponse().getStatus())
+                        .isEqualTo(Response.Status.NOT_FOUND.getStatusCode()));
+    }
+
+    @Test // regression test for https://github.com/trinodb/trino-gateway/issues/943
+    void testResolveRoutingForExistingQueryResolvesToDeactivatedBackend()
+    {
+        // A request that polls an already-submitted query whose owning cluster was deactivated but is
+        // still located by the sticky lookup must route to that cluster, even though the active-backend
+        // selection for new queries would have nothing to choose from.
+        String queryId = "20240101_000000_00003_ccccc";
+        String backendUrl = "https://deactivated-but-healthy.example.com";
+
+        HttpServletRequest uiRequest = Mockito.mock(HttpServletRequest.class);
+        when(uiRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(uiRequest.getRequestURI()).thenReturn("/ui/query.html");
+        when(uiRequest.getQueryString()).thenReturn(queryId);
+
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
+        when(routingManager.findRoutingGroupForQueryId(queryId)).thenReturn("shutting-down-group");
+        when(routingManager.findExternalUrlForQueryId(queryId)).thenReturn(backendUrl);
 
         RoutingTargetResponse response = handler.resolveRouting(uiRequest);
         assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
