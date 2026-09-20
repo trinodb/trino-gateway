@@ -146,6 +146,6 @@ final class TestProxyRequestHandlerOAuth2
         return new ProxyResponse(
                 statusCode,
                 ImmutableListMultimap.of(HeaderName.of(WWW_AUTHENTICATE), wwwAuthenticate),
-                "");
+                new byte[0]);
     }
 }
