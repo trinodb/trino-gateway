@@ -73,6 +73,8 @@ const en_US = {
       Create: "Cluster created successfully",
       Update: "Cluster updated successfully",
       Delete: "Cluster deleted successfully",
+      DeleteTitle: "Delete cluster",
+      DeleteConfirm: (name: string) => `Are you sure you want to delete the cluster "${name}"?`,
       ErrorCreate: "Failed to create cluster",
       ErrorUpdate: "Failed to update cluster",
       ErrorDelete: "Failed to delete cluster",
