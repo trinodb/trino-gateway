@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import styles from './cluster.module.scss';
 import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
-import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Tag, Toast, Typography } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Switch, Table, Tag, Toast, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { Role, useAccessStore } from "../store";
@@ -16,6 +16,9 @@ export function Cluster() {
   const [visibleForm, setVisibleForm] = useState(false);
   const [formApi, setFormApi] = useState<FormApi<any>>();
   const [form, setForm] = useState<BackendData>();
+  const [visibleDelete, setVisibleDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BackendData>();
 
   useEffect(() => {
     list();
@@ -26,6 +29,18 @@ export function Cluster() {
       .then(data => {
         setBackendData(data.sort((a, b) => a.name.localeCompare(b.name)));
       }).catch(() => { });
+  }
+
+  const remove = () => {
+    if (deleteTarget === undefined || deleting) return;
+    setDeleting(true);
+    backendDeleteApi({ name: deleteTarget.name })
+      .then(() => {
+        list();
+        Toast.success(Locale.Cluster.Delete);
+        setVisibleDelete(false);
+      }).catch(() => { Toast.error(Locale.Cluster.ErrorDelete) })
+      .finally(() => { setDeleting(false) });
   }
 
   const linkRender = (text: string) => {
@@ -47,20 +62,10 @@ export function Cluster() {
           setForm(record)
           setVisibleForm(true)
         }}>{Locale.UI.Edit}</Button>
-        <Popconfirm
-          title={Locale.UI.DeleteTitle}
-          content={Locale.UI.DeleteContent}
-          position="bottomRight"
-          onConfirm={() => {
-            backendDeleteApi({ name: record.name })
-              .then(() => {
-                list();
-                Toast.success(Locale.Cluster.Delete);
-              }).catch(() => { Toast.error(Locale.Cluster.ErrorDelete) });
-          }}
-        >
-          <Button>{Locale.UI.Delete}</Button>
-        </Popconfirm>
+        <Button onClick={() => {
+          setDeleteTarget(record)
+          setVisibleDelete(true)
+        }}>{Locale.UI.Delete}</Button>
       </ButtonGroup>
     );
   }
@@ -209,6 +214,26 @@ export function Cluster() {
           />
           <Form.Switch label="Active" field='active' initValue={form?.active || false} />
         </Form>
+      </Modal>
+      <Modal
+        title={Locale.Cluster.DeleteTitle}
+        visible={visibleDelete}
+        onOk={remove}
+        onCancel={() => { setVisibleDelete(false) }}
+        okText={Locale.UI.Delete}
+        cancelText={Locale.UI.Cancel}
+        okButtonProps={{ type: 'danger', theme: 'solid', loading: deleting, disabled: deleting }}
+        cancelButtonProps={{ disabled: deleting }}
+        maskClosable={!deleting}
+        closable={!deleting}
+        closeOnEsc={!deleting}
+        centered
+        width={460}
+      >
+        <Text>{Locale.Cluster.DeleteConfirm(deleteTarget?.name ?? '')}</Text>
+        <div style={{ marginTop: '8px' }}>
+          <Text type="danger">{Locale.UI.DeleteContent}</Text>
+        </div>
       </Modal>
     </>
   );
