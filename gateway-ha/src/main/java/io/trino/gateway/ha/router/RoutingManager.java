@@ -119,4 +119,14 @@ public interface RoutingManager
      * @return true if an active backend has the same scheme and authority
      */
     boolean isBackendActive(String backendUrl);
+
+    /**
+     * Finds a configured backend matching {@code backendUrl} that is intentionally out of service: no
+     * matching backend is active, and the matching backend is not healthy. Matching is by scheme and
+     * authority (host/port) only and is case-insensitive, like {@link #isBackendActive}.
+     *
+     * @param backendUrl the backend URL to resolve
+     * @return the name of the inactive, unhealthy backend, or empty if there is none
+     */
+    Optional<String> findInactiveUnhealthyBackendName(String backendUrl);
 }

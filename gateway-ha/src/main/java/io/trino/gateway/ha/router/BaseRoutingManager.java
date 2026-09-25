@@ -122,6 +122,23 @@ public abstract class BaseRoutingManager
                 .anyMatch(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target));
     }
 
+    @Override
+    public Optional<String> findInactiveUnhealthyBackendName(String backendUrl)
+    {
+        String target = schemeAndAuthority(backendUrl);
+        List<ProxyBackendConfiguration> matching = gatewayBackendManager.getAllBackends().stream()
+                .filter(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target))
+                .toList();
+        // Another active backend serving the same address means the cluster is not out of service.
+        if (matching.stream().anyMatch(ProxyBackendConfiguration::isActive)) {
+            return Optional.empty();
+        }
+        return matching.stream()
+                .filter(backend -> getBackEndHealth(backend.getName()).orElse(TrinoStatus.UNKNOWN) != TrinoStatus.HEALTHY)
+                .map(ProxyBackendConfiguration::getName)
+                .findFirst();
+    }
+
     private static String schemeAndAuthority(String url)
     {
         try {
