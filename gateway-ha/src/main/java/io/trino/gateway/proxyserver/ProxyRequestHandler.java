@@ -51,6 +51,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
+import static com.google.common.net.HttpHeaders.TRANSFER_ENCODING;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.http.client.HeaderNames.VIA;
@@ -231,7 +233,15 @@ public class ProxyRequestHandler
     private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie)
     {
         Response.ResponseBuilder builder = Response.status(response.statusCode()).entity(response.body());
-        response.headers().forEach((headerName, value) -> builder.header(headerName.toString(), value));
+        // The body is re-framed from the buffered entity, so the backend's framing headers
+        // no longer describe it. Forwarding them produces responses with a stale Content-Length
+        // or with both Content-Length and Transfer-Encoding, which strict clients reject.
+        response.headers().forEach((headerName, value) -> {
+            String name = headerName.toString();
+            if (!name.equalsIgnoreCase(CONTENT_LENGTH) && !name.equalsIgnoreCase(TRANSFER_ENCODING)) {
+                builder.header(name, value);
+            }
+        });
         cookie.forEach(builder::cookie);
         return builder.build();
     }
@@ -272,7 +282,9 @@ public class ProxyRequestHandler
             Optional<String> username,
             RoutingDestination routingDestination)
     {
-        log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
+        if (log.isDebugEnabled()) {
+            log.debug("For Request [%s] got Response [%s]", request.getUri(), response.bodyForLogging());
+        }
 
         QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
@@ -288,11 +300,11 @@ public class ProxyRequestHandler
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
+                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.bodyForLogging(), response.statusCode());
             }
         }
         else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
+            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.bodyForLogging(), response.statusCode(), username.orElse(null));
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
