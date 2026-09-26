@@ -20,6 +20,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -39,6 +40,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
+import static io.trino.gateway.ha.router.HaGatewayManager.removeTrailingSlash;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -46,6 +48,7 @@ public class RoutingTargetHandler
     private static final Logger log = Logger.get(RoutingTargetHandler.class);
     private final RoutingManager routingManager;
     private final RoutingGroupSelector routingGroupSelector;
+    private final GatewayBackendManager gatewayBackendManager;
     private final String defaultRoutingGroup;
     private final List<String> statementPaths;
     private final boolean requestAnalyserClientsUseV2Format;
@@ -56,10 +59,12 @@ public class RoutingTargetHandler
     public RoutingTargetHandler(
             RoutingManager routingManager,
             RoutingGroupSelector routingGroupSelector,
+            GatewayBackendManager gatewayBackendManager,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.routingManager = requireNonNull(routingManager);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
         requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
@@ -77,8 +82,13 @@ public class RoutingTargetHandler
                     .orElse(defaultRoutingGroup);
             String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
                     .orElse(cluster);
+            String clusterName = gatewayBackendManager.getAllBackends().stream()
+                    .filter(b -> removeTrailingSlash(b.getProxyTo()).equals(removeTrailingSlash(cluster)))
+                    .findFirst()
+                    .map(ProxyBackendConfiguration::getName)
+                    .orElse(null);
             return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
+                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl, clusterName),
                     request);
         }).orElseGet(() -> getRoutingTargetResponse(request));
 
@@ -104,7 +114,7 @@ public class RoutingTargetHandler
             modifiedRequest = new HeaderModifyingRequestWrapper(request, routingDestination.externalHeaders());
         }
         return new RoutingTargetResponse(
-                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl),
+                new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl, backendConfiguration.getName()),
                 modifiedRequest);
     }
 
