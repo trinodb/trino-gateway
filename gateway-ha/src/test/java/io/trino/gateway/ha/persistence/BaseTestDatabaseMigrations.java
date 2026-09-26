@@ -132,6 +132,7 @@ public abstract class BaseTestDatabaseMigrations
                 container.getDriverClassName(),
                 true,
                 4,
-                true);
+                true,
+                null);
     }
 }

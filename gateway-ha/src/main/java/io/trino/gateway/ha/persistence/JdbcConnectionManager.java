@@ -13,22 +13,22 @@
  */
 package io.trino.gateway.ha.persistence;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
-import jakarta.annotation.Nullable;
+import jakarta.annotation.PreDestroy;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcConnectionManager
@@ -39,79 +39,84 @@ public class JdbcConnectionManager
     private final DataStoreConfiguration configuration;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledFuture<?> cleanupTask;
+
+    private HikariDataSource dataSource;
 
     @Inject
     public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
     {
         this.jdbi = requireNonNull(jdbi, "jdbi is null");
-        this.configuration = configuration;
-        startCleanUps();
+        this.configuration = requireNonNull(configuration, "configuration is null");
+        cleanupTask = startCleanUps();
     }
 
     public Jdbi getJdbi()
     {
-        return jdbi;
-    }
-
-    public Jdbi getJdbi(@Nullable String routingGroupDatabase)
-    {
-        if (routingGroupDatabase == null) {
+        Integer maxPoolSize = configuration.getMaxPoolSize();
+        if (maxPoolSize == null) {
             return jdbi;
         }
 
-        return Jdbi.create(buildJdbcUrl(routingGroupDatabase), configuration.getUser(), configuration.getPassword())
+        return Jdbi.create(getOrCreateDataSource(maxPoolSize))
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
-    @VisibleForTesting
-    String buildJdbcUrl(@Nullable String routingGroupDatabase)
+    private ScheduledFuture<?> startCleanUps()
     {
-        String jdbcUrl = configuration.getJdbcUrl();
-        if (jdbcUrl == null) {
-            throw new IllegalArgumentException("JDBC URL cannot be null");
-        }
-        if (routingGroupDatabase == null) {
-            return jdbcUrl;
-        }
-        try {
-            int index = jdbcUrl.indexOf("/") + 1;
-            if (index == 0) {
-                throw new IllegalArgumentException("Invalid JDBC URL: no '/' found in " + jdbcUrl);
-            }
-
-            URI newUri = getUriWithRoutingGroupDatabase(routingGroupDatabase, index, jdbcUrl);
-            return jdbcUrl.substring(0, index) + newUri;
-        }
-        catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static URI getUriWithRoutingGroupDatabase(String routingGroupDatabase, int index, String jdbcUrl)
-            throws URISyntaxException
-    {
-        URI uri = new URI(jdbcUrl.substring(index));
-        return new URI(
-                uri.getScheme(),
-                uri.getUserInfo(),
-                uri.getHost(),
-                uri.getPort(),
-                Path.of(uri.getPath()).resolveSibling(routingGroupDatabase).toString(),
-                uri.getQuery(),
-                uri.getFragment());
-    }
-
-    private void startCleanUps()
-    {
-        executorService.scheduleWithFixedDelay(
+        return executorService.scheduleWithFixedDelay(
                 () -> {
                     log.info("Performing query history cleanup task");
                     long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
-                    jdbi.onDemand(QueryHistoryDao.class).deleteOldHistory(created);
+                    getJdbi().onDemand(QueryHistoryDao.class).deleteOldHistory(created);
                 },
                 1,
                 120,
                 TimeUnit.MINUTES);
+    }
+
+    private synchronized HikariDataSource getOrCreateDataSource(int maxPoolSize)
+    {
+        checkArgument(maxPoolSize > 0, "maxPoolSize must be greater than 0");
+        if (dataSource != null && !dataSource.isClosed()) {
+            return dataSource;
+        }
+
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(configuration.getJdbcUrl());
+        hikariConfig.setUsername(configuration.getUser());
+        hikariConfig.setPassword(configuration.getPassword());
+        if (configuration.getDriver() != null) {
+            hikariConfig.setDriverClassName(configuration.getDriver());
+        }
+        hikariConfig.setMaximumPoolSize(maxPoolSize);
+        if (configuration.getKeepaliveTime() != null) {
+            hikariConfig.setKeepaliveTime(configuration.getKeepaliveTime().toMillis());
+        }
+        if (configuration.getMaxLifetime() != null) {
+            hikariConfig.setMaxLifetime(configuration.getMaxLifetime().toMillis());
+        }
+        hikariConfig.setPoolName("trino-gateway");
+
+        dataSource = new HikariDataSource(hikariConfig);
+        return dataSource;
+    }
+
+    @PreDestroy
+    public synchronized void close()
+    {
+        cleanupTask.cancel(true);
+        executorService.shutdownNow();
+
+        if (dataSource != null && !dataSource.isClosed()) {
+            try {
+                dataSource.close();
+            }
+            catch (RuntimeException exception) {
+                log.warn(exception, "Failed to close datasource");
+            }
+        }
+        dataSource = null;
     }
 }

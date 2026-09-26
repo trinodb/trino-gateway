@@ -55,6 +55,20 @@ You can also disable query history recording to the database by setting
 `queryHistoryEnabled` to `false`. This can be useful in scenarios where you
 want to reduce database load or don't need query history tracking.
 
+If `maxPoolSize` is configured and greater than 0, Trino Gateway uses a
+connection pool for data store connections, including gateway metadata and
+query history.
+If `maxPoolSize` is not configured, Trino Gateway creates a new JDBC connection
+per request.
+A value of `10` is a reasonable starting point for many deployments, but the
+optimal value depends on the database capacity and expected concurrency.
+The optional `keepaliveTime` and `maxLifetime` settings control how frequently
+idle pooled connections are checked and how long a pooled connection can be
+reused. Both accept Airlift-style durations such as `2m` or `30m`. If they are
+not configured, the connection pool defaults are used. A non-zero value below
+`30s`, or a `keepaliveTime` that is not less than `maxLifetime`, is not applied:
+the setting is reset to its default or disabled and a warning is logged.
+
 For example:
 
 ```yaml
@@ -66,7 +80,29 @@ dataStore:
   queryHistoryHoursRetention: 24
   runMigrationsEnabled: false
   queryHistoryEnabled: true  # Set to false to disable query history recording
+  maxPoolSize: 10            # Optional: enables JDBC connection pooling for the data store
+  keepaliveTime: 2m          # Optional: interval for checking idle pooled connections
+  maxLifetime: 30m           # Optional: maximum lifetime of a pooled connection
 ```
+
+Keep the pool small. Trino Gateway uses the data store only for backend
+metadata, query history, and periodic cleanup, not on the query routing path, so
+a large pool is rarely beneficial. HikariCP recommends a fixed-size pool sized
+roughly as `(cpu_cores * 2) + effective_spindles` for the Trino Gateway host,
+and the default of `10` suits most deployments. Never set `maxPoolSize` higher
+than what the database allows across all Trino Gateway instances, such as
+PostgreSQL or MySQL `max_connections`, or the Oracle `sessions` and `processes`
+limits. At high scale, an external pooler such as PgBouncer is often a better
+fit than a large pool.
+
+Set `maxLifetime` a few seconds shorter than the shortest connection lifetime
+enforced by the database or infrastructure, such as a load balancer idle timeout
+or the MySQL `wait_timeout`. Keep `keepaliveTime` shorter than `maxLifetime`.
+
+For the rationale and the full set of pool tuning options, see the HikariCP
+documentation on [pool
+sizing](https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing) and
+[configuration](https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby).
 
 `Flyway` uses a transactional lock in databases that support it such as 
 [PostgreSQL](https://documentation.red-gate.com/fd/postgresql-database-235241807.html#).
