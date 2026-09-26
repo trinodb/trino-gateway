@@ -23,7 +23,6 @@ import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,7 +46,7 @@ public class ProxyResponseHandler
     public ProxyResponse handle(Request request, Response response)
     {
         try {
-            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), new String(response.getInputStream().readNBytes((int) responseSize.toBytes()), StandardCharsets.UTF_8));
+            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), response.getInputStream().readNBytes((int) responseSize.toBytes()));
         }
         catch (IOException e) {
             throw new ProxyException("Failed reading response from remote Trino server", e);
@@ -57,7 +56,7 @@ public class ProxyResponseHandler
     public record ProxyResponse(
             int statusCode,
             ListMultimap<HeaderName, String> headers,
-            String body)
+            byte[] body)
     {
         public ProxyResponse
         {
