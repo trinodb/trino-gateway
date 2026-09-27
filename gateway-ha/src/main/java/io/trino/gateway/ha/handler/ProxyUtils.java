@@ -16,6 +16,7 @@ package io.trino.gateway.ha.handler;
 import com.google.common.collect.ImmutableSet;
 import io.airlift.http.client.HeaderName;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.TrinoQueryProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
@@ -90,7 +91,7 @@ public final class ProxyUtils
         if (path == null) {
             return Optional.empty();
         }
-        log.debug("Trying to extract query id from path [%s] or queryString [%s]", path, queryParams);
+        log.debug("Trying to extract query id from path/queryString [%s]", OAuth2RoutingUtils.redactForLog(path, queryParams));
         // matchingStatementPath should match paths such as /v1/statement/executing/query_id/nonce/sequence_number,
         // and if custom paths are supplied using the statementPaths configuration, paths such as
         // /custom/statement/path/executing/query_id/nonce/sequence_number

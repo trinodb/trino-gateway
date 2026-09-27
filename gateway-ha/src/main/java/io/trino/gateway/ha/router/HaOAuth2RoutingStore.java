@@ -13,13 +13,14 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import org.jdbi.v3.core.Jdbi;
 
+import java.sql.SQLException;
 import java.util.Optional;
-import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,52 +48,57 @@ public class HaOAuth2RoutingStore
     }
 
     @Override
-    public void setBackends(Set<String> oauthIds, String backend)
+    public void setBackend(String pinKey, String backend)
     {
-        if (oauthIds.isEmpty()) {
-            return;
-        }
         try {
-            // Idempotent upsert without dialect-specific syntax: a repeated challenge for the same
-            // id (or a re-pin) replaces the row rather than failing on the primary key. Record every
-            // id of the handshake in one transaction on a single connection so the delete+insert of
-            // all ids is atomic (all-or-nothing, keeping the OAuth2 state consistent) and concurrent
-            // pins of the same id serialize instead of racing into a primary-key violation.
             long created = System.currentTimeMillis();
+            // Portable upsert in one transaction: a repeated challenge or re-pin replaces the row
+            // instead of failing on the primary key.
             jdbi.useTransaction(handle -> {
                 OAuth2RoutingDao txDao = handle.attach(OAuth2RoutingDao.class);
-                for (String oauthId : oauthIds) {
-                    txDao.delete(oauthId);
-                    txDao.insert(oauthId, backend, created);
-                }
+                txDao.delete(pinKey);
+                txDao.insert(pinKey, backend, created);
             });
         }
         catch (RuntimeException e) {
-            log.warn(e, "Failed to persist OAuth2 pins %s", oauthIds);
+            log.warn("Failed to persist OAuth2 pin: %s", describeForLog(e));
         }
     }
 
     @Override
-    public Optional<String> findBackend(String oauthId)
+    public Optional<String> findBackend(String pinKey)
     {
         try {
-            return Optional.ofNullable(dao.findBackendByOAuthId(oauthId));
+            return Optional.ofNullable(dao.findBackendByPinKey(pinKey));
         }
         catch (RuntimeException e) {
             // DB unreadable: fall back to normal (non-pinned) routing rather than failing the request.
-            log.warn(e, "Failed to load OAuth2 pin [%s]; falling back to normal routing", oauthId);
+            log.warn("Failed to load OAuth2 pin; falling back to normal routing: %s", describeForLog(e));
             return Optional.empty();
         }
     }
 
     @Override
-    public void removeBackend(String oauthId)
+    public void removeBackend(String pinKey)
     {
         try {
-            dao.delete(oauthId);
+            dao.delete(pinKey);
         }
         catch (RuntimeException e) {
-            log.warn(e, "Failed to remove OAuth2 pin [%s]", oauthId);
+            log.warn("Failed to remove OAuth2 pin: %s", describeForLog(e));
         }
+    }
+
+    /**
+     * Describes a failure by exception class and SQL state only. Jdbi renders bound arguments,
+     * which here include the pin key, into exception messages and stack traces.
+     */
+    @VisibleForTesting
+    static String describeForLog(RuntimeException e)
+    {
+        if (e.getCause() instanceof SQLException sqlException) {
+            return "%s (SQLState %s)".formatted(e.getClass().getSimpleName(), sqlException.getSQLState());
+        }
+        return e.getClass().getSimpleName();
     }
 }

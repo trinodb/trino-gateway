@@ -98,7 +98,7 @@ routing above cannot solve this on its own: the CLI/driver poll loop does not
 carry cookies.
 
 When `routing.oauth2RoutingEnabled` is set to true, Trino Gateway records the
-`authId`/`authIdHash` advertised in the `401` challenge together with the
+`authId` advertised in the `401` challenge together with the
 coordinator that issued it, and pins every later request of that handshake —
 the poll loop, the initiate redirect, and the callback — back to the same
 coordinator:
@@ -108,12 +108,18 @@ routing:
   oauth2RoutingEnabled: true
 ```
 
-Pins are stored in the gateway's database so they are visible across every
+Pins are stored in the gateway's database under a one-way hash of the
+handshake id, so the table does not expose the ids needed to poll for or
+complete another user's login. They are visible across every
 Trino Gateway instance, and are cleaned up automatically; see
 `dataStore.oauth2RoutingRetention` (default `1h`) to change how long a
 pin is kept. If the pinned coordinator becomes unavailable before the
 handshake completes, Trino Gateway drops the pin and asks the client to
 re-authenticate, since the handshake cannot be resumed on another coordinator.
+
+Trino Gateway cannot redact these ids from the HTTP request log; see
+[Configure OAuth2 token-exchange routing](installation.md#configure-oauth2-token-exchange-routing)
+before enabling this feature.
 
 This feature is off by default.
 

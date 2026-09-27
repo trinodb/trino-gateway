@@ -14,30 +14,27 @@
 package io.trino.gateway.ha.router;
 
 import java.util.Optional;
-import java.util.Set;
 
 /**
- * Shared, cross-pod store of Trino OAuth2 token-exchange pins ({@code authId}/{@code authIdHash} →
- * minting coordinator). A pin is recorded by whichever gateway pod proxies the {@code 401}
- * challenge, but the matching poll/initiate request may land on a different pod, so the pin must be
- * visible to every pod. See {@link OAuth2RoutingUtils}.
+ * Shared, cross-pod store of Trino OAuth2 token-exchange pins ({@code pinKey} → minting
+ * coordinator). A pin is recorded by whichever gateway pod proxies the {@code 401} challenge, but
+ * the matching poll/initiate/callback request may land on a different pod, so the pin must be
+ * visible to every pod. See {@link OAuth2RoutingUtils#pinKeyForAuthIdHash}.
  */
 public interface OAuth2RoutingStore
 {
     /**
-     * Pins one or more OAuth2 identifiers (the {@code authId} and {@code authIdHash} advertised in a
-     * single {@code 401} challenge) to the coordinator that minted them. Recorded atomically, so a
-     * handshake's pins are stored all-or-nothing.
+     * Pins a handshake to the coordinator that minted it.
      */
-    void setBackends(Set<String> oauthIds, String backend);
+    void setBackend(String pinKey, String backend);
 
     /**
-     * The pinned backend for an OAuth2 identifier, or empty if none is recorded.
+     * The pinned backend for a handshake, or empty if none is recorded.
      */
-    Optional<String> findBackend(String oauthId);
+    Optional<String> findBackend(String pinKey);
 
     /**
      * Drops a pin (e.g. once its backend is gone and the client must re-authenticate).
      */
-    void removeBackend(String oauthId);
+    void removeBackend(String pinKey);
 }

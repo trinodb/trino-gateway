@@ -73,7 +73,10 @@ public class FileBasedRoutingGroupSelector
 
         rules.get().forEach(rule -> {
             if (rule.evaluateCondition(data, state)) {
-                log.debug("%s evaluated to true on request: %s", rule, request);
+                log.debug(
+                        "%s evaluated to true on request: %s",
+                        rule,
+                        OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
                 rule.evaluateAction(result, data, state);
             }
         });

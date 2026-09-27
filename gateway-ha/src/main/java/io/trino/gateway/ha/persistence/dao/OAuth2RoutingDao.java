@@ -21,23 +21,23 @@ public interface OAuth2RoutingDao
     @SqlQuery(
             """
             SELECT backend_url FROM oauth2_routing
-            WHERE oauth_id = :oauthId
+            WHERE pin_key = :pinKey
             """)
-    String findBackendByOAuthId(String oauthId);
+    String findBackendByPinKey(String pinKey);
 
     @SqlUpdate(
             """
-            INSERT INTO oauth2_routing (oauth_id, backend_url, created)
-            VALUES (:oauthId, :backendUrl, :created)
+            INSERT INTO oauth2_routing (pin_key, backend_url, created)
+            VALUES (:pinKey, :backendUrl, :created)
             """)
-    void insert(String oauthId, String backendUrl, long created);
+    void insert(String pinKey, String backendUrl, long created);
 
     @SqlUpdate(
             """
             DELETE FROM oauth2_routing
-            WHERE oauth_id = :oauthId
+            WHERE pin_key = :pinKey
             """)
-    void delete(String oauthId);
+    void delete(String pinKey);
 
     @SqlUpdate(
             """

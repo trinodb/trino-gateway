@@ -15,7 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.hash.Hashing;
 import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,18 +44,21 @@ import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
  * that coordinator holds the in-memory exchange state for it. So every request carrying that
  * {@code authId}/hash must be routed back to the minting coordinator.
  * <p>
+ * The {@code oauth2_routing} table is keyed by a pin key, never by the raw {@code authId} or
+ * {@code authIdHash}: the {@code authId} is enough to poll for the token, and the
+ * {@code authIdHash} is enough to drive the browser initiate leg. See {@link #pinKeyForAuthIdHash}.
+ * <p>
  * The minting coordinator advertises both identifiers in the {@code WWW-Authenticate} challenge it
  * returns on the unauthenticated request:
  * <pre>
  *   WWW-Authenticate: Bearer x_redirect_server="https://host/oauth2/token/initiate/{authIdHash}",
  *                            x_token_server="https://host/oauth2/token/{authId}"
  * </pre>
- * Recording both identifiers from that single challenge lets the gateway pin the poll loop
- * ({@code authId}) and the browser initiate redirect ({@code authIdHash}) without ever having to
- * reproduce Trino's hashing of {@code authId}.
+ * Only {@code x_token_server} (the raw {@code authId}) is used to record the pin. The
+ * {@code authIdHash} is derived locally, so one row covers both the poll and initiate legs.
  * <p>
  * NOTE: the path and challenge-parameter constants below mirror Trino's token-exchange flow
- * (verified shape as of Trino 446). They are intentionally isolated here; if a future Trino version
+ * (verified against Trino 483). They are intentionally isolated here; if a future Trino version
  * changes them, this is the only file that needs to change.
  */
 public final class OAuth2RoutingUtils
@@ -70,18 +73,27 @@ public final class OAuth2RoutingUtils
     // legs it carries no id in its path — the id rides through the IdP inside the state parameter.
     public static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
 
+    // Placeholder for ids in logged paths: never log a raw authId, authIdHash or pin key.
+    private static final String REDACTED = "<redacted>";
+
+    // Domain separation, not a secret: a pin key never equals a bare sha256 of the authIdHash.
+    private static final String PIN_KEY_PREFIX = "tgw-oauth2-pin:";
+
+    // Trino's authIdHash is a lower-case sha256 hex digest.
+    private static final Pattern HEX_64_PATTERN = Pattern.compile("[0-9a-f]{64}");
+
+    private static final int AUTH_ID_STRING_LENGTH = 36;
+
     // Parameters Trino places in the WWW-Authenticate challenge for the token-exchange flow.
     private static final String TOKEN_SERVER_PARAM = "x_token_server";
-    private static final String REDIRECT_SERVER_PARAM = "x_redirect_server";
 
     // Trino round-trips the id through the IdP inside the "state" query parameter (a signed JWT); its
-    // "handler_state" claim is the authIdHash the initiate/poll legs are already pinned by.
+    // "handler_state" claim is the authIdHash, which maps to the same pin key as the other legs.
     private static final String STATE_PARAM = "state";
     private static final String HANDLER_STATE_CLAIM = "handler_state";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static final Pattern TOKEN_SERVER_PATTERN = challengeParamPattern(TOKEN_SERVER_PARAM);
-    private static final Pattern REDIRECT_SERVER_PATTERN = challengeParamPattern(REDIRECT_SERVER_PARAM);
 
     static final String REAUTH_MESSAGE =
             "Trino Gateway: the Trino coordinator handling this OAuth2 login is no longer available. Please reconnect to re-authenticate.";
@@ -98,59 +110,67 @@ public final class OAuth2RoutingUtils
     }
 
     /**
-     * The stable routing key for an in-flight handshake request carried in the request <em>path</em>:
-     * the driver poll ({@code /oauth2/token/{authId}}) and the browser initiate
-     * ({@code /oauth2/token/initiate/{authIdHash}}). Empty if {@code path} is neither. The browser
-     * callback ({@code /oauth2/callback}) carries its id in the {@code state} parameter instead — see
-     * {@link #oauthIdFromCallback}.
+     * The pin-store lookup key for a handshake request carried in the path: the driver poll
+     * ({@code /oauth2/token/{authId}}) or the browser initiate ({@code /oauth2/token/initiate/{authIdHash}}).
+     * Empty if {@code path} is neither, or the id is not a canonical lower-case UUID (poll) or 64
+     * lower-case hex chars (initiate). The callback is handled by {@link #pinKeyFromCallback}.
      */
-    public static Optional<String> oauthIdFromRequestPath(String path)
+    public static Optional<String> pinKeyFromRequestPath(String path)
     {
         if (isNullOrEmpty(path)) {
             return Optional.empty();
         }
         if (path.startsWith(OAUTH2_INITIATE_PATH_PREFIX)) {
-            return firstSegmentAfter(path, OAUTH2_INITIATE_PATH_PREFIX);
+            return firstSegmentAfter(path, OAUTH2_INITIATE_PATH_PREFIX)
+                    .filter(OAuth2RoutingUtils::isHex64)
+                    .map(OAuth2RoutingUtils::pinKeyForAuthIdHash);
         }
         if (path.startsWith(OAUTH2_TOKEN_PATH_PREFIX)) {
-            return firstSegmentAfter(path, OAUTH2_TOKEN_PATH_PREFIX);
+            return firstSegmentAfter(path, OAUTH2_TOKEN_PATH_PREFIX)
+                    .flatMap(OAuth2RoutingUtils::parseAuthId)
+                    .map(authId -> pinKeyForAuthIdHash(hashAuthId(authId)));
         }
         return Optional.empty();
     }
 
     /**
-     * The routing key for an OAuth2 callback request ({@code /oauth2/callback?state=...&code=...}).
-     * The callback is the browser leg returning from the IdP; unlike the token/initiate legs it
-     * carries no id in its path. Trino round-trips the id through the IdP inside the signed
-     * {@code state} JWT, as the {@code handler_state} claim — which is exactly the {@code authIdHash}
-     * the initiate and poll legs are already pinned by. We decode the JWT payload (base64url, without
-     * verifying the signature — this only selects a backend; the coordinator still verifies it) and
-     * return that {@code authIdHash} so the callback is pinned to the same coordinator that minted the
-     * handshake, without depending on {@link OAuth2GatewayCookie}. Empty if this is not a callback,
-     * the {@code state} is absent, it is a browser-UI login (no {@code handler_state}), or the state
-     * cannot be parsed — in which case the caller falls back to normal (cookie/stochastic) routing.
+     * The pin-store lookup key for an OAuth2 callback ({@code /oauth2/callback?state=...&code=...}).
+     * The id is the {@code handler_state} claim (the {@code authIdHash}) of the signed {@code state}
+     * JWT. The signature is not verified here: this only selects a backend and the coordinator
+     * verifies it. Empty if the claim is absent or malformed, in which case normal routing applies.
      */
-    public static Optional<String> oauthIdFromCallback(String path, String queryString)
+    public static Optional<String> pinKeyFromCallback(String path, String queryString)
     {
         if (isNullOrEmpty(path) || !path.startsWith(OAUTH2_CALLBACK_PATH)) {
             return Optional.empty();
         }
-        return stateParam(queryString).flatMap(OAuth2RoutingUtils::handlerStateClaim);
+        return stateParam(queryString)
+                .flatMap(OAuth2RoutingUtils::handlerStateClaim)
+                .filter(OAuth2RoutingUtils::isHex64)
+                .map(OAuth2RoutingUtils::pinKeyForAuthIdHash);
     }
 
     /**
-     * Both routing keys ({@code authId} and {@code authIdHash}) advertised in a {@code 401}
-     * token-exchange challenge, or empty if {@code wwwAuthenticate} is not such a challenge.
+     * The pin-store lookup/write key for a {@code 401} token-exchange challenge, derived from the
+     * {@code authId} in {@code x_token_server}. Empty if {@code wwwAuthenticate} is not such a
+     * challenge, or its {@code authId} is not a valid UUID. {@code x_redirect_server} is not used,
+     * because the {@code authIdHash} is derived from the {@code authId}.
      */
-    public static Set<String> oauthIdsFromChallenge(String wwwAuthenticate)
+    public static Optional<String> pinKeyFromChallenge(String wwwAuthenticate)
     {
         if (isNullOrEmpty(wwwAuthenticate) || !wwwAuthenticate.contains(OAUTH2_TOKEN_PATH_PREFIX)) {
-            return ImmutableSet.of();
+            return Optional.empty();
         }
-        ImmutableSet.Builder<String> ids = ImmutableSet.builder();
-        addIdFromServerUrl(ids, TOKEN_SERVER_PATTERN.matcher(wwwAuthenticate));
-        addIdFromServerUrl(ids, REDIRECT_SERVER_PATTERN.matcher(wwwAuthenticate));
-        return ids.build();
+        Matcher matcher = TOKEN_SERVER_PATTERN.matcher(wwwAuthenticate);
+        if (!matcher.find()) {
+            return Optional.empty();
+        }
+        String serverUrl = matcher.group(1);
+        int tokenPathStart = serverUrl.indexOf(OAUTH2_TOKEN_PATH_PREFIX);
+        if (tokenPathStart < 0) {
+            return Optional.empty();
+        }
+        return pinKeyFromRequestPath(serverUrl.substring(tokenPathStart));
     }
 
     /**
@@ -168,18 +188,73 @@ public final class OAuth2RoutingUtils
         return Response.ok(REAUTH_TOKEN_POLL_BODY).type(APPLICATION_JSON).build();
     }
 
-    private static void addIdFromServerUrl(ImmutableSet.Builder<String> ids, Matcher matcher)
+    /**
+     * A form of an OAuth2 request path (and, for the callback, its query string) safe to log: the
+     * {@code authId}, {@code authIdHash} or {@code state} portion is replaced with {@value #REDACTED}.
+     * The segments are matched anywhere in {@code path}, because callers may pass a backend URI path
+     * with a {@code proxyTo} base path in front (for example {@code /trino/oauth2/token/<uuid>}).
+     */
+    public static String redactForLog(String path, String queryString)
     {
-        if (!matcher.find()) {
-            return;
+        if (isNullOrEmpty(path)) {
+            return path;
         }
-        String serverUrl = matcher.group(1);
-        int tokenPathStart = serverUrl.indexOf(OAUTH2_TOKEN_PATH_PREFIX);
-        if (tokenPathStart < 0) {
-            return;
+        int initiateIndex = path.indexOf(OAUTH2_INITIATE_PATH_PREFIX);
+        if (initiateIndex >= 0) {
+            return path.substring(0, initiateIndex) + OAUTH2_INITIATE_PATH_PREFIX + REDACTED;
         }
-        // Reuse the request-path logic on the path portion of the advertised URL.
-        oauthIdFromRequestPath(serverUrl.substring(tokenPathStart)).ifPresent(ids::add);
+        int tokenIndex = path.indexOf(OAUTH2_TOKEN_PATH_PREFIX);
+        if (tokenIndex >= 0) {
+            return path.substring(0, tokenIndex) + OAUTH2_TOKEN_PATH_PREFIX + REDACTED;
+        }
+        int callbackIndex = path.indexOf(OAUTH2_CALLBACK_PATH);
+        if (callbackIndex >= 0) {
+            return path.substring(0, callbackIndex) + OAUTH2_CALLBACK_PATH + (queryString != null ? "?" + REDACTED : "");
+        }
+        return path + (queryString != null ? "?" + queryString : "");
+    }
+
+    /**
+     * The {@code oauth2_routing} key for an {@code authIdHash}: {@code sha256("tgw-oauth2-pin:" + authIdHash)}.
+     */
+    public static String pinKeyForAuthIdHash(String authIdHash)
+    {
+        return sha256Hex(PIN_KEY_PREFIX + authIdHash);
+    }
+
+    /**
+     * Mirrors Trino's {@code OAuth2TokenExchange.hashAuthId}: sha256 of the canonical UUID string.
+     */
+    private static String hashAuthId(UUID authId)
+    {
+        return sha256Hex(authId.toString());
+    }
+
+    private static String sha256Hex(String value)
+    {
+        return Hashing.sha256().hashString(value, StandardCharsets.UTF_8).toString();
+    }
+
+    private static boolean isHex64(String value)
+    {
+        return HEX_64_PATTERN.matcher(value).matches();
+    }
+
+    private static Optional<UUID> parseAuthId(String segment)
+    {
+        // Trino mints authId with UUID.randomUUID().toString(). UUID.fromString also accepts shortened
+        // groups and upper-case hex, so require the canonical form instead of normalizing it.
+        if (segment.length() != AUTH_ID_STRING_LENGTH) {
+            return Optional.empty();
+        }
+        try {
+            UUID authId = UUID.fromString(segment);
+            return authId.toString().equals(segment) ? Optional.of(authId) : Optional.empty();
+        }
+        catch (IllegalArgumentException e) {
+            // Not a UUID, fall back to normal routing.
+            return Optional.empty();
+        }
     }
 
     private static Optional<String> firstSegmentAfter(String path, String prefix)

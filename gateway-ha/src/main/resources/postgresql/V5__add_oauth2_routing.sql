@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS oauth2_routing (
-oauth_id VARCHAR(256) PRIMARY KEY,
+pin_key CHAR(64) PRIMARY KEY,
 backend_url VARCHAR (256),
 created bigint
 );

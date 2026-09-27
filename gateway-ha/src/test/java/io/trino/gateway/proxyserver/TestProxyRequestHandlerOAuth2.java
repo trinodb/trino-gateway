@@ -20,6 +20,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
+import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static org.mockito.Mockito.mock;
@@ -42,15 +43,18 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestProxyRequestHandlerOAuth2
 {
+    private static final UUID AUTH_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    private static final String PIN_KEY = OAuth2RoutingUtils.pinKeyFromRequestPath("/oauth2/token/" + AUTH_ID).orElseThrow();
+
     // A single 401 challenge advertises both the poll-loop authId (x_token_server) and the browser
-    // initiate authIdHash (x_redirect_server).
+    // initiate authIdHash (x_redirect_server); only x_token_server is used to derive the pin.
     private static final String TOKEN_EXCHANGE_CHALLENGE =
             "x_redirect_server=\"https://coord-a:8443/oauth2/token/initiate/HASH9\", "
-                    + "x_token_server=\"https://coord-a:8443/oauth2/token/AUTH9\"";
+                    + "x_token_server=\"https://coord-a:8443/oauth2/token/" + AUTH_ID + "\"";
     // A run-of-the-mill bearer challenge that is not a token-exchange handshake.
     private static final String NON_TOKEN_EXCHANGE_CHALLENGE = "realm=\"trino\", error=\"invalid_token\"";
 
-    private static final URI REMOTE_URI = URI.create("http://coord-a:8080/oauth2/token/AUTH9");
+    private static final URI REMOTE_URI = URI.create("http://coord-a:8080/oauth2/token/" + AUTH_ID);
 
     private final List<ProxyRequestHandler> handlers = new ArrayList<>();
 
@@ -68,14 +72,14 @@ final class TestProxyRequestHandlerOAuth2
     }
 
     @Test
-    void testRecordsBothIdsOnTokenExchangeChallenge()
+    void testRecordsPinOnTokenExchangeChallenge()
     {
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
 
         handler(true, store).recordOAuth2Challenge(REMOTE_URI, response(401, TOKEN_EXCHANGE_CHALLENGE));
 
-        // Both ids are pinned to the challenge's coordinator (scheme://authority of the remote URI).
-        verify(store).setBackends(Set.of("AUTH9", "HASH9"), "http://coord-a:8080");
+        // The backend is scheme://authority of the remote URI
+        verify(store).setBackend(PIN_KEY, "http://coord-a:8080");
     }
 
     @Test
@@ -97,6 +101,18 @@ final class TestProxyRequestHandlerOAuth2
         handler(true, store).recordOAuth2Challenge(REMOTE_URI, response(401, NON_TOKEN_EXCHANGE_CHALLENGE));
 
         // A 401 without a token-exchange challenge (no x_token_server / x_redirect_server) pins nothing.
+        verifyNoInteractions(store);
+    }
+
+    @Test
+    void testWritesNothingWithOnlyRedirectServer()
+    {
+        OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
+        String redirectServerOnly = "x_redirect_server=\"https://coord-a:8443/oauth2/token/initiate/HASH9\"";
+
+        handler(true, store).recordOAuth2Challenge(REMOTE_URI, response(401, redirectServerOnly));
+
+        // The pin is derived only from x_token_server, so this challenge pins nothing
         verifyNoInteractions(store);
     }
 
