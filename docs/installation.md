@@ -247,17 +247,46 @@ created bigint
 CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
 ```
 
-If the pinned coordinator becomes unhealthy or inactive, the pin is dropped
-and the client is forced to re-authenticate, since the handshake cannot be
-recovered on another backend.
+A pin is dropped, and the client is forced to re-authenticate, only when its
+coordinator is deactivated or removed. Otherwise the request goes to the pinned
+coordinator whatever its health status, since no other coordinator can finish
+the handshake. If that coordinator is down, the request fails with `502` and the
+pin is removed after the retention period. The Trino CLI and JDBC driver retry a
+`502` while they poll for the token, so they wait until their external
+authentication timeout, 2 minutes by default. A new login gets a new handshake
+id and is not affected.
 
-Stored pins are retained for 1 hour by default, and are pruned automatically.
-The retention period can be adjusted (as a duration with a time unit) with:
+Pins are written on `401` responses to unauthenticated requests, so writes are
+rate-limited per gateway instance. Over the limit, the pin is not written, the
+rest of that handshake is routed normally and may fail, and the
+`PinWriteRateLimited` counter of the
+`io.trino.gateway.ha.router:name=OAuth2RoutingStats` JMX bean is incremented.
+The limit is shared by all clients of the instance, so a flood of
+unauthenticated requests above it also stops real logins from being pinned. To
+avoid that, raise the limit or rate-limit anonymous traffic in front of the
+gateway. Adjust the limit with:
+
+```yaml
+routing:
+  oauth2RoutingMaxPinWritesPerSecond: 2000
+```
+
+The limit is an average, so an instance that was idle can briefly write up to
+about twice as many pins in one second.
+
+Stored pins are retained for 20 minutes by default and are removed by a sweep
+that runs every 5 minutes. Keep the retention above the coordinators'
+`http-server.authentication.oauth2.challenge-timeout` (15 minutes by default),
+so a pin is not removed while its handshake can still complete. Trino Gateway
+logs a warning if the retention is 15 minutes or less:
 
 ```yaml
 dataStore:
-  oauth2RoutingRetention: "1h"    # e.g. "90s", "10m", "2h"
+  oauth2RoutingRetention: "20m"    # e.g. "30m", "1h"
 ```
+
+The sweep only runs while `oauth2RoutingEnabled` is set. If you turn OAuth2
+routing off, remove the remaining pins with `DELETE FROM oauth2_routing`.
 
 Trino Gateway keeps the handshake ids out of its own log lines, but the
 [HTTP request log](https://trino.io/docs/current/admin/properties-logging.html#http-server-log-enabled)

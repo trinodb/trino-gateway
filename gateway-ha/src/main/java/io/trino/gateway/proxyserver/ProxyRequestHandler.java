@@ -346,8 +346,9 @@ public class ProxyRequestHandler
             return response;
         }
         String backend = getRemoteTarget(remoteUri);
-        oauth2RoutingStore.setBackend(pinKey.get(), backend);
-        log.debug("Pinned an OAuth2 handshake to backend [%s]", backend);
+        if (oauth2RoutingStore.setBackend(pinKey.get(), backend)) {
+            log.debug("Pinned an OAuth2 handshake to backend [%s]", backend);
+        }
         return response;
     }
 

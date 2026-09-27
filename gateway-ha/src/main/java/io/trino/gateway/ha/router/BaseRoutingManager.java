@@ -111,7 +111,7 @@ public abstract class BaseRoutingManager
     }
 
     @Override
-    public boolean isBackendActiveAndHealthy(String backendUrl)
+    public boolean isBackendActive(String backendUrl)
     {
         // The OAuth2 pin is a scheme://authority string: the proxy target without any path
         // (see ProxyRequestHandler#getRemoteTarget). Match each backend on the same shape, case
@@ -119,8 +119,7 @@ public abstract class BaseRoutingManager
         // its own pin instead of being treated as a stale backend and forcing a needless re-auth.
         String target = schemeAndAuthority(backendUrl);
         return gatewayBackendManager.getAllActiveBackends().stream()
-                .filter(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target))
-                .anyMatch(backend -> isBackendHealthy(backend.getName()));
+                .anyMatch(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target));
     }
 
     private static String schemeAndAuthority(String url)
