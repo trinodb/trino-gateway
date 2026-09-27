@@ -181,23 +181,39 @@ routing:
 ```
 
 Pins are recorded in the `oauth2_routing` table so they are shared across
-gateway instances. This table is created automatically by the database
-migrations run on startup (see [Backend database](#backend-database)), so no
-separate database or manual setup is required as long as migrations are enabled.
-If you have set `runMigrationsEnabled` to `false`, the table is not created for
-you: you must provision it manually using the DDL below, otherwise pins cannot
-be persisted and OAuth2 routing silently falls back to normal routing. For
-reference, the DDL (identical for MySQL and PostgreSQL; Oracle uses `NUMBER` for
-the `created` column) is:
+gateway instances, keyed by a `pin_key` that is a further hash of the
+`authId`/`authIdHash`, not the `authId`/`authIdHash` itself -- the table
+stores neither value, and `pin_key` cannot be inverted back to either one, so
+a reader of the table cannot use it to look up or steal another user's
+in-flight token. The gateway's own application log lines on these paths
+redact the `authId`/`authIdHash`/`state` they would otherwise carry, but this
+does not cover the [airlift HTTP request log](#logging)
+(`http-server.log.enabled`, on by default), which still records the raw
+request path *and* query string of every request, unredacted -- the poll
+leg's `authId`, the initiate leg's `authIdHash`, and the callback's
+authorization code and `state`; restrict access to that log, or disable it,
+if OAuth2 routing is enabled and that log is in scope for your deployment.
+This table is created automatically
+by the database migrations run on startup (see [Backend database](#backend-database)),
+so no separate database or manual setup is required as long as migrations are
+enabled. If you have set `runMigrationsEnabled` to `false`, the table is not
+created for you: you must provision it manually using the DDL below, otherwise
+pins cannot be persisted and OAuth2 routing silently falls back to normal
+routing. For reference, the DDL (identical for MySQL and PostgreSQL; Oracle
+uses `NUMBER` for the `created` column) is:
 
 ```sql
 CREATE TABLE IF NOT EXISTS oauth2_routing (
-oauth_id VARCHAR(256) PRIMARY KEY,
+pin_key CHAR(64) PRIMARY KEY,
 backend_url VARCHAR (256),
 created bigint
 );
 CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
 ```
+
+(The `V5` migration that creates this table has not shipped in a Trino
+Gateway release yet, so `pin_key CHAR(64)` above was changed in place rather
+than introduced as a later migration.)
 
 If the pinned coordinator becomes unhealthy or inactive, the pin is dropped
 and the client is forced to re-authenticate, since the handshake cannot be

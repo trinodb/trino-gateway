@@ -98,22 +98,34 @@ routing above cannot solve this on its own: the CLI/driver poll loop does not
 carry cookies.
 
 When `routing.oauth2RoutingEnabled` is set to true, Trino Gateway records the
-`authId`/`authIdHash` advertised in the `401` challenge together with the
-coordinator that issued it, and pins every later request of that handshake —
-the poll loop, the initiate redirect, and the callback — back to the same
-coordinator:
+`authId` advertised in the `401` challenge (specifically, only the
+`x_token_server` value; `x_redirect_server`'s `authIdHash` is re-derived from
+it locally, the same way every leg derives it) together with the coordinator
+that issued it, and pins every later request of that handshake — the poll
+loop, the initiate redirect, and the callback — back to the same coordinator:
 
 ```yaml
 routing:
   oauth2RoutingEnabled: true
 ```
 
-Pins are stored in the gateway's database so they are visible across every
-Trino Gateway instance, and are cleaned up automatically; see
-`dataStore.oauth2RoutingRetention` (default `1h`) to change how long a
-pin is kept. If the pinned coordinator becomes unavailable before the
-handshake completes, Trino Gateway drops the pin and asks the client to
-re-authenticate, since the handshake cannot be resumed on another coordinator.
+Pins are stored in the gateway's database, keyed by a hash of the `authId`
+rather than the `authId`/`authIdHash` itself, so the table stores neither
+value and a reader of it cannot look up another user's in-flight token. They
+are visible across every Trino Gateway instance, and are cleaned up
+automatically; see `dataStore.oauth2RoutingRetention` (default `1h`) to
+change how long a pin is kept. If the pinned coordinator becomes unavailable
+before the handshake completes, Trino Gateway drops the pin and asks the
+client to re-authenticate, since the handshake cannot be resumed on another
+coordinator.
+
+The gateway's own application log lines on these paths redact the `authId`/
+`authIdHash`/`state` they would otherwise carry. This does not cover the
+[airlift HTTP request log](installation.md#logging)
+(`http-server.log.enabled`, on by default), which still records the raw
+request path — including an unredacted `authId` — for every request; see
+[Configure OAuth2 token-exchange routing](installation.md#configure-oauth2-token-exchange-routing)
+for what to do about that log if it is in scope for your deployment.
 
 This feature is off by default.
 
