@@ -88,58 +88,47 @@ final class TestStochasticRoutingManager
     }
 
     @Test
-    void testIsBackendActiveAndHealthy()
+    void testIsBackendActive()
     {
-        ProxyBackendConfiguration healthy = new ProxyBackendConfiguration();
-        healthy.setActive(true);
-        healthy.setRoutingGroup("oauth-group");
-        healthy.setName("oauth-healthy");
-        healthy.setProxyTo("http://oauth-healthy:8080");
-        healthy.setExternalUrl("https://ext.example");
-        backendManager.addBackend(healthy);
-        haRoutingManager.updateBackEndHealth(healthy.getName(), TrinoStatus.HEALTHY);
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-healthy:8080")).isTrue();
+        ProxyBackendConfiguration active = oauthBackend("oauth-active", "http://oauth-active:8080", true);
+        // Not checked yet, as on a freshly started instance
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active:8080")).isTrue();
+        // The health status does not matter
+        for (TrinoStatus status : TrinoStatus.values()) {
+            haRoutingManager.updateBackEndHealth(active.getName(), status);
+            assertThat(haRoutingManager.isBackendActive("http://oauth-active:8080")).isTrue();
+        }
 
-        // Unhealthy -> not available (the client must re-auth).
-        haRoutingManager.updateBackEndHealth(healthy.getName(), TrinoStatus.UNHEALTHY);
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-healthy:8080")).isFalse();
+        ProxyBackendConfiguration deactivated = oauthBackend("oauth-deactivated", "http://oauth-deactivated:8080", false);
+        haRoutingManager.updateBackEndHealth(deactivated.getName(), TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-deactivated:8080")).isFalse();
 
-        // Configured but inactive -> not available.
-        ProxyBackendConfiguration inactive = new ProxyBackendConfiguration();
-        inactive.setActive(false);
-        inactive.setRoutingGroup("oauth-group");
-        inactive.setName("oauth-inactive");
-        inactive.setProxyTo("http://oauth-inactive:8080");
-        inactive.setExternalUrl("https://ext.example");
-        backendManager.addBackend(inactive);
-        haRoutingManager.updateBackEndHealth(inactive.getName(), TrinoStatus.HEALTHY);
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-inactive:8080")).isFalse();
+        // Unknown backend
+        assertThat(haRoutingManager.isBackendActive("http://oauth-does-not-exist:8080")).isFalse();
 
-        // Unknown / removed backend -> not available.
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://does-not-exist:8080")).isFalse();
+        // A proxyTo carrying a base path still matches its scheme://authority pin
+        oauthBackend("oauth-path", "http://oauth-path:8080/gateway", true);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-path:8080")).isTrue();
 
-        // A proxyTo carrying a base path still matches its scheme://authority pin (the pin is the
-        // proxy target without a path), so sticky OAuth2 routing is not defeated by a path-prefixed
-        // backend URL.
-        ProxyBackendConfiguration pathPrefixed = new ProxyBackendConfiguration();
-        pathPrefixed.setActive(true);
-        pathPrefixed.setRoutingGroup("oauth-group");
-        pathPrefixed.setName("oauth-path");
-        pathPrefixed.setProxyTo("http://oauth-path:8080/gateway");
-        pathPrefixed.setExternalUrl("https://ext.example");
-        backendManager.addBackend(pathPrefixed);
-        haRoutingManager.updateBackEndHealth(pathPrefixed.getName(), TrinoStatus.HEALTHY);
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-path:8080")).isTrue();
+        // Host comparison is case-insensitive
+        oauthBackend("oauth-mixed", "http://OAuth-Mixed:8080", true);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-mixed:8080")).isTrue();
 
-        // A mixed-case proxyTo matches a lower-cased pin: host comparison is case-insensitive.
-        ProxyBackendConfiguration mixedCase = new ProxyBackendConfiguration();
-        mixedCase.setActive(true);
-        mixedCase.setRoutingGroup("oauth-group");
-        mixedCase.setName("oauth-mixed");
-        mixedCase.setProxyTo("http://OAuth-Mixed:8080");
-        mixedCase.setExternalUrl("https://ext.example");
-        backendManager.addBackend(mixedCase);
-        haRoutingManager.updateBackEndHealth(mixedCase.getName(), TrinoStatus.HEALTHY);
-        assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-mixed:8080")).isTrue();
+        // Any active backend with the address counts, even if an inactive one shares it
+        oauthBackend("oauth-shared-inactive", "http://oauth-shared:8080", false);
+        oauthBackend("oauth-shared-active", "http://oauth-shared:8080", true);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-shared:8080")).isTrue();
+    }
+
+    private ProxyBackendConfiguration oauthBackend(String name, String proxyTo, boolean active)
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setActive(active);
+        backend.setRoutingGroup("oauth-group");
+        backend.setName(name);
+        backend.setProxyTo(proxyTo);
+        backend.setExternalUrl("https://ext.example");
+        backendManager.addBackend(backend);
+        return backend;
     }
 }

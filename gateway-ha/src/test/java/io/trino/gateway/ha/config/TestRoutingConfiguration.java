@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 final class TestRoutingConfiguration
 {
@@ -28,6 +29,18 @@ final class TestRoutingConfiguration
         assertThat(routingConfiguration.getAsyncTimeout()).isEqualTo(new Duration(2, MINUTES));
         assertThat(routingConfiguration.isForwardedHeadersEnabled()).isTrue();
         assertThat(routingConfiguration.getDefaultRoutingGroup()).isEqualTo("adhoc");
+        assertThat(routingConfiguration.isOauth2RoutingEnabled()).isFalse();
+        assertThat(routingConfiguration.getOauth2RoutingMaxPinWritesPerSecond()).isEqualTo(2000);
+    }
+
+    @Test
+    void testOauth2RoutingMaxPinWritesPerSecondMustBeFiniteAndPositive()
+    {
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        assertThatIllegalArgumentException().isThrownBy(() -> routingConfiguration.setOauth2RoutingMaxPinWritesPerSecond(0));
+        assertThatIllegalArgumentException().isThrownBy(() -> routingConfiguration.setOauth2RoutingMaxPinWritesPerSecond(-1));
+        assertThatIllegalArgumentException().isThrownBy(() -> routingConfiguration.setOauth2RoutingMaxPinWritesPerSecond(Double.POSITIVE_INFINITY));
+        assertThatIllegalArgumentException().isThrownBy(() -> routingConfiguration.setOauth2RoutingMaxPinWritesPerSecond(Double.NaN));
     }
 
     @Test

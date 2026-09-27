@@ -25,8 +25,11 @@ public interface OAuth2RoutingStore
 {
     /**
      * Pins a handshake to the coordinator that minted it.
+     *
+     * @return true if the pin was written, false if this instance's pin write rate limit is exceeded
+     *         or the write failed
      */
-    void setBackend(String pinKey, String backend);
+    boolean setBackend(String pinKey, String backend);
 
     /**
      * The pinned backend for a handshake, or empty if none is recorded.
