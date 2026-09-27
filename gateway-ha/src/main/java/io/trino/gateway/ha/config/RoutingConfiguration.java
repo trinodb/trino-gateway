@@ -15,6 +15,7 @@ package io.trino.gateway.ha.config;
 
 import io.airlift.units.Duration;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class RoutingConfiguration
@@ -32,6 +33,9 @@ public class RoutingConfiguration
     // multi-coordinator deployment routes the poll loop stochastically and the handshake stalls.
     // See OAuth2RoutingUtils.
     private boolean oauth2RoutingEnabled;
+
+    // Per gateway instance
+    private double oauth2RoutingMaxPinWritesPerSecond = 2000;
 
     public Duration getAsyncTimeout()
     {
@@ -71,5 +75,18 @@ public class RoutingConfiguration
     public void setOauth2RoutingEnabled(boolean oauth2RoutingEnabled)
     {
         this.oauth2RoutingEnabled = oauth2RoutingEnabled;
+    }
+
+    public double getOauth2RoutingMaxPinWritesPerSecond()
+    {
+        return oauth2RoutingMaxPinWritesPerSecond;
+    }
+
+    public void setOauth2RoutingMaxPinWritesPerSecond(double oauth2RoutingMaxPinWritesPerSecond)
+    {
+        checkArgument(oauth2RoutingMaxPinWritesPerSecond > 0,
+                "routing.oauth2RoutingMaxPinWritesPerSecond must be > 0, got: %s",
+                oauth2RoutingMaxPinWritesPerSecond);
+        this.oauth2RoutingMaxPinWritesPerSecond = oauth2RoutingMaxPinWritesPerSecond;
     }
 }

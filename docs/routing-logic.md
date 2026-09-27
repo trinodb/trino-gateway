@@ -112,10 +112,15 @@ Pins are stored in the gateway's database under a one-way hash of the
 handshake id, so the table does not expose the ids needed to poll for or
 complete another user's login. They are visible across every
 Trino Gateway instance, and are cleaned up automatically; see
-`dataStore.oauth2RoutingRetention` (default `1h`) to change how long a
-pin is kept. If the pinned coordinator becomes unavailable before the
-handshake completes, Trino Gateway drops the pin and asks the client to
-re-authenticate, since the handshake cannot be resumed on another coordinator.
+`dataStore.oauth2RoutingRetention` (default `20m`) to change how long a
+pin is kept.
+
+If the pinned coordinator is deactivated or removed before the handshake
+completes, Trino Gateway drops the pin and asks the client to re-authenticate,
+since the handshake cannot be resumed on another coordinator. If the
+coordinator is active but looks unhealthy to one gateway instance, that
+instance keeps the pin and routes the request normally, because its local
+health view can be stale.
 
 Trino Gateway cannot redact these ids from the HTTP request log; see
 [Configure OAuth2 token-exchange routing](installation.md#configure-oauth2-token-exchange-routing)

@@ -192,13 +192,13 @@ public class RoutingTargetHandler
      * Returns:
      * <ul>
      *   <li>a present backend — route the request there (the sticky coordinator is active and healthy);</li>
-     *   <li>empty — not a pinnable token-exchange request, or no pin recorded yet on this gateway
-     *       (fall through to normal routing; the 401 challenge handler records the pin).</li>
+     *   <li>empty — not a pinnable token-exchange request, no pin recorded yet on this gateway (fall
+     *       through to normal routing; the 401 challenge handler records the pin), or the pinned
+     *       coordinator is active but unhealthy in this instance's local view (fall through, pin kept).</li>
      * </ul>
-     * If a pin exists but its coordinator is no longer active and healthy — deactivated, unhealthy, or
-     * removed from the fleet — the pin is dropped and the client is forced to re-authenticate, since
-     * only the minting coordinator holds the exchange state and the handshake cannot be recovered on
-     * another backend.
+     * If the pinned coordinator is deactivated or removed from the fleet (see
+     * {@link RoutingManager#isBackendActive}), the pin is dropped and the client is forced to
+     * re-authenticate, since only the minting coordinator holds the exchange state.
      */
     private Optional<String> getOAuth2StickyBackend(HttpServletRequest request)
     {
@@ -210,20 +210,18 @@ public class RoutingTargetHandler
         if (pinnedBackend == null) {
             return Optional.empty();
         }
-        // Route to the pinned coordinator only while it is still active and healthy. Deactivation is a
-        // deliberate operator signal to stop sending it traffic, so an inactive coordinator is treated
-        // as unavailable even if it is otherwise healthy; an unhealthy or removed coordinator is
-        // likewise unavailable. Only the minting coordinator holds this handshake's in-memory exchange
-        // state, so when it is unavailable the pin cannot be recovered on another backend — drop it and
-        // force re-auth.
         if (routingManager.isBackendActiveAndHealthy(pinnedBackend)) {
             return Optional.of(pinnedBackend);
         }
-        oauth2RoutingStore.removeBackend(pinKey);
-        log.warn("OAuth2 pinned backend [%s] is unavailable for [%s]; forcing re-auth",
-                pinnedBackend,
-                OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
-        throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        if (!routingManager.isBackendActive(pinnedBackend)) {
+            oauth2RoutingStore.removeBackend(pinKey);
+            log.warn("OAuth2 pinned backend [%s] is no longer active for [%s]; forcing re-auth",
+                    pinnedBackend,
+                    OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
+            throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        }
+        // Unhealthy in this instance's view, which may be stale: keep the shared pin and route normally
+        return Optional.empty();
     }
 
     /**

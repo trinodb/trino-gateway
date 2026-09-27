@@ -24,7 +24,8 @@ import java.util.Optional;
 public interface OAuth2RoutingStore
 {
     /**
-     * Pins a handshake to the coordinator that minted it.
+     * Pins a handshake to the coordinator that minted it. Not written if this instance's pin write
+     * rate limit is exceeded.
      */
     void setBackend(String pinKey, String backend);
 

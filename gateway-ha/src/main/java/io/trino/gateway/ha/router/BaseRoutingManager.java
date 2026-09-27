@@ -123,6 +123,14 @@ public abstract class BaseRoutingManager
                 .anyMatch(backend -> isBackendHealthy(backend.getName()));
     }
 
+    @Override
+    public boolean isBackendActive(String backendUrl)
+    {
+        String target = schemeAndAuthority(backendUrl);
+        return gatewayBackendManager.getAllActiveBackends().stream()
+                .anyMatch(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target));
+    }
+
     private static String schemeAndAuthority(String url)
     {
         try {

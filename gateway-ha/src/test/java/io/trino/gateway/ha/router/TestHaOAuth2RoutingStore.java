@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.SQLException;
+import java.util.stream.IntStream;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
@@ -43,7 +45,7 @@ final class TestHaOAuth2RoutingStore
     {
         dataStoreConfig = dataStoreConfig(postgres);
         connectionManager = new JdbcConnectionManager(dataStoreConfig);
-        store = new HaOAuth2RoutingStore(connectionManager.getJdbi());
+        store = new HaOAuth2RoutingStore(connectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
     }
 
     @AfterAll
@@ -84,7 +86,7 @@ final class TestHaOAuth2RoutingStore
         store.setBackend("pin-shared", "http://coord-c:8080");
 
         otherPodConnectionManager = new JdbcConnectionManager(dataStoreConfig);
-        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi());
+        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
         assertThat(otherPod.findBackend("pin-shared")).hasValue("http://coord-c:8080");
     }
 
@@ -114,7 +116,7 @@ final class TestHaOAuth2RoutingStore
         DataStoreConfiguration pooledConfig = dataStoreConfig(postgres);
         pooledConfig.setMaxPoolSize(2);
         try (JdbcConnectionManager pooledConnectionManager = new JdbcConnectionManager(pooledConfig)) {
-            OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager.getJdbi());
+            OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
 
             pooledStore.setBackend("pin-pooled", "http://coord-e:8080");
             assertThat(pooledStore.findBackend("pin-pooled")).hasValue("http://coord-e:8080");
@@ -123,5 +125,31 @@ final class TestHaOAuth2RoutingStore
             pooledStore.removeBackend("pin-pooled");
             assertThat(pooledStore.findBackend("pin-pooled")).isEmpty();
         }
+    }
+
+    @Test
+    void testPinWritesAreRateLimitedPerInstance()
+    {
+        HaGatewayConfiguration config = new HaGatewayConfiguration();
+        config.getRouting().setOauth2RoutingMaxPinWritesPerSecond(1);
+        OAuth2RoutingStats stats = new OAuth2RoutingStats();
+        OAuth2RoutingStore limitedStore = new HaOAuth2RoutingStore(connectionManager.getJdbi(), config, stats);
+
+        IntStream.range(0, 50).forEach(i -> limitedStore.setBackend("rate-" + i, "http://coord-d:8080"));
+
+        long written = IntStream.range(0, 50)
+                .filter(i -> limitedStore.findBackend("rate-" + i).isPresent())
+                .count();
+        assertThat(written).isLessThan(50);
+        assertThat(stats.getPinWriteRateLimited().getTotalCount()).isGreaterThan(0);
+
+        IntStream.range(0, 50).forEach(i -> limitedStore.removeBackend("rate-" + i));
+    }
+
+    private static HaGatewayConfiguration unlimitedWritesConfig()
+    {
+        HaGatewayConfiguration config = new HaGatewayConfiguration();
+        config.getRouting().setOauth2RoutingMaxPinWritesPerSecond(1_000_000);
+        return config;
     }
 }

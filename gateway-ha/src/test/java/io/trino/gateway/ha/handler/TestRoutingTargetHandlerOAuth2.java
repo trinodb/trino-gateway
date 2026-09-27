@@ -17,11 +17,13 @@ import com.google.common.hash.Hashing;
 import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
@@ -37,6 +39,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -66,9 +69,14 @@ final class TestRoutingTargetHandlerOAuth2
 
     private static RoutingTargetHandler handler(RoutingManager routingManager, OAuth2RoutingStore store)
     {
+        return handler(routingManager, store, mock(RoutingGroupSelector.class));
+    }
+
+    private static RoutingTargetHandler handler(RoutingManager routingManager, OAuth2RoutingStore store, RoutingGroupSelector routingGroupSelector)
+    {
         HaGatewayConfiguration config = new HaGatewayConfiguration();
         config.getRouting().setOauth2RoutingEnabled(true);
-        return new RoutingTargetHandler(routingManager, store, mock(RoutingGroupSelector.class), config);
+        return new RoutingTargetHandler(routingManager, store, routingGroupSelector, config);
     }
 
     private static HttpServletRequest oauthRequest(String path)
@@ -80,13 +88,13 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testForcesReAuthAndDropsPinWhenPinnedBackendUnavailable()
+    void testForcesReAuthAndDropsPinWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
         when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
         HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
 
@@ -102,13 +110,13 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendUnavailable()
+    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         when(store.findBackend(INITIATE_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
         when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
         HttpServletRequest request = oauthRequest("/oauth2/token/initiate/" + INITIATE_AUTH_ID_HASH);
 
@@ -120,6 +128,28 @@ final class TestRoutingTargetHandlerOAuth2
 
         // The stale pin is dropped so the client's next attempt re-authenticates.
         verify(store).removeBackend(INITIATE_PIN_KEY);
+    }
+
+    @Test
+    void testNeverDropsPinWhenBackendMerelyLooksUnhealthyButIsStillActive()
+    {
+        RoutingManager routingManager = mock(RoutingManager.class);
+        OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
+        RoutingGroupSelector routingGroupSelector = mock(RoutingGroupSelector.class);
+        when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://flaky:8080"));
+        when(routingManager.isBackendActiveAndHealthy("http://flaky:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://flaky:8080")).thenReturn(true);
+        when(routingGroupSelector.findRoutingDestination(any())).thenReturn(new RoutingSelectorResponse(null));
+        ProxyBackendConfiguration fallbackBackend = new ProxyBackendConfiguration();
+        fallbackBackend.setProxyTo("http://fallback:8080");
+        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(fallbackBackend);
+
+        HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
+
+        RoutingTargetResponse response = handler(routingManager, store, routingGroupSelector).resolveRouting(request);
+
+        assertThat(response.routingDestination().clusterHost()).isEqualTo("http://fallback:8080");
+        verify(store, never()).removeBackend(POLL_PIN_KEY);
     }
 
     @Test

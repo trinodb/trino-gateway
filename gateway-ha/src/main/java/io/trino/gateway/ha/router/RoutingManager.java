@@ -119,4 +119,14 @@ public interface RoutingManager
      * @return true if an active backend with the same scheme and authority is healthy
      */
     boolean isBackendActiveAndHealthy(String backendUrl);
+
+    /**
+     * Whether {@code backendUrl} maps to an active backend. Unlike {@link #isBackendActiveAndHealthy},
+     * this ignores the local health view and reflects only the backend configuration, so it is used to
+     * decide whether to delete shared state such as an OAuth2 pin.
+     *
+     * @param backendUrl the backend URL to resolve
+     * @return true if an active backend with the same scheme and authority is configured
+     */
+    boolean isBackendActive(String backendUrl);
 }

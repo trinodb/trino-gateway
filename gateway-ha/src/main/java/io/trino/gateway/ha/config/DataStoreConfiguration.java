@@ -24,11 +24,9 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
-    // How long an OAuth2 pin is kept before the periodic DB cleanup may prune it. Pins only need to
-    // outlive an in-flight handshake (minutes), so an hour is ample. Note this is a lower bound: the
-    // cleanup sweep runs on its own fixed cadence, so a pin can linger until the next sweep after this
-    // period elapses.
-    private Duration oauth2RoutingRetention = Duration.valueOf("1h");
+    // Must exceed Trino's OAuth2 challenge timeout (15m by default). Pins are swept every 5 minutes,
+    // so a pin can outlive this by up to one sweep interval.
+    private Duration oauth2RoutingRetention = Duration.valueOf("20m");
     private Integer maxPoolSize;
     private Duration keepaliveTime;
     private Duration maxLifetime;
