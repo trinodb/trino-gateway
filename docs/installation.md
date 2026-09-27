@@ -215,16 +215,48 @@ CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
 Gateway release yet, so `pin_key CHAR(64)` above was changed in place rather
 than introduced as a later migration.)
 
-If the pinned coordinator becomes unhealthy or inactive, the pin is dropped
-and the client is forced to re-authenticate, since the handshake cannot be
-recovered on another backend.
+A pin is dropped, and the client forced to re-authenticate, only when its
+coordinator is deactivated or removed from the fleet -- a shared signal every
+gateway instance agrees on, since only the minting coordinator holds the
+handshake state and it truly cannot be recovered elsewhere. A coordinator that
+is configured/active but merely looks unhealthy from one gateway instance's
+own local health check never has its pin dropped over that: the request
+simply falls back to normal routing instead, since that instance's health
+view can be stale or wrong and deleting a pin every other, healthy instance
+might still need would be worse. A callback that falls back this way is
+likely routed to a different, unpinned coordinator, which consumes the
+one-time authorization code but cannot complete the exchange, so the client
+sees no response until Trino's own challenge timeout elapses and retries.
 
-Stored pins are retained for 1 hour by default, and are pruned automatically.
-The retention period can be adjusted (as a duration with a time unit) with:
+Pin writes (one per proxied `401` challenge, an unauthenticated code path) are
+rate-limited per gateway instance to bound load on the shared table; a write
+beyond the limit is simply skipped (the triggering request still gets a
+normal response, just without a pin) and counted in the JMX-exported
+`OAuth2RoutingStats` MBean (`io.trino.gateway.ha.router:name=OAuth2RoutingStats`,
+`PinWriteRateLimited` counter). Adjust the limit with:
+
+```yaml
+routing:
+  oauth2RoutingMaxPinWritesPerSecond: 2000   # default 2000, must be > 0
+```
+
+The limit is shared by every client of one gateway instance, so it is sized
+to comfortably absorb legitimate bursts (many logins at once, or a connection
+pool whose tokens expire together) rather than to bound a single bad actor;
+monitor the `PinWriteRateLimited` counter above and alert if it is ever
+nonzero.
+
+Stored pins are retained for 20 minutes by default -- comfortably longer than
+Trino's own 15-minute default challenge timeout, so a pin does not get pruned
+out from under a handshake that is still legitimately in flight -- and are
+pruned by a dedicated sweep that runs every 5 minutes, in batches, so a large
+backlog cannot hold one long-running delete. The retention period can be
+adjusted (as a duration with a time unit); it should stay safely above your
+coordinators' `http-server.authentication.oauth2.challenge-timeout`:
 
 ```yaml
 dataStore:
-  oauth2RoutingRetention: "1h"    # e.g. "90s", "10m", "2h"
+  oauth2RoutingRetention: "20m"    # e.g. "30m", "1h" -- keep it above the challenge timeout
 ```
 
 ### Configure logging <a name="logging">

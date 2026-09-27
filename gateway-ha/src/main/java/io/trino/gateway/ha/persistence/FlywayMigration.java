@@ -18,6 +18,8 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
 
+import java.util.Locale;
+
 public class FlywayMigration
 {
     private static final Logger log = Logger.get(FlywayMigration.class);
@@ -26,16 +28,7 @@ public class FlywayMigration
 
     private static String getLocation(String configDbUrl)
     {
-        if (configDbUrl.startsWith("jdbc:postgresql")) {
-            return "postgresql";
-        }
-        if (configDbUrl.startsWith("jdbc:mysql")) {
-            return "mysql";
-        }
-        if (configDbUrl.startsWith("jdbc:oracle")) {
-            return "oracle";
-        }
-        throw new IllegalArgumentException("Invalid JDBC URL: %s. Only PostgreSQL, MySQL, and Oracle are supported.".formatted(configDbUrl));
+        return JdbcUrlDialect.forJdbcUrl(configDbUrl).name().toLowerCase(Locale.ROOT);
     }
 
     public static void migrate(DataStoreConfiguration config)

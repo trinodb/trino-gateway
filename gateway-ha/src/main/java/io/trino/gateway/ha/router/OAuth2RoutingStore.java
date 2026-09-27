@@ -26,7 +26,9 @@ public interface OAuth2RoutingStore
 {
     /**
      * Pins a handshake (identified by {@code pinKey}, see
-     * {@link OAuth2RoutingUtils#pinKeyForAuthIdHash}) to the coordinator that minted it.
+     * {@link OAuth2RoutingUtils#pinKeyForAuthIdHash}) to the coordinator that minted it. A write may
+     * be silently skipped if this instance's pin-write rate limit is exceeded, in which case the
+     * request the pin would have served simply falls back to normal routing.
      */
     void setBackend(String pinKey, String backend);
 

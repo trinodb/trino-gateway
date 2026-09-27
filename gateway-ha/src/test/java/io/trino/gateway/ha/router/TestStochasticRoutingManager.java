@@ -143,4 +143,42 @@ final class TestStochasticRoutingManager
         haRoutingManager.updateBackEndHealth(mixedCase.getName(), TrinoStatus.HEALTHY);
         assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-mixed:8080")).isTrue();
     }
+
+    @Test
+    void testIsBackendActive()
+    {
+        // Active and healthy -> active (unaffected by health).
+        ProxyBackendConfiguration active = new ProxyBackendConfiguration();
+        active.setActive(true);
+        active.setRoutingGroup("oauth-group");
+        active.setName("oauth-active-flag-active");
+        active.setProxyTo("http://oauth-active-flag:8080");
+        active.setExternalUrl("https://ext.example");
+        backendManager.addBackend(active);
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+
+        // Unlike isBackendActiveAndHealthy, this instance's own local health view (unhealthy, or no
+        // view at all) must not affect the result: only the shared "active" flag matters, so a pin's
+        // backend is never treated as gone just because this pod's health check is currently negative
+        // or has not run yet.
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.UNHEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.UNKNOWN);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+
+        // Deactivated: a deliberate operator signal shared via the DB -> not active.
+        ProxyBackendConfiguration deactivated = new ProxyBackendConfiguration();
+        deactivated.setActive(false);
+        deactivated.setRoutingGroup("oauth-group");
+        deactivated.setName("oauth-deactivated-flag");
+        deactivated.setProxyTo("http://oauth-deactivated-flag:8080");
+        deactivated.setExternalUrl("https://ext.example");
+        backendManager.addBackend(deactivated);
+        haRoutingManager.updateBackEndHealth(deactivated.getName(), TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-deactivated-flag:8080")).isFalse();
+
+        // Removed from the fleet entirely -> not active.
+        assertThat(haRoutingManager.isBackendActive("http://oauth-does-not-exist-flag:8080")).isFalse();
+    }
 }

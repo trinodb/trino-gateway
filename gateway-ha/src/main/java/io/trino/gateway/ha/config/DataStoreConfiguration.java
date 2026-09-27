@@ -24,11 +24,14 @@ public class DataStoreConfiguration
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
     private boolean runMigrationsEnabled = true;
-    // How long an OAuth2 pin is kept before the periodic DB cleanup may prune it. Pins only need to
-    // outlive an in-flight handshake (minutes), so an hour is ample. Note this is a lower bound: the
-    // cleanup sweep runs on its own fixed cadence, so a pin can linger until the next sweep after this
-    // period elapses.
-    private Duration oauth2RoutingRetention = Duration.valueOf("1h");
+    // How long an OAuth2 pin is kept before the periodic sweep may prune it. Must exceed Trino's own
+    // token-exchange challenge timeout (OAuth2Config.challengeTimeout, 15m by default) by more than
+    // the poll loop's worst-case wait (OAuth2TokenExchange.MAX_POLL_TIME, 10s, times up to 10 polls =
+    // 1m40s) plus a safety margin, or a pin could be swept while its handshake is still legitimately
+    // in flight. 20m clears Trino's 15m challenge timeout + 1m40s poll wait (16m40s) with about 3m20s
+    // to spare. Note this is a lower bound: the sweep runs on its own fixed cadence (every 5 minutes,
+    // see JdbcConnectionManager), so a pin can linger until the next sweep after this period elapses.
+    private Duration oauth2RoutingRetention = Duration.valueOf("20m");
 
     public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled)
     {

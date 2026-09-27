@@ -14,13 +14,17 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import org.jdbi.v3.core.Jdbi;
 
 import java.sql.SQLException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,25 +35,46 @@ import static java.util.Objects.requireNonNull;
  * read only a handful of times, so the DB load is negligible and a cache would only add staleness.
  * Every DB call is wrapped so that if the DB is unreadable for any reason, {@link #findBackend}
  * returns empty and the request falls back to normal (non-pinned) routing.
+ * <p>
+ * Pin <em>writes</em> are additionally rate-limited per instance: the {@code 401} challenge that
+ * triggers a write is served to unauthenticated clients, so without a limit a flood of bogus
+ * challenges could be used to hammer the shared table (write amplification). Exceeding the limit
+ * just skips the pin for that challenge (the request falls back to normal routing); it never fails
+ * the request.
  */
 public class HaOAuth2RoutingStore
         implements OAuth2RoutingStore
 {
     private static final Logger log = Logger.get(HaOAuth2RoutingStore.class);
+    private static final long RATE_LIMIT_LOG_INTERVAL_MILLIS = TimeUnit.MINUTES.toMillis(1);
 
     private final Jdbi jdbi;
     private final OAuth2RoutingDao dao;
+    private final RateLimiter pinWriteRateLimiter;
+    private final OAuth2RoutingStats stats;
+    private final AtomicLong lastRateLimitLogMillis = new AtomicLong();
 
     @Inject
-    public HaOAuth2RoutingStore(Jdbi jdbi)
+    public HaOAuth2RoutingStore(Jdbi jdbi, HaGatewayConfiguration configuration, OAuth2RoutingStats stats)
     {
         this.jdbi = requireNonNull(jdbi, "jdbi is null");
         this.dao = jdbi.onDemand(OAuth2RoutingDao.class);
+        this.stats = requireNonNull(stats, "stats is null");
+        double maxPinWritesPerSecond = configuration.getRouting().getOauth2RoutingMaxPinWritesPerSecond();
+        this.pinWriteRateLimiter = RateLimiter.create(maxPinWritesPerSecond);
     }
 
     @Override
     public void setBackend(String pinKey, String backend)
     {
+        if (!pinWriteRateLimiter.tryAcquire()) {
+            // Skip the write (normal, non-pinned routing still applies to whatever request triggered
+            // it) rather than queueing or blocking: pin writes are proxy-side-effects of a request that
+            // is otherwise already complete, so there is nothing to backpressure against.
+            stats.recordPinWriteRateLimited();
+            logRateLimitedAtMostOncePerMinute();
+            return;
+        }
         try {
             long created = System.currentTimeMillis();
             // Idempotent upsert without dialect-specific syntax: a repeated challenge for the same
@@ -109,5 +134,15 @@ public class HaOAuth2RoutingStore
             return "%s (SQLState %s)".formatted(e.getClass().getSimpleName(), sqlException.getSQLState());
         }
         return e.getClass().getSimpleName();
+    }
+
+    private void logRateLimitedAtMostOncePerMinute()
+    {
+        long now = System.currentTimeMillis();
+        long last = lastRateLimitLogMillis.get();
+        if (now - last >= RATE_LIMIT_LOG_INTERVAL_MILLIS && lastRateLimitLogMillis.compareAndSet(last, now)) {
+            log.warn("OAuth2 pin writes are being rate-limited (routing.oauth2RoutingMaxPinWritesPerSecond exceeded); "
+                    + "affected requests fall back to normal routing");
+        }
     }
 }

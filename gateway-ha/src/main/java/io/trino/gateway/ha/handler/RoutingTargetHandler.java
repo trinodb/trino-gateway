@@ -192,13 +192,19 @@ public class RoutingTargetHandler
      * Returns:
      * <ul>
      *   <li>a present backend — route the request there (the sticky coordinator is active and healthy);</li>
-     *   <li>empty — not a pinnable token-exchange request, or no pin recorded yet on this gateway
-     *       (fall through to normal routing; the 401 challenge handler records the pin).</li>
+     *   <li>empty — not a pinnable token-exchange request, no pin recorded yet on this gateway (fall
+     *       through to normal routing; the 401 challenge handler records the pin), or the pinned
+     *       coordinator merely looks unhealthy from this instance's own local view (also falls through
+     *       to normal routing, without touching the shared pin — see below).</li>
      * </ul>
-     * If a pin exists but its coordinator is no longer active and healthy — deactivated, unhealthy, or
-     * removed from the fleet — the pin is dropped and the client is forced to re-authenticate, since
-     * only the minting coordinator holds the exchange state and the handshake cannot be recovered on
-     * another backend.
+     * If a pin exists but its coordinator is truly gone — deactivated or removed from the fleet, a
+     * fact every gateway instance agrees on via the shared backend configuration (see
+     * {@link RoutingManager#isBackendActive}) — the pin is dropped and the client is forced to
+     * re-authenticate, since only the minting coordinator holds the exchange state and the handshake
+     * cannot be recovered elsewhere. A pin is never dropped merely because <em>this</em> instance's own
+     * health check currently reports the coordinator unhealthy/pending/unknown: that view is local and
+     * can be stale or simply wrong for one pod, and incorrectly deleting a shared pin over it would
+     * break the handshake for every other pod too.
      */
     private Optional<String> getOAuth2StickyBackend(HttpServletRequest request)
     {
@@ -210,20 +216,21 @@ public class RoutingTargetHandler
         if (pinnedBackend == null) {
             return Optional.empty();
         }
-        // Route to the pinned coordinator only while it is still active and healthy. Deactivation is a
-        // deliberate operator signal to stop sending it traffic, so an inactive coordinator is treated
-        // as unavailable even if it is otherwise healthy; an unhealthy or removed coordinator is
-        // likewise unavailable. Only the minting coordinator holds this handshake's in-memory exchange
-        // state, so when it is unavailable the pin cannot be recovered on another backend — drop it and
-        // force re-auth.
         if (routingManager.isBackendActiveAndHealthy(pinnedBackend)) {
             return Optional.of(pinnedBackend);
         }
-        oauth2RoutingStore.removeBackend(pinKey);
-        log.warn("OAuth2 pinned backend [%s] is unavailable for [%s]; forcing re-auth",
-                pinnedBackend,
-                OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
-        throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        if (!routingManager.isBackendActive(pinnedBackend)) {
+            // Deactivated or removed from the fleet: a deliberate, shared signal every instance agrees
+            // on, so the handshake truly cannot be recovered. Safe to drop the pin and force re-auth.
+            oauth2RoutingStore.removeBackend(pinKey);
+            log.warn("OAuth2 pinned backend is no longer configured/active for [%s]; forcing re-auth",
+                    OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
+            throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        }
+        // Configured/active, just not healthy per this instance's own local view: skip the pin (fall
+        // through to normal routing) without deleting it, since another pod may see it as healthy, or
+        // this view may simply be stale.
+        return Optional.empty();
     }
 
     /**

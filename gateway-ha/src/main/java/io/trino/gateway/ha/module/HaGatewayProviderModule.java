@@ -50,6 +50,7 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaOAuth2RoutingStore;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
+import io.trino.gateway.ha.router.OAuth2RoutingStats;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -72,6 +73,7 @@ import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.NOOP;
 import static java.util.Objects.requireNonNull;
+import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 public class HaGatewayProviderModule
         extends AbstractModule
@@ -85,6 +87,8 @@ public class HaGatewayProviderModule
         binder().bind(GatewayBackendManager.class).to(HaGatewayManager.class).in(Scopes.SINGLETON);
         binder().bind(QueryHistoryManager.class).to(HaQueryHistoryManager.class).in(Scopes.SINGLETON);
         binder().bind(OAuth2RoutingStore.class).to(HaOAuth2RoutingStore.class).in(Scopes.SINGLETON);
+        binder().bind(OAuth2RoutingStats.class).in(Scopes.SINGLETON);
+        newExporter(binder()).export(OAuth2RoutingStats.class).withGeneratedName();
         binder().bind(BackendStateManager.class).in(Scopes.SINGLETON);
         binder().bind(JdbcConnectionManager.class).in(Scopes.SINGLETON);
         binder().bind(AuthorizationManager.class).in(Scopes.SINGLETON);

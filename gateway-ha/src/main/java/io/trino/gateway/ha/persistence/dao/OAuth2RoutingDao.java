@@ -39,10 +39,44 @@ public interface OAuth2RoutingDao
             """)
     void delete(String pinKey);
 
+    /**
+     * Deletes up to {@code batchSize} expired pins and returns how many rows were actually deleted;
+     * callers loop until the return value is below {@code batchSize}. MySQL supports {@code LIMIT}
+     * directly on {@code DELETE}.
+     */
     @SqlUpdate(
             """
             DELETE FROM oauth2_routing
             WHERE created < :created
+            LIMIT :batchSize
             """)
-    void deleteOldOAuth2Pins(long created);
+    int deleteOldPinsBatchMysql(long created, int batchSize);
+
+    /**
+     * PostgreSQL has no {@code LIMIT} on {@code DELETE}; emulate it by deleting the primary keys
+     * returned by a {@code LIMIT}ed sub-select.
+     */
+    @SqlUpdate(
+            """
+            DELETE FROM oauth2_routing
+            WHERE pin_key IN (
+                SELECT pin_key FROM oauth2_routing
+                WHERE created < :created
+                LIMIT :batchSize
+            )
+            """)
+    int deleteOldPinsBatchPostgres(long created, int batchSize);
+
+    /**
+     * Oracle has no {@code LIMIT} either; {@code ROWNUM} is assigned to each row as it is fetched, so
+     * combining it with the {@code created} predicate caps the number of rows the delete removes
+     * without requiring Oracle 12c's {@code FETCH FIRST}.
+     */
+    @SqlUpdate(
+            """
+            DELETE FROM oauth2_routing
+            WHERE created < :created
+            AND ROWNUM <= :batchSize
+            """)
+    int deleteOldPinsBatchOracle(long created, int batchSize);
 }

@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.persistence;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -107,6 +108,59 @@ final class TestJdbcConnectionManager
         assertThatThrownBy(() -> connectionManager.buildJdbcUrl("newdb"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Invalid JDBC URL: no '/' found in jdbc:postgresql:mydb");
+    }
+
+    @Test
+    void testOauth2RoutingSweepScheduledWhenEnabled()
+    {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.getRouting().setOauth2RoutingEnabled(true);
+        DataStoreConfiguration db = new DataStoreConfiguration("jdbc:postgresql://localhost:5432/mydb", "sa", "sa", "", true, 4, true);
+        try (JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(db.getJdbcUrl(), "sa", "sa"), db, configuration)) {
+            assertThat(connectionManager.isOauth2RoutingSweepScheduled()).isTrue();
+        }
+    }
+
+    @Test
+    void testOauth2RoutingSweepNotScheduledWhenDisabled()
+    {
+        // With the feature off, nothing ever writes to oauth2_routing; the sweep must not be
+        // scheduled at all, rather than run every 5 minutes against a table that -- with
+        // runMigrationsEnabled=false -- may not even exist.
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.getRouting().setOauth2RoutingEnabled(false);
+        DataStoreConfiguration db = new DataStoreConfiguration("jdbc:postgresql://localhost:5432/mydb", "sa", "sa", "", true, 4, true);
+        try (JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(db.getJdbcUrl(), "sa", "sa"), db, configuration)) {
+            assertThat(connectionManager.isOauth2RoutingSweepScheduled()).isFalse();
+        }
+    }
+
+    @Test
+    void testConstructsFineWithUnknownJdbcPrefixWhenOauth2RoutingDisabled()
+    {
+        // An unrecognized JDBC URL prefix must never prevent startup when the feature that would
+        // ever use it is off: the dialect is resolved lazily, only once the sweep is actually
+        // scheduled, and it is never scheduled here.
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.getRouting().setOauth2RoutingEnabled(false);
+        DataStoreConfiguration db = new DataStoreConfiguration("jdbc:h2:mem:test", "sa", "sa", "", true, 4, true);
+        try (JdbcConnectionManager connectionManager = new JdbcConnectionManager(Jdbi.create(db.getJdbcUrl(), "sa", "sa"), db, configuration)) {
+            assertThat(connectionManager.isOauth2RoutingSweepScheduled()).isFalse();
+        }
+    }
+
+    @Test
+    void testFailsAtStartupWithUnknownJdbcPrefixWhenOauth2RoutingEnabled()
+    {
+        // With the feature on, an unrecognized prefix must fail clearly at startup -- the same way
+        // FlywayMigration.migrate does -- rather than only failing once the sweep first runs, 5
+        // minutes later.
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.getRouting().setOauth2RoutingEnabled(true);
+        DataStoreConfiguration db = new DataStoreConfiguration("jdbc:h2:mem:test", "sa", "sa", "", true, 4, true);
+        assertThatThrownBy(() -> new JdbcConnectionManager(Jdbi.create(db.getJdbcUrl(), "sa", "sa"), db, configuration))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid JDBC URL: jdbc:h2:mem:test. Only PostgreSQL, MySQL, and Oracle are supported.");
     }
 
     private static JdbcConnectionManager createConnectionManager(String jdbcUrl)

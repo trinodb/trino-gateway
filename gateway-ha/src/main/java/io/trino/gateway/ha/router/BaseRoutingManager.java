@@ -123,6 +123,18 @@ public abstract class BaseRoutingManager
                 .anyMatch(backend -> isBackendHealthy(backend.getName()));
     }
 
+    @Override
+    public boolean isBackendActive(String backendUrl)
+    {
+        // Unlike isBackendActiveAndHealthy, this does not consult isBackendHealthy: that status comes
+        // from this instance's own health-check loop and is local/possibly-stale, whereas
+        // getAllActiveBackends() reflects the shared "active" flag in the database, so every instance
+        // agrees on it.
+        String target = schemeAndAuthority(backendUrl);
+        return gatewayBackendManager.getAllActiveBackends().stream()
+                .anyMatch(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target));
+    }
+
     private static String schemeAndAuthority(String url)
     {
         try {

@@ -112,12 +112,23 @@ routing:
 Pins are stored in the gateway's database, keyed by a hash of the `authId`
 rather than the `authId`/`authIdHash` itself, so the table stores neither
 value and a reader of it cannot look up another user's in-flight token. They
-are visible across every Trino Gateway instance, and are cleaned up
-automatically; see `dataStore.oauth2RoutingRetention` (default `1h`) to
-change how long a pin is kept. If the pinned coordinator becomes unavailable
-before the handshake completes, Trino Gateway drops the pin and asks the
-client to re-authenticate, since the handshake cannot be resumed on another
-coordinator.
+are visible across every Trino Gateway instance, and are pruned by a
+dedicated sweep every 5 minutes, in batches; see
+`dataStore.oauth2RoutingRetention` (default `20m`, comfortably above Trino's
+own 15-minute default challenge timeout) to change how long a pin is kept.
+Pin writes are also rate-limited per instance
+(`routing.oauth2RoutingMaxPinWritesPerSecond`, default `2000`, must be `> 0`)
+since the write path is reachable unauthenticated; monitor the JMX-exported
+`OAuth2RoutingStats` MBean's `PinWriteRateLimited` counter and alert if it is
+ever nonzero.
+
+If the pinned coordinator is deactivated or removed from the fleet, Trino
+Gateway drops the pin and asks the client to re-authenticate, since the
+handshake cannot be resumed on another coordinator. A coordinator that is
+configured/active but merely looks unhealthy from one gateway instance's own
+local view never has its pin dropped over that -- that view can be stale or
+wrong for a single pod -- so the request simply falls back to normal routing
+instead.
 
 The gateway's own application log lines on these paths redact the `authId`/
 `authIdHash`/`state` they would otherwise carry. This does not cover the
