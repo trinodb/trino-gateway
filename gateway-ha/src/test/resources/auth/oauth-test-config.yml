@@ -1,6 +1,6 @@
 serverConfig:
   node.environment: test
-  http-server.http.port: 8080
+  http-server.http.enabled: false
   http-server.https.enabled: true
   http-server.https.port: ${ENV:REQUEST_ROUTER_PORT}
   http-server.https.keystore.path: ${ENV:LOCALHOST_JKS}
