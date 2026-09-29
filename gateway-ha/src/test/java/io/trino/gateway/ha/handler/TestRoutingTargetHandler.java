@@ -31,6 +31,7 @@ import io.trino.gateway.proxyserver.MultiReadHttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -427,6 +428,29 @@ class TestRoutingTargetHandler
                 Mockito.mock(OAuth2RoutingStore.class),
                 RoutingGroupSelector.byRoutingExternal(httpClient, gatewayConfig.getRoutingRules().getRulesExternalConfiguration(), gatewayConfig.getRequestAnalyzerConfig()),
                 gatewayConfig);
+    }
+
+    @Test // regression test for https://github.com/trinodb/trino-gateway/issues/943
+    void testResolveRoutingForExistingQueryWithNoActiveBackendsReturnsNotFound()
+    {
+        // A request that polls an already-submitted query (query id present) whose owning cluster
+        // has been deactivated for graceful shutdown, and whose sticky lookup can no longer locate
+        // the backend. This must not fall through to the new-query active-backend selection; it
+        // should resolve to a clean 404 Not Found instead.
+        String queryId = "20240101_000000_00002_bbbbb";
+
+        HttpServletRequest uiRequest = Mockito.mock(HttpServletRequest.class);
+        when(uiRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(uiRequest.getRequestURI()).thenReturn("/ui/query.html");
+        when(uiRequest.getQueryString()).thenReturn(queryId);
+
+        // Sticky lookup cannot locate the backend for the query id.
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(null);
+
+        assertThatThrownBy(() -> handler.resolveRouting(uiRequest))
+                .isInstanceOf(WebApplicationException.class)
+                .satisfies(thrown -> assertThat(((WebApplicationException) thrown).getResponse().getStatus())
+                        .isEqualTo(Response.Status.NOT_FOUND.getStatusCode()));
     }
 
     private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()
