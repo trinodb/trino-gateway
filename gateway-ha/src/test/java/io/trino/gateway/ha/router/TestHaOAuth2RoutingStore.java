@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,7 +23,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import java.util.Set;
+import java.sql.SQLException;
+import java.util.stream.IntStream;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
@@ -44,7 +46,7 @@ final class TestHaOAuth2RoutingStore
     {
         dataStoreConfig = dataStoreConfig(postgres);
         connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
-        store = new HaOAuth2RoutingStore(connectionManager.getJdbi());
+        store = new HaOAuth2RoutingStore(connectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
     }
 
     @AfterAll
@@ -64,41 +66,81 @@ final class TestHaOAuth2RoutingStore
     @Test
     void testSetFindRemove()
     {
-        assertThat(store.findBackend("auth-x")).isEmpty();
+        assertThat(store.findBackend("pin-x")).isEmpty();
 
-        store.setBackends(Set.of("auth-x"), "http://coord-a:8080");
-        assertThat(store.findBackend("auth-x")).hasValue("http://coord-a:8080");
+        store.setBackend("pin-x", "http://coord-a:8080");
+        assertThat(store.findBackend("pin-x")).hasValue("http://coord-a:8080");
 
         // Idempotent re-pin replaces the row rather than failing on the primary key.
-        store.setBackends(Set.of("auth-x"), "http://coord-b:8080");
-        assertThat(store.findBackend("auth-x")).hasValue("http://coord-b:8080");
+        store.setBackend("pin-x", "http://coord-b:8080");
+        assertThat(store.findBackend("pin-x")).hasValue("http://coord-b:8080");
 
         // A forced re-auth drops the pin.
-        store.removeBackend("auth-x");
-        assertThat(store.findBackend("auth-x")).isEmpty();
+        store.removeBackend("pin-x");
+        assertThat(store.findBackend("pin-x")).isEmpty();
     }
 
     @Test
     void testPinIsVisibleAcrossPods()
     {
         // A pin written by one pod must be readable by another pod sharing the DB.
-        store.setBackends(Set.of("auth-shared"), "http://coord-c:8080");
+        store.setBackend("pin-shared", "http://coord-c:8080");
 
         otherPodConnectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
-        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi());
-        assertThat(otherPod.findBackend("auth-shared")).hasValue("http://coord-c:8080");
+        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
+        assertThat(otherPod.findBackend("pin-shared")).hasValue("http://coord-c:8080");
     }
 
     @Test
-    void testSetBackendsRecordsAllIdsAtomically()
+    void testDescribeForLogNeverIncludesExceptionMessage()
     {
-        // Both ids advertised in a single challenge are written together in one transaction, so the
-        // poll loop (authId) and the browser initiate (authIdHash) resolve to the same coordinator.
-        store.setBackends(Set.of("auth-poll", "auth-hash"), "http://coord-d:8080");
-        assertThat(store.findBackend("auth-poll")).hasValue("http://coord-d:8080");
-        assertThat(store.findBackend("auth-hash")).hasValue("http://coord-d:8080");
+        // A DB-layer exception's message (Jdbi's statement exceptions in particular) can render the
+        // failed statement's bound arguments -- the pin key, here -- so describeForLog must derive its
+        // output only from the exception's class and, if present, its SQLException cause's SQL state,
+        // never from getMessage()/getLocalizedMessage()/toString() of the exception itself.
+        String pinKey = "pin-that-must-never-appear-in-a-log-line";
+        SQLException sqlException = new SQLException("statement failed, arguments: [" + pinKey + "]", "23505");
+        RuntimeException wrapped = new RuntimeException("insert failed for pin_key=" + pinKey, sqlException);
 
-        store.removeBackend("auth-poll");
-        store.removeBackend("auth-hash");
+        String described = HaOAuth2RoutingStore.describeForLog(wrapped);
+
+        assertThat(described).doesNotContain(pinKey)
+                .contains("RuntimeException")
+                .contains("23505");
+
+        // Without a SQLException cause, only the exception's class name is used.
+        RuntimeException noCause = new RuntimeException("insert failed for pin_key=" + pinKey);
+        assertThat(HaOAuth2RoutingStore.describeForLog(noCause))
+                .doesNotContain(pinKey)
+                .isEqualTo("RuntimeException");
+    }
+
+    @Test
+    void testPinWritesAreRateLimitedPerInstance()
+    {
+        // The write path (recording a pin from a proxied 401) is reachable unauthenticated, so a flood
+        // of writes on one instance must not all land: a low limit should leave most of a rapid burst
+        // unrecorded (and counted), protecting the shared table from write amplification.
+        HaGatewayConfiguration config = new HaGatewayConfiguration();
+        config.getRouting().setOauth2RoutingMaxPinWritesPerSecond(1);
+        OAuth2RoutingStats stats = new OAuth2RoutingStats();
+        OAuth2RoutingStore limitedStore = new HaOAuth2RoutingStore(connectionManager.getJdbi(), config, stats);
+
+        IntStream.range(0, 50).forEach(i -> limitedStore.setBackend("rate-" + i, "http://coord-d:8080"));
+
+        long written = IntStream.range(0, 50)
+                .filter(i -> limitedStore.findBackend("rate-" + i).isPresent())
+                .count();
+        assertThat(written).isLessThan(50);
+        assertThat(stats.getPinWriteRateLimited().getTotalCount()).isGreaterThan(0);
+
+        IntStream.range(0, 50).forEach(i -> limitedStore.removeBackend("rate-" + i));
+    }
+
+    private static HaGatewayConfiguration unlimitedWritesConfig()
+    {
+        HaGatewayConfiguration config = new HaGatewayConfiguration();
+        config.getRouting().setOauth2RoutingMaxPinWritesPerSecond(1_000_000);
+        return config;
     }
 }

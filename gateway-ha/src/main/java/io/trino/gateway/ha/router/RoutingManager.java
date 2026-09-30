@@ -114,9 +114,27 @@ public interface RoutingManager
      * and authority (host/port) only and is case-insensitive, so a proxy-to URL that carries a base
      * path or differs in host case still resolves to its backend (e.g. an OAuth2 pin, which is a
      * bare {@code scheme://authority}).
+     * <p>
+     * Health is this gateway instance's own, local, possibly-stale-or-wrong view (it is not shared
+     * across pods). Do not treat a {@code false} result here alone as grounds to delete anything from
+     * shared state — see {@link #isBackendActive}.
      *
      * @param backendUrl the backend URL to resolve
      * @return true if an active backend with the same scheme and authority is healthy
      */
     boolean isBackendActiveAndHealthy(String backendUrl);
+
+    /**
+     * Whether {@code backendUrl} currently maps to a backend that is active per the shared backend
+     * configuration (the {@code gateway_backend.active} flag in the database), regardless of this
+     * instance's local health view. Unlike {@link #isBackendActiveAndHealthy}, this reflects a
+     * deliberate, shared signal (the backend was deactivated or removed entirely) rather than a
+     * per-instance health check, so it is safe to use as the basis for deleting shared state such as
+     * an OAuth2 pin: every gateway instance will agree on it, whereas health can differ pod to pod and
+     * flap independently of whether the backend is actually gone.
+     *
+     * @param backendUrl the backend URL to resolve
+     * @return true if an active backend with the same scheme and authority is configured
+     */
+    boolean isBackendActive(String backendUrl);
 }

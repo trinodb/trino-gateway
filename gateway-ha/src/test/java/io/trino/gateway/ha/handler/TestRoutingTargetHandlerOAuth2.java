@@ -13,13 +13,17 @@
  */
 package io.trino.gateway.ha.handler;
 
+import com.google.common.hash.Hashing;
 import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
+import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
@@ -31,9 +35,11 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -42,6 +48,18 @@ import static org.mockito.Mockito.when;
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestRoutingTargetHandlerOAuth2
 {
+    private static final UUID POLL_AUTH_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    private static final String POLL_PIN_KEY = OAuth2RoutingUtils.pinKeyFromRequestPath("/oauth2/token/" + POLL_AUTH_ID).orElseThrow();
+
+    private static final UUID INITIATE_AUTH_ID = UUID.fromString("66666666-7777-8888-9999-aaaaaaaaaaaa");
+    private static final String INITIATE_AUTH_ID_HASH = sha256Hex(INITIATE_AUTH_ID.toString());
+    private static final String INITIATE_PIN_KEY =
+            OAuth2RoutingUtils.pinKeyFromRequestPath("/oauth2/token/initiate/" + INITIATE_AUTH_ID_HASH).orElseThrow();
+
+    private static final UUID CALLBACK_AUTH_ID = UUID.fromString("bbbbbbbb-cccc-dddd-eeee-ffffffffffff");
+    private static final String CALLBACK_AUTH_ID_HASH = sha256Hex(CALLBACK_AUTH_ID.toString());
+    private static final String CALLBACK_PIN_KEY = OAuth2RoutingUtils.pinKeyForAuthIdHash(CALLBACK_AUTH_ID_HASH);
+
     @BeforeAll
     void initCookieSingleton()
     {
@@ -51,9 +69,14 @@ final class TestRoutingTargetHandlerOAuth2
 
     private static RoutingTargetHandler handler(RoutingManager routingManager, OAuth2RoutingStore store)
     {
+        return handler(routingManager, store, mock(RoutingGroupSelector.class));
+    }
+
+    private static RoutingTargetHandler handler(RoutingManager routingManager, OAuth2RoutingStore store, RoutingGroupSelector routingGroupSelector)
+    {
         HaGatewayConfiguration config = new HaGatewayConfiguration();
         config.getRouting().setOauth2RoutingEnabled(true);
-        return new RoutingTargetHandler(routingManager, store, mock(RoutingGroupSelector.class), config);
+        return new RoutingTargetHandler(routingManager, store, routingGroupSelector, config);
     }
 
     private static HttpServletRequest oauthRequest(String path)
@@ -65,15 +88,16 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testForcesReAuthAndDropsPinWhenPinnedBackendUnavailable()
+    void testForcesReAuthAndDropsPinWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
-        when(store.findBackend("authABC")).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
+        when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
         when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        // Truly gone: deactivated or removed from the fleet, a shared signal every instance agrees on.
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
-        HttpServletRequest request = oauthRequest("/oauth2/token/authABC");
+        HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
 
         assertThatThrownBy(() -> handler(routingManager, store).resolveRouting(request))
                 .isInstanceOfSatisfying(WebApplicationException.class, e -> {
@@ -83,19 +107,19 @@ final class TestRoutingTargetHandlerOAuth2
                 });
 
         // The stale pin is dropped so the client's next attempt re-authenticates.
-        verify(store).removeBackend("authABC");
+        verify(store).removeBackend(POLL_PIN_KEY);
     }
 
     @Test
-    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendUnavailable()
+    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
-        when(store.findBackend("hashABC")).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
+        when(store.findBackend(INITIATE_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
         when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
-        HttpServletRequest request = oauthRequest("/oauth2/token/initiate/hashABC");
+        HttpServletRequest request = oauthRequest("/oauth2/token/initiate/" + INITIATE_AUTH_ID_HASH);
 
         assertThatThrownBy(() -> handler(routingManager, store).resolveRouting(request))
                 .isInstanceOfSatisfying(WebApplicationException.class, e ->
@@ -104,7 +128,33 @@ final class TestRoutingTargetHandlerOAuth2
                         assertThat(e.getResponse().getStatus()).isEqualTo(401));
 
         // The stale pin is dropped so the client's next attempt re-authenticates.
-        verify(store).removeBackend("hashABC");
+        verify(store).removeBackend(INITIATE_PIN_KEY);
+    }
+
+    @Test
+    void testNeverDropsPinWhenBackendMerelyLooksUnhealthyButIsStillActive()
+    {
+        // This instance's own (local, possibly stale/wrong) health view says unhealthy, but the shared
+        // backend configuration still lists it as active: the pin must be left alone -- the request
+        // just falls back to normal routing -- because another pod may see it as healthy right now.
+        RoutingManager routingManager = mock(RoutingManager.class);
+        OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
+        RoutingGroupSelector routingGroupSelector = mock(RoutingGroupSelector.class);
+        when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://flaky:8080"));
+        when(routingManager.isBackendActiveAndHealthy("http://flaky:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://flaky:8080")).thenReturn(true);
+        when(routingGroupSelector.findRoutingDestination(any())).thenReturn(new RoutingSelectorResponse(null));
+        ProxyBackendConfiguration fallbackBackend = new ProxyBackendConfiguration();
+        fallbackBackend.setProxyTo("http://fallback:8080");
+        when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(fallbackBackend);
+
+        HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
+
+        // Does not throw: falls through to normal (non-OAuth2-pinned) routing instead of forcing re-auth.
+        RoutingTargetResponse response = handler(routingManager, store, routingGroupSelector).resolveRouting(request);
+
+        assertThat(response.routingDestination().clusterHost()).isEqualTo("http://fallback:8080");
+        verify(store, never()).removeBackend(POLL_PIN_KEY);
     }
 
     @Test
@@ -112,16 +162,16 @@ final class TestRoutingTargetHandlerOAuth2
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
-        when(store.findBackend("authXYZ")).thenReturn(Optional.of("http://live:8080"));
+        when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://live:8080"));
         // Active and healthy -> route the in-flight handshake there.
         when(routingManager.isBackendActiveAndHealthy("http://live:8080")).thenReturn(true);
 
-        HttpServletRequest request = oauthRequest("/oauth2/token/authXYZ");
+        HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
 
         RoutingTargetResponse response = handler(routingManager, store).resolveRouting(request);
 
         assertThat(response.routingDestination().clusterHost()).isEqualTo("http://live:8080");
-        verify(store, never()).removeBackend("authXYZ");
+        verify(store, never()).removeBackend(POLL_PIN_KEY);
     }
 
     @Test
@@ -131,16 +181,40 @@ final class TestRoutingTargetHandlerOAuth2
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         // The callback carries no id in its path; it is pinned by the authIdHash inside the state JWT,
         // reusing the pin recorded for the initiate leg.
-        when(store.findBackend("hashHHH")).thenReturn(Optional.of("http://minting:8080"));
+        when(store.findBackend(CALLBACK_PIN_KEY)).thenReturn(Optional.of("http://minting:8080"));
         when(routingManager.isBackendActiveAndHealthy("http://minting:8080")).thenReturn(true);
 
         HttpServletRequest request = oauthRequest("/oauth2/callback");
-        when(request.getQueryString()).thenReturn("code=abc&state=" + stateJwt("hashHHH"));
+        when(request.getQueryString()).thenReturn("code=abc&state=" + stateJwt(CALLBACK_AUTH_ID_HASH));
 
         RoutingTargetResponse response = handler(routingManager, store).resolveRouting(request);
 
         assertThat(response.routingDestination().clusterHost()).isEqualTo("http://minting:8080");
-        verify(store, never()).removeBackend("hashHHH");
+        verify(store, never()).removeBackend(CALLBACK_PIN_KEY);
+    }
+
+    @Test
+    void testRewriteLogTargetRedactsHandshakeIds()
+    {
+        // Regression test for the reroute log line leaking the handshake id via the rewrite target:
+        // it must carry the same redaction as the incoming-request side of the log line, not the raw
+        // authId/authIdHash the request actually gets proxied with.
+        HttpServletRequest pollRequest = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
+        assertThat(RoutingTargetHandler.redactedRewriteTarget("http://live:8080", pollRequest))
+                .isEqualTo("http://live:8080/oauth2/token/<redacted>")
+                .doesNotContain(POLL_AUTH_ID.toString());
+
+        HttpServletRequest initiateRequest = oauthRequest("/oauth2/token/initiate/" + INITIATE_AUTH_ID_HASH);
+        assertThat(RoutingTargetHandler.redactedRewriteTarget("http://live:8080", initiateRequest))
+                .isEqualTo("http://live:8080/oauth2/token/initiate/<redacted>")
+                .doesNotContain(INITIATE_AUTH_ID_HASH);
+
+        HttpServletRequest callbackRequest = oauthRequest("/oauth2/callback");
+        String state = stateJwt(CALLBACK_AUTH_ID_HASH);
+        when(callbackRequest.getQueryString()).thenReturn("code=abc&state=" + state);
+        assertThat(RoutingTargetHandler.redactedRewriteTarget("http://live:8080", callbackRequest))
+                .isEqualTo("http://live:8080/oauth2/callback?<redacted>")
+                .doesNotContain(state);
     }
 
     private static String stateJwt(String handlerState)
@@ -153,5 +227,10 @@ final class TestRoutingTargetHandlerOAuth2
     private static String base64Url(String value)
     {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String sha256Hex(String value)
+    {
+        return Hashing.sha256().hashString(value, StandardCharsets.UTF_8).toString();
     }
 }

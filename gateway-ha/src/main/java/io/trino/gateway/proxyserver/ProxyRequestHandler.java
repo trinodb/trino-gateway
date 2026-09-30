@@ -14,6 +14,7 @@
 package io.trino.gateway.proxyserver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -50,11 +51,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
@@ -268,8 +267,22 @@ public class ProxyRequestHandler
 
     private static Response handleProxyException(Request request, ProxyException e)
     {
-        log.warn(e, "Proxy request failed: %s %s", request.getMethod(), request.getUri());
+        log.warn(e, "Proxy request failed: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
         throw badRequest(e.getMessage());
+    }
+
+    /**
+     * A form of {@code uri} safe to write to a log line: its path/query is passed through
+     * {@link OAuth2RoutingUtils#redactForLog} so an OAuth2 handshake id ({@code authId}/
+     * {@code authIdHash}/{@code state}) is never written to a proxy log. {@code uri} here is the
+     * backend request's URI, which carries the backend's {@code proxyTo} base path in front of
+     * Trino's own path — {@code redactForLog} matches the token/initiate/callback segments anywhere
+     * in the path for exactly that reason.
+     */
+    @VisibleForTesting
+    static String redactUriForLog(URI uri)
+    {
+        return "%s://%s%s".formatted(uri.getScheme(), uri.getAuthority(), OAuth2RoutingUtils.redactForLog(uri.getPath(), uri.getQuery()));
     }
 
     private static WebApplicationException badRequest(String message)
@@ -287,11 +300,11 @@ public class ProxyRequestHandler
             Optional<String> username,
             RoutingDestination routingDestination)
     {
-        log.debug("For Request [%s] got Response [%s]", request.getUri(), response.body());
+        log.debug("For Request [%s] got Response [%s]", redactUriForLog(request.getUri()), response.body());
 
         QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
-        log.debug("Extracting proxy destination : [%s] for request : [%s]", queryDetail.getBackendUrl(), request.getUri());
+        log.debug("Extracting proxy destination : [%s] for request : [%s]", queryDetail.getBackendUrl(), redactUriForLog(request.getUri()));
 
         if (response.statusCode() == OK.getStatusCode()) {
             try {
@@ -317,9 +330,9 @@ public class ProxyRequestHandler
 
     /**
      * Pins the Trino OAuth2 token-exchange handshake to this backend. The minting coordinator
-     * advertises the {@code authId} (poll loop) and {@code authIdHash} (browser initiate) inside the
-     * {@code WWW-Authenticate} challenge of its {@code 401}; recording both here lets every later
-     * request of the handshake be routed back here. See {@link OAuth2RoutingUtils}.
+     * advertises the {@code authId} inside the {@code WWW-Authenticate} challenge of its {@code 401}
+     * ({@code x_token_server}); recording the derived pin key here lets every later request of the
+     * handshake (poll, initiate, and callback) be routed back here. See {@link OAuth2RoutingUtils}.
      */
     ProxyResponse recordOAuth2Challenge(URI remoteUri, ProxyResponse response)
     {
@@ -329,17 +342,15 @@ public class ProxyRequestHandler
         if (!oauth2RoutingEnabled || response.statusCode() != UNAUTHORIZED.getStatusCode()) {
             return response;
         }
-        Set<String> oauthIds = response.headers().get(HeaderName.of(WWW_AUTHENTICATE)).stream()
-                .flatMap(header -> OAuth2RoutingUtils.oauthIdsFromChallenge(header).stream())
-                .collect(toImmutableSet());
-        if (oauthIds.isEmpty()) {
+        Optional<String> pinKey = response.headers().get(HeaderName.of(WWW_AUTHENTICATE)).stream()
+                .flatMap(header -> OAuth2RoutingUtils.pinKeyFromChallenge(header).stream())
+                .findFirst();
+        if (pinKey.isEmpty()) {
             return response;
         }
         String backend = getRemoteTarget(remoteUri);
-        // Record both ids of the handshake atomically so the poll loop and browser legs are pinned
-        // together (all-or-nothing) to the coordinator that minted them.
-        oauth2RoutingStore.setBackends(oauthIds, backend);
-        log.debug("Pinned OAuth2 ids %s to backend [%s]", oauthIds, backend);
+        oauth2RoutingStore.setBackend(pinKey.get(), backend);
+        log.debug("Pinned an OAuth2 handshake to backend [%s]", backend);
         return response;
     }
 
