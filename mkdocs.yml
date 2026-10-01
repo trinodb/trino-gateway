@@ -90,6 +90,7 @@ nav:
   - Reference:
       - Routing rules: routing-rules.md
       - Routing logic: routing-logic.md
+      - Spooled segment routing: spooled-segment-routing.md
       - Gateway API: gateway-api.md
       - Backend tags: backend-tags.md
       - Code architecture: design.md
