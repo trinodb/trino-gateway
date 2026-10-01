@@ -38,9 +38,10 @@ function App() {
 function Screen() {
   useSwitchTheme()
   const access = useAccessStore();
+  const updateToken = useAccessStore(state => state.updateToken);
   useEffect(() => {
     // Prevent multiple initialization runs
-    if (access.isAuthorized()) {
+    if (useAccessStore.getState().token) {
       return;
     }
 
@@ -54,7 +55,7 @@ function Screen() {
           const token = await fetchTokenApi();
 
           if (token) {
-            access.updateToken(token);
+            updateToken(token);
           } else {
             console.log('🔍 No token received from server');
           }
@@ -63,7 +64,7 @@ function Screen() {
           const token = Cookies.get('token');
 
           if (token) {
-            access.updateToken(token);
+            updateToken(token);
             Cookies.remove('token');
           }
         }
@@ -73,7 +74,7 @@ function Screen() {
     };
 
     initializeToken();
-  }, []); // Empty dependency array - only run once on mount
+  }, [updateToken]);
   return (
     <>
       {access.isAuthorized() ? (
