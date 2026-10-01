@@ -18,6 +18,7 @@ import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -68,7 +69,7 @@ final class TestRoutingTargetHandlerOAuth2
     {
         HaGatewayConfiguration config = new HaGatewayConfiguration();
         config.getRouting().setOauth2RoutingEnabled(true);
-        return new RoutingTargetHandler(routingManager, store, mock(RoutingGroupSelector.class), config);
+        return new RoutingTargetHandler(routingManager, store, mock(RoutingGroupSelector.class), mock(GatewayBackendManager.class), config);
     }
 
     private static HttpServletRequest oauthRequest(String path)
