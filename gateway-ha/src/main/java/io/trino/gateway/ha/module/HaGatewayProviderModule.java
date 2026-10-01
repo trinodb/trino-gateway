@@ -57,6 +57,7 @@ import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFormAuthManager;
+import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.NoopAuthorizer;
 import io.trino.gateway.ha.security.NoopFilter;
@@ -156,6 +157,17 @@ public class HaGatewayProviderModule
         AuthenticationConfiguration authenticationConfiguration = config.getAuthentication();
         if (authenticationConfiguration != null && authenticationConfiguration.getForm() != null) {
             return new LbFormAuthManager(authenticationConfiguration.getForm(), config.getPresetUsers(), config.getPagePermissions());
+        }
+        return null;
+    }
+
+    @Provides
+    @Singleton
+    public static LbJwtManager getJwtAuthentication(HaGatewayConfiguration config)
+    {
+        AuthenticationConfiguration authenticationConfiguration = config.getAuthentication();
+        if (authenticationConfiguration != null && authenticationConfiguration.getJwt() != null) {
+            return new LbJwtManager(authenticationConfiguration.getJwt(), config.getPagePermissions());
         }
         return null;
     }
