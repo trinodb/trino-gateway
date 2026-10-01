@@ -43,7 +43,7 @@ Trino Gateway requires a MySQL, PostgreSQL, or Oracle database. Database
 initialization is performed automatically when the Trino Gateway process
 starts. Migrations are performed using `Flyway`.
 
-The migration files can viewed in the `gateway-ha/src/main/resources/` folder.
+The migration files can be viewed in the `gateway-ha/src/main/resources/` folder.
 Each database type supported has its own sub-folder.
 
 The files are also included in the JAR file.
