@@ -168,6 +168,19 @@ final class TestLbJwtManager
     }
 
     @Test
+    void testConstructorWithInvalidUserMappingFile()
+            throws IOException
+    {
+        Path keyFile = createRSAPublicKeyFile();
+        JwtConfiguration config = createJwtConfiguration(keyFile.toString(), TEST_ISSUER, TEST_AUDIENCE);
+        config.setUserMappingFile(tempDir.resolve("missing-user-mapping.json").toFile());
+
+        assertThatThrownBy(() -> new LbJwtManager(config, new HashMap<>()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("JWT user mapping file does not exist or is not readable");
+    }
+
+    @Test
     void testVerifyValidRSAToken()
             throws IOException
     {

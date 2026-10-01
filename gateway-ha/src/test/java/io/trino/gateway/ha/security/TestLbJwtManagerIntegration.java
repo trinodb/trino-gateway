@@ -41,7 +41,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -97,9 +99,32 @@ final class TestLbJwtManagerIntegration
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
 
-        // Wait for the gateway to start
-        Thread.sleep(5000);
+        waitForGateway();
         log.info("Gateway started on port: " + routerPort);
+    }
+
+    private void waitForGateway()
+            throws IOException
+    {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/trino-gateway/readyz")
+                .build();
+        IOException lastFailure = null;
+        int lastStatus = 0;
+        while (System.nanoTime() < deadline) {
+            try (Response response = httpClient.newCall(request).execute()) {
+                lastStatus = response.code();
+                if (response.isSuccessful()) {
+                    return;
+                }
+            }
+            catch (IOException e) {
+                lastFailure = e;
+            }
+            sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+        }
+        throw new IOException("Gateway did not become ready within 30 seconds; last status: " + lastStatus, lastFailure);
     }
 
     @Test

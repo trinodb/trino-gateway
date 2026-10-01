@@ -15,7 +15,7 @@ import { useAccessStore, useConfigStore } from './store';
 import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
-import { loginTypeApi, getTokenApi} from './api/webapp/login';
+import { fetchTokenApi, loginTypeApi } from './api/webapp/login';
 import Cookies from 'js-cookie';
 import { TimezoneProvider } from "./components/TimezoneContext";
 
@@ -51,7 +51,7 @@ function Screen() {
 
         if (authType === 'jwt') {
           // Use server API to get JWT token
-          const token = await getTokenApi();
+          const token = await fetchTokenApi();
 
           if (token) {
             access.updateToken(token);

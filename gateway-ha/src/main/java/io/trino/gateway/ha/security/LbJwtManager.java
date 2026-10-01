@@ -58,6 +58,11 @@ public class LbJwtManager
     public LbJwtManager(JwtConfiguration configuration, Map<String, String> pagePermissions)
     {
         this.jwtConfig = configuration;
+        configuration.getUserMappingFile().ifPresent(file -> {
+            if (!file.isFile() || !file.canRead()) {
+                throw new IllegalArgumentException("JWT user mapping file does not exist or is not readable: " + file);
+            }
+        });
         this.pagePermissions = pagePermissions.entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
                 .collect(toImmutableMap(entry -> entry.getKey().toUpperCase(ENGLISH), Map.Entry::getValue));
@@ -199,12 +204,6 @@ public class LbJwtManager
             String keyId = unverifiedJwt.getKeyId();
             String algorithm = unverifiedJwt.getAlgorithm();
             String issuer = unverifiedJwt.getIssuer();
-            String subject = unverifiedJwt.getSubject();
-
-            if (log.isDebugEnabled()) {
-                unverifiedJwt.getClaims().forEach(
-                        (key, value) -> log.debug("JWT %s : %s", key, value));
-            }
 
             if (keyId == null) {
                 log.error("JWT token is missing 'kid' (key ID) in header, required for JWKS verification. " +
@@ -233,9 +232,8 @@ public class LbJwtManager
             // Now verify the token with the correct key
             DecodedJWT verifiedJwt = jwtVerifierLocal.verify(token);
 
-            log.info("Successfully verified JWT token with key ID: %s, subject: %s, issuer: %s",
+            log.debug("Successfully verified JWT token with key ID: %s, issuer: %s",
                     keyId,
-                    subject,
                     issuer);
 
             return Optional.of(verifiedJwt.getClaims());

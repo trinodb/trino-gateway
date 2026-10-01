@@ -24,6 +24,6 @@ export async function getUIConfiguration(): Promise<any> {
     return api.get('/webapp/getUIConfiguration')
 }
 
-export async function getTokenApi(): Promise<any> {
+export async function fetchTokenApi(): Promise<any> {
   return api.post('/token', {})
 }

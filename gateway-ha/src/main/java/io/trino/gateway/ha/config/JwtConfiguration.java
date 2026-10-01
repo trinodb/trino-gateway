@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha.config;
 
-import io.airlift.configuration.validation.FileExists;
-
 import java.io.File;
 import java.util.Optional;
 
@@ -79,7 +77,7 @@ public class JwtConfiguration
         this.userMappingPattern = Optional.ofNullable(userMappingPattern);
     }
 
-    public Optional<@FileExists File> getUserMappingFile()
+    public Optional<File> getUserMappingFile()
     {
         return this.userMappingFile;
     }
