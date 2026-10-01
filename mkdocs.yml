@@ -90,6 +90,7 @@ nav:
   - Reference:
       - Routing rules: routing-rules.md
       - Routing logic: routing-logic.md
+      - Spooled segment routing: spooled-segment-routing.md
       - Gateway API: gateway-api.md
       - Code architecture: design.md
       - Migration to Airlift: migration-to-airlift.md
