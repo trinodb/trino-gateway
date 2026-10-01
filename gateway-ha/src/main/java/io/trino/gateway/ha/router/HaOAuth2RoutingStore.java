@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.google.inject.Inject;
 import io.airlift.log.Logger;
+import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import org.jdbi.v3.core.Jdbi;
 
@@ -40,9 +41,9 @@ public class HaOAuth2RoutingStore
     private final OAuth2RoutingDao dao;
 
     @Inject
-    public HaOAuth2RoutingStore(Jdbi jdbi)
+    public HaOAuth2RoutingStore(JdbcConnectionManager connectionManager)
     {
-        this.jdbi = requireNonNull(jdbi, "jdbi is null");
+        this.jdbi = requireNonNull(connectionManager, "connectionManager is null").getJdbi();
         this.dao = jdbi.onDemand(OAuth2RoutingDao.class);
     }
 
