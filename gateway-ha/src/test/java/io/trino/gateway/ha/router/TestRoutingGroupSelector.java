@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableSet;
+import io.airlift.compress.v3.zstd.ZstdCompressor;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.util.QueryRequestMock;
@@ -35,6 +36,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import java.util.Base64;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.google.common.io.BaseEncoding.base64Url;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.router.RoutingGroupSelector.ROUTING_GROUP_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -276,6 +279,121 @@ final class TestRoutingGroupSelector
 
         String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
         assertThat(routingGroup).isEqualTo("statement-header-group");
+    }
+
+    @Test
+    void testTrinoQueryPropertiesCompressedPreparedStatementInHeader()
+            throws IOException
+    {
+        String routingGroup = routeExecuteOfPreparedStatement(encodeForHeader(compressForHeader("SELECT\n  c1\n, c2\nFROM\n  foo\n")));
+        assertThat(routingGroup).isEqualTo("statement-header-group");
+    }
+
+    @Test
+    void testTrinoQueryPropertiesCompressedPreparedStatementWithoutBase64Padding()
+            throws IOException
+    {
+        String compressed = compressForHeader("SELECT\n  c1\n, c2\nFROM\n  foo\n");
+        String unpadded = compressed.replaceAll("=+$", "");
+        assertThat(unpadded).isNotEqualTo(compressed); // guard: this statement does need padding
+
+        String routingGroup = routeExecuteOfPreparedStatement(encodeForHeader(unpadded));
+        assertThat(routingGroup).isEqualTo("statement-header-group");
+    }
+
+    @Test
+    void testTrinoQueryPropertiesCompressedPreparedStatementOverBodySizeLimit()
+            throws IOException
+    {
+        // A header sized value can claim a huge decompressed size, so the limit must be enforced before the
+        // buffer is allocated. Valid SQL matching the prepared-statement rule, so the only reason routing can
+        // fall back to the default group is the size guard. 5x clears the 4x byte budget derived from maxBodySize.
+        String oversized = "SELECT '" + "a".repeat(5 * requestAnalyzerConfig.getMaxBodySize()) + "' FROM foo";
+
+        HttpServletRequest mockRequest = executeRequestWithPreparedStatementHeader("statement1=" + encodeForHeader(compressForHeader(oversized)), "statement1");
+        String routingGroup = preparedStatementRulesSelector().findRoutingDestination(mockRequest).routingGroup();
+        assertThat(routingGroup).isEqualTo("no-match");
+
+        TrinoQueryProperties queryProperties = (TrinoQueryProperties) mockRequest.getAttribute(TRINO_QUERY_PROPERTIES);
+        assertThat(queryProperties.getErrorMessage()).hasValueSatisfying(message -> assertThat(message)
+                .contains("over the limit")
+                .contains("maxBodySize " + requestAnalyzerConfig.getMaxBodySize()));
+    }
+
+    @Test
+    void testTrinoQueryPropertiesCompressedPreparedStatementWithoutDeclaredSize()
+            throws IOException
+    {
+        // A zstd frame may omit the decompressed size, and then there is no budget to check before allocating.
+        // Minimal frame: magic, then a header descriptor of 0 (no content size, not single segment, no
+        // dictionary) followed by a window descriptor. Trino and Kyuubi never emit this, a hostile client can.
+        byte[] frameWithoutContentSize = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, 0x00, 0x00};
+        String headerValue = "$zstd:" + base64Url().encode(frameWithoutContentSize);
+
+        HttpServletRequest mockRequest = executeRequestWithPreparedStatementHeader("statement1=" + encodeForHeader(headerValue), "statement1");
+        String routingGroup = preparedStatementRulesSelector().findRoutingDestination(mockRequest).routingGroup();
+        assertThat(routingGroup).isEqualTo("no-match");
+
+        TrinoQueryProperties queryProperties = (TrinoQueryProperties) mockRequest.getAttribute(TRINO_QUERY_PROPERTIES);
+        assertThat(queryProperties.getErrorMessage()).hasValueSatisfying(message -> assertThat(message).contains("does not declare its decompressed size"));
+    }
+
+    @Test
+    void testTrinoQueryPropertiesPreparedStatementHeaderWithWhitespaceAroundEntries()
+            throws IOException
+    {
+        // Proxies that merge repeated headers join them with ", ", and Trino trims both the entries and the
+        // name=value halves (HttpRequestSessionContextFactory). statement2 must still be found.
+        String headerValue = "statement1=" + encodeForHeader("SELECT 1") + " , statement2 = " + encodeForHeader("SELECT c1 FROM foo") + ",";
+
+        HttpServletRequest mockRequest = executeRequestWithPreparedStatementHeader(headerValue, "statement2");
+        String routingGroup = preparedStatementRulesSelector().findRoutingDestination(mockRequest).routingGroup();
+        assertThat(routingGroup).isEqualTo("statement-header-group");
+    }
+
+    private String routeExecuteOfPreparedStatement(String encodedHeaderValue)
+            throws IOException
+    {
+        HttpServletRequest mockRequest = executeRequestWithPreparedStatementHeader("statement1=" + encodedHeaderValue, "statement1");
+        return preparedStatementRulesSelector().findRoutingDestination(mockRequest).routingGroup();
+    }
+
+    private RoutingGroupSelector preparedStatementRulesSelector()
+    {
+        return RoutingGroupSelector.byRoutingRulesEngine(
+                "src/test/resources/rules/routing_rules_trino_query_properties.yml",
+                oneHourRefreshPeriod,
+                requestAnalyzerConfig);
+    }
+
+    // EXECUTE <statementName> with the given raw X-Trino-Prepared-Statement header value, against catalog cat / schema schem
+    private HttpServletRequest executeRequestWithPreparedStatementHeader(String headerValue, String statementName)
+            throws IOException
+    {
+        MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.add(TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME, headerValue);
+
+        return new QueryRequestMock().query("EXECUTE " + statementName).httpHeaders(headers)
+                .httpHeader(TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME, "cat")
+                .httpHeader(TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME, "schem")
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .getHttpServletRequest();
+    }
+
+    // Mirrors io.trino.server.protocol.PreparedStatementEncoder, without its length threshold
+    private static String compressForHeader(String preparedStatement)
+    {
+        ZstdCompressor compressor = ZstdCompressor.create();
+        byte[] input = preparedStatement.getBytes(UTF_8);
+        byte[] compressed = new byte[compressor.maxCompressedLength(input.length)];
+        int compressedSize = compressor.compress(input, 0, input.length, compressed, 0, compressed.length);
+        return "$zstd:" + base64Url().encode(compressed, 0, compressedSize);
+    }
+
+    // Trino clients send prepared statement header values URL encoded, so "$zstd:" arrives as "%24zstd%3A"
+    private static String encodeForHeader(String headerValue)
+    {
+        return URLEncoder.encode(headerValue, UTF_8);
     }
 
     @Test

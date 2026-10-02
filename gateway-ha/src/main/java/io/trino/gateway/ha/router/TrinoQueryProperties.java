@@ -20,9 +20,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.airlift.compress.v3.MalformedInputException;
 import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
@@ -320,14 +322,19 @@ public class TrinoQueryProperties
         if (headers == null) {
             return preparedStatementsMapBuilder.build();
         }
+        // Same splitting as io.trino.server.HttpRequestSessionContextFactory: proxies that merge repeated headers
+        // join them with ", ", so entries and the name=value halves are trimmed and empty entries dropped.
+        Splitter entrySplitter = Splitter.on(',').trimResults().omitEmptyStrings();
+        Splitter nameValueSplitter = Splitter.on('=').trimResults();
         while (headers.hasMoreElements()) {
-            String[] preparedStatementsArray = headers.nextElement().split(",");
-            for (String preparedStatement : preparedStatementsArray) {
-                String[] nameValue = preparedStatement.split("=");
-                if (nameValue.length != 2) {
+            for (String preparedStatement : entrySplitter.split(headers.nextElement())) {
+                List<String> nameValue = nameValueSplitter.splitToList(preparedStatement);
+                if (nameValue.size() != 2) {
                     throw new RequestParsingException("preparedStatement must be formatted as name=value, but is %s".formatted(preparedStatement));
                 }
-                preparedStatementsMapBuilder.put(URLDecoder.decode(nameValue[0], UTF_8), URLDecoder.decode(decodePreparedStatementFromHeader(nameValue[1]), UTF_8));
+                // The header value is URL encoded, so "$zstd:" arrives as "%24zstd%3A". Decoding must happen
+                // in this order, matching io.trino.server.HttpRequestSessionContextFactory, or the prefix never matches.
+                preparedStatementsMapBuilder.put(URLDecoder.decode(nameValue.get(0), UTF_8), decodePreparedStatementFromHeader(URLDecoder.decode(nameValue.get(1), UTF_8)));
             }
         }
         return preparedStatementsMapBuilder.build();
@@ -347,6 +354,7 @@ public class TrinoQueryProperties
     }
 
     private String decodePreparedStatementFromHeader(String headerValue)
+            throws RequestParsingException
     {
         // From io.trino.server.protocol.PreparedStatementEncoder
         String prefix = "$zstd:";
@@ -355,10 +363,37 @@ public class TrinoQueryProperties
         }
 
         String encoded = headerValue.substring(prefix.length());
-        byte[] compressed = base64Url().decode(encoded);
+        byte[] compressed;
+        long decompressedSize;
+        try {
+            compressed = base64Url().decode(encoded);
+            decompressedSize = decompressor.getDecompressedSize(compressed, 0, compressed.length);
+        }
+        catch (IllegalArgumentException | MalformedInputException e) {
+            throw new RequestParsingException("preparedStatement could not be decoded", e);
+        }
 
-        byte[] preparedStatement = new byte[toIntExact(decompressor.getDecompressedSize(compressed, 0, compressed.length))];
-        decompressor.decompress(compressed, 0, compressed.length, preparedStatement, 0, preparedStatement.length);
+        // A frame may omit the decompressed size, and then getDecompressedSize returns -1. Without it there is
+        // no budget to check before allocating, so reject instead of guessing. Trino and Kyuubi always write it.
+        if (decompressedSize < 0) {
+            throw new RequestParsingException("preparedStatement does not declare its decompressed size");
+        }
+        // The zstd frame header states the decompressed size, so a value small enough to fit in a header can
+        // ask for gigabytes. Check it before allocating. maxBodySize bounds the body in characters; UTF-8 uses
+        // at most 4 bytes per character, so the byte budget is 4x. Anything larger is past Trino's
+        // query.max-length anyway.
+        long maxDecompressedBytes = (long) maxBodySize * 4;
+        if (decompressedSize > maxDecompressedBytes) {
+            throw new RequestParsingException("preparedStatement decompresses to %s bytes, over the limit %s (maxBodySize %s)".formatted(decompressedSize, maxDecompressedBytes, maxBodySize));
+        }
+
+        byte[] preparedStatement = new byte[toIntExact(decompressedSize)];
+        try {
+            decompressor.decompress(compressed, 0, compressed.length, preparedStatement, 0, preparedStatement.length);
+        }
+        catch (MalformedInputException e) {
+            throw new RequestParsingException("preparedStatement could not be decompressed", e);
+        }
         return new String(preparedStatement, UTF_8);
     }
 
@@ -735,6 +770,11 @@ public class TrinoQueryProperties
         public RequestParsingException(String message)
         {
             super(message);
+        }
+
+        public RequestParsingException(String message, Throwable cause)
+        {
+            super(message, cause);
         }
     }
 
