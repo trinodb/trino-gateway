@@ -19,37 +19,34 @@ import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestStochasticRoutingManager
 {
-    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     RoutingManager haRoutingManager;
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
 
-    @AfterAll
-    public final void close()
-    {
-        postgres.close();
-    }
-
     @BeforeAll
     void setUp()
     {
-        DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig(POSTGRESQL);
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         RoutingConfiguration routingConfiguration = new RoutingConfiguration();
         backendManager = new HaGatewayManager(connectionManager.getJdbi(), routingConfiguration, new DatabaseCacheConfiguration());

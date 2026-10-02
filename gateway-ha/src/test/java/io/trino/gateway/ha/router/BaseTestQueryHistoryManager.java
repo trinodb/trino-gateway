@@ -20,29 +20,34 @@ import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
+import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class BaseTestQueryHistoryManager
 {
-    protected final JdbcDatabaseContainer<?> container = startContainer();
+    private final JdbcDatabaseContainer<?> container;
     private QueryHistoryManager queryHistoryManager;
     private Jdbi jdbi;
 
-    protected abstract JdbcDatabaseContainer<?> startContainer();
+    protected BaseTestQueryHistoryManager(JdbcDatabaseContainer<?> container)
+    {
+        this.container = requireNonNull(container, "container is null");
+    }
 
     @BeforeAll
     void setUp()
@@ -66,12 +71,6 @@ abstract class BaseTestQueryHistoryManager
     void cleanUp()
     {
         jdbi.useHandle(handle -> handle.execute("DELETE FROM query_history"));
-    }
-
-    @AfterAll
-    public final void close()
-    {
-        container.close();
     }
 
     @Test

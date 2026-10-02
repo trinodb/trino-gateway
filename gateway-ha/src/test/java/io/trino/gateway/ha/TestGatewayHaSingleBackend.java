@@ -22,12 +22,13 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.trino.TrinoContainer;
 
@@ -35,29 +36,31 @@ import java.io.File;
 import java.util.List;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestGatewayHaSingleBackend
 {
-    private TrinoContainer trino;
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final TrinoContainer TRINO = createTrinoContainer()
+            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
     void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-        trino.start();
+        int backendPort = TRINO.getMappedPort(8080);
 
-        int backendPort = trino.getMappedPort(8080);
-
-        postgresql.start();
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "test-config-template.yml");
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
@@ -117,11 +120,5 @@ final class TestGatewayHaSingleBackend
     List<Protocol> protocols()
     {
         return ImmutableList.of(Protocol.HTTP_1_1, Protocol.H2_PRIOR_KNOWLEDGE);
-    }
-
-    @AfterAll
-    void cleanup()
-    {
-        trino.close();
     }
 }

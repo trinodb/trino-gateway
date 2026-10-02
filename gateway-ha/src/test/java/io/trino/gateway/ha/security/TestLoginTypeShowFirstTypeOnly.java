@@ -26,6 +26,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
@@ -43,12 +45,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * multi-method fallback, so form/basic credentials still authenticate even though the
  * login page only offers oauth.
  */
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestLoginTypeShowFirstTypeOnly
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     private final int routerPort = 25001 + (int) (Math.random() * 1000);
 
@@ -56,8 +60,7 @@ final class TestLoginTypeShowFirstTypeOnly
     void setup()
             throws Exception
     {
-        postgresql.start();
-        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "auth/oauth-and-form-show-first-only-test-config.yml");
+        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "auth/oauth-and-form-show-first-only-test-config.yml");
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
     }

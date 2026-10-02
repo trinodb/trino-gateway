@@ -20,19 +20,23 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Set;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaOAuth2RoutingStore
 {
-    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     private DataStoreConfiguration dataStoreConfig;
     private JdbcConnectionManager connectionManager;
@@ -42,7 +46,7 @@ final class TestHaOAuth2RoutingStore
     @BeforeAll
     void setUp()
     {
-        dataStoreConfig = dataStoreConfig(postgres);
+        dataStoreConfig = dataStoreConfig(POSTGRESQL);
         connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         store = new HaOAuth2RoutingStore(connectionManager.getJdbi());
     }
@@ -58,7 +62,6 @@ final class TestHaOAuth2RoutingStore
         if (otherPodConnectionManager != null) {
             otherPodConnectionManager.close();
         }
-        postgres.close();
     }
 
     @Test
