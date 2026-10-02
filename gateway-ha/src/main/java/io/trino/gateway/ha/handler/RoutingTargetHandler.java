@@ -202,11 +202,11 @@ public class RoutingTargetHandler
      */
     private Optional<String> getOAuth2StickyBackend(HttpServletRequest request)
     {
-        String oauthId = oauth2RoutingId(request).orElse(null);
-        if (oauthId == null) {
+        String pinKey = oauth2PinKey(request).orElse(null);
+        if (pinKey == null) {
             return Optional.empty();
         }
-        String pinnedBackend = oauth2RoutingStore.findBackend(oauthId).orElse(null);
+        String pinnedBackend = oauth2RoutingStore.findBackend(pinKey).orElse(null);
         if (pinnedBackend == null) {
             return Optional.empty();
         }
@@ -219,35 +219,49 @@ public class RoutingTargetHandler
         if (routingManager.isBackendActiveAndHealthy(pinnedBackend)) {
             return Optional.of(pinnedBackend);
         }
-        oauth2RoutingStore.removeBackend(oauthId);
-        log.warn("OAuth2 pinned backend [%s] is unavailable for [%s]; forcing re-auth", pinnedBackend, request.getRequestURI());
+        oauth2RoutingStore.removeBackend(pinKey);
+        log.warn("OAuth2 pinned backend [%s] is unavailable for [%s]; forcing re-auth",
+                pinnedBackend,
+                OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
         throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
     }
 
     /**
-     * The pin key for an in-flight token-exchange request: from the path for the driver poll
-     * ({@code /oauth2/token/{authId}}) and the browser initiate
+     * The pin-store lookup key for an in-flight token-exchange request: from the path for the driver
+     * poll ({@code /oauth2/token/{authId}}) and the browser initiate
      * ({@code /oauth2/token/initiate/{authIdHash}}), or from the {@code state} parameter for the
      * browser callback ({@code /oauth2/callback}). Empty for anything else.
      */
-    private Optional<String> oauth2RoutingId(HttpServletRequest request)
+    private Optional<String> oauth2PinKey(HttpServletRequest request)
     {
         String path = request.getRequestURI();
-        Optional<String> callbackId = OAuth2RoutingUtils.oauthIdFromCallback(path, request.getQueryString());
-        if (callbackId.isPresent()) {
-            return callbackId;
+        Optional<String> callbackKey = OAuth2RoutingUtils.pinKeyFromCallback(path, request.getQueryString());
+        if (callbackKey.isPresent()) {
+            return callbackKey;
         }
-        return OAuth2RoutingUtils.oauthIdFromRequestPath(path);
+        return OAuth2RoutingUtils.pinKeyFromRequestPath(path);
     }
 
     private void logRewrite(String newBackend, HttpServletRequest request)
     {
-        log.info("Rerouting [%s://%s:%s%s%s]--> [%s]",
+        log.info("Rerouting [%s://%s:%s%s]--> [%s]",
                 request.getScheme(),
                 request.getRemoteHost(),
                 request.getServerPort(),
-                request.getRequestURI(),
-                (request.getQueryString() != null ? "?" + request.getQueryString() : ""),
-                buildUriWithNewCluster(newBackend, request));
+                OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()),
+                redactedRewriteTarget(newBackend, request));
+    }
+
+    /**
+     * The rewrite target as written to the reroute log line: {@code newBackend} plus the same
+     * redacted path/query {@link #logRewrite} already uses for the incoming request. Unlike
+     * {@link ProxyUtils#buildUriWithNewCluster}, which is used for the actual proxied request and
+     * must carry the real {@code authId}/{@code authIdHash}/{@code state}, this must never do so:
+     * logging the raw target would let a log reader lift the handshake id straight off the reroute
+     * line. Package-private so it can be unit-tested directly without capturing log output.
+     */
+    static String redactedRewriteTarget(String newBackend, HttpServletRequest request)
+    {
+        return newBackend + OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString());
     }
 }
