@@ -20,7 +20,21 @@ public class BackendStateConfiguration
     private Boolean ssl = false;
     private boolean xForwardedProtoHeader;
 
+    // Defaults to the login resource of the Web UI in Trino 483 and later. Backend clusters
+    // running Trino 482 or earlier need UiLoginType.FORM configured.
+    private UiLoginType uiLoginType = UiLoginType.AUTH_API;
+
     public BackendStateConfiguration() {}
+
+    public UiLoginType getUiLoginType()
+    {
+        return this.uiLoginType;
+    }
+
+    public void setUiLoginType(UiLoginType uiLoginType)
+    {
+        this.uiLoginType = uiLoginType;
+    }
 
     public String getUsername()
     {
