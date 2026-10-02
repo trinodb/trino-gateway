@@ -13,8 +13,11 @@
  */
 package io.trino.gateway.proxyserver;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ListMultimap;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
@@ -26,8 +29,10 @@ import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
@@ -46,15 +51,19 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableListMultimap.toImmutableListMultimap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
@@ -70,7 +79,9 @@ import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
+import static io.trino.gateway.ha.handler.HttpUtils.SPOOLED_BACKEND_PARAMETER;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_SPOOLED_PATH;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
@@ -93,6 +104,7 @@ public class ProxyRequestHandler
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
     private final HttpClient httpClient;
     private final RoutingManager routingManager;
+    private final GatewayBackendManager gatewayBackendManager;
     private final QueryHistoryManager queryHistoryManager;
     private final OAuth2RoutingStore oauth2RoutingStore;
     private final boolean cookiesEnabled;
@@ -106,12 +118,14 @@ public class ProxyRequestHandler
     public ProxyRequestHandler(
             @ForProxy HttpClient httpClient,
             RoutingManager routingManager,
+            GatewayBackendManager gatewayBackendManager,
             QueryHistoryManager queryHistoryManager,
             OAuth2RoutingStore oauth2RoutingStore,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.oauth2RoutingStore = requireNonNull(oauth2RoutingStore, "oauth2RoutingStore is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
@@ -202,12 +216,16 @@ public class ProxyRequestHandler
             future = future.transform(response -> recordOAuth2Challenge(remoteUri, response), executor);
         }
 
-        if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
-            Optional<String> username = ((TrinoRequestUser) servletRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
-            future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
-            if (includeClusterInfoInResponse) {
-                cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
+        if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith)) {
+            if (request.getMethod().equals(HttpMethod.POST)) {
+                Optional<String> username = ((TrinoRequestUser) servletRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
+                future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
+                if (includeClusterInfoInResponse) {
+                    cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
+                }
             }
+            // Spooled segments appear in any statement response, not only the one to the initial POST
+            future = future.transform(response -> rewriteSpooledSegmentUris(response, routingDestination.clusterHost()), executor);
         }
 
         setupAsyncResponse(
@@ -341,6 +359,74 @@ public class ProxyRequestHandler
         oauth2RoutingStore.setBackends(oauthIds, backend);
         log.debug("Pinned OAuth2 ids %s to backend [%s]", oauthIds, backend);
         return response;
+    }
+
+    /**
+     * Rewrites spooled segment URIs in a query results response to include the query id and the
+     * name of the backend that produced them as query parameters. Requests to
+     * {@code /v1/spooled/download/<token>} and {@code /v1/spooled/ack/<token>} otherwise carry no
+     * information identifying the cluster that produced the segment, so the gateway cannot route
+     * them to the correct backend when multiple clusters use the spooling protocol with
+     * coordinator proxying. The backend name allows stateless routing that survives query history
+     * cleanup and gateway restarts; {@code queryId} is kept as a fallback. Both parameters are
+     * ignored by Trino coordinators.
+     */
+    ProxyResponse rewriteSpooledSegmentUris(ProxyResponse response, String clusterHost)
+    {
+        if (response.statusCode() != OK.getStatusCode() || !response.body().contains(V1_SPOOLED_PATH)) {
+            return response;
+        }
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(response.body());
+            String queryId = root.path("id").asText();
+            JsonNode segments = root.path("data").path("segments");
+            if (queryId.isEmpty() || !segments.isArray()) {
+                return response;
+            }
+            StringBuilder parameters = new StringBuilder("queryId=").append(queryId);
+            findBackendName(clusterHost).ifPresent(backendName ->
+                    parameters.append('&').append(SPOOLED_BACKEND_PARAMETER).append('=').append(URLEncoder.encode(backendName, UTF_8)));
+            boolean rewritten = false;
+            for (JsonNode segment : segments) {
+                rewritten |= appendParametersToSpooledUri(segment, "uri", parameters.toString());
+                rewritten |= appendParametersToSpooledUri(segment, "ackUri", parameters.toString());
+            }
+            if (!rewritten) {
+                return response;
+            }
+            ListMultimap<HeaderName, String> headers = response.headers().entries().stream()
+                    .filter(entry -> !entry.getKey().toString().equalsIgnoreCase(CONTENT_LENGTH))
+                    .collect(toImmutableListMultimap(Map.Entry::getKey, Map.Entry::getValue));
+            return new ProxyResponse(response.statusCode(), headers, OBJECT_MAPPER.writeValueAsString(root));
+        }
+        catch (IOException | IllegalArgumentException e) {
+            log.warn(e, "Failed to rewrite spooled segment URIs, response is proxied unmodified");
+            return response;
+        }
+    }
+
+    private Optional<String> findBackendName(String clusterHost)
+    {
+        // All backends rather than only active ones, so segments of a deactivated backend can still be collected
+        return gatewayBackendManager.getAllBackends().stream()
+                .filter(backend -> clusterHost.equals(backend.getProxyTo()))
+                .map(ProxyBackendConfiguration::getName)
+                .findFirst();
+    }
+
+    private static boolean appendParametersToSpooledUri(JsonNode segment, String field, String parameters)
+    {
+        JsonNode uriNode = segment.path(field);
+        if (!uriNode.isTextual()) {
+            return false;
+        }
+        String uri = uriNode.asText();
+        String path = URI.create(uri).getPath();
+        if (path == null || !path.startsWith(V1_SPOOLED_PATH)) {
+            return false;
+        }
+        ((ObjectNode) segment).put(field, uri + (uri.contains("?") ? "&" : "?") + parameters);
+        return true;
     }
 
     public static QueryHistoryManager.QueryDetail getQueryDetailsFromRequest(Request request, Optional<String> username)
