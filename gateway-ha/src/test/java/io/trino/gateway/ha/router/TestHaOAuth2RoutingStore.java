@@ -44,7 +44,7 @@ final class TestHaOAuth2RoutingStore
     {
         dataStoreConfig = dataStoreConfig(postgres);
         connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
-        store = new HaOAuth2RoutingStore(connectionManager.getJdbi());
+        store = new HaOAuth2RoutingStore(connectionManager);
     }
 
     @AfterAll
@@ -85,7 +85,7 @@ final class TestHaOAuth2RoutingStore
         store.setBackends(Set.of("auth-shared"), "http://coord-c:8080");
 
         otherPodConnectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
-        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi());
+        OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager);
         assertThat(otherPod.findBackend("auth-shared")).hasValue("http://coord-c:8080");
     }
 
@@ -100,5 +100,22 @@ final class TestHaOAuth2RoutingStore
 
         store.removeBackend("auth-poll");
         store.removeBackend("auth-hash");
+    }
+
+    @Test
+    void testPinsWithConnectionPool()
+    {
+        DataStoreConfiguration pooledConfig = dataStoreConfig(postgres);
+        pooledConfig.setMaxPoolSize(2);
+        try (JdbcConnectionManager pooledConnectionManager = createTestingJdbcConnectionManager(pooledConfig)) {
+            OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager);
+
+            pooledStore.setBackends(Set.of("auth-pooled"), "http://coord-e:8080");
+            assertThat(pooledStore.findBackend("auth-pooled")).hasValue("http://coord-e:8080");
+            assertThat(store.findBackend("auth-pooled")).hasValue("http://coord-e:8080");
+
+            pooledStore.removeBackend("auth-pooled");
+            assertThat(pooledStore.findBackend("auth-pooled")).isEmpty();
+        }
     }
 }
