@@ -55,6 +55,13 @@ You can also disable query history recording to the database by setting
 `queryHistoryEnabled` to `false`. This can be useful in scenarios where you
 want to reduce database load or don't need query history tracking.
 
+To limit the size of each query history record, set
+`queryHistoryMaxQueryTextLength` to the maximum number of characters of query
+text to store. Longer query text is truncated and a
+`-- [truncated by trino-gateway: N of M chars]` comment is appended, so the
+stored value can be slightly longer than the configured limit. By default, the
+full query text is stored.
+
 If `maxPoolSize` is configured and greater than 0, Trino Gateway uses a
 connection pool for data store connections, including Trino Gateway metadata,
 query history, and the pins for
@@ -81,6 +88,7 @@ dataStore:
   queryHistoryHoursRetention: 24
   runMigrationsEnabled: false
   queryHistoryEnabled: true  # Set to false to disable query history recording
+  queryHistoryMaxQueryTextLength: 10000  # Optional: truncate stored query text
   maxPoolSize: 10            # Optional: enables JDBC connection pooling for the data store
   keepaliveTime: 2m          # Optional: interval for checking idle pooled connections
   maxLifetime: 30m           # Optional: maximum lifetime of a pooled connection

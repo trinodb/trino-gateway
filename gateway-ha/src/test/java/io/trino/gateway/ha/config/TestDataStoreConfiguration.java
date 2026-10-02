@@ -30,6 +30,7 @@ final class TestDataStoreConfiguration
         assertThat(dataStoreConfiguration.getPassword()).isNull();
         assertThat(dataStoreConfiguration.getDriver()).isNull();
         assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isTrue();
+        assertThat(dataStoreConfiguration.getQueryHistoryMaxQueryTextLength()).isNull();
         assertThat(dataStoreConfiguration.getMaxPoolSize()).isNull();
         assertThat(dataStoreConfiguration.getKeepaliveTime()).isNull();
         assertThat(dataStoreConfiguration.getMaxLifetime()).isNull();
@@ -54,6 +55,9 @@ final class TestDataStoreConfiguration
 
         dataStoreConfiguration.setQueryHistoryEnabled(false);
         assertThat(dataStoreConfiguration.isQueryHistoryEnabled()).isFalse();
+
+        dataStoreConfiguration.setQueryHistoryMaxQueryTextLength(10000);
+        assertThat(dataStoreConfiguration.getQueryHistoryMaxQueryTextLength()).isEqualTo(10000);
 
         dataStoreConfiguration.setMaxPoolSize(10);
         assertThat(dataStoreConfiguration.getMaxPoolSize()).isEqualTo(10);
