@@ -9,14 +9,14 @@ import {
 import { Login } from './components/login';
 import { RootLayout as Layout } from './components/layout';
 import { hasPagePermission, routers } from './router';
-import { Empty, LocaleProvider } from '@douyinfe/semi-ui';
+import { Empty, LocaleProvider, Spin } from '@douyinfe/semi-ui';
 import { getSemiLang } from './locales';
 import { useAccessStore, useConfigStore } from './store';
 import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
-import Cookies from 'js-cookie';
 import { TimezoneProvider } from "./components/TimezoneContext";
+import { StoreKey } from "./constant";
 
 function App() {
   return (
@@ -38,12 +38,12 @@ function Screen() {
   useSwitchTheme()
   const access = useAccessStore();
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (token) {
-      access.updateToken(token);
-      Cookies.remove('token');
-    }
+    localStorage.removeItem(StoreKey.Access);
+    void useAccessStore.getState().loadUserInfo();
   }, [])
+  if (access.status === "loading") {
+    return <Spin size="large" />;
+  }
   return (
     <>
       {access.isAuthorized() ? (

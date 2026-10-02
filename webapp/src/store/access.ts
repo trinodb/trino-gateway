@@ -1,6 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { StoreKey } from "../constant";
 import { getInfoApi } from "../api/webapp/login";
 
 export enum Role {
@@ -11,6 +9,7 @@ export enum Role {
 
 export interface AccessControlStore {
   token: string;
+  status: "loading" | "authenticated" | "unauthenticated";
 
   userId: string;
   userName: string;
@@ -24,18 +23,17 @@ export interface AccessControlStore {
   roles: string[];
 
   updateToken: (_: string) => void;
+  clearSession: () => void;
   isAuthorized: () => boolean;
-  getUserInfo: (_?: boolean) => void;
+  loadUserInfo: () => Promise<void>;
   hasRole: (role: Role) => boolean;
   hasPermission: (permission: string | undefined) => boolean;
 }
 
-let fetchState: number = 0; // 0 not fetch, 1 fetching, 2 done
-
 export const useAccessStore = create<AccessControlStore>()(
-  persist(
     (set, get) => ({
       token: "",
+      status: "loading",
 
       userId: "",
       userName: "",
@@ -49,27 +47,32 @@ export const useAccessStore = create<AccessControlStore>()(
       roles: [],
 
       updateToken(token: string) {
-        set(() => ({ token: token?.trim() }));
+        set(() => ({ token: token?.trim(), status: "loading" }));
         if (get().token) {
-          get().getUserInfo(true);
+          void get().loadUserInfo();
         }
       },
-      isAuthorized() {
-        get().getUserInfo();
-        return (
-          !!get().token
-        );
+      clearSession() {
+        set(() => ({
+          token: "",
+          status: "unauthenticated",
+          userId: "",
+          userName: "",
+          roles: [],
+          permissions: [],
+        }));
       },
-      getUserInfo(force: boolean = false) {
-        if ((!get().token) || (!force && fetchState > 0)) return;
-        fetchState = 1;
-        getInfoApi().then((data) => {
-          set(() => ({ ...data }));
-        }).catch(() => {
-          // console.error("[Config] failed to fetch config");
-        }).finally(() => {
-          fetchState = 2;
-        });
+      isAuthorized() {
+        return get().status === "authenticated";
+      },
+      async loadUserInfo() {
+        set(() => ({ status: "loading" }));
+        try {
+          const data = await getInfoApi();
+          set(() => ({ ...data, status: "authenticated" }));
+        } catch {
+          get().clearSession();
+        }
       },
       hasRole(role: Role) {
         return get().roles.includes(role);
@@ -79,18 +82,4 @@ export const useAccessStore = create<AccessControlStore>()(
         return permission == undefined || permissions == null || permissions.length == 0 || permissions.includes(permission);
       },
     }),
-    {
-      name: StoreKey.Access,
-      version: 1,
-      migrate(persistedState, version) {
-        const state = persistedState as AccessControlStore;
-
-        if (version < 1) {
-          // merge your old config
-        }
-
-        return state as any;
-      },
-    },
-  ),
 );
