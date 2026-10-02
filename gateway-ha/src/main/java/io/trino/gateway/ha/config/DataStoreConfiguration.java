@@ -23,6 +23,7 @@ public class DataStoreConfiguration
     private String driver;
     private boolean queryHistoryEnabled = true;
     private Integer queryHistoryHoursRetention = 4;
+    private Integer queryHistoryMaxQueryTextLength;
     private boolean runMigrationsEnabled = true;
     // How long an OAuth2 pin is kept before the periodic DB cleanup may prune it. Pins only need to
     // outlive an in-flight handshake (minutes), so an hour is ample. Note this is a lower bound: the
@@ -105,6 +106,16 @@ public class DataStoreConfiguration
     public void setQueryHistoryHoursRetention(Integer queryHistoryHoursRetention)
     {
         this.queryHistoryHoursRetention = queryHistoryHoursRetention;
+    }
+
+    public Integer getQueryHistoryMaxQueryTextLength()
+    {
+        return this.queryHistoryMaxQueryTextLength;
+    }
+
+    public void setQueryHistoryMaxQueryTextLength(Integer queryHistoryMaxQueryTextLength)
+    {
+        this.queryHistoryMaxQueryTextLength = queryHistoryMaxQueryTextLength;
     }
 
     public boolean isRunMigrationsEnabled()
