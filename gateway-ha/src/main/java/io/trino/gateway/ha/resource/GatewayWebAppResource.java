@@ -121,7 +121,8 @@ public class GatewayWebAppResource
     public Response findQueryHistory(QueryHistoryRequest query, @Context SecurityContext securityContext)
     {
         TableData<?> queryHistory;
-        if (!securityContext.isUserInRole("ADMIN")) {
+        boolean isAdmin = securityContext.isUserInRole("ADMIN");
+        if (!isAdmin && !uiConfiguration.isAllowNonAdminToViewAllQueryHistory()) {
             queryHistory = queryHistoryManager.findQueryHistory(new QueryHistoryRequest(
                     query.page(),
                     query.size(),
