@@ -232,7 +232,8 @@ public class LbJwtManager
             // Now verify the token with the correct key
             DecodedJWT verifiedJwt = jwtVerifierLocal.verify(token);
 
-            log.debug("Successfully verified JWT token with key ID: %s, issuer: %s",
+            log.debug(
+                    "Successfully verified JWT token with key ID: %s, issuer: %s",
                     keyId,
                     issuer);
 
