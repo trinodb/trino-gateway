@@ -13,8 +13,10 @@
  */
 package io.trino.gateway.ha.security;
 
+import io.trino.gateway.ha.security.util.AuthenticationException;
+
 public class UserMappingException
-        extends Exception
+        extends AuthenticationException
 {
     public UserMappingException(String message)
     {
