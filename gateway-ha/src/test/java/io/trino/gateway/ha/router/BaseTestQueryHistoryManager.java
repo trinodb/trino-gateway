@@ -34,6 +34,7 @@ import java.util.Optional;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class BaseTestQueryHistoryManager
@@ -105,6 +106,51 @@ abstract class BaseTestQueryHistoryManager
         queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of("other-user"));
         // Only 1 query when user is 'other-user'
         assertThat(queryDetails).hasSize(1);
+    }
+
+    @Test
+    void testSubmitQueryDetailTruncatesQueryText()
+    {
+        DataStoreConfiguration config = new DataStoreConfiguration();
+        config.setJdbcUrl(container.getJdbcUrl());
+        config.setQueryHistoryMaxQueryTextLength(10);
+        QueryHistoryManager truncatingManager = new HaQueryHistoryManager(jdbi, config);
+
+        QueryHistoryManager.QueryDetail longQuery = new QueryHistoryManager.QueryDetail();
+        longQuery.setQueryId("truncation_long");
+        longQuery.setQueryText("select 1234567890");
+        longQuery.setBackendUrl("http://localhost:9999");
+        longQuery.setUser("test@ea.com");
+        longQuery.setCaptureTime(System.currentTimeMillis());
+        truncatingManager.submitQueryDetail(longQuery);
+
+        QueryHistoryManager.QueryDetail shortQuery = new QueryHistoryManager.QueryDetail();
+        shortQuery.setQueryId("truncation_short");
+        shortQuery.setQueryText("select 1");
+        shortQuery.setBackendUrl("http://localhost:9999");
+        shortQuery.setUser("test@ea.com");
+        shortQuery.setCaptureTime(System.currentTimeMillis() + 1);
+        truncatingManager.submitQueryDetail(shortQuery);
+
+        // The submitted detail is not modified, only the persisted text is truncated
+        assertThat(longQuery.getQueryText()).isEqualTo("select 1234567890");
+
+        assertThat(truncatingManager.fetchQueryHistory(Optional.empty()))
+                .extracting(QueryHistoryManager.QueryDetail::getQueryText)
+                .containsExactly(
+                        "select 1",
+                        "select 123\n-- [truncated by trino-gateway: 10 of 17 chars]");
+    }
+
+    @Test
+    void testInvalidMaxQueryTextLength()
+    {
+        DataStoreConfiguration config = new DataStoreConfiguration();
+        config.setJdbcUrl(container.getJdbcUrl());
+        config.setQueryHistoryMaxQueryTextLength(0);
+        assertThatThrownBy(() -> new HaQueryHistoryManager(jdbi, config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("queryHistoryMaxQueryTextLength must be greater than 0");
     }
 
     @Test
