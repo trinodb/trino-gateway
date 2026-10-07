@@ -29,6 +29,8 @@ export function Login() {
         return Locale.Auth.OAuthMethod;
       case 'form':
         return Locale.Auth.FormMethod;
+      case 'jwt':
+        return Locale.Auth.JwtMethod;
       default:
         return type;
     }
@@ -122,6 +124,11 @@ export function Login() {
             <Button theme="solid" className={styles.button} onClick={submitOAuth}>
               {Locale.Auth.OAuth2}
             </Button>
+          </div>
+        )}
+        {loginType == 'jwt' && (
+          <div className={styles.jwt}>
+            <p>{Locale.Auth.JwtRequired}</p>
           </div>
         )}
         {loginType == 'none' && (

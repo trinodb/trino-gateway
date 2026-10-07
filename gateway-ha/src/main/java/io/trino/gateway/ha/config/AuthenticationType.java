@@ -26,7 +26,8 @@ import static java.util.stream.Collectors.joining;
 public enum AuthenticationType
 {
     OAUTH("oauth"),
-    FORM("form");
+    FORM("form"),
+    JWT("jwt");
 
     private final String value;
 
