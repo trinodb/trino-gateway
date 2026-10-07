@@ -51,6 +51,8 @@ const en_US = {
     OAuth2: "Sign in with external authentication",
     OAuthMethod: "External authentication",
     FormMethod: "Username & password",
+    JwtMethod: "JWT authentication",
+    JwtRequired: "JWT authentication is required. Provide a valid token through the configured identity proxy.",
     SelectMethod: "Select an authentication method",
     NoneAuthTip: "Password not allowed",
     LoginSuccess: "Login success",

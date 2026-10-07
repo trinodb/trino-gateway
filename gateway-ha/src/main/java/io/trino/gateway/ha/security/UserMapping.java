@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
 
+// Based on https://github.com/trinodb/trino/blob/2aa8ed4a6be6e9fdf6d6f48c9ab2f3faddbb4adb/core/trino-main/src/main/java/io/trino/server/security/UserMapping.java
 public final class UserMapping
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

@@ -16,10 +16,14 @@ export async function getInfoApi(): Promise<any> {
   return api.post('/userinfo', {})
 }
 
-export async function loginTypeApi(): Promise<any> {
+export async function loginTypeApi(): Promise<string[]> {
   return api.post('/loginType', {})
 }
 
 export async function getUIConfiguration(): Promise<any> {
     return api.get('/webapp/getUIConfiguration')
+}
+
+export async function fetchTokenApi(): Promise<any> {
+  return api.post('/token', {})
 }

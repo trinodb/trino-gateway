@@ -47,8 +47,13 @@ public final class AuthenticationTypeResolver
      */
     public static List<AuthenticationType> resolveChainTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured)
     {
+        return resolveChainTypes(defaultTypes, oauthConfigured, formConfigured, false);
+    }
+
+    public static List<AuthenticationType> resolveChainTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured, boolean jwtConfigured)
+    {
         // Listed-and-configured methods first, in configured order (validated + deduped).
-        LinkedHashSet<AuthenticationType> chainTypes = new LinkedHashSet<>(resolveConfiguredListedTypes(defaultTypes, oauthConfigured, formConfigured, false));
+        LinkedHashSet<AuthenticationType> chainTypes = new LinkedHashSet<>(resolveConfiguredListedTypes(defaultTypes, oauthConfigured, formConfigured, jwtConfigured, false));
 
         // A configured method is always accepted even when defaultType omits it, so the list
         // can only reorder methods, never remove one the gateway can serve. This keeps
@@ -56,6 +61,7 @@ public final class AuthenticationTypeResolver
         // SSO, automation via form/basic) even if defaultType names only one.
         appendConfiguredButUnlisted(chainTypes, AuthenticationType.OAUTH, oauthConfigured);
         appendConfiguredButUnlisted(chainTypes, AuthenticationType.FORM, formConfigured);
+        appendConfiguredButUnlisted(chainTypes, AuthenticationType.JWT, jwtConfigured);
 
         if (chainTypes.isEmpty()) {
             throw new IllegalStateException("No authentication methods configured; configure an authentication.oauth and/or authentication.form block (authentication.defaultType=%s)".formatted(defaultTypes));
@@ -84,11 +90,16 @@ public final class AuthenticationTypeResolver
      */
     public static List<AuthenticationType> resolveEffectiveTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured)
     {
+        return resolveEffectiveTypes(defaultTypes, oauthConfigured, formConfigured, false);
+    }
+
+    public static List<AuthenticationType> resolveEffectiveTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured, boolean jwtConfigured)
+    {
         // The login page prefers the listed-and-configured methods, in configured order; this is
         // what deliberately hides a configured-but-unlisted method from the page (the API still
         // accepts it via resolveChainTypes). resolveConfiguredListedTypes still fails fast on an
         // unknown/misspelled type or a null/empty defaultType.
-        List<AuthenticationType> listedTypes = resolveConfiguredListedTypes(defaultTypes, oauthConfigured, formConfigured, true);
+        List<AuthenticationType> listedTypes = resolveConfiguredListedTypes(defaultTypes, oauthConfigured, formConfigured, jwtConfigured, true);
         if (!listedTypes.isEmpty()) {
             return listedTypes;
         }
@@ -96,12 +107,12 @@ public final class AuthenticationTypeResolver
         // accepted chain so the login page stays usable and the gateway still boots (LoginResource
         // resolves this in its constructor) instead of throwing. resolveChainTypes throws only when
         // nothing at all is configured.
-        List<AuthenticationType> chainTypes = resolveChainTypes(defaultTypes, oauthConfigured, formConfigured);
+        List<AuthenticationType> chainTypes = resolveChainTypes(defaultTypes, oauthConfigured, formConfigured, jwtConfigured);
         log.warn("None of the authentication.defaultType entries %s has a matching configuration block; the login page falls back to the configured methods %s", defaultTypes, chainTypes);
         return chainTypes;
     }
 
-    private static List<AuthenticationType> resolveConfiguredListedTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured, boolean warnOnUnconfigured)
+    private static List<AuthenticationType> resolveConfiguredListedTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured, boolean jwtConfigured, boolean warnOnUnconfigured)
     {
         if (defaultTypes == null || defaultTypes.isEmpty()) {
             throw new IllegalArgumentException("authentication.defaultType must list at least one authentication type");
@@ -112,7 +123,7 @@ public final class AuthenticationTypeResolver
         LinkedHashSet<AuthenticationType> listedTypes = new LinkedHashSet<>();
         for (String rawType : defaultTypes) {
             AuthenticationType authType = AuthenticationType.fromValue(rawType);
-            if (isConfigured(authType, oauthConfigured, formConfigured)) {
+            if (isConfigured(authType, oauthConfigured, formConfigured, jwtConfigured)) {
                 listedTypes.add(authType);
             }
             else if (warnOnUnconfigured) {
@@ -129,11 +140,12 @@ public final class AuthenticationTypeResolver
         }
     }
 
-    private static boolean isConfigured(AuthenticationType type, boolean oauthConfigured, boolean formConfigured)
+    private static boolean isConfigured(AuthenticationType type, boolean oauthConfigured, boolean formConfigured, boolean jwtConfigured)
     {
         return switch (type) {
             case OAUTH -> oauthConfigured;
             case FORM -> formConfigured;
+            case JWT -> jwtConfigured;
         };
     }
 }
