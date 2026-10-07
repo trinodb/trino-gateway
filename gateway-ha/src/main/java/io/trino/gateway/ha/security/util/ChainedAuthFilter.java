@@ -25,6 +25,8 @@ import io.trino.gateway.ha.security.FormAuthenticator;
 import io.trino.gateway.ha.security.LbAuthenticator;
 import io.trino.gateway.ha.security.LbFilter;
 import io.trino.gateway.ha.security.LbFormAuthManager;
+import io.trino.gateway.ha.security.LbJwtAuthenticator;
+import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbUnauthorizedHandler;
 import jakarta.annotation.Nullable;
@@ -51,6 +53,7 @@ public class ChainedAuthFilter
     public ChainedAuthFilter(
             @Nullable LbOAuthManager oauthManager,
             @Nullable LbFormAuthManager formAuthManager,
+            @Nullable LbJwtManager jwtManager,
             AuthorizationManager authorizationManager,
             HaGatewayConfiguration config,
             Authorizer authorizer)
@@ -62,7 +65,8 @@ public class ChainedAuthFilter
         List<AuthenticationType> authMethods = AuthenticationTypeResolver.resolveChainTypes(
                 config.getAuthentication().getDefaultType(),
                 oauthManager != null,
-                formAuthManager != null);
+                formAuthManager != null,
+                jwtManager != null);
         log.info("Authentication chain accepts these methods, in fallback order: %s", authMethods);
         for (AuthenticationType authMethod : authMethods) {
             switch (authMethod) {
@@ -83,6 +87,11 @@ public class ChainedAuthFilter
                             authorizer,
                             new LbUnauthorizedHandler(AuthenticationType.FORM)));
                 }
+                case JWT -> authFilters.add(new LbFilter(
+                        new LbJwtAuthenticator(requireNonNull(jwtManager), authorizationManager),
+                        authorizer,
+                        "Bearer",
+                        new LbUnauthorizedHandler(AuthenticationType.JWT)));
             }
         }
         this.filters = authFilters.build();

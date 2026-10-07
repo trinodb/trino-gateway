@@ -34,13 +34,15 @@ public class AuthenticationConfiguration
     private List<String> defaultType;
     private OAuthConfiguration oauth;
     private FormAuthConfiguration form;
+    private JwtConfiguration jwt;
     private boolean showFirstTypeOnly;
 
-    public AuthenticationConfiguration(List<String> defaultType, OAuthConfiguration oauth, FormAuthConfiguration form)
+    public AuthenticationConfiguration(List<String> defaultType, OAuthConfiguration oauth, FormAuthConfiguration form, JwtConfiguration jwt)
     {
         this.defaultType = defaultType;
         this.oauth = oauth;
         this.form = form;
+        this.jwt = jwt;
     }
 
     public AuthenticationConfiguration() {}
@@ -73,6 +75,16 @@ public class AuthenticationConfiguration
     public void setForm(FormAuthConfiguration form)
     {
         this.form = form;
+    }
+
+    public JwtConfiguration getJwt()
+    {
+        return this.jwt;
+    }
+
+    public void setJwt(JwtConfiguration jwt)
+    {
+        this.jwt = jwt;
     }
 
     /**
