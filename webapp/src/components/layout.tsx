@@ -4,7 +4,7 @@ import styles from './layout.module.scss';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { hasPagePermission, routers, routersMapper } from '../router';
-import { Theme, useAccessStore, useConfigStore } from '../store';
+import { Theme, useAccessStore, useConfigStore, useUIConfigurationStore } from '../store';
 import { getUIConfiguration, logoutApi } from '../api/webapp/login';
 import Locale from "../locales";
 import { TimezoneDropdown } from "./TimezoneContext";
@@ -14,23 +14,23 @@ export const RootLayout = (props: {
 }) => {
   const access = useAccessStore();
   const config = useConfigStore();
+  const updateUIConfiguration = useUIConfigurationStore((state) => state.update);
+  const disabledPages = useUIConfigurationStore((state) => state.disabledPages);
   const location = useLocation();
   const { Header, Sider, Content } = Layout;
   const [collapsed, setCollapsed] = useState(false);
   const [selectedKey, setSelectedKey] = useState(location.pathname.substring(location.pathname.lastIndexOf('/') + 1));
   const [userProfile, setUserProfile] = useState(false);
-  const [disabledPages, setDisabledPages] = useState<string[]>(['']);
   const [filteredRouters, setFilteredRouters] = useState(routers);
 
   useEffect(() => {
       getUIConfiguration().then((res) => {
-          if (Object.keys(res).length == 0) {
-              setDisabledPages(res)
-          } else {
-              setDisabledPages(res.disablePages)
-          }
+          updateUIConfiguration({
+            disabledPages: Array.isArray(res?.disablePages) ? res.disablePages : [],
+            allowNonAdminToViewAllQueryHistory: !!res?.allowNonAdminToViewAllQueryHistory,
+          });
       })
-  }, []);
+  }, [updateUIConfiguration]);
 
     useEffect(() => {
         const routerFilters = disabledPages.length > 0 ?
