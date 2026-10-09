@@ -21,33 +21,38 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaGatewayManager
 {
-    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
-    private final Jdbi jdbi = createTestingJdbcConnectionManager(dataStoreConfig(postgres)).getJdbi();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
-    @AfterAll
-    public final void close()
+    private Jdbi jdbi;
+
+    @BeforeAll
+    void setUp()
     {
-        postgres.close();
+        jdbi = createTestingJdbcConnectionManager(dataStoreConfig(POSTGRESQL)).getJdbi();
     }
 
     @BeforeEach
@@ -136,8 +141,9 @@ final class TestHaGatewayManager
     void testGatewayManagerCacheExpire()
     {
         // This test stops the database, so it needs a container of its own
-        PostgreSQLContainer postgres = createTestingPostgresContainer();
-        DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
+        PostgreSQLContainer dedicatedPostgres = createPostgreSqlContainer();
+        dedicatedPostgres.start();
+        DataStoreConfiguration dataStoreConfig = dataStoreConfig(dedicatedPostgres);
         JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
         DatabaseCacheConfiguration cacheConfiguration = new DatabaseCacheConfiguration();
         cacheConfiguration.setEnabled(true);
@@ -158,7 +164,7 @@ final class TestHaGatewayManager
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Test read from cache when DB is not available
-        postgres.stop();
+        dedicatedPostgres.stop();
         assertThat(haGatewayManager.getBackendByName("new-etl1").map(ProxyBackendConfiguration::getProxyTo)).hasValue("https://etl1.trino.gateway.io:443");
 
         // Failed to refresh from DB, but still read from cache

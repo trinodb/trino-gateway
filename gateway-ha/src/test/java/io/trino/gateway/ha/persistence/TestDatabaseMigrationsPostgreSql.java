@@ -14,15 +14,20 @@
 package io.trino.gateway.ha.persistence;
 
 import org.jdbi.v3.core.Handle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 
 final class TestDatabaseMigrationsPostgreSql
         extends BaseTestDatabaseMigrations
 {
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
     public TestDatabaseMigrationsPostgreSql()
     {
-        super(createPostgreSqlContainer(), "public");
+        super(POSTGRESQL, "public");
     }
 
     @Override

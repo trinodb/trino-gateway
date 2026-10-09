@@ -16,12 +16,13 @@ package io.trino.gateway.ha.persistence;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
+@Testcontainers
 @TestInstance(PER_CLASS)
 @Execution(SAME_THREAD)
 @Isolated
@@ -39,20 +41,18 @@ public abstract class BaseTestDatabaseMigrations
 
     private final JdbcDatabaseContainer<?> container;
     protected final String schema;
-    protected final Jdbi jdbi;
+    protected Jdbi jdbi;
 
     public BaseTestDatabaseMigrations(JdbcDatabaseContainer<?> container, String schema)
     {
         this.container = requireNonNull(container, "container is null");
-        this.container.start();
         this.schema = requireNonNull(schema, "schema is null");
-        jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
     }
 
-    @AfterAll
-    public final void close()
+    @BeforeAll
+    public final void setUpJdbi()
     {
-        container.close();
+        jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
     }
 
     @Test
