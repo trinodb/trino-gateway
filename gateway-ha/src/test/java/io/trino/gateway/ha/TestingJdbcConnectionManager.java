@@ -14,10 +14,8 @@
 package io.trino.gateway.ha;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
-import io.trino.gateway.ha.module.HaGatewayProviderModule;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.jdbi.v3.core.Jdbi;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
@@ -51,7 +49,6 @@ public final class TestingJdbcConnectionManager
 
     public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)
     {
-        Jdbi jdbi = HaGatewayProviderModule.createJdbi(config);
-        return new JdbcConnectionManager(jdbi, config);
+        return new JdbcConnectionManager(config);
     }
 }

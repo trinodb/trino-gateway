@@ -46,11 +46,18 @@ public class JdbcConnectionManager
     private HikariDataSource dataSource;
 
     @Inject
-    public JdbcConnectionManager(Jdbi jdbi, DataStoreConfiguration configuration)
+    public JdbcConnectionManager(DataStoreConfiguration configuration)
     {
-        this.jdbi = requireNonNull(jdbi, "jdbi is null");
         this.configuration = requireNonNull(configuration, "configuration is null");
+        this.jdbi = createJdbi(configuration);
         cleanupTask = startCleanUps();
+    }
+
+    private static Jdbi createJdbi(DataStoreConfiguration configuration)
+    {
+        return Jdbi.create(configuration.getJdbcUrl(), configuration.getUser(), configuration.getPassword())
+                .installPlugin(new SqlObjectPlugin())
+                .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
     public Jdbi getJdbi()

@@ -36,14 +36,12 @@ import io.trino.gateway.ha.clustermonitor.TrinoClusterStatsObserver;
 import io.trino.gateway.ha.config.AuthenticationConfiguration;
 import io.trino.gateway.ha.config.AuthorizationConfiguration;
 import io.trino.gateway.ha.config.ClusterStatsConfiguration;
-import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import io.trino.gateway.ha.persistence.RecordAndAnnotatedConstructorMapper;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
@@ -65,7 +63,6 @@ import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
@@ -122,12 +119,9 @@ public class HaGatewayProviderModule
 
     @Singleton
     @Provides
-    public static Jdbi createJdbi(DataStoreConfiguration config)
+    public static Jdbi getJdbi(JdbcConnectionManager connectionManager)
     {
-        Jdbi jdbi = Jdbi.create(config.getJdbcUrl(), config.getUser(), config.getPassword());
-        jdbi.installPlugin(new SqlObjectPlugin());
-        jdbi.registerRowMapper(new RecordAndAnnotatedConstructorMapper());
-        return jdbi;
+        return connectionManager.getJdbi();
     }
 
     @Provides

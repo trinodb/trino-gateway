@@ -115,7 +115,7 @@ final class TestJdbcConnectionManagerPool
                 )
                 """));
 
-        QueryHistoryManager queryHistoryManager = new HaQueryHistoryManager(connectionManager, configuration);
+        QueryHistoryManager queryHistoryManager = new HaQueryHistoryManager(connectionManager.getJdbi(), configuration);
         try (ExecutorService executorService = Executors.newSingleThreadExecutor();
                 Handle heldHandle = jdbi.open()) {
             Future<List<QueryHistoryManager.QueryDetail>> queryHistory = executorService.submit(() -> queryHistoryManager.fetchQueryHistory(Optional.empty()));
@@ -152,7 +152,7 @@ final class TestJdbcConnectionManagerPool
         try (ExecutorService executorService = Executors.newSingleThreadExecutor();
                 Handle heldHandle = jdbi.open()) {
             Future<HaGatewayManager> gatewayManager = executorService.submit(() -> new HaGatewayManager(
-                    connectionManager,
+                    connectionManager.getJdbi(),
                     new RoutingConfiguration(),
                     new DatabaseCacheConfiguration()));
 
@@ -292,8 +292,6 @@ final class TestJdbcConnectionManagerPool
 
     private static JdbcConnectionManager createConnectionManager(DataStoreConfiguration configuration)
     {
-        return new JdbcConnectionManager(
-                Jdbi.create(configuration.getJdbcUrl(), configuration.getUser(), configuration.getPassword()),
-                configuration);
+        return new JdbcConnectionManager(configuration);
     }
 }

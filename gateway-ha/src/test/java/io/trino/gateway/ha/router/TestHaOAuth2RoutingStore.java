@@ -101,4 +101,21 @@ final class TestHaOAuth2RoutingStore
         store.removeBackend("auth-poll");
         store.removeBackend("auth-hash");
     }
+
+    @Test
+    void testPinsWithConnectionPool()
+    {
+        DataStoreConfiguration pooledConfig = dataStoreConfig(postgres);
+        pooledConfig.setMaxPoolSize(2);
+        try (JdbcConnectionManager pooledConnectionManager = createTestingJdbcConnectionManager(pooledConfig)) {
+            OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager.getJdbi());
+
+            pooledStore.setBackends(Set.of("auth-pooled"), "http://coord-e:8080");
+            assertThat(pooledStore.findBackend("auth-pooled")).hasValue("http://coord-e:8080");
+            assertThat(store.findBackend("auth-pooled")).hasValue("http://coord-e:8080");
+
+            pooledStore.removeBackend("auth-pooled");
+            assertThat(pooledStore.findBackend("auth-pooled")).isEmpty();
+        }
+    }
 }
