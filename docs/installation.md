@@ -653,6 +653,67 @@ supported for legacy reasons and may be deprecated in the future. It is only
 supported for backend clusters with `web-ui.authentication.type=FORM`. Set
 a username and password using `backendState` as with the `JDBC` option.
 
+#### PING
+
+This is a lightweight liveness check for backends that speak the Trino client
+protocol but do not implement the endpoints used by the other monitors, such
+as `v1/info` or `ui/api/stats`. The monitor sends a plain `GET` request to
+`pingPath` on each backend, and marks the backend healthy on a `200` response
+and unhealthy otherwise. Responses with status `502`, `503`, or `504` are
+retried up to `retries` times.
+
+The check does not open a session or run a query, so it does not create idle
+sessions on the backend, and it does not require the `backendState` section.
+It does not report running or queued query counts, so it cannot be used with
+the `QueryCountBasedRouter`.
+
+```yaml
+clusterStatsConfiguration:
+  monitorType: PING
+
+monitor:
+  pingPath: /v1/ping
+  retries: 1
+```
+
+`pingPath` is optional and defaults to `/v1/ping`.
+
+##### Use with Apache Kyuubi
+
+[Apache Kyuubi](https://kyuubi.apache.org/) can expose a Trino frontend that
+accepts requests from Trino clients and delegates the queries to an engine
+such as Spark, Flink, Hive, or Trino. The Kyuubi Trino frontend implements the
+statement endpoints used for query submission, polling, and cancellation, but
+not the endpoints that the `INFO_API`, `UI_API`, and `JDBC` monitors rely on.
+With those monitor types a Kyuubi backend is always marked unhealthy and never
+receives queries. Use `PING` to add Kyuubi as a backend next to Trino clusters:
+
+```text
+Trino client -> Trino Gateway -> Kyuubi (Trino frontend) -> Spark, Flink, ...
+                              \-> Trino cluster
+```
+
+Register the Kyuubi Trino frontend address, for example
+`http://kyuubi.example.com:10999`, as the `proxyTo` URL of the backend, and
+place it in its own routing group so that routing rules can choose between
+Kyuubi and Trino backends.
+
+Keep the following behavior in mind:
+
+- A healthy `PING` result only means that the Kyuubi frontend is up. Kyuubi
+  launches an engine when a session for that engine type is opened, so an
+  engine that cannot start, for example because of missing engine
+  configuration, still passes the health check.
+- Kyuubi selects the engine per session through `kyuubi.engine.type`, not per
+  statement. To send different statements to different engines, for example
+  `INSERT` to Spark and `SELECT` to Trino, route them to different backends
+  with [routing rules](routing-rules.md) before the session is opened.
+- Queries for engines other than Trino may use SQL syntax that the Trino
+  parser rejects. Leave `requestAnalyzerConfig.analyzeRequest` disabled for
+  this traffic, and use an
+  [external routing service](routing-rules.md#use-an-external-service-for-routing-rules)
+  if routing decisions depend on the SQL text.
+
 #### NOOP
 
 This option disables health checks.
