@@ -21,6 +21,7 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
 import io.trino.gateway.ha.router.GatewayCookie;
+import io.trino.gateway.ha.router.NoHealthyBackendException;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -29,6 +30,7 @@ import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,6 +53,7 @@ public class RoutingTargetHandler
     private final OAuth2RoutingStore oauth2RoutingStore;
     private final RoutingGroupSelector routingGroupSelector;
     private final String defaultRoutingGroup;
+    private final boolean unmatchedRequestFallbackEnabled;
     private final List<String> statementPaths;
     private final boolean requestAnalyserClientsUseV2Format;
     private final int requestAnalyserMaxBodySize;
@@ -68,6 +71,7 @@ public class RoutingTargetHandler
         this.oauth2RoutingStore = requireNonNull(oauth2RoutingStore);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
+        this.unmatchedRequestFallbackEnabled = haGatewayConfiguration.getRouting().isUnmatchedRequestFallbackEnabled();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
         requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
         requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
@@ -99,11 +103,26 @@ public class RoutingTargetHandler
         RoutingSelectorResponse routingDestination = routingGroupSelector.findRoutingDestination(request);
         String user = request.getHeader(USER_HEADER);
 
-        // This falls back on default routing group backend if there is no cluster found for the routing group.
-        String routingGroup = !isNullOrEmpty(routingDestination.routingGroup())
-                ? routingDestination.routingGroup()
-                : defaultRoutingGroup;
-        ProxyBackendConfiguration backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
+        String routingGroup = routingDestination.routingGroup();
+        if (isNullOrEmpty(routingGroup)) {
+            if (!unmatchedRequestFallbackEnabled) {
+                log.warn("Rejecting request [%s]: it matched no routing rule or routing group header", request.getRequestURI());
+                throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Request did not resolve to a routing group and fallback to the default routing group is disabled")
+                        .build());
+            }
+            routingGroup = defaultRoutingGroup;
+        }
+        ProxyBackendConfiguration backendConfiguration;
+        try {
+            backendConfiguration = routingManager.provideBackendConfiguration(routingGroup, user);
+        }
+        catch (NoHealthyBackendException e) {
+            log.warn("Rejecting request for routing group [%s]: %s", routingGroup, e.getMessage());
+            throw new WebApplicationException(Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(e.getMessage())
+                    .build());
+        }
         String clusterHost = backendConfiguration.getProxyTo();
         String externalUrl = backendConfiguration.getExternalUrl();
         // Apply headers from RoutingDestination if there are any

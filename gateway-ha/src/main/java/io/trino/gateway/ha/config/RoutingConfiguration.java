@@ -25,6 +25,14 @@ public class RoutingConfiguration
 
     private String defaultRoutingGroup = "adhoc";
 
+    // On (default): a request matching no routing rule or header goes to the default routing group.
+    // Off: it is rejected, so every request must be explicitly routed.
+    private boolean unmatchedRequestFallbackEnabled = true;
+
+    // On (default): a routing group with no healthy backend falls back to the default routing group.
+    // Off: the request is rejected, so it never lands on a backend outside the group it asked for.
+    private boolean unavailableGroupFallbackEnabled = true;
+
     // Off (default, opt-in dark launch): when on, the gateway pins every request of a Trino
     // OAuth2 token-exchange handshake (the driver's /oauth2/token/{authId} poll loop and the
     // browser's /oauth2/token/initiate/{authIdHash} redirect) to the coordinator that minted the
@@ -61,6 +69,26 @@ public class RoutingConfiguration
     public void setDefaultRoutingGroup(String defaultRoutingGroup)
     {
         this.defaultRoutingGroup = defaultRoutingGroup;
+    }
+
+    public boolean isUnmatchedRequestFallbackEnabled()
+    {
+        return unmatchedRequestFallbackEnabled;
+    }
+
+    public void setUnmatchedRequestFallbackEnabled(boolean unmatchedRequestFallbackEnabled)
+    {
+        this.unmatchedRequestFallbackEnabled = unmatchedRequestFallbackEnabled;
+    }
+
+    public boolean isUnavailableGroupFallbackEnabled()
+    {
+        return unavailableGroupFallbackEnabled;
+    }
+
+    public void setUnavailableGroupFallbackEnabled(boolean unavailableGroupFallbackEnabled)
+    {
+        this.unavailableGroupFallbackEnabled = unavailableGroupFallbackEnabled;
     }
 
     public boolean isOauth2RoutingEnabled()

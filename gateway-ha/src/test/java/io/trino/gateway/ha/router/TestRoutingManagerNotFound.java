@@ -56,9 +56,8 @@ final class TestRoutingManagerNotFound
     @Test
     void testNonExistentRoutingGroupThrowsNotFoundException()
     {
-        // When requesting a non-existent routing group, an IllegalStateException should be thrown
         assertThatThrownBy(() -> routingManager.provideBackendConfiguration("non_existent_group", "user"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Number of active backends found zero");
+                .isInstanceOf(NoHealthyBackendException.class)
+                .hasMessage("No healthy backend found for default routing group [default]");
     }
 }

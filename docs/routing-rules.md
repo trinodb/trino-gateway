@@ -12,6 +12,26 @@ routing:
     defaultRoutingGroup: "test-group"
 ```
 
+Trino Gateway sends a request to the `defaultRoutingGroup` in two cases, each
+controlled by its own setting:
+
+* `unmatchedRequestFallbackEnabled`: the request matches no routing rule or
+  routing group header. When set to `false`, such a request is rejected with
+  HTTP 400, so every request must be explicitly routed.
+* `unavailableGroupFallbackEnabled`: the request's routing group has no healthy
+  backend, including a group with no backends configured. When set to `false`,
+  such a request is rejected with HTTP 503 instead of running on a backend
+  outside the group it asked for.
+
+Both default to `true`. For example, to keep sending unmatched requests to the
+default group while never letting a request for a specific group spill over
+into it:
+
+```yaml
+routing:
+    unavailableGroupFallbackEnabled: false
+```
+
 The routing rules engine feature enables you to either write custom logic to
 route requests based on the request info such as any of the [request
 headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers),
