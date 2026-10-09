@@ -15,6 +15,7 @@ import { useAccessStore, useConfigStore } from './store';
 import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
+import { fetchTokenApi, loginTypeApi } from './api/webapp/login';
 import Cookies from 'js-cookie';
 import { TimezoneProvider } from "./components/TimezoneContext";
 
@@ -37,13 +38,43 @@ function App() {
 function Screen() {
   useSwitchTheme()
   const access = useAccessStore();
+  const updateToken = useAccessStore(state => state.updateToken);
   useEffect(() => {
-    const token = Cookies.get('token');
-    if (token) {
-      access.updateToken(token);
-      Cookies.remove('token');
+    // Prevent multiple initialization runs
+    if (useAccessStore.getState().token) {
+      return;
     }
-  }, [])
+
+    // Conditionally use JWT server API or cookie based on authentication type
+    const initializeToken = async () => {
+      try {
+        const authType = await loginTypeApi();
+
+        if (authType === 'jwt') {
+          // Use server API to get JWT token
+          const token = await fetchTokenApi();
+
+          if (token) {
+            updateToken(token);
+          } else {
+            console.log('🔍 No token received from server');
+          }
+        } else {
+          // Use cookie-based token retrieval (existing logic)
+          const token = Cookies.get('token');
+
+          if (token) {
+            updateToken(token);
+            Cookies.remove('token');
+          }
+        }
+      } catch (error) {
+        console.error('🔍 Error during token initialization:', error);
+      }
+    };
+
+    initializeToken();
+  }, [updateToken]);
   return (
     <>
       {access.isAuthorized() ? (
