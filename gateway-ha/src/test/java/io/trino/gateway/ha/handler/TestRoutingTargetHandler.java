@@ -22,10 +22,12 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.NoHealthyBackendException;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
+import io.trino.gateway.proxyserver.MultiReadHttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
@@ -45,6 +47,8 @@ import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -338,6 +342,91 @@ class TestRoutingTargetHandler
 
         RoutingTargetResponse response = handler.resolveRouting(uiRequest);
         assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+    }
+
+    @Test
+    void testUnmatchedRequestRejectedWhenUnmatchedFallbackDisabled()
+    {
+        HaGatewayConfiguration gatewayConfig = provideGatewayConfiguration();
+        gatewayConfig.getRouting().setUnmatchedRequestFallbackEnabled(false);
+        RoutingTargetHandler handler = createHandler(gatewayConfig);
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse(null, List.of(), ImmutableMap.of()));
+
+        assertThatThrownBy(() -> handler.resolveRouting(prepareStatementSubmission()))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(400));
+        verify(routingManager, never()).provideBackendConfiguration(any(), any());
+    }
+
+    @Test
+    void testUnmatchedNonQueryRequestRoutedWhenUnmatchedFallbackDisabled()
+    {
+        HaGatewayConfiguration gatewayConfig = provideGatewayConfiguration();
+        gatewayConfig.getRouting().setUnmatchedRequestFallbackEnabled(false);
+        RoutingTargetHandler handler = createHandler(gatewayConfig);
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse(null, List.of(), ImmutableMap.of()));
+
+        for (String path : List.of("/ui/", "/oauth2/callback", "/v1/info")) {
+            HttpServletRequest nonQueryRequest = Mockito.mock(HttpServletRequest.class);
+            when(nonQueryRequest.getMethod()).thenReturn(HttpMethod.GET);
+            when(nonQueryRequest.getRequestURI()).thenReturn(path);
+
+            RoutingTargetResponse result = handler.resolveRouting(nonQueryRequest);
+
+            assertThat(result.routingDestination().routingGroup()).as(path).isEqualTo("default-group");
+        }
+    }
+
+    @Test
+    void testMatchedRequestRoutedWhenUnmatchedFallbackDisabled()
+    {
+        HaGatewayConfiguration gatewayConfig = provideGatewayConfiguration();
+        gatewayConfig.getRouting().setUnmatchedRequestFallbackEnabled(false);
+        RoutingTargetHandler handler = createHandler(gatewayConfig);
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse("test-group", List.of(), ImmutableMap.of()));
+
+        RoutingTargetResponse result = handler.resolveRouting(request);
+
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("test-group");
+    }
+
+    @Test
+    void testUnmatchedRequestUsesDefaultGroupWhenOnlyUnavailableGroupFallbackDisabled()
+    {
+        HaGatewayConfiguration gatewayConfig = provideGatewayConfiguration();
+        gatewayConfig.getRouting().setUnavailableGroupFallbackEnabled(false);
+        RoutingTargetHandler handler = createHandler(gatewayConfig);
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse(null, List.of(), ImmutableMap.of()));
+
+        RoutingTargetResponse result = handler.resolveRouting(request);
+
+        assertThat(result.routingDestination().routingGroup()).isEqualTo("default-group");
+    }
+
+    @Test
+    void testNoHealthyBackendReturnsServiceUnavailable()
+    {
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse("test-group", List.of(), ImmutableMap.of()));
+        when(routingManager.provideBackendConfiguration(any(), any())).thenThrow(new NoHealthyBackendException("No healthy backend"));
+
+        assertThatThrownBy(() -> handler.resolveRouting(request))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(503));
+    }
+
+    private static HttpServletRequest prepareStatementSubmission()
+    {
+        HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
+        when(mockRequest.getRequestURI()).thenReturn("/v1/statement");
+        return new MultiReadHttpServletRequest(mockRequest, "SELECT 1");
+    }
+
+    private RoutingTargetHandler createHandler(HaGatewayConfiguration gatewayConfig)
+    {
+        return new RoutingTargetHandler(
+                routingManager,
+                Mockito.mock(OAuth2RoutingStore.class),
+                RoutingGroupSelector.byRoutingExternal(httpClient, gatewayConfig.getRoutingRules().getRulesExternalConfiguration(), gatewayConfig.getRequestAnalyzerConfig()),
+                gatewayConfig);
     }
 
     private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()

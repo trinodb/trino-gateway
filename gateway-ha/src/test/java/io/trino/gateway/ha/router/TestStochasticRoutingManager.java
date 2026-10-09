@@ -30,6 +30,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
@@ -82,6 +83,59 @@ final class TestStochasticRoutingManager
 
         assertThat(haRoutingManager.provideBackendConfiguration(groupName, "").getProxyTo())
                 .isEqualTo("test_group0.trino.example.com");
+    }
+
+    @Test
+    void testUnavailableGroupFallbackDisabledRejectsGroupWithoutBackends()
+    {
+        RoutingConfiguration noFallbackConfig = new RoutingConfiguration();
+        noFallbackConfig.setUnavailableGroupFallbackEnabled(false);
+        RoutingManager noFallbackRoutingManager = new StochasticRoutingManager(backendManager, historyManager, noFallbackConfig);
+
+        assertThatThrownBy(() -> noFallbackRoutingManager.provideBackendConfiguration("no_backends_configured_for_this_group", ""))
+                .isInstanceOf(NoHealthyBackendException.class);
+    }
+
+    @Test
+    void testUnavailableGroupFallbackDisabledStillServesHealthyGroup()
+    {
+        String groupName = "fallback_disabled_but_healthy_group";
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setActive(true);
+        backend.setRoutingGroup(groupName);
+        backend.setName(groupName + "-backend");
+        backend.setProxyTo(groupName + ".trino.example.com");
+        backend.setExternalUrl("trino.example.com");
+        backendManager.addBackend(backend);
+
+        RoutingConfiguration noFallbackConfig = new RoutingConfiguration();
+        noFallbackConfig.setUnavailableGroupFallbackEnabled(false);
+        RoutingManager noFallbackRoutingManager = new StochasticRoutingManager(backendManager, historyManager, noFallbackConfig);
+        // Health is tracked per RoutingManager instance, so it must be set on the instance under test.
+        noFallbackRoutingManager.updateBackEndHealth(backend.getName(), TrinoStatus.HEALTHY);
+
+        assertThat(noFallbackRoutingManager.provideBackendConfiguration(groupName, "").getProxyTo())
+                .isEqualTo(groupName + ".trino.example.com");
+    }
+
+    @Test
+    void testUnavailableGroupFallbackDisabledWithUnhealthyDefaultGroup()
+    {
+        RoutingConfiguration noFallbackConfig = new RoutingConfiguration();
+        noFallbackConfig.setUnavailableGroupFallbackEnabled(false);
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setActive(true);
+        backend.setRoutingGroup(noFallbackConfig.getDefaultRoutingGroup());
+        backend.setName("default-group-unhealthy-backend");
+        backend.setProxyTo("default-group-unhealthy-backend.trino.example.com");
+        backend.setExternalUrl("trino.example.com");
+        backendManager.addBackend(backend);
+        RoutingManager noFallbackRoutingManager = new StochasticRoutingManager(backendManager, historyManager, noFallbackConfig);
+        noFallbackRoutingManager.updateBackEndHealth(backend.getName(), TrinoStatus.UNHEALTHY);
+
+        assertThatThrownBy(() -> noFallbackRoutingManager.provideBackendConfiguration(noFallbackConfig.getDefaultRoutingGroup(), ""))
+                .isInstanceOf(NoHealthyBackendException.class)
+                .hasMessage("No healthy backend found for default routing group [adhoc]");
     }
 
     @Test
