@@ -56,10 +56,9 @@ You can also disable query history recording to the database by setting
 want to reduce database load or don't need query history tracking.
 
 If `maxPoolSize` is configured and greater than 0, Trino Gateway uses a
-connection pool for data store connections, including gateway metadata and
-query history. The pins for
-[OAuth2 token-exchange routing](#configure-oauth2-token-exchange-routing) do not
-use the pool yet, and still open a new JDBC connection for each request.
+connection pool for data store connections, including Trino Gateway metadata,
+query history, and the pins for
+[OAuth2 token-exchange routing](#configure-oauth2-token-exchange-routing).
 If `maxPoolSize` is not configured, Trino Gateway creates a new JDBC connection
 per request.
 A value of `10` is a reasonable starting point for many deployments, but the
