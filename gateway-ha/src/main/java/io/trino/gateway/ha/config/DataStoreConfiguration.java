@@ -33,7 +33,15 @@ public class DataStoreConfiguration
     private Duration keepaliveTime;
     private Duration maxLifetime;
 
-    public DataStoreConfiguration(String jdbcUrl, String user, String password, String driver, boolean queryHistoryEnabled, Integer queryHistoryHoursRetention, boolean runMigrationsEnabled, Integer maxPoolSize)
+    public DataStoreConfiguration(
+            String jdbcUrl,
+            String user,
+            String password,
+            String driver,
+            boolean queryHistoryEnabled,
+            Integer queryHistoryHoursRetention,
+            boolean runMigrationsEnabled,
+            Integer maxPoolSize)
     {
         this.jdbcUrl = jdbcUrl;
         this.user = user;
