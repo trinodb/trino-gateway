@@ -284,7 +284,6 @@ public abstract class BaseRoutingManager
                     ProbeResult result = probe.get();
                     if (result.queryFound()) {
                         log.info("Found query [%s] on backend [%s]", queryId, result.backend());
-                        setBackendForQueryId(queryId, result.backend());
                         return result.backend();
                     }
                 }
@@ -299,7 +298,7 @@ public abstract class BaseRoutingManager
             log.warn("Interrupted while searching backends for query [%s]", queryId);
         }
         catch (Exception e) {
-            log.warn("Query id [%s] not found", queryId);
+            log.warn(e, "Failed to search backends for query [%s]", queryId);
         }
         finally {
             // Nothing reads the remaining probes. This drops the ones still queued; a probe that is already

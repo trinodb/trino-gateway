@@ -32,6 +32,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
@@ -46,6 +47,7 @@ final class TestRoutingManagerSearchAllBackends
     private HttpServer queryOwner;
     private HttpServer otherBackend;
     private final List<HttpServer> hungBackends = new ArrayList<>();
+    private final CountDownLatch releaseHungBackends = new CountDownLatch(1);
     private BaseRoutingManager routingManager;
     private PostgreSQLContainer postgres;
     private String queryOwnerUrl;
@@ -58,16 +60,16 @@ final class TestRoutingManagerSearchAllBackends
         // The backend that actually knows the query answers 200. It responds with a small delay,
         // which is what a real cluster does and what makes the outcome independent of whether the
         // probe happens to have finished by the time its result is inspected.
-        queryOwner = startBackend(200, 150);
+        queryOwner = startBackend(200, 150, null);
         // Any other backend does not know the query.
-        otherBackend = startBackend(404, 0);
+        otherBackend = startBackend(404, 0, null);
         queryOwnerUrl = urlOf(queryOwner);
         otherBackendUrl = urlOf(otherBackend);
-        // Backends that accept the request but do not answer within the search budget. The results are read
-        // in the order the probes finish, so the query owner has to be found while these are still
+        // Backends that accept the request but do not answer until the test releases them. The results are
+        // read in the order the probes finish, so the query owner has to be found while these are still
         // outstanding. Reading the results in submission order would spend the shared deadline waiting on them.
         for (int i = 0; i < 4; i++) {
-            hungBackends.add(startBackend(404, 6_000));
+            hungBackends.add(startBackend(404, 0, releaseHungBackends));
         }
 
         postgres = createTestingPostgresContainer();
@@ -93,6 +95,8 @@ final class TestRoutingManagerSearchAllBackends
     @AfterAll
     void tearDown()
     {
+        // The handlers of the hung backends run on the dispatcher thread of their server, and stop() waits for it
+        releaseHungBackends.countDown();
         if (routingManager != null) {
             routingManager.shutdown();
         }
@@ -111,22 +115,26 @@ final class TestRoutingManagerSearchAllBackends
     @Test
     void testFindsBackendThatOwnsTheQuery()
     {
-        assertThat(routingManager.findBackendForUnknownQueryId(QUERY_ID))
+        // Goes through the cache, as production lookups do
+        assertThat(routingManager.findBackendForQueryId(QUERY_ID))
                 .isEqualTo(queryOwnerUrl);
     }
 
-    private static HttpServer startBackend(int statusCode, long delayMillis)
+    private static HttpServer startBackend(int statusCode, long delayMillis, CountDownLatch release)
             throws IOException
     {
         HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.createContext("/v1/query/", exchange -> {
-            if (delayMillis > 0) {
-                try {
+            try {
+                if (release != null) {
+                    release.await();
+                }
+                if (delayMillis > 0) {
                     Thread.sleep(delayMillis);
                 }
-                catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
             exchange.sendResponseHeaders(statusCode, -1);
             exchange.close();
