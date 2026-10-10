@@ -142,4 +142,37 @@ final class TestStochasticRoutingManager
         haRoutingManager.updateBackEndHealth(mixedCase.getName(), TrinoStatus.HEALTHY);
         assertThat(haRoutingManager.isBackendActiveAndHealthy("http://oauth-mixed:8080")).isTrue();
     }
+
+    @Test
+    void testIsBackendActive()
+    {
+        ProxyBackendConfiguration active = new ProxyBackendConfiguration();
+        active.setActive(true);
+        active.setRoutingGroup("oauth-group");
+        active.setName("oauth-active-flag-active");
+        active.setProxyTo("http://oauth-active-flag:8080");
+        active.setExternalUrl("https://ext.example");
+        backendManager.addBackend(active);
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+
+        // Local health must not affect the result
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.UNHEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+        haRoutingManager.updateBackEndHealth(active.getName(), TrinoStatus.UNKNOWN);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-active-flag:8080")).isTrue();
+
+        ProxyBackendConfiguration deactivated = new ProxyBackendConfiguration();
+        deactivated.setActive(false);
+        deactivated.setRoutingGroup("oauth-group");
+        deactivated.setName("oauth-deactivated-flag");
+        deactivated.setProxyTo("http://oauth-deactivated-flag:8080");
+        deactivated.setExternalUrl("https://ext.example");
+        backendManager.addBackend(deactivated);
+        haRoutingManager.updateBackEndHealth(deactivated.getName(), TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.isBackendActive("http://oauth-deactivated-flag:8080")).isFalse();
+
+        // Unknown backend
+        assertThat(haRoutingManager.isBackendActive("http://oauth-does-not-exist-flag:8080")).isFalse();
+    }
 }

@@ -192,62 +192,71 @@ public class RoutingTargetHandler
      * Returns:
      * <ul>
      *   <li>a present backend — route the request there (the sticky coordinator is active and healthy);</li>
-     *   <li>empty — not a pinnable token-exchange request, or no pin recorded yet on this gateway
-     *       (fall through to normal routing; the 401 challenge handler records the pin).</li>
+     *   <li>empty — not a pinnable token-exchange request, no pin recorded yet on this gateway (fall
+     *       through to normal routing; the 401 challenge handler records the pin), or the pinned
+     *       coordinator is active but unhealthy in this instance's local view (fall through, pin kept).</li>
      * </ul>
-     * If a pin exists but its coordinator is no longer active and healthy — deactivated, unhealthy, or
-     * removed from the fleet — the pin is dropped and the client is forced to re-authenticate, since
-     * only the minting coordinator holds the exchange state and the handshake cannot be recovered on
-     * another backend.
+     * If the pinned coordinator is deactivated or removed from the fleet (see
+     * {@link RoutingManager#isBackendActive}), the pin is dropped and the client is forced to
+     * re-authenticate, since only the minting coordinator holds the exchange state.
      */
     private Optional<String> getOAuth2StickyBackend(HttpServletRequest request)
     {
-        String oauthId = oauth2RoutingId(request).orElse(null);
-        if (oauthId == null) {
+        String pinKey = oauth2PinKey(request).orElse(null);
+        if (pinKey == null) {
             return Optional.empty();
         }
-        String pinnedBackend = oauth2RoutingStore.findBackend(oauthId).orElse(null);
+        String pinnedBackend = oauth2RoutingStore.findBackend(pinKey).orElse(null);
         if (pinnedBackend == null) {
             return Optional.empty();
         }
-        // Route to the pinned coordinator only while it is still active and healthy. Deactivation is a
-        // deliberate operator signal to stop sending it traffic, so an inactive coordinator is treated
-        // as unavailable even if it is otherwise healthy; an unhealthy or removed coordinator is
-        // likewise unavailable. Only the minting coordinator holds this handshake's in-memory exchange
-        // state, so when it is unavailable the pin cannot be recovered on another backend — drop it and
-        // force re-auth.
         if (routingManager.isBackendActiveAndHealthy(pinnedBackend)) {
             return Optional.of(pinnedBackend);
         }
-        oauth2RoutingStore.removeBackend(oauthId);
-        log.warn("OAuth2 pinned backend [%s] is unavailable for [%s]; forcing re-auth", pinnedBackend, request.getRequestURI());
-        throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        if (!routingManager.isBackendActive(pinnedBackend)) {
+            oauth2RoutingStore.removeBackend(pinKey);
+            log.warn("OAuth2 pinned backend [%s] is no longer active for [%s]; forcing re-auth",
+                    pinnedBackend,
+                    OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()));
+            throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
+        }
+        // Unhealthy in this instance's view, which may be stale: keep the shared pin and route normally
+        return Optional.empty();
     }
 
     /**
-     * The pin key for an in-flight token-exchange request: from the path for the driver poll
-     * ({@code /oauth2/token/{authId}}) and the browser initiate
+     * The pin-store lookup key for an in-flight token-exchange request: from the path for the driver
+     * poll ({@code /oauth2/token/{authId}}) and the browser initiate
      * ({@code /oauth2/token/initiate/{authIdHash}}), or from the {@code state} parameter for the
      * browser callback ({@code /oauth2/callback}). Empty for anything else.
      */
-    private Optional<String> oauth2RoutingId(HttpServletRequest request)
+    private Optional<String> oauth2PinKey(HttpServletRequest request)
     {
         String path = request.getRequestURI();
-        Optional<String> callbackId = OAuth2RoutingUtils.oauthIdFromCallback(path, request.getQueryString());
-        if (callbackId.isPresent()) {
-            return callbackId;
+        Optional<String> callbackKey = OAuth2RoutingUtils.pinKeyFromCallback(path, request.getQueryString());
+        if (callbackKey.isPresent()) {
+            return callbackKey;
         }
-        return OAuth2RoutingUtils.oauthIdFromRequestPath(path);
+        return OAuth2RoutingUtils.pinKeyFromRequestPath(path);
     }
 
     private void logRewrite(String newBackend, HttpServletRequest request)
     {
-        log.info("Rerouting [%s://%s:%s%s%s]--> [%s]",
+        log.info("Rerouting [%s://%s:%s%s]--> [%s]",
                 request.getScheme(),
                 request.getRemoteHost(),
                 request.getServerPort(),
-                request.getRequestURI(),
-                (request.getQueryString() != null ? "?" + request.getQueryString() : ""),
-                buildUriWithNewCluster(newBackend, request));
+                OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString()),
+                redactedRewriteTarget(newBackend, request));
+    }
+
+    /**
+     * The rewrite target for the reroute log line: {@code newBackend} plus the redacted path/query.
+     * Unlike {@link ProxyUtils#buildUriWithNewCluster}, it must not carry the real {@code authId},
+     * {@code authIdHash} or {@code state}, because a log reader could lift the handshake id from it.
+     */
+    static String redactedRewriteTarget(String newBackend, HttpServletRequest request)
+    {
+        return newBackend + OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString());
     }
 }

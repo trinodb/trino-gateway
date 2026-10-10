@@ -13,13 +13,16 @@
  */
 package io.trino.gateway.ha.persistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.persistence.dao.OAuth2RoutingDao;
 import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PreDestroy;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
@@ -37,22 +40,42 @@ public class JdbcConnectionManager
 {
     private static final Logger log = Logger.get(JdbcConnectionManager.class);
 
+    private static final int OAUTH2_ROUTING_SWEEP_BATCH_SIZE = 10_000;
+
     private final Jdbi jdbi;
     private final DataStoreConfiguration configuration;
+    @Nullable
+    private final JdbcUrlDialect oauth2RoutingDialect;
     private final ScheduledExecutorService executorService =
             Executors.newSingleThreadScheduledExecutor();
     private final ScheduledFuture<?> cleanupTask;
+    @Nullable
+    private final ScheduledFuture<?> oauth2RoutingSweepTask;
 
     private HikariDataSource dataSource;
 
     @Inject
+    public JdbcConnectionManager(DataStoreConfiguration configuration, HaGatewayConfiguration haGatewayConfiguration)
+    {
+        this(configuration, haGatewayConfiguration.getRouting().isOauth2RoutingEnabled());
+    }
+
+    @VisibleForTesting
     public JdbcConnectionManager(DataStoreConfiguration configuration)
     {
+        this(configuration, true);
+    }
+
+    private JdbcConnectionManager(DataStoreConfiguration configuration, boolean oauth2RoutingEnabled)
+    {
         this.configuration = requireNonNull(configuration, "configuration is null");
+        // Only resolved when OAuth2 routing is enabled, so other JDBC URLs still work with migrations disabled
+        oauth2RoutingDialect = oauth2RoutingEnabled ? JdbcUrlDialect.forJdbcUrl(configuration.getJdbcUrl()) : null;
         jdbi = Jdbi.create(configuration.getJdbcUrl(), configuration.getUser(), configuration.getPassword())
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
         cleanupTask = startCleanUps();
+        oauth2RoutingSweepTask = oauth2RoutingEnabled ? startOAuth2RoutingSweep() : null;
     }
 
     public Jdbi getJdbi()
@@ -67,15 +90,18 @@ public class JdbcConnectionManager
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
     }
 
+    @VisibleForTesting
+    boolean isOauth2RoutingSweepScheduled()
+    {
+        return oauth2RoutingSweepTask != null;
+    }
+
     private ScheduledFuture<?> startCleanUps()
     {
         return executorService.scheduleWithFixedDelay(
                 () -> {
-                    // Each cleanup is isolated in its own try-catch: scheduleWithFixedDelay silently
-                    // suppresses all future runs once a task throws, so a failure in one cleanup (e.g. a
-                    // table not yet created during a rolling deploy) must neither skip the other cleanup
-                    // nor propagate out of the scheduled task. Resolving the Jdbi instance inside the
-                    // try block keeps a failure to create the connection pool isolated in the same way.
+                    // scheduleWithFixedDelay suppresses all future runs once a task throws. Resolving the
+                    // Jdbi inside the try block keeps a failure to create the connection pool isolated too.
                     try {
                         log.info("Performing query history cleanup task");
                         long created = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(this.configuration.getQueryHistoryHoursRetention());
@@ -84,19 +110,52 @@ public class JdbcConnectionManager
                     catch (RuntimeException e) {
                         log.warn(e, "Query history cleanup failed; will retry on next run");
                     }
-
-                    try {
-                        log.info("Performing OAuth2 routing cleanup task");
-                        long oauthCutoff = System.currentTimeMillis() - this.configuration.getOauth2RoutingRetention().toMillis();
-                        getJdbi().onDemand(OAuth2RoutingDao.class).deleteOldOAuth2Pins(oauthCutoff);
-                    }
-                    catch (RuntimeException e) {
-                        log.warn(e, "OAuth2 routing cleanup failed; will retry on next run");
-                    }
                 },
                 1,
                 120,
                 TimeUnit.MINUTES);
+    }
+
+    private ScheduledFuture<?> startOAuth2RoutingSweep()
+    {
+        return executorService.scheduleWithFixedDelay(
+                () -> {
+                    try {
+                        sweepOAuth2Pins(OAUTH2_ROUTING_SWEEP_BATCH_SIZE);
+                    }
+                    catch (RuntimeException e) {
+                        log.warn(e, "OAuth2 routing sweep failed; will retry on next run");
+                    }
+                },
+                1,
+                5,
+                TimeUnit.MINUTES);
+    }
+
+    /**
+     * Deletes expired pins in batches of at most {@code batchSize} rows, so a backlog is not removed in
+     * one long transaction.
+     */
+    @VisibleForTesting
+    int sweepOAuth2Pins(int batchSize)
+    {
+        long cutoff = System.currentTimeMillis() - this.configuration.getOauth2RoutingRetention().toMillis();
+        OAuth2RoutingDao dao = getJdbi().onDemand(OAuth2RoutingDao.class);
+        int totalDeleted = 0;
+        int deletedInBatch;
+        do {
+            deletedInBatch = switch (requireNonNull(oauth2RoutingDialect, "OAuth2 routing is disabled")) {
+                case MYSQL -> dao.deleteOldPinsBatchMysql(cutoff, batchSize);
+                case POSTGRESQL -> dao.deleteOldPinsBatchPostgres(cutoff, batchSize);
+                case ORACLE -> dao.deleteOldPinsBatchOracle(cutoff, batchSize);
+            };
+            totalDeleted += deletedInBatch;
+        }
+        while (deletedInBatch == batchSize);
+        if (totalDeleted > 0) {
+            log.info("OAuth2 routing sweep deleted %s expired pin(s)", totalDeleted);
+        }
+        return totalDeleted;
     }
 
     private synchronized HikariDataSource getOrCreateDataSource(int maxPoolSize)
@@ -131,6 +190,9 @@ public class JdbcConnectionManager
     public synchronized void close()
     {
         cleanupTask.cancel(true);
+        if (oauth2RoutingSweepTask != null) {
+            oauth2RoutingSweepTask.cancel(true);
+        }
         executorService.shutdownNow();
 
         if (dataSource != null && !dataSource.isClosed()) {

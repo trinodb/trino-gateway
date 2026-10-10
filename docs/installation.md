@@ -220,7 +220,8 @@ routing:
 ```
 
 Pins are recorded in the `oauth2_routing` table so they are shared across
-gateway instances. This table is created automatically by the database
+gateway instances. Each pin is keyed by `pin_key`, a hash of the handshake id.
+This table is created automatically by the database
 migrations run on startup (see [Backend database](#backend-database)), so no
 separate database or manual setup is required as long as migrations are enabled.
 If you have set `runMigrationsEnabled` to `false`, the table is not created for
@@ -231,24 +232,47 @@ the `created` column) is:
 
 ```sql
 CREATE TABLE IF NOT EXISTS oauth2_routing (
-oauth_id VARCHAR(256) PRIMARY KEY,
+pin_key CHAR(64) PRIMARY KEY,
 backend_url VARCHAR (256),
 created bigint
 );
 CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
 ```
 
-If the pinned coordinator becomes unhealthy or inactive, the pin is dropped
-and the client is forced to re-authenticate, since the handshake cannot be
-recovered on another backend.
+A pin is dropped, and the client is forced to re-authenticate, only when its
+coordinator is deactivated or removed, since the handshake cannot be recovered
+on another backend. If the coordinator is active but looks unhealthy to one
+gateway instance, the pin is kept and the request is routed normally.
 
-Stored pins are retained for 1 hour by default, and are pruned automatically.
-The retention period can be adjusted (as a duration with a time unit) with:
+Pins are written on `401` responses to unauthenticated requests, so writes are
+rate-limited per gateway instance. Over the limit, the pin is not written, the
+rest of that handshake is routed normally and may fail, and the
+`PinWriteRateLimited` counter of the
+`io.trino.gateway.ha.router:name=OAuth2RoutingStats` JMX bean is incremented.
+Adjust the limit with:
+
+```yaml
+routing:
+  oauth2RoutingMaxPinWritesPerSecond: 2000
+```
+
+Stored pins are retained for 20 minutes by default and are removed by a sweep
+that runs every 5 minutes. Keep the retention above the coordinators'
+`http-server.authentication.oauth2.challenge-timeout` (15 minutes by default),
+so a pin is not removed while its handshake can still complete:
 
 ```yaml
 dataStore:
-  oauth2RoutingRetention: "1h"    # e.g. "90s", "10m", "2h"
+  oauth2RoutingRetention: "20m"    # e.g. "30m", "1h"
 ```
+
+Trino Gateway keeps the handshake ids out of its own log lines, but the
+[HTTP request log](https://trino.io/docs/current/admin/properties-logging.html#http-server-log-enabled)
+(`http-server.log.enabled`, on by default) records the raw path and query of
+every request, including the `authId`, the `authIdHash`, and the callback's
+`code` and `state`. Anyone who can read that log while a login is in progress
+can take it over, so restrict access to the log or disable it when OAuth2
+routing is enabled.
 
 ### Configure logging <a name="logging">
 
