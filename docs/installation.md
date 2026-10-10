@@ -220,7 +220,8 @@ routing:
 ```
 
 Pins are recorded in the `oauth2_routing` table so they are shared across
-gateway instances. This table is created automatically by the database
+gateway instances. Each pin is keyed by `pin_key`, a hash of the handshake id.
+This table is created automatically by the database
 migrations run on startup (see [Backend database](#backend-database)), so no
 separate database or manual setup is required as long as migrations are enabled.
 If you have set `runMigrationsEnabled` to `false`, the table is not created for
@@ -231,7 +232,7 @@ the `created` column) is:
 
 ```sql
 CREATE TABLE IF NOT EXISTS oauth2_routing (
-oauth_id VARCHAR(256) PRIMARY KEY,
+pin_key CHAR(64) PRIMARY KEY,
 backend_url VARCHAR (256),
 created bigint
 );
@@ -249,6 +250,14 @@ The retention period can be adjusted (as a duration with a time unit) with:
 dataStore:
   oauth2RoutingRetention: "1h"    # e.g. "90s", "10m", "2h"
 ```
+
+Trino Gateway keeps the handshake ids out of its own log lines, but the
+[HTTP request log](https://trino.io/docs/current/admin/properties-logging.html#http-server-log-enabled)
+(`http-server.log.enabled`, on by default) records the raw path and query of
+every request, including the `authId`, the `authIdHash`, and the callback's
+`code` and `state`. Anyone who can read that log while a login is in progress
+can take it over, so restrict access to the log or disable it when OAuth2
+routing is enabled.
 
 ### Configure logging <a name="logging">
 

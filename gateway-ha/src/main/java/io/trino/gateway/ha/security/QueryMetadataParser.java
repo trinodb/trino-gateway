@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.TrinoQueryProperties;
 import io.trino.gateway.ha.security.util.GatewayFilterPriorities;
@@ -66,7 +67,9 @@ public class QueryMetadataParser
             return;
         }
 
-        log.debug("Processing query metadata for path: %s", path);
+        log.debug(
+                "Processing query metadata for path: %s",
+                OAuth2RoutingUtils.redactForLog(path, requestContext.getUriInfo().getRequestUri().getQuery()));
         // Buffer the entity (aka body of the request) for future reads during request processing
         ContainerRequest jerseyRequest = (ContainerRequest) requestContext;
         jerseyRequest.bufferEntity();

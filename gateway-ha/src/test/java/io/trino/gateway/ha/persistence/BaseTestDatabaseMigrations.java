@@ -99,7 +99,7 @@ public abstract class BaseTestDatabaseMigrations
     {
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
         verifyResultSetCount("SELECT query_id FROM query_history", 0);
-        verifyResultSetCount("SELECT oauth_id FROM oauth2_routing", 0);
+        verifyResultSetCount("SELECT pin_key FROM oauth2_routing", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)

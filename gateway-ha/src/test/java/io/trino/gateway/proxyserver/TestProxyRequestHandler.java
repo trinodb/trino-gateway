@@ -185,4 +185,14 @@ final class TestProxyRequestHandler
         assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
         assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
     }
+
+    @Test
+    void testRedactUriForLog()
+    {
+        // The backend URI has the proxyTo base path before the OAuth2 path
+        assertThat(ProxyRequestHandler.redactUriForLog(URI.create("https://coord-a:8443/trino/oauth2/token/11111111-2222-3333-4444-555555555555")))
+                .isEqualTo("https://coord-a:8443/trino/oauth2/token/<redacted>");
+        assertThat(ProxyRequestHandler.redactUriForLog(URI.create("https://coord-a:8443/v1/statement")))
+                .isEqualTo("https://coord-a:8443/v1/statement");
+    }
 }

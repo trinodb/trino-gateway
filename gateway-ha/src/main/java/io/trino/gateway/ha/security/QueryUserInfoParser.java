@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
+import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.TrinoRequestUser;
 import io.trino.gateway.ha.security.util.GatewayFilterPriorities;
@@ -92,7 +93,10 @@ public class QueryUserInfoParser
             if (pathFilter.requiresBackendAuthentication(path)) {
                 throw unauthorized(e.getMessage());
             }
-            log.debug("Ignoring client certificate mapping failure on exempt path %s: %s", path, e.getMessage());
+            log.debug(
+                    "Ignoring client certificate mapping failure on exempt path %s: %s",
+                    OAuth2RoutingUtils.redactForLog(path, requestContext.getUriInfo().getRequestUri().getQuery()),
+                    e.getMessage());
             user = trinoRequestUserProvider.getInstance(requestContext, null);
         }
 
