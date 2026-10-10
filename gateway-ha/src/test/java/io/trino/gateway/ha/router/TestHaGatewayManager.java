@@ -31,7 +31,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -42,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 final class TestHaGatewayManager
 {
     private final PostgreSQLContainer postgres = createTestingPostgresContainer();
-    private final Jdbi jdbi = createTestingJdbcConnectionManager(dataStoreConfig(postgres)).getJdbi();
+    private final Jdbi jdbi = new JdbcConnectionManager(dataStoreConfig(postgres)).getJdbi();
 
     @AfterAll
     public final void close()
@@ -138,7 +137,7 @@ final class TestHaGatewayManager
         // This test stops the database, so it needs a container of its own
         PostgreSQLContainer postgres = createTestingPostgresContainer();
         DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
-        JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(dataStoreConfig);
         DatabaseCacheConfiguration cacheConfiguration = new DatabaseCacheConfiguration();
         cacheConfiguration.setEnabled(true);
         cacheConfiguration.setRefreshAfterWrite(new Duration(3, SECONDS));

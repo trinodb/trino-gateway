@@ -49,15 +49,10 @@ public class JdbcConnectionManager
     public JdbcConnectionManager(DataStoreConfiguration configuration)
     {
         this.configuration = requireNonNull(configuration, "configuration is null");
-        this.jdbi = createJdbi(configuration);
-        cleanupTask = startCleanUps();
-    }
-
-    private static Jdbi createJdbi(DataStoreConfiguration configuration)
-    {
-        return Jdbi.create(configuration.getJdbcUrl(), configuration.getUser(), configuration.getPassword())
+        jdbi = Jdbi.create(configuration.getJdbcUrl(), configuration.getUser(), configuration.getPassword())
                 .installPlugin(new SqlObjectPlugin())
                 .registerRowMapper(new RecordAndAnnotatedConstructorMapper());
+        cleanupTask = startCleanUps();
     }
 
     public Jdbi getJdbi()

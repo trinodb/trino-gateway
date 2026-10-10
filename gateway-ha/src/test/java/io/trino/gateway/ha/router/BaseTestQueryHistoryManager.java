@@ -32,7 +32,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -57,7 +56,7 @@ abstract class BaseTestQueryHistoryManager
                 true,
                 null);
         FlywayMigration.migrate(config);
-        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
+        JdbcConnectionManager jdbcConnectionManager = new JdbcConnectionManager(config);
         jdbi = jdbcConnectionManager.getJdbi();
         queryHistoryManager = new HaQueryHistoryManager(jdbi, config);
     }
