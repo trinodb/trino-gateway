@@ -25,7 +25,6 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import java.util.List;
 import java.util.Optional;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,7 +49,7 @@ abstract class BaseExternalUrlQueryHistoryTest
                 true,
                 null);
         FlywayMigration.migrate(config);
-        JdbcConnectionManager jdbcConnectionManager = createTestingJdbcConnectionManager(config);
+        JdbcConnectionManager jdbcConnectionManager = new JdbcConnectionManager(config);
         queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
     }
 

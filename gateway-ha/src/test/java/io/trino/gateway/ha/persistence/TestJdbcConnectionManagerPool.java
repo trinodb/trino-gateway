@@ -67,7 +67,7 @@ final class TestJdbcConnectionManagerPool
             throws Exception
     {
         DataStoreConfiguration configuration = createConfiguration(2);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
 
         try {
             assertThirdConnectionBlocks(connectionManager.getJdbi(), connectionManager.getJdbi());
@@ -82,7 +82,7 @@ final class TestJdbcConnectionManagerPool
     void testRejectsInvalidMaxPoolSize(int maxPoolSize)
     {
         DataStoreConfiguration configuration = createConfiguration(maxPoolSize);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
 
         try {
             assertThatThrownBy(connectionManager::getJdbi)
@@ -99,7 +99,7 @@ final class TestJdbcConnectionManagerPool
             throws Exception
     {
         DataStoreConfiguration configuration = createConfiguration(1);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
         Jdbi jdbi = connectionManager.getJdbi();
         jdbi.useHandle(handle -> handle.execute(
                 """
@@ -136,7 +136,7 @@ final class TestJdbcConnectionManagerPool
             throws Exception
     {
         DataStoreConfiguration configuration = createConfiguration(1);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
         Jdbi jdbi = connectionManager.getJdbi();
         jdbi.useHandle(handle -> handle.execute(
                 """
@@ -172,7 +172,7 @@ final class TestJdbcConnectionManagerPool
             throws Exception
     {
         DataStoreConfiguration configuration = createConfiguration(null);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
         Jdbi jdbi = connectionManager.getJdbi();
 
         try (ExecutorService executorService = Executors.newFixedThreadPool(3)) {
@@ -220,7 +220,7 @@ final class TestJdbcConnectionManagerPool
     void testCloseClosesPool()
     {
         DataStoreConfiguration configuration = createConfiguration(1);
-        JdbcConnectionManager connectionManager = createConnectionManager(configuration);
+        JdbcConnectionManager connectionManager = new JdbcConnectionManager(configuration);
         Jdbi jdbi = connectionManager.getJdbi();
 
         jdbi.useHandle(_ -> {});
@@ -288,10 +288,5 @@ final class TestJdbcConnectionManagerPool
                 4,
                 true,
                 maxPoolSize);
-    }
-
-    private static JdbcConnectionManager createConnectionManager(DataStoreConfiguration configuration)
-    {
-        return new JdbcConnectionManager(configuration);
     }
 }

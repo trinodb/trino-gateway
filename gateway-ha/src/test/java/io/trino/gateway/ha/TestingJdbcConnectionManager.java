@@ -15,7 +15,6 @@ package io.trino.gateway.ha;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
-import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
@@ -45,10 +44,5 @@ public final class TestingJdbcConnectionManager
                 null);
         FlywayMigration.migrate(config);
         return config;
-    }
-
-    public static JdbcConnectionManager createTestingJdbcConnectionManager(DataStoreConfiguration config)
-    {
-        return new JdbcConnectionManager(config);
     }
 }

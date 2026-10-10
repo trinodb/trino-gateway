@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,7 +51,7 @@ final class TestQueryCountBasedRouter
 
     private final PostgreSQLContainer postgres = createTestingPostgresContainer();
     private final DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
-    private final JdbcConnectionManager connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+    private final JdbcConnectionManager connectionManager = new JdbcConnectionManager(dataStoreConfig);
 
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;

@@ -24,7 +24,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.Set;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingJdbcConnectionManager;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +42,7 @@ final class TestHaOAuth2RoutingStore
     void setUp()
     {
         dataStoreConfig = dataStoreConfig(postgres);
-        connectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+        connectionManager = new JdbcConnectionManager(dataStoreConfig);
         store = new HaOAuth2RoutingStore(connectionManager.getJdbi());
     }
 
@@ -84,7 +83,7 @@ final class TestHaOAuth2RoutingStore
         // A pin written by one pod must be readable by another pod sharing the DB.
         store.setBackends(Set.of("auth-shared"), "http://coord-c:8080");
 
-        otherPodConnectionManager = createTestingJdbcConnectionManager(dataStoreConfig);
+        otherPodConnectionManager = new JdbcConnectionManager(dataStoreConfig);
         OAuth2RoutingStore otherPod = new HaOAuth2RoutingStore(otherPodConnectionManager.getJdbi());
         assertThat(otherPod.findBackend("auth-shared")).hasValue("http://coord-c:8080");
     }
@@ -107,7 +106,7 @@ final class TestHaOAuth2RoutingStore
     {
         DataStoreConfiguration pooledConfig = dataStoreConfig(postgres);
         pooledConfig.setMaxPoolSize(2);
-        try (JdbcConnectionManager pooledConnectionManager = createTestingJdbcConnectionManager(pooledConfig)) {
+        try (JdbcConnectionManager pooledConnectionManager = new JdbcConnectionManager(pooledConfig)) {
             OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager.getJdbi());
 
             pooledStore.setBackends(Set.of("auth-pooled"), "http://coord-e:8080");
