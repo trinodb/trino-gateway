@@ -14,12 +14,6 @@ backend API responses. A tag can be any nonblank string that does not contain a
 duplicate tags are removed. A common convention is `key:value` pairs, for
 example `env:prod` or `team:data-eng`.
 
-!!! warning "Manual migrations"
-    If `runMigrationsEnabled` is `false`, apply
-    `V5__add_tags_to_gateway_backend.sql` before upgrading. All backend
-    create and update requests fail until the `tags` column exists, even when
-    no tags are used.
-
 ## Setting tags
 
 Tags can be set when creating or updating a backend via the

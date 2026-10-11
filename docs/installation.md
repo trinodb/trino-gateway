@@ -50,6 +50,9 @@ The files are also included in the JAR file.
 
 If you do not want migrations to be performed automatically on startup, then
 you can set `runMigrationsEnabled` to `false` in the data store configuration.
+Migrations are activated by default, and deactivating them is rarely necessary.
+With migrations deactivated, you must apply any new migration files to the
+database manually before each upgrade of Trino Gateway.
 
 You can also disable query history recording to the database by setting
 `queryHistoryEnabled` to `false`. This can be useful in scenarios where you
@@ -86,7 +89,6 @@ dataStore:
   password: PASSWORD
   driver: org.postgresql.Driver
   queryHistoryHoursRetention: 24
-  runMigrationsEnabled: false
   queryHistoryEnabled: true  # Set to false to disable query history recording
   queryHistoryMaxQueryTextLength: 10000  # Optional: truncate stored query text
   maxPoolSize: 10            # Optional: enables JDBC connection pooling for the data store
@@ -229,23 +231,10 @@ routing:
 
 Pins are recorded in the `oauth2_routing` table so they are shared across
 gateway instances. Each pin is keyed by `pin_key`, a hash of the handshake id.
-This table is created automatically by the database
-migrations run on startup (see [Backend database](#backend-database)), so no
-separate database or manual setup is required as long as migrations are enabled.
-If you have set `runMigrationsEnabled` to `false`, the table is not created for
-you: you must provision it manually using the DDL below, otherwise pins cannot
-be persisted and OAuth2 routing silently falls back to normal routing. For
-reference, the DDL (identical for MySQL and PostgreSQL; Oracle uses `NUMBER` for
-the `created` column) is:
-
-```sql
-CREATE TABLE IF NOT EXISTS oauth2_routing (
-pin_key CHAR(64) PRIMARY KEY,
-backend_url VARCHAR (256),
-created bigint
-);
-CREATE INDEX oauth2_routing_created_idx ON oauth2_routing(created);
-```
+The table is created by the [database migrations](#backend-database). If
+migrations are deactivated with `runMigrationsEnabled` set to `false` and the
+table does not exist, pins cannot be persisted and OAuth2 routing silently falls
+back to normal routing.
 
 A pin is dropped, and the client is forced to re-authenticate, only when its
 coordinator is deactivated or removed. Otherwise the request goes to the pinned
