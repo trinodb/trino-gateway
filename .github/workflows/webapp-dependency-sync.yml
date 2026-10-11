@@ -1,0 +1,41 @@
+name: webapp dependency sync
+
+on:
+  pull_request:
+    paths:
+      - 'webapp/package.json'
+      - 'webapp/scripts/check-webui-sync.mjs'
+      - '.github/workflows/webapp-dependency-sync.yml'
+  schedule:
+    # Weekly, so drift shows up even when the Trino web UI moves and this
+    # repository does not. Matches the Dependabot schedule.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.event_name != 'schedule' || github.repository == 'trinodb/trino-gateway'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+      # The script has no dependencies, so no install is needed. Drift is
+      # advisory for now and reported in the job summary.
+      - name: Compare shared dependencies with the Trino web UI
+        shell: bash
+        run: |
+          {
+            echo '```'
+            node webapp/scripts/check-webui-sync.mjs
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
