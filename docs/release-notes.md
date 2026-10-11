@@ -2,6 +2,87 @@
 
 ## 2026
 
+### Trino Gateway 22 (20 Oct 2026) { id="22" }
+
+Artifacts:
+
+* [JAR file gateway-ha-22-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/22/gateway-ha-22-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:22`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/22.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.22.0`
+
+Changes:
+
+**General**
+
+* Add support for configuring multiple
+  [authentication methods](security.md#authentication) as an ordered list with
+  fallback in the `authentication.defaultType` configuration property.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Add support for [JWT authentication](security.md#jwt-authentication) with
+  bearer tokens in the `Authorization` header, including
+  [user mapping](security.md#user-mapping) of the token principal.
+  ([#449](https://github.com/trinodb/trino-gateway/issues/449))
+* Add support for
+  [routing all requests of a Trino OAuth2 login](installation.md#configure-oauth2-token-exchange-routing)
+  to the coordinator that started it with the `routing.oauth2RoutingEnabled`
+  configuration property.
+  ([#631](https://github.com/trinodb/trino-gateway/issues/631) and
+  [#892](https://github.com/trinodb/trino-gateway/issues/892))
+* Add support for attaching [tags to Trino clusters](backend-tags.md).
+  ([#947](https://github.com/trinodb/trino-gateway/pull/947))
+* Add support for
+  [pooling database connections](installation.md#backend-database) with the
+  `dataStore.maxPoolSize`, `dataStore.keepaliveTime`, and `dataStore.maxLifetime`
+  configuration properties.
+  ([#377](https://github.com/trinodb/trino-gateway/issues/377))
+* Add support for [granting default privileges](security.md#default-privileges)
+  to all authenticated users with the `authorization.enableDefaultPrivilege` and
+  `authorization.defaultPrivilege` configuration properties.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Add support for
+  [limiting the length of query text](installation.md#backend-database) stored
+  in the query history with the
+  `dataStore.queryHistoryMaxQueryTextLength` configuration property.
+  ([#1311](https://github.com/trinodb/trino-gateway/issues/1311))
+* Add support for suppressing subordinate referrals when
+  [LDAP searches](security.md#authorization) start at the root of a Microsoft
+  Active Directory domain with the `ldapAdDomainScopeControl` configuration
+  property.
+  ([#1173](https://github.com/trinodb/trino-gateway/issues/1173))
+* Add support for `ALTER MATERIALIZED VIEW ... EXECUTE` statements in
+  [routing rules based on query properties](routing-rules.md#trinoqueryproperties).
+  ([#1340](https://github.com/trinodb/trino-gateway/pull/1340))
+* Automatically manage all database schema changes and remove the
+  `gateway-ha-persistence-mysql.sql` and `gateway-ha-persistence-postgres.sql`
+  database initialization scripts from the JAR file. When [database migrations
+  are deactivated](installation.md#backend-database) with `runMigrationsEnabled`
+  set to `false`, create the database schema with the migration files instead.
+  ([#1304](https://github.com/trinodb/trino-gateway/pull/1304))
+* Fix routing to the default routing group instead of the group selected by
+  routing rules for prepared statements longer than 2048 characters.
+  ([#1289](https://github.com/trinodb/trino-gateway/pull/1289))
+
+**UI**
+
+* Add an [authentication method](security.md#authentication) selector to the
+  login page. Show only the first method by setting the
+  `authentication.showFirstTypeOnly` configuration property to `true`.
+  ([#1170](https://github.com/trinodb/trino-gateway/pull/1170))
+* Add support for viewing the tags of Trino clusters in the cluster list, and
+  for editing them when adding or updating a cluster.
+  ([#947](https://github.com/trinodb/trino-gateway/pull/947))
+* Show the name of the cluster in the confirmation dialog for deleting a
+  cluster.
+  ([#1280](https://github.com/trinodb/trino-gateway/pull/1280))
+
+More details and a list of all merged pull requests are [available in the milestone 22
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A22+is%3Aclosed)
+and the [GitHub release section for version
+22](https://github.com/trinodb/trino-gateway/releases/tag/22).
+
 ### Trino Gateway 21 (25 Aug 2026) { id="21" }
 
 Artifacts:
