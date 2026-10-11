@@ -21,16 +21,16 @@ importers:
         specifier: 2.104.0
         version: 2.104.0(@floating-ui/dom@1.8.0)(@tiptap/suggestion@3.31.3(@floating-ui/dom@1.8.0)(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))(@tiptap/pm@3.31.3))(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
       '@vvo/tzdb':
-        specifier: ^6.198.0
+        specifier: 6.198.0
         version: 6.198.0
       echarts:
         specifier: 6.1.0
         version: 6.1.0
       js-cookie:
-        specifier: ^3.0.8
+        specifier: 3.0.8
         version: 3.0.8
       moment:
-        specifier: ^2.31.0
+        specifier: 2.31.0
         version: 2.31.0
       react:
         specifier: 19.3.0
@@ -55,7 +55,7 @@ importers:
         specifier: 1.64.0
         version: 1.64.0
       '@types/js-cookie':
-        specifier: ^3.0.6
+        specifier: 3.0.6
         version: 3.0.6
       '@types/react':
         specifier: 19.3.0
@@ -64,34 +64,34 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       '@typescript-eslint/eslint-plugin':
-        specifier: ^8.71.0
+        specifier: 8.71.0
         version: 8.71.0(@typescript-eslint/parser@8.71.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@typescript-eslint/parser':
-        specifier: ^8.71.0
+        specifier: 8.71.0
         version: 8.71.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@vitejs/plugin-react':
-        specifier: ^5.2.0
+        specifier: 5.2.0
         version: 5.2.0(supports-color@7.2.0)(vite@7.3.6(sass@1.105.1))
       eslint:
-        specifier: ^9.39.5
+        specifier: 9.39.5
         version: 9.39.5(supports-color@7.2.0)
       eslint-plugin-react-hooks:
-        specifier: ^5.2.0
+        specifier: 5.2.0
         version: 5.2.0(eslint@9.39.5(supports-color@7.2.0))
       eslint-plugin-react-refresh:
-        specifier: ^0.5.7
+        specifier: 0.5.7
         version: 0.5.7(eslint@9.39.5(supports-color@7.2.0))
       globals:
         specifier: 16.5.0
         version: 16.5.0
       typescript:
-        specifier: ^6.0.3
+        specifier: 6.0.3
         version: 6.0.3
       vite:
-        specifier: ^7.3.6
+        specifier: 7.3.6
         version: 7.3.6(sass@1.105.1)
       vite-plugin-svgr:
-        specifier: ^5.2.0
+        specifier: 5.2.0
         version: 5.2.0(rollup@4.59.1)(supports-color@7.2.0)(typescript@6.0.3)(vite@7.3.6(sass@1.105.1))
 
 packages:
