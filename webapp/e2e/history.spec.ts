@@ -30,7 +30,8 @@ test.describe('history', () => {
     await page.getByRole('button', { name: 'Query' }).click()
 
     await expect.poll(() => api.callsTo('/webapp/findQueryHistory').length).toBeGreaterThan(before)
-    expect(api.callsTo('/webapp/findQueryHistory').at(-1)?.body).toMatchObject({
+    const calls = api.callsTo('/webapp/findQueryHistory')
+    expect(calls[calls.length - 1].body).toMatchObject({
       page: 1,
       queryId: '20260115_100100_00002_abcde',
     })
