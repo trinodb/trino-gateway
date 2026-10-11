@@ -58,6 +58,7 @@ export default [
     },
   },
   {
-    ignores: ['dist', 'node', 'playwright-report', 'test-results'],
+    // dist and node are left behind in checkouts that predate the build in target
+    ignores: ['target', 'dist', 'node', 'playwright-report', 'test-results'],
   },
 ];

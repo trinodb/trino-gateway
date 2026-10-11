@@ -12,6 +12,10 @@ export default defineConfig((mode: ConfigEnv) => {
   return {
     base: `/trino-gateway/`,
     plugins: [react(), svgr()],
+    build: {
+      // The Maven build packages this directory into the webapp JAR.
+      outDir: 'target/dist',
+    },
     css: {
       preprocessorOptions: {
         scss: {

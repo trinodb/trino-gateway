@@ -51,15 +51,27 @@ only after the Trino web UI adopted them.
 
 # Package
 
+The folder is also the `webapp` Maven module. The Maven build installs Node.js
+and pnpm into `target/node`, builds the production bundle into `target/dist`,
+and packages it as a JAR that the `gateway-ha` module depends on.
+
 ```
-# If you want the web to start with the project, you can execute 
+# Build everything, from the root of the repository
 ./mvnw clean install
 
-# If you want to run the web project alone, you can execute 
-cd ./webapp
-pnpm install
-pnpm run build
+# Build and check only the web UI, from the root of the repository
+./mvnw install -pl webapp
 ```
+
+To use the Node.js and pnpm versions that Maven installed with the commands in
+this file, add them to the path:
+
+```
+export PATH="$PWD/target/node:$PATH"
+```
+
+The [development documentation](../docs/development.md#web-ui) has more
+details.
 
 # Guidelines
 
