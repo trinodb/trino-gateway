@@ -126,7 +126,7 @@ export function Dashboard() {
   );
 }
 
-function updateLegendColor() {
+function useLegendColor() {
     const [color, setColor] = useState(getCSSVar('--semi-color-text-0'));
 
     useEffect(() => {
@@ -148,7 +148,7 @@ function LineChart(props: {
   timeZone: string
 }) {
   const chartRef = useRef(null);
-  const legendColor = updateLegendColor();
+  const legendColor = useLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
@@ -223,7 +223,7 @@ function DistributionChart(props: {
   data: DistributionChartData[]
 }) {
   const chartRef = useRef(null);
-  const legendColor = updateLegendColor();
+  const legendColor = useLegendColor();
 
   useEffect(() => {
     const chartInstance = echarts.init(chartRef.current);
