@@ -68,16 +68,17 @@ jobs:
           java-version: 25
           cache: 'maven'
           distribution: 'temurin'
-      # Maven installs the pinned Node.js and pnpm versions into webapp/node
-      # and builds the web UI, so the tests use the same toolchain as the build.
+      # Maven installs the pinned Node.js and pnpm versions into
+      # webapp/target/node and builds the web UI, so the tests use the same
+      # toolchain as the build.
       - name: Build web UI with Maven
-        run: $MAVEN -pl gateway-ha generate-resources
+        run: $MAVEN -pl webapp process-resources
       - name: Install browser
         working-directory: webapp
-        run: PATH="$PWD/node:$PATH" pnpm exec playwright install --with-deps chromium
+        run: PATH="$PWD/target/node:$PATH" pnpm exec playwright install --with-deps chromium
       - name: Run web UI tests
         working-directory: webapp
-        run: PATH="$PWD/node:$PATH" pnpm run test
+        run: PATH="$PWD/target/node:$PATH" pnpm run test
       - name: Upload test report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
