@@ -12,6 +12,12 @@ export default defineConfig((mode: ConfigEnv) => {
   return {
     base: `/trino-gateway/`,
     plugins: [react(), svgr()],
+    build: {
+      // The webapp JAR serves this directory from /static on the classpath. Vite empties it on
+      // every build, so bundles from earlier builds do not end up in the JAR.
+      outDir: 'target/classes/static',
+      emptyOutDir: true,
+    },
     css: {
       preprocessorOptions: {
         scss: {
