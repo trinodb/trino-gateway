@@ -17,7 +17,7 @@ import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
 import { fetchTokenApi, loginTypeApi } from './api/webapp/login';
 import Cookies from 'js-cookie';
-import { TimezoneProvider } from "./components/TimezoneContext";
+import { TimezoneProvider } from "./components/timezone";
 
 function App() {
   return (
