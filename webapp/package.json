@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "check": "pnpm run typecheck && pnpm run lint",
     "preview": "vite preview",
     "test": "playwright test"
   },
