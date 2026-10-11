@@ -1,0 +1,8 @@
+# The Maven build installs with --ignore-scripts. Declare that explicitly, so
+# that pnpm does not stop on dependencies with unapproved build scripts.
+# esbuild works without its install script, since the platform binary is an
+# optional dependency. The same applies to @parcel/watcher, an optional
+# dependency of sass.
+allowBuilds:
+  esbuild: false
+  '@parcel/watcher': false
