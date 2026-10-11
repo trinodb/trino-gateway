@@ -75,7 +75,7 @@ export function RoutingRules() {
                 });
 
                 Toast.success(Locale.RoutingRules.Update);
-            } catch (error) {
+            } catch {
                 Toast.error(Locale.RoutingRules.ErrorUpdate);
             }
         }

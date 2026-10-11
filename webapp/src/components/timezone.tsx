@@ -1,12 +1,8 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { Typography, Select } from "@douyinfe/semi-ui";
 import Locale from "../locales";
 import {getTimeDisplayZoneOptions} from "../utils/time";
-
-export const TimezoneContext = createContext<{
-  timezone: string;
-  changeTimezone: (tz: string) => void;
-}>({ timezone: 'UTC', changeTimezone: () => {} });
+import { TimezoneContext } from "./TimezoneContext";
 
 export function TimezoneProvider({ children }: { children: React.ReactNode }) {
   const [timezone, setTimezone] = useState<string>(() => Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC');

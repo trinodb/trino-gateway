@@ -10,7 +10,7 @@ export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
     Toast.success(Locale.Copy.Success);
-  } catch (error) {
+  } catch {
     const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
@@ -19,7 +19,7 @@ export async function copyToClipboard(text: string): Promise<void> {
     try {
       document.execCommand("copy");
       Toast.success(Locale.Copy.Success);
-    } catch (error) {
+    } catch {
       Toast.error(Locale.Copy.Failed);
     }
     document.body.removeChild(textArea);
@@ -158,8 +158,7 @@ export function getCSSVar(varName: string): string {
 
 
 let isThrottled = false;
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function throttle(func: Function, throttleTime: number = 1000): void {
+export function throttle(func: () => void, throttleTime: number = 1000): void {
   if (isThrottled) {
     return;
   }

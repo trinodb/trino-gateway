@@ -16,7 +16,7 @@ import { useEffect } from 'react';
 import { getCSSVar } from './utils/utils';
 import { IllustrationIdle, IllustrationIdleDark } from '@douyinfe/semi-illustrations';
 import Cookies from 'js-cookie';
-import { TimezoneProvider } from "./components/TimezoneContext";
+import { TimezoneProvider } from "./components/timezone";
 
 function App() {
   return (
