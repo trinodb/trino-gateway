@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
-    "@types/echarts": "^5.0.0",
     "@types/js-cookie": "^3.0.6",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
