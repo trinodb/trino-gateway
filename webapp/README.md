@@ -13,8 +13,12 @@
 ```
 pnpm install
 pnpm run dev
+pnpm run check
 pnpm run build
 ```
+
+The `check` script runs the type check and lint. The Maven build runs it as
+well, so a failure there fails the build.
 
 # Test
 

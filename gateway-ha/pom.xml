@@ -639,6 +639,15 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run check</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>build</id>
                         <goals>
                             <goal>pnpm</goal>
