@@ -22,6 +22,13 @@ test.describe('dashboard', () => {
     }
   })
 
+  test('explains a metric in a tooltip', async ({ page }) => {
+    await login(page)
+    await page.getByRole('img', { name: 'help_circle' }).first().hover()
+
+    await expect(page.getByText('The number of queries in the past hour')).toBeVisible()
+  })
+
   test('follows the timezone selection', async ({ page }) => {
     await login(page)
     const summary = page.locator('.semi-descriptions')
