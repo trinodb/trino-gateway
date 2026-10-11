@@ -10,7 +10,8 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "check": "pnpm run typecheck && pnpm run lint",
     "preview": "vite preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "sync:check": "node scripts/check-webui-sync.mjs"
   },
   "dependencies": {
     "@douyinfe/semi-icons": "2.104.0",

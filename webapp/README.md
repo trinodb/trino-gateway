@@ -34,6 +34,21 @@ pnpm run test
 Each test also fails on any uncaught exception or console error in the browser.
 Run the tests before and after a dependency update.
 
+# Dependencies
+
+Dependencies are pinned to exact versions. The versions of the packages shared
+with the [Trino web UI](https://github.com/trinodb/trino/tree/master/core/trino-web-ui)
+follow that project, since the web UI here is planned to embed the Trino query
+editor, which shares its React stack with the Trino web UI. Report the
+differences with:
+
+```
+pnpm run sync:check
+```
+
+Drift is advisory. Major version updates of the shared packages land here
+only after the Trino web UI adopted them.
+
 # Package
 
 ```
