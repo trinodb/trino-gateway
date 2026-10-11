@@ -16,6 +16,20 @@ pnpm run dev
 pnpm run build
 ```
 
+# Test
+
+Functional tests run with [Playwright](https://playwright.dev/) against the
+production bundle. Every backend call is mocked in `e2e/fixtures.ts`, so no
+running Trino Gateway is needed.
+
+```
+pnpm exec playwright install chromium
+pnpm run test
+```
+
+Each test also fails on any uncaught exception or console error in the browser.
+Run the tests before and after a dependency update.
+
 # Package
 
 ```

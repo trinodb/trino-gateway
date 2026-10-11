@@ -56,6 +56,36 @@ jobs:
       - name: Build with Maven
         run: $MAVEN clean verify
 
+  webapp-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7.0.1
+      - name: Install required Java distribution
+        uses: actions/setup-java@v6.0.1
+        with:
+          java-version: 25
+          cache: 'maven'
+          distribution: 'temurin'
+      # Maven installs the pinned Node.js and pnpm versions into webapp/node
+      # and builds the web UI, so the tests use the same toolchain as the build.
+      - name: Build web UI with Maven
+        run: $MAVEN -pl gateway-ha generate-resources
+      - name: Install browser
+        working-directory: webapp
+        run: PATH="$PWD/node:$PATH" pnpm exec playwright install --with-deps chromium
+      - name: Run web UI tests
+        working-directory: webapp
+        run: PATH="$PWD/node:$PATH" pnpm run test
+      - name: Upload test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: webapp-test-report
+          path: webapp/playwright-report/
+          retention-days: 7
+
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
