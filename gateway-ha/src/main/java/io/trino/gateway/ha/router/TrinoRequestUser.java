@@ -33,6 +33,7 @@ import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Request;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
@@ -58,6 +59,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
+import static java.lang.Math.toIntExact;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
@@ -233,8 +235,8 @@ public class TrinoRequestUser
 
         if (userInfoCache.isPresent()) {
             try {
-                userInfo = Optional.of(userInfoCache.orElseThrow().get(token));
-                return Optional.of(userInfo.orElseThrow().getSubject().toString());
+                userInfo = Optional.ofNullable(userInfoCache.orElseThrow().get(token));
+                return userInfo.map(info -> info.getSubject().toString());
             }
             catch (RuntimeException e) {
                 log.error(e, "Could not get userInfo");
@@ -267,6 +269,7 @@ public class TrinoRequestUser
         private final Optional<URI> oauthUserInfoUrl;
         private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
         private final Optional<JWEDecrypter> jweDecrypter;
+        private final int userInfoTimeoutMillis;
 
         public TrinoRequestUserProvider(RequestAnalyzerConfig config)
         {
@@ -279,6 +282,7 @@ public class TrinoRequestUser
             this.clientCertificateUserResolver = clientCertificateUserResolver;
             jweDecrypter = Optional.ofNullable(config.getOauthRefreshTokensSecretKey())
                     .map(TrinoRequestUserProvider::createJweDecrypter);
+            userInfoTimeoutMillis = toIntExact(config.getOauthRequestTimeout().toMillis());
             if (config.getOauthTokenInfoUrl() != null) {
                 oauthUserInfoUrl = Optional.of(URI.create(config.getOauthTokenInfoUrl()));
                 userInfoCache = Optional.of(Caffeine.newBuilder()
@@ -315,8 +319,11 @@ public class TrinoRequestUser
         private UserInfo getUserInfo(String token)
         {
             Request nimbusRequest = new UserInfoRequest(oauthUserInfoUrl.orElseThrow(), new BearerAccessToken(token));
+            HTTPRequest httpRequest = nimbusRequest.toHTTPRequest();
+            httpRequest.setConnectTimeout(userInfoTimeoutMillis);
+            httpRequest.setReadTimeout(userInfoTimeoutMillis);
             try {
-                UserInfoResponse userInfoResponse = parse(nimbusRequest.toHTTPRequest().send());
+                UserInfoResponse userInfoResponse = parse(httpRequest.send());
                 if (!userInfoResponse.indicatesSuccess()) {
                     log.error("Received bad response from userinfo endpoint: %s", userInfoResponse.toErrorResponse().getErrorObject());
                     return null;
@@ -324,7 +331,7 @@ public class TrinoRequestUser
                 return userInfoResponse.toSuccessResponse().getUserInfo();
             }
             catch (IOException ex) {
-                log.debug("Call to access token endpoint failed: %s", ex.getMessage());
+                log.warn("Request to userinfo endpoint %s failed: %s", oauthUserInfoUrl.orElseThrow(), ex);
             }
             catch (ParseException e) {
                 throw new RuntimeException(e);
