@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.resource;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 
@@ -87,6 +89,8 @@ public class GatewayWebAppResource
         RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
         isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
         ruleType = routingRules.getRulesType();
+        checkArgument(!isRulesEngineEnabled || ruleType != RulesType.FILE || routingRules.getRulesConfigPath() != null,
+                "rulesConfigPath is required when rulesType is FILE");
     }
 
     @POST
@@ -230,6 +234,10 @@ public class GatewayWebAppResource
             return Response.status(Response.Status.NO_CONTENT)
                     .entity(Result.fail("Routing rules are managed by an external service")).build();
         }
+        if (!isRulesEngineEnabled) {
+            // No rules file has to be configured when the rules engine is not in use
+            return Response.ok(Result.ok(ImmutableList.of())).build();
+        }
         List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
         return Response.ok(Result.ok(routingRulesList)).build();
     }
@@ -242,6 +250,14 @@ public class GatewayWebAppResource
     public Response updateRoutingRules(RoutingRule routingRule)
             throws IOException
     {
+        if (!isRulesEngineEnabled) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Result.fail("Routing rules engine is not enabled")).build();
+        }
+        if (ruleType == RulesType.EXTERNAL) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Result.fail("Routing rules are managed by an external service")).build();
+        }
         List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
         return Response.ok(Result.ok(routingRulesList)).build();
     }
