@@ -153,4 +153,17 @@ final class TestRoutingRulesManager
         assertThat(updatedRoutingRules.getFirst().actions().getFirst()).isEqualTo("result.put(\"routingGroup\", \"adhoc\")");
         assertThat(updatedRoutingRules.getFirst().description()).isEqualTo("if query from airflow, route to adhoc group");
     }
+
+    @Test
+    void testFileRulesWithoutConfigPath()
+    {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        RoutingRulesConfiguration routingRulesConfiguration = new RoutingRulesConfiguration();
+        routingRulesConfiguration.setRulesEngineEnabled(true);
+        configuration.setRoutingRules(routingRulesConfiguration);
+
+        assertThatThrownBy(() -> new RoutingRulesManager(configuration))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("rulesConfigPath is required when rulesType is FILE");
+    }
 }

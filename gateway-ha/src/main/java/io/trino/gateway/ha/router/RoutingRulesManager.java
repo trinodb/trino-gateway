@@ -19,6 +19,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.RoutingRulesConfiguration;
+import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.domain.RoutingRule;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -40,7 +43,10 @@ public class RoutingRulesManager
     @Inject
     public RoutingRulesManager(HaGatewayConfiguration configuration)
     {
-        this.rulesConfigPath = configuration.getRoutingRules().getRulesConfigPath();
+        RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
+        this.rulesConfigPath = routingRules.getRulesConfigPath();
+        checkArgument(!routingRules.isRulesEngineEnabled() || routingRules.getRulesType() != RulesType.FILE || rulesConfigPath != null,
+                "rulesConfigPath is required when rulesType is FILE");
     }
 
     public List<RoutingRule> getRoutingRules()
