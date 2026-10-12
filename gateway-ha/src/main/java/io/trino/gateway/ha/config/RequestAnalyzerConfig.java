@@ -13,7 +13,12 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
 import jakarta.validation.constraints.Max;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class RequestAnalyzerConfig
 {
@@ -26,6 +31,7 @@ public class RequestAnalyzerConfig
     private String tokenUserField = "email";
     private String oauthTokenInfoUrl;
     private String oauthRefreshTokensSecretKey;
+    private Duration oauthRequestTimeout = new Duration(5, SECONDS);
     private boolean isAnalyzeRequest;
 
     public RequestAnalyzerConfig() {}
@@ -99,6 +105,19 @@ public class RequestAnalyzerConfig
     public void setOauthRefreshTokensSecretKey(String oauthRefreshTokensSecretKey)
     {
         this.oauthRefreshTokensSecretKey = oauthRefreshTokensSecretKey;
+    }
+
+    public Duration getOauthRequestTimeout()
+    {
+        return oauthRequestTimeout;
+    }
+
+    public void setOauthRequestTimeout(Duration oauthRequestTimeout)
+    {
+        requireNonNull(oauthRequestTimeout, "oauthRequestTimeout is null");
+        checkArgument(oauthRequestTimeout.toMillis() > 0, "oauthRequestTimeout must be positive");
+        checkArgument(oauthRequestTimeout.toMillis() <= Integer.MAX_VALUE, "oauthRequestTimeout must be at most %s ms", Integer.MAX_VALUE);
+        this.oauthRequestTimeout = oauthRequestTimeout;
     }
 
     public boolean isClientsUseV2Format()

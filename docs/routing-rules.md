@@ -386,6 +386,11 @@ If configured, Trino Gateway attempts to retrieve the user info by exchanging
 potential authorization tokens with this URL. Responses are cached for 10
 minutes to avoid triggering rate limits.
 
+`oauthRequestTimeout`:
+
+Connect and read timeout of the request to `oauthTokenInfoUrl`. If the request
+fails or times out, no user is extracted from the token. Defaults to `5s`.
+
 `oauthRefreshTokensSecretKey`:
 
 If configured, Trino Gateway decrypts the tokens that Trino issues when OAuth2

@@ -24,14 +24,21 @@ import com.nimbusds.jose.crypto.AESEncrypter;
 import com.nimbusds.jose.util.Base64URL;
 import io.airlift.compress.v3.zstd.ZstdOutputStream;
 import io.airlift.json.JsonCodec;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.util.QueryRequestMock;
 import jakarta.servlet.http.HttpServletRequest;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import javax.crypto.spec.SecretKeySpec;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
@@ -43,10 +50,14 @@ import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static jakarta.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class TestTrinoRequestUser
 {
+    private static final String OPAQUE_TOKEN = "opaque-access-token";
+
     @Test
     void testJsonCreator()
     {
@@ -172,5 +183,89 @@ final class TestTrinoRequestUser
         JWEObject jwe = new JWEObject(new JWEHeader(JWEAlgorithm.A256GCMKW, EncryptionMethod.A256GCM), new Payload(innerJwt));
         jwe.encrypt(new AESEncrypter(new SecretKeySpec(key, "AES")));
         return jwe.serialize();
+    }
+
+    @Test
+    void testUserFromUserInfoSubject()
+            throws Exception
+    {
+        assertThat(userFromUserInfo(new RequestAnalyzerConfig(), userInfoResponse(
+                """
+                {
+                  "sub": "123456789",
+                  "email": "user@example.com"
+                }
+                """))).hasValue("123456789");
+    }
+
+    @Test
+    void testUserFromUserInfoErrorResponse()
+            throws Exception
+    {
+        assertThat(userFromUserInfo(new RequestAnalyzerConfig(), new MockResponse().setResponseCode(500))).isEmpty();
+    }
+
+    @Test
+    @Timeout(value = 30, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    void testUserInfoRequestTimesOut()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthRequestTimeout(new Duration(200, MILLISECONDS));
+
+        assertThat(userFromUserInfo(requestAnalyzerConfig, new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))).isEmpty();
+    }
+
+    @Test
+    void testUserInfoRequestCarriesBearerToken()
+            throws Exception
+    {
+        try (MockWebServer userInfoServer = new MockWebServer()) {
+            userInfoServer.enqueue(userInfoResponse(
+                    """
+                    {
+                      "sub": "123456789"
+                    }
+                    """));
+            userInfoServer.start();
+
+            assertThat(userFromUserInfo(userInfoServer, new RequestAnalyzerConfig())).hasValue("123456789");
+
+            RecordedRequest recordedRequest = userInfoServer.takeRequest(5, SECONDS);
+            assertThat(recordedRequest).isNotNull();
+            assertThat(recordedRequest.getPath()).isEqualTo("/userinfo");
+            assertThat(recordedRequest.getHeader(AUTHORIZATION)).isEqualTo("Bearer " + OPAQUE_TOKEN);
+        }
+    }
+
+    private static MockResponse userInfoResponse(String json)
+    {
+        return new MockResponse()
+                .setHeader("Content-Type", "application/json")
+                .setBody(json);
+    }
+
+    private static Optional<String> userFromUserInfo(RequestAnalyzerConfig requestAnalyzerConfig, MockResponse response)
+            throws IOException
+    {
+        try (MockWebServer userInfoServer = new MockWebServer()) {
+            userInfoServer.enqueue(response);
+            userInfoServer.start();
+            return userFromUserInfo(userInfoServer, requestAnalyzerConfig);
+        }
+    }
+
+    private static Optional<String> userFromUserInfo(MockWebServer userInfoServer, RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        requestAnalyzerConfig.setOauthTokenInfoUrl(userInfoServer.url("/userinfo").toString());
+
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Bearer " + OPAQUE_TOKEN)
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+        return trinoRequestUser.getUser();
     }
 }
