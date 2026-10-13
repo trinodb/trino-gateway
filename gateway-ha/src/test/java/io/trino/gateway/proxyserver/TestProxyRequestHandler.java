@@ -33,6 +33,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.io.File;
 import java.net.URI;
 import java.util.Optional;
+import java.util.Random;
+import java.util.zip.CRC32;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
@@ -62,6 +64,9 @@ final class TestProxyRequestHandler
     private static final int NOT_FOUND = 404;
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
     private static final String HEAD_ENDPOINT = "/v1/query";
+    private static final String SPOOLED_SEGMENT_ENDPOINT = "/v1/spooled/download/segment-1";
+    // Larger than the 16 MiB default max response content length of the airlift HTTP client
+    private static final String SPOOLED_SEGMENT = randomAscii(17 * 1024 * 1024);
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
     private final String healthCheckEndpoint = "/v1/info";
@@ -91,6 +96,12 @@ final class TestProxyRequestHandler
                 if (request.getMethod().equals("HEAD") && request.getPath().equals(HEAD_ENDPOINT)) {
                     return new MockResponse().setResponseCode(200)
                             .setHeader(CONTENT_TYPE, JSON_UTF_8);
+                }
+
+                if (request.getMethod().equals("GET") && request.getPath().equals(SPOOLED_SEGMENT_ENDPOINT)) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, "application/octet-stream")
+                            .setBody(SPOOLED_SEGMENT);
                 }
 
                 return new MockResponse().setResponseCode(NOT_FOUND);
@@ -152,6 +163,22 @@ final class TestProxyRequestHandler
     }
 
     @Test
+    void testSpooledSegmentDownloadIsStreamedIntact()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + SPOOLED_SEGMENT_ENDPOINT;
+
+        Request getRequest = new Request.Builder().url(url).get().build();
+        try (Response response = httpClient.newCall(getRequest).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+            byte[] body = response.body().bytes();
+            assertThat(body).hasSize(SPOOLED_SEGMENT.length());
+            assertThat(crc32(body)).isEqualTo(crc32(SPOOLED_SEGMENT.getBytes(UTF_8)));
+        }
+    }
+
+    @Test
     void testGetQueryDetailsFromRequest()
     {
         // A sample query longer than 200 characters to test against truncation.
@@ -184,5 +211,22 @@ final class TestProxyRequestHandler
         assertThat(queryDetail.getUser()).isEqualTo(username.get());
         assertThat(queryDetail.getSource()).isEqualTo("trino-cli");
         assertThat(queryDetail.getBackendUrl()).isEqualTo("http://localhost:" + routerPort);
+    }
+
+    private static String randomAscii(int size)
+    {
+        Random random = new Random(42);
+        StringBuilder builder = new StringBuilder(size);
+        for (int i = 0; i < size; i++) {
+            builder.append((char) ('a' + random.nextInt(26)));
+        }
+        return builder.toString();
+    }
+
+    private static long crc32(byte[] bytes)
+    {
+        CRC32 crc32 = new CRC32();
+        crc32.update(bytes);
+        return crc32.getValue();
     }
 }
