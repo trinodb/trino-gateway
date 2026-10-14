@@ -51,6 +51,10 @@ public class FlywayMigration
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .load();
+        // V1 was changed after release to stop creating the resource group tables, so databases
+        // created by Trino Gateway 18 or older recorded a different checksum. Repair updates the
+        // recorded checksums instead of failing validation, and never re-runs an applied migration.
+        // Do not change a released migration again, add a new one instead.
         flyway.repair();
         MigrateResult migrations = flyway.migrate();
         log.info("Performed %s migrations", migrations.migrationsExecuted);
