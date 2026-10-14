@@ -95,7 +95,7 @@ public class QueryUserInfoParser
             }
             log.debug(
                     "Ignoring client certificate mapping failure on exempt path %s: %s",
-                    OAuth2RoutingUtils.redactForLog(path, requestContext.getUriInfo().getRequestUri().getQuery()),
+                    OAuth2RoutingUtils.redactForLog(path, null),
                     e.getMessage());
             user = trinoRequestUserProvider.getInstance(requestContext, null);
         }

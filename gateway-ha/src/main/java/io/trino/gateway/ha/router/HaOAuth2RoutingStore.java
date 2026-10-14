@@ -91,7 +91,8 @@ public class HaOAuth2RoutingStore
 
     /**
      * Describes a failure by exception class and SQL state only. Jdbi renders bound arguments,
-     * which here include the pin key, into exception messages and stack traces.
+     * which here include the pin key, into exception messages and stack traces, so the exception is
+     * not logged, even though that also hides the cause of connection failures.
      */
     @VisibleForTesting
     static String describeForLog(RuntimeException e)

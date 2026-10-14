@@ -67,9 +67,7 @@ public class QueryMetadataParser
             return;
         }
 
-        log.debug(
-                "Processing query metadata for path: %s",
-                OAuth2RoutingUtils.redactForLog(path, requestContext.getUriInfo().getRequestUri().getQuery()));
+        log.debug("Processing query metadata for path: %s", OAuth2RoutingUtils.redactForLog(path, null));
         // Buffer the entity (aka body of the request) for future reads during request processing
         ContainerRequest jerseyRequest = (ContainerRequest) requestContext;
         jerseyRequest.bufferEntity();
