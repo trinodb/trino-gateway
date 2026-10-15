@@ -67,7 +67,7 @@ export const routers: RouterItems = [
     itemKey: 'routing-rules',
     text: Locale.Menu.Sider.RoutingRules,
     icon: <IconList className={styles.icon}/>,
-    roles: [],
+    roles: [Role.ADMIN],
     routeProps: {
       path: '/routing-rules',
       element: < RoutingRules />

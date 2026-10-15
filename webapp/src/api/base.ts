@@ -14,7 +14,7 @@ export class ClientApi {
         headers: getHeaders(),
         method: "GET"
       });
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       this.authErrorHandler()
     }
     else if (res.status === 204) {
@@ -34,7 +34,7 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401 || resJson.code === 403) {
+    if (resJson.code === 401) {
       this.authErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
@@ -58,7 +58,7 @@ export class ClientApi {
         },
         method: "POST"
       });
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       this.authErrorHandler()
     }
     else if (res.status !== 200) {
@@ -70,7 +70,7 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401 || resJson.code === 403) {
+    if (resJson.code === 401) {
       this.authErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
@@ -124,7 +124,7 @@ export class ClientApi {
       theme: "light"
     });
     const accessStore = useAccessStore.getState();
-    accessStore.updateToken("");
+    accessStore.clearSession();
     throw new Error(Locale.Auth.Expiration);
   }
   serverErrorHandler(msg: string): void {

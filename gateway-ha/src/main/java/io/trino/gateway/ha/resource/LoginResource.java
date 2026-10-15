@@ -25,6 +25,7 @@ import io.trino.gateway.ha.security.LbFormAuthManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbPrincipal;
 import io.trino.gateway.ha.security.OidcCookie;
+import io.trino.gateway.ha.security.SessionCookie;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
@@ -130,16 +131,21 @@ public class LoginResource
             throw new WebApplicationException("Form authentication is not setup");
         }
         Result<?> r = formAuthManager.processRESTLogin(loginForm);
-        return Response.ok(r).build();
+        Response.ResponseBuilder response = Response.ok(r);
+        // The webapp keeps no token of its own, so the session lives in the HttpOnly cookie
+        if (r.getData() instanceof Map<?, ?> data && data.get("token") instanceof String token) {
+            response.cookie(SessionCookie.getTokenCookie(token));
+        }
+        return response.build();
     }
 
     @POST
     @Path("logout")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response processRESTLogin()
+    public Response processRESTLogout()
     {
-        return Response.ok(Result.ok()).build();
+        return Response.ok(Result.ok()).cookie(SessionCookie.getLogoutCookie()).build();
     }
 
     @POST

@@ -28,7 +28,9 @@ public class AuthorizedExceptionMapper
     public Response toResponse(ForbiddenException exception)
     {
         if (exception.getMessage().equals(LocalizationMessages.USER_NOT_AUTHORIZED())) {
-            return Response.ok(Result.fail(Response.Status.UNAUTHORIZED)).build();
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Result.fail(Response.Status.FORBIDDEN))
+                    .build();
         }
         return exception.getResponse();
     }

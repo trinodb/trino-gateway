@@ -50,8 +50,12 @@ export const RootLayout = (props: {
   }, [location]);
 
   const logout = () => {
-    logoutApi({}).then(() => {
-      access.updateToken("");
+    logoutApi({}).then((logoutUrl) => {
+      access.clearSession();
+      if (typeof logoutUrl === "string") {
+        window.location.assign(logoutUrl);
+        return;
+      }
       Toast.success(Locale.Auth.LogoutSuccess);
     }).catch(() => { });
   }

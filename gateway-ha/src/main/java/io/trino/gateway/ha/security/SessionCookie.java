@@ -32,21 +32,29 @@ public final class SessionCookie
                 .comment("")
                 .maxAge(60 * 60 * 24)
                 .secure(true)
+                .httpOnly(true)
+                .sameSite(NewCookie.SameSite.LAX)
                 .build();
     }
 
     public static Response logOut()
     {
-        NewCookie cookie = new NewCookie.Builder(OAUTH_ID_TOKEN)
+        return Response.ok("You are logged out successfully.")
+                .cookie(getLogoutCookie())
+                .build();
+    }
+
+    public static NewCookie getLogoutCookie()
+    {
+        return new NewCookie.Builder(OAUTH_ID_TOKEN)
                 .value("logout")
                 .path("/")
                 .domain("")
                 .comment("")
                 .maxAge(0)
                 .secure(true)
-                .build();
-        return Response.ok("You are logged out successfully.")
-                .cookie(cookie)
+                .httpOnly(true)
+                .sameSite(NewCookie.SameSite.LAX)
                 .build();
     }
 }
