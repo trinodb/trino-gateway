@@ -27,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TestHaGatewayConfiguration
 {
+    private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+
     @Test
     void testDefaultStatementPaths()
     {
@@ -172,5 +174,18 @@ class TestHaGatewayConfiguration
                 .readValue(yamlBridgeFirst, HaGatewayConfiguration.class);
 
         assertThatCode(configuration::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    void testUIConfigurationAllowsViewingAllQueryHistoryWhenEnabled()
+            throws Exception
+    {
+        UIConfiguration uiConfiguration = YAML_OBJECT_MAPPER.readValue(
+                """
+                allowNonAdminToViewAllQueryHistory: true
+                """,
+                UIConfiguration.class);
+
+        assertThat(uiConfiguration.isAllowNonAdminToViewAllQueryHistory()).isTrue();
     }
 }
