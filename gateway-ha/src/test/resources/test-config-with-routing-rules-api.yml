@@ -32,6 +32,7 @@ requestAnalyzerConfig:
 uiConfiguration:
   disablePages:
     - 'routing-rules'
+  queryLinkType: HASH_ROUTE
 
 routingRules:
   rulesEngineEnabled: true
