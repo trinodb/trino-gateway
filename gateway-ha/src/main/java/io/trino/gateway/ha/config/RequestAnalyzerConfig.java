@@ -31,6 +31,7 @@ public class RequestAnalyzerConfig
     private String tokenUserField = "email";
     private String oauthTokenInfoUrl;
     private Duration oauthTokenInfoTimeout = new Duration(5, SECONDS);
+    private String oauthTokenInfoUserField = "sub";
     private boolean isAnalyzeRequest;
 
     public RequestAnalyzerConfig() {}
@@ -107,6 +108,18 @@ public class RequestAnalyzerConfig
         checkArgument(oauthTokenInfoTimeout.toMillis() > 0, "oauthTokenInfoTimeout must be positive");
         checkArgument(oauthTokenInfoTimeout.toMillis() <= Integer.MAX_VALUE, "oauthTokenInfoTimeout must be at most %s ms", Integer.MAX_VALUE);
         this.oauthTokenInfoTimeout = oauthTokenInfoTimeout;
+    }
+
+    public String getOauthTokenInfoUserField()
+    {
+        return oauthTokenInfoUserField;
+    }
+
+    public void setOauthTokenInfoUserField(String oauthTokenInfoUserField)
+    {
+        requireNonNull(oauthTokenInfoUserField, "oauthTokenInfoUserField is null");
+        checkArgument(!oauthTokenInfoUserField.isBlank(), "oauthTokenInfoUserField is blank");
+        this.oauthTokenInfoUserField = oauthTokenInfoUserField;
     }
 
     public boolean isClientsUseV2Format()

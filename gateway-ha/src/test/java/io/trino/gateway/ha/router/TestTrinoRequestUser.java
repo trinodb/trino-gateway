@@ -132,6 +132,52 @@ final class TestTrinoRequestUser
     }
 
     @Test
+    void testUserFromUserInfoClaim()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthTokenInfoUserField("preferred_username");
+
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse(
+                """
+                {
+                  "sub": "123456789",
+                  "email": "user@example.com",
+                  "preferred_username": " user "
+                }
+                """))).hasValue("user");
+    }
+
+    @Test
+    void testUserFromUserInfoFallsBackToSubject()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthTokenInfoUserField("email");
+
+        // Missing, blank and non-string claim
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\"}"))).hasValue("123456789");
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\", \"email\": \" \"}"))).hasValue("123456789");
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\", \"email\": 42}"))).hasValue("123456789");
+    }
+
+    @Test
+    void testTokenUserFieldDoesNotApplyToUserInfo()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setTokenUserField("preferred_username");
+
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse(
+                """
+                {
+                  "sub": "123456789",
+                  "preferred_username": "user"
+                }
+                """))).hasValue("123456789");
+    }
+
+    @Test
     void testUserFromUserInfoErrorResponse()
             throws Exception
     {
