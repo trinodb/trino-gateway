@@ -26,7 +26,9 @@ final class TestRequestAnalyzerConfig
     @Test
     void testDefaults()
     {
-        assertThat(new RequestAnalyzerConfig().getOauthRequestTimeout()).isEqualTo(new Duration(5, SECONDS));
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        assertThat(requestAnalyzerConfig.getOauthRequestTimeout()).isEqualTo(new Duration(5, SECONDS));
+        assertThat(requestAnalyzerConfig.getOauthTokenInfoUserField()).isEqualTo("sub");
     }
 
     @Test
@@ -45,5 +47,17 @@ final class TestRequestAnalyzerConfig
         assertThatThrownBy(() -> requestAnalyzerConfig.setOauthRequestTimeout(new Duration(30, DAYS)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("oauthRequestTimeout must be at most 2147483647 ms");
+    }
+
+    @Test
+    void testRejectsBlankUserInfoUserField()
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        assertThatThrownBy(() -> requestAnalyzerConfig.setOauthTokenInfoUserField(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("oauthTokenInfoUserField is null");
+        assertThatThrownBy(() -> requestAnalyzerConfig.setOauthTokenInfoUserField(" "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("oauthTokenInfoUserField is blank");
     }
 }
