@@ -173,4 +173,23 @@ class TestHaGatewayConfiguration
 
         assertThatCode(configuration::validate).doesNotThrowAnyException();
     }
+
+    @Test
+    void testQueryLinkTypeDefaultsToQueryHtml()
+            throws Exception
+    {
+        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+
+        HaGatewayConfiguration withoutUiConfiguration = objectMapper.readValue("{}", HaGatewayConfiguration.class);
+        assertThat(withoutUiConfiguration.getUiConfiguration().getQueryLinkType()).isEqualTo(QueryLinkType.QUERY_HTML);
+
+        String yaml =
+                """
+                uiConfiguration:
+                  disablePages:
+                    - routing-rules
+                """;
+        HaGatewayConfiguration withoutQueryLinkType = objectMapper.readValue(yaml, HaGatewayConfiguration.class);
+        assertThat(withoutQueryLinkType.getUiConfiguration().getQueryLinkType()).isEqualTo(QueryLinkType.QUERY_HTML);
+    }
 }

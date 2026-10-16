@@ -13,3 +13,5 @@ export interface HistoryData {
   total: number;
   rows: HistoryDetail[];
 }
+
+export type QueryLinkType = "QUERY_HTML" | "HASH_ROUTE";
