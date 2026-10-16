@@ -25,10 +25,14 @@ import io.airlift.http.client.Request;
 import io.airlift.http.client.StaticBodyGenerator;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
@@ -71,9 +75,11 @@ import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerat
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
+import static io.trino.gateway.ha.router.HaGatewayManager.removeTrailingSlash;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
+import static jakarta.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
@@ -93,6 +99,8 @@ public class ProxyRequestHandler
     private final HttpClient httpClient;
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
+    private final GatewayBackendManager gatewayBackendManager;
+    private final BackendStateManager backendStateManager;
     private final OAuth2RoutingStore oauth2RoutingStore;
     private final boolean cookiesEnabled;
     private final boolean oauth2RoutingEnabled;
@@ -106,12 +114,16 @@ public class ProxyRequestHandler
             @ForProxy HttpClient httpClient,
             RoutingManager routingManager,
             QueryHistoryManager queryHistoryManager,
+            GatewayBackendManager gatewayBackendManager,
+            BackendStateManager backendStateManager,
             OAuth2RoutingStore oauth2RoutingStore,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
+        this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.oauth2RoutingStore = requireNonNull(oauth2RoutingStore, "oauth2RoutingStore is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         oauth2RoutingEnabled = haGatewayConfiguration.getRouting().isOauth2RoutingEnabled();
@@ -212,7 +224,7 @@ public class ProxyRequestHandler
         setupAsyncResponse(
                 asyncResponse,
                 future.transform(response -> buildResponse(response, cookieBuilder.build()), executor)
-                        .catching(ProxyException.class, e -> handleProxyException(request, e), directExecutor()));
+                        .catching(ProxyException.class, e -> handleProxyException(request, e, routingDestination), directExecutor()));
     }
 
     private ImmutableList<NewCookie> getOAuth2GatewayCookie(URI remoteUri, HttpServletRequest servletRequest)
@@ -265,10 +277,37 @@ public class ProxyRequestHandler
         return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler(proxyResponseConfiguration)));
     }
 
-    private static Response handleProxyException(Request request, ProxyException e)
+    @VisibleForTesting
+    Response handleProxyException(Request request, ProxyException e, RoutingDestination routingDestination)
     {
+        Optional<ProxyBackendConfiguration> inactiveBackend = findInactiveUnhealthyBackend(routingDestination.clusterHost());
+        if (inactiveBackend.isPresent()) {
+            log.debug(e, "Proxy request failed, backend is inactive and unreachable: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
+            throw new WebApplicationException(
+                    Response.status(SERVICE_UNAVAILABLE)
+                            .type(TEXT_PLAIN_TYPE)
+                            .entity("Backend cluster %s is inactive and unreachable".formatted(inactiveBackend.get().getName()))
+                            .build());
+        }
         log.warn(e, "Proxy request failed: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
         throw badRequest(e.getMessage());
+    }
+
+    @VisibleForTesting
+    Optional<ProxyBackendConfiguration> findInactiveUnhealthyBackend(String clusterHost)
+    {
+        try {
+            String target = removeTrailingSlash(clusterHost);
+            return gatewayBackendManager.getAllBackends().stream()
+                    .filter(backend -> removeTrailingSlash(backend.getProxyTo()).equals(target))
+                    .filter(backend -> !backend.isActive())
+                    .filter(backend -> backendStateManager.getBackendState(backend).trinoStatus() != TrinoStatus.HEALTHY)
+                    .findFirst();
+        }
+        catch (RuntimeException e) {
+            log.debug(e, "Failed to look up backend state for %s", clusterHost);
+            return Optional.empty();
+        }
     }
 
     /**

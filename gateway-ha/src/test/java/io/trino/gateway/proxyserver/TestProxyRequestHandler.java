@@ -13,8 +13,19 @@
  */
 package io.trino.gateway.proxyserver;
 
+import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
+import io.trino.gateway.ha.clustermonitor.TrinoStatus;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.GatewayBackendManager;
+import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
+import io.trino.gateway.ha.router.RoutingManager;
+import jakarta.ws.rs.WebApplicationException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -32,10 +43,12 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
@@ -46,7 +59,10 @@ import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @TestInstance(PER_CLASS)
 final class TestProxyRequestHandler
@@ -194,5 +210,119 @@ final class TestProxyRequestHandler
                 .isEqualTo("https://coord-a:8443/trino/oauth2/token/<redacted>");
         assertThat(ProxyRequestHandler.redactUriForLog(URI.create("https://coord-a:8443/v1/statement")))
                 .isEqualTo("https://coord-a:8443/v1/statement");
+    }
+
+    @Test
+    void testFindInactiveUnhealthyBackend()
+    {
+        ProxyBackendConfiguration backend = backend(false);
+        // trailing slash on the configured proxyTo must not defeat the match
+        backend.setProxyTo("http://trino-a:8080/");
+
+        assertThat(handler(backend, TrinoStatus.UNHEALTHY).findInactiveUnhealthyBackend("http://trino-a:8080"))
+                .containsSame(backend);
+    }
+
+    @Test
+    void testFindInactiveUnhealthyBackendIgnoresActiveBackend()
+    {
+        assertThat(handler(backend(true), TrinoStatus.UNHEALTHY).findInactiveUnhealthyBackend("http://trino-a:8080")).isEmpty();
+    }
+
+    @Test
+    void testFindInactiveUnhealthyBackendIgnoresHealthyBackend()
+    {
+        assertThat(handler(backend(false), TrinoStatus.HEALTHY).findInactiveUnhealthyBackend("http://trino-a:8080")).isEmpty();
+    }
+
+    @Test
+    void testFindInactiveUnhealthyBackendIgnoresUnknownHost()
+    {
+        assertThat(handler(backend(false), TrinoStatus.UNHEALTHY).findInactiveUnhealthyBackend("http://other:8080")).isEmpty();
+    }
+
+    @Test
+    void testFindInactiveUnhealthyBackendFallsBackWhenLookupFails()
+    {
+        GatewayBackendManager backendManager = mock(GatewayBackendManager.class);
+        when(backendManager.getAllBackends()).thenThrow(new IllegalStateException("cache load failed"));
+
+        assertThat(handler(backendManager, mock(BackendStateManager.class)).findInactiveUnhealthyBackend("http://trino-a:8080")).isEmpty();
+    }
+
+    @Test
+    void testProxyFailureReturns503ForInactiveUnhealthyBackend()
+    {
+        RoutingDestination destination = destination();
+
+        assertThatThrownBy(() -> handler(backend(false), TrinoStatus.UNHEALTHY)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(503);
+                    assertThat((String) e.getResponse().getEntity()).isEqualTo("Backend cluster trino-a is inactive and unreachable");
+                });
+    }
+
+    @Test
+    void testProxyFailureReturns502ForActiveBackend()
+    {
+        RoutingDestination destination = destination();
+
+        assertThatThrownBy(() -> handler(backend(true), TrinoStatus.UNHEALTHY)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(502);
+                    assertThat((String) e.getResponse().getEntity()).isEqualTo("connection refused");
+                });
+    }
+
+    @Test
+    void testProxyFailureReturns502ForInactiveHealthyBackend()
+    {
+        RoutingDestination destination = destination();
+
+        assertThatThrownBy(() -> handler(backend(false), TrinoStatus.HEALTHY)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(502));
+    }
+
+    private static RoutingDestination destination()
+    {
+        return new RoutingDestination("adhoc", "http://trino-a:8080", URI.create("http://trino-a:8080/v1/statement"), "http://trino-a:8080");
+    }
+
+    private static io.airlift.http.client.Request proxyRequest(RoutingDestination destination)
+    {
+        return prepareGet().setUri(destination.clusterUri()).build();
+    }
+
+    private static ProxyBackendConfiguration backend(boolean active)
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("trino-a");
+        backend.setProxyTo("http://trino-a:8080");
+        backend.setActive(active);
+        return backend;
+    }
+
+    private static ProxyRequestHandler handler(ProxyBackendConfiguration backend, TrinoStatus status)
+    {
+        GatewayBackendManager backendManager = mock(GatewayBackendManager.class);
+        when(backendManager.getAllBackends()).thenReturn(List.of(backend));
+        BackendStateManager stateManager = mock(BackendStateManager.class);
+        when(stateManager.getBackendState(backend)).thenReturn(ClusterStats.builder("trino-a").trinoStatus(status).build());
+        return handler(backendManager, stateManager);
+    }
+
+    private static ProxyRequestHandler handler(GatewayBackendManager backendManager, BackendStateManager stateManager)
+    {
+        return new ProxyRequestHandler(
+                mock(HttpClient.class),
+                mock(RoutingManager.class),
+                mock(QueryHistoryManager.class),
+                backendManager,
+                stateManager,
+                mock(OAuth2RoutingStore.class),
+                new HaGatewayConfiguration());
     }
 }

@@ -28,6 +28,8 @@ import io.trino.gateway.ha.handler.ProxyHandlerStats;
 import io.trino.gateway.ha.handler.RoutingTargetHandler;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
@@ -57,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 final class TestRouteToBackendResource
 {
@@ -230,6 +233,8 @@ final class TestRouteToBackendResource
             super(unsupportedInterface(HttpClient.class),
                     unsupportedInterface(RoutingManager.class),
                     unsupportedInterface(QueryHistoryManager.class),
+                    unsupportedInterface(GatewayBackendManager.class),
+                    mock(BackendStateManager.class),
                     unsupportedInterface(OAuth2RoutingStore.class),
                     new HaGatewayConfiguration());
         }
