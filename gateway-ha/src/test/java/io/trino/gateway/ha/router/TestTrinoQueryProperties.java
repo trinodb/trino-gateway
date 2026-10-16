@@ -582,6 +582,7 @@ final class TestTrinoQueryProperties
             .add("DROP VIEW c.s.t")                                         // DropView
             .add("ALTER BRANCH fb IN TABLE c.s.t FAST FORWARD TO tb")       // FastForwardBranch
             .add("INSERT INTO c.s.t VALUES (1)")                            // Insert
+            .add("ALTER MATERIALIZED VIEW c.s.t EXECUTE optimize")          // MaterializedViewExecute
             .add("REFRESH MATERIALIZED VIEW c.s.t")                         // RefreshMaterializedView
             .add("ALTER VIEW c.s.t REFRESH")                                // RefreshView
             .add("ALTER TABLE c.s.t RENAME COLUMN a TO b")                  // RenameColumn

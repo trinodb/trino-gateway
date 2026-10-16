@@ -56,6 +56,7 @@ import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.FastForwardBranch;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Insert;
+import io.trino.sql.tree.MaterializedViewExecute;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
 import io.trino.sql.tree.QualifiedName;
@@ -506,6 +507,7 @@ public class TrinoQueryProperties
             case TruncateTable s -> tableBuilder.add(qualifyName(s.getTableName()));
             case DropView s -> tableBuilder.add(qualifyName(s.getName()));
             case DropMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
+            case MaterializedViewExecute s -> tableBuilder.add(qualifyName(s.getName()));
             case RefreshMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
             case RefreshView s -> tableBuilder.add(qualifyName(s.getName()));
             // ALTER TABLE ... column operations: the modified table is what routing cares about
