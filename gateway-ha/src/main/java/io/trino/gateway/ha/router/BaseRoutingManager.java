@@ -53,6 +53,7 @@ public abstract class BaseRoutingManager
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
+    private final boolean unavailableGroupFallbackEnabled;
     private final QueryHistoryManager queryHistoryManager;
     private final LoadingCache<String, String> queryIdBackendCache;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
@@ -62,6 +63,7 @@ public abstract class BaseRoutingManager
     {
         this.gatewayBackendManager = gatewayBackendManager;
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
+        this.unavailableGroupFallbackEnabled = routingConfiguration.isUnavailableGroupFallbackEnabled();
         this.queryHistoryManager = queryHistoryManager;
         this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
         this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
@@ -94,12 +96,12 @@ public abstract class BaseRoutingManager
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveDefaultBackends().stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        return selectBackend(backends, user).orElseThrow(() -> new IllegalStateException("Number of active backends found zero"));
+        return selectBackend(backends, user).orElseThrow(() -> new NoHealthyBackendException("No healthy backend found for default routing group [%s]".formatted(defaultRoutingGroup)));
     }
 
     /**
-     * Performs routing to a given cluster group. This falls back to a default backend, if no scheduled
-     * backend is found.
+     * Performs routing to a given cluster group. If the group has no healthy backend, this falls back
+     * to the default routing group unless that fallback is disabled.
      */
     @Override
     public ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user)
@@ -107,7 +109,14 @@ public abstract class BaseRoutingManager
         List<ProxyBackendConfiguration> backends = gatewayBackendManager.getActiveBackends(routingGroup).stream()
                 .filter(backEnd -> isBackendHealthy(backEnd.getName()))
                 .toList();
-        return selectBackend(backends, user).orElseGet(() -> provideDefaultBackendConfiguration(user));
+        Optional<ProxyBackendConfiguration> selected = selectBackend(backends, user);
+        if (selected.isPresent()) {
+            return selected.get();
+        }
+        if (!unavailableGroupFallbackEnabled) {
+            throw new NoHealthyBackendException("No healthy backend found for routing group [%s] and fallback to the default routing group is disabled".formatted(routingGroup));
+        }
+        return provideDefaultBackendConfiguration(user);
     }
 
     @Override

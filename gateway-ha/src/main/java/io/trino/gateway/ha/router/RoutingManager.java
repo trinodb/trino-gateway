@@ -106,6 +106,8 @@ public interface RoutingManager
      * @param routingGroup the routing group to use for backend selection
      * @param user the user requesting the backend
      * @return the backend configuration for the selected cluster
+     * @throws NoHealthyBackendException if no healthy backend can serve the request: {@code routingGroup}
+     *         has none and fallback to the default routing group is disabled, or the default routing group has none
      */
     ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user);
 
