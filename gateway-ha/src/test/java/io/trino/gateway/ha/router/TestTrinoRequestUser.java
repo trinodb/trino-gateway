@@ -132,6 +132,82 @@ final class TestTrinoRequestUser
     }
 
     @Test
+    void testUserFromUserInfoClaim()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthTokenInfoUserField("preferred_username");
+
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse(
+                """
+                {
+                  "sub": "123456789",
+                  "email": "user@example.com",
+                  "preferred_username": " user "
+                }
+                """))).hasValue("user");
+    }
+
+    @Test
+    void testUserFromUserInfoFallsBackToSubject()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthTokenInfoUserField("email");
+
+        // Missing, blank and non-string claim
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\"}"))).hasValue("123456789");
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\", \"email\": \" \"}"))).hasValue("123456789");
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse("{\"sub\": \"123456789\", \"email\": 42}"))).hasValue("123456789");
+    }
+
+    @Test
+    void testTokenUserFieldDoesNotApplyToUserInfo()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setTokenUserField("preferred_username");
+
+        assertThat(userFromUserInfo(requestAnalyzerConfig, userInfoResponse(
+                """
+                {
+                  "sub": "123456789",
+                  "preferred_username": "user"
+                }
+                """))).hasValue("123456789");
+    }
+
+    @Test
+    void testUserFromUserInfoForJwtWithoutTokenUserField()
+            throws Exception
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthTokenInfoUserField("preferred_username");
+
+        // No email claim, the default tokenUserField, so the token is exchanged with the userinfo endpoint
+        String token = JWT.create()
+                .withSubject("123456789")
+                .sign(HMAC256("random"));
+
+        try (MockWebServer userInfoServer = new MockWebServer()) {
+            userInfoServer.enqueue(userInfoResponse(
+                    """
+                    {
+                      "sub": "123456789",
+                      "preferred_username": "user"
+                    }
+                    """));
+            userInfoServer.start();
+
+            assertThat(userFromUserInfo(userInfoServer, requestAnalyzerConfig, token)).hasValue("user");
+
+            RecordedRequest recordedRequest = userInfoServer.takeRequest(5, SECONDS);
+            assertThat(recordedRequest).isNotNull();
+            assertThat(recordedRequest.getHeader(AUTHORIZATION)).isEqualTo("Bearer " + token);
+        }
+    }
+
+    @Test
     void testUserFromUserInfoErrorResponse()
             throws Exception
     {
@@ -162,7 +238,7 @@ final class TestTrinoRequestUser
                     """));
             userInfoServer.start();
 
-            assertThat(userFromUserInfo(userInfoServer, new RequestAnalyzerConfig())).hasValue("123456789");
+            assertThat(userFromUserInfo(userInfoServer, new RequestAnalyzerConfig(), OPAQUE_TOKEN)).hasValue("123456789");
 
             RecordedRequest recordedRequest = userInfoServer.takeRequest(5, SECONDS);
             assertThat(recordedRequest).isNotNull();
@@ -184,18 +260,18 @@ final class TestTrinoRequestUser
         try (MockWebServer userInfoServer = new MockWebServer()) {
             userInfoServer.enqueue(response);
             userInfoServer.start();
-            return userFromUserInfo(userInfoServer, requestAnalyzerConfig);
+            return userFromUserInfo(userInfoServer, requestAnalyzerConfig, OPAQUE_TOKEN);
         }
     }
 
-    private static Optional<String> userFromUserInfo(MockWebServer userInfoServer, RequestAnalyzerConfig requestAnalyzerConfig)
+    private static Optional<String> userFromUserInfo(MockWebServer userInfoServer, RequestAnalyzerConfig requestAnalyzerConfig, String token)
     {
         requestAnalyzerConfig.setOauthTokenInfoUrl(userInfoServer.url("/userinfo").toString());
 
         HttpServletRequest mockRequest = new QueryRequestMock()
                 .requestAnalyzerConfig(requestAnalyzerConfig)
                 .httpHeader(USER_HEADER, null)
-                .httpHeader(AUTHORIZATION, "Bearer " + OPAQUE_TOKEN)
+                .httpHeader(AUTHORIZATION, "Bearer " + token)
                 .getHttpServletRequest();
 
         TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
