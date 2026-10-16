@@ -52,6 +52,7 @@ import io.trino.sql.tree.FastForwardBranch;
 import io.trino.sql.tree.Grant;
 import io.trino.sql.tree.GrantRoles;
 import io.trino.sql.tree.Insert;
+import io.trino.sql.tree.MaterializedViewExecute;
 import io.trino.sql.tree.Merge;
 import io.trino.sql.tree.Prepare;
 import io.trino.sql.tree.Query;
@@ -141,6 +142,7 @@ public final class StatementUtils
             .add(basicStatement(ShowBranches.class, DESCRIBE))
             // Table Procedure
             .add(basicStatement(TableExecute.class, ALTER_TABLE_EXECUTE))
+            .add(basicStatement(MaterializedViewExecute.class, ALTER_TABLE_EXECUTE))
             // DML
             .add(basicStatement(CreateTableAsSelect.class, INSERT))
             .add(basicStatement(RefreshMaterializedView.class, INSERT))
