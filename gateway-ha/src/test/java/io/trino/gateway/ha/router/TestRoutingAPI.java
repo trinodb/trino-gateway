@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.HaGatewayTestUtils;
+import io.trino.gateway.ha.config.QueryLinkType;
 import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.RoutingRule;
 import okhttp3.MediaType;
@@ -166,5 +167,6 @@ final class TestRoutingAPI
 
         assertThat(response.code()).isEqualTo(200);
         assertThat(uiConfiguration.getDisablePages()).containsExactly("routing-rules");
+        assertThat(uiConfiguration.getQueryLinkType()).isEqualTo(QueryLinkType.PREVIEW);
     }
 }
