@@ -266,8 +266,11 @@ claim named in `requestAnalyzerConfig.tokenUserField` is used as the username.
 By default, this is the `email` claim. If the token is a JWE issued by Trino,
 and `requestAnalyzerConfig.oauthRefreshTokensSecretKey` is configured, then the
 token is decrypted and the same claim is used. If the token is not a valid JWT,
-and `requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token is
-exchanged with the Info URL. Responses are cached for 10 minutes to avoid
+or has no such claim, and `requestAnalyzerConfig.oauthTokenInfoUrl` is
+configured, then the token is exchanged with the Info URL, and the value of the
+claim named in `requestAnalyzerConfig.oauthTokenInfoUserField` is used as the
+username. By default, this is the `sub` claim. Responses are cached for 10
+minutes to avoid
 triggering rate limits.
 
 You may call `trinoRequestUser.getUser()` and `trinoRequestUser.getUserInfo()`
@@ -390,6 +393,12 @@ minutes to avoid triggering rate limits.
 
 Connect and read timeout of the request to `oauthTokenInfoUrl`. If the request
 fails or times out, no user is extracted from the token. Defaults to `5s`.
+
+`oauthTokenInfoUserField`:
+
+When extracting the user from the response of `oauthTokenInfoUrl`, this claim is
+used as the username. If the claim is missing, blank, or not a string, the `sub`
+claim is used. Defaults to `sub`.
 
 `oauthRefreshTokensSecretKey`:
 
