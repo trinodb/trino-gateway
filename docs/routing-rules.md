@@ -226,9 +226,11 @@ Kerberos and Certificate authentication are not currently supported. If the
 request contains the `Authorization: Bearer` header, an attempt is made to treat
 the token as a JWT and deserialize it. If this is successful, the value of the
 claim named in `requestAnalyzerConfig.tokenUserField` is used as the username.
-By default, this is the `email` claim. If the token is not a valid JWT, and
-`requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token is
-exchanged with the Info URL. Responses are cached for 10 minutes to avoid
+By default, this is the `email` claim. If the token is not a valid JWT, or has
+no such claim, and `requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then
+the token is exchanged with the Info URL, and the value of the claim named in
+`requestAnalyzerConfig.oauthTokenInfoUserField` is used as the username. By
+default, this is the `sub` claim. Responses are cached for 10 minutes to avoid
 triggering rate limits.
 
 You may call `trinoRequestUser.getUser()` and `trinoRequestUser.getUserInfo()`
@@ -325,6 +327,17 @@ By default, the `email` claim is used.
 If configured, Trino Gateway attempts to retrieve the user info by exchanging
 potential authorization tokens with this URL. Responses are cached for 10
 minutes to avoid triggering rate limits.
+
+`oauthTokenInfoTimeout`:
+
+Connect and read timeout of the request to `oauthTokenInfoUrl`. If the request
+fails or times out, no user is extracted from the token. Defaults to `5s`.
+
+`oauthTokenInfoUserField`:
+
+When extracting the user from the response of `oauthTokenInfoUrl`, this claim is
+used as the username. If the claim is missing, blank, or not a string, the `sub`
+claim is used. Defaults to `sub`.
 
 ### Execution of rules
 

@@ -13,7 +13,12 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
 import jakarta.validation.constraints.Max;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class RequestAnalyzerConfig
 {
@@ -25,6 +30,8 @@ public class RequestAnalyzerConfig
     private String clientCertificateUserMappingFile;
     private String tokenUserField = "email";
     private String oauthTokenInfoUrl;
+    private Duration oauthTokenInfoTimeout = new Duration(5, SECONDS);
+    private String oauthTokenInfoUserField = "sub";
     private boolean isAnalyzeRequest;
 
     public RequestAnalyzerConfig() {}
@@ -88,6 +95,31 @@ public class RequestAnalyzerConfig
     public void setOauthTokenInfoUrl(String oauthTokenInfoUrl)
     {
         this.oauthTokenInfoUrl = oauthTokenInfoUrl;
+    }
+
+    public Duration getOauthTokenInfoTimeout()
+    {
+        return oauthTokenInfoTimeout;
+    }
+
+    public void setOauthTokenInfoTimeout(Duration oauthTokenInfoTimeout)
+    {
+        requireNonNull(oauthTokenInfoTimeout, "oauthTokenInfoTimeout is null");
+        checkArgument(oauthTokenInfoTimeout.toMillis() > 0, "oauthTokenInfoTimeout must be positive");
+        checkArgument(oauthTokenInfoTimeout.toMillis() <= Integer.MAX_VALUE, "oauthTokenInfoTimeout must be at most %s ms", Integer.MAX_VALUE);
+        this.oauthTokenInfoTimeout = oauthTokenInfoTimeout;
+    }
+
+    public String getOauthTokenInfoUserField()
+    {
+        return oauthTokenInfoUserField;
+    }
+
+    public void setOauthTokenInfoUserField(String oauthTokenInfoUserField)
+    {
+        requireNonNull(oauthTokenInfoUserField, "oauthTokenInfoUserField is null");
+        checkArgument(!oauthTokenInfoUserField.isBlank(), "oauthTokenInfoUserField is blank");
+        this.oauthTokenInfoUserField = oauthTokenInfoUserField;
     }
 
     public boolean isClientsUseV2Format()
