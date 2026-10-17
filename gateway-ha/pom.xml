@@ -565,8 +565,8 @@
                             <goal>install-node-and-pnpm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v24.12.0</nodeVersion>
-                            <pnpmVersion>11.13.1</pnpmVersion>
+                            <nodeVersion>v24.21.0</nodeVersion>
+                            <pnpmVersion>11.28.5</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
@@ -578,6 +578,15 @@
                         <configuration>
                             <arguments>install --ignore-scripts</arguments>
                             <pnpmRegistryURL>${frontend.pnpmRegistryURL}</pnpmRegistryURL>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>pnpm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run check</arguments>
                         </configuration>
                     </execution>
                     <execution>

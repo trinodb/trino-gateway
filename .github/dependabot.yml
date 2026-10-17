@@ -29,19 +29,45 @@ updates:
     directory: "webapp"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 2
-    # Group dependabot updates for the web UI dependencies to reduce PR volume.
-    groups:
-      web-ui-dependencies:
-        patterns:
-          - "*"
-    allow:
-      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    # Dependencies are pinned to exact versions. Rewrite the version in
+    # package.json on every update rather than only touching the lockfile.
+    versioning-strategy: increase
+    # Updates are deliberately not grouped. A grouped pull request fails as a
+    # whole when a single update breaks, and cannot be merged in parts.
     ignore:
-      # Ignore major updates for all dependencies; allow only minor/patch updates.
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
+      # Never run ahead of the Trino web UI on a major version of the packages
+      # shared with it. Majors land when the web UI adopts them, while minor
+      # and patch updates flow freely. The web UI manifest is the reference:
+      # https://github.com/trinodb/trino/blob/master/core/trino-web-ui/src/main/resources/webapp/package.json
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-router-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zustand"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-plugin-*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@typescript-eslint/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "globals"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/*"
+        update-types: ["version-update:semver-major"]
     cooldown:
       # Apply 7 day cooldown to avoid updating dependencies right away. This reduces the opportunity window
       # when supply chain is compromised.
