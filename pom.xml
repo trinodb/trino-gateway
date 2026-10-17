@@ -29,6 +29,7 @@
 
     <modules>
         <module>gateway-ha</module>
+        <module>webapp</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/trinodb/trino-gateway.git</connection>
@@ -77,6 +78,12 @@
                 <groupId>io.airlift</groupId>
                 <artifactId>units</artifactId>
                 <version>1.13</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino.gateway</groupId>
+                <artifactId>webapp</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <dependency>

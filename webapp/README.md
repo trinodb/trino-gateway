@@ -13,20 +13,65 @@
 ```
 pnpm install
 pnpm run dev
+pnpm run check
 pnpm run build
 ```
+
+The `check` script runs the type check and lint. The Maven build runs it as
+well, so a failure there fails the build.
+
+# Test
+
+Functional tests run with [Playwright](https://playwright.dev/) against the
+production bundle. Every backend call is mocked in `e2e/fixtures.ts`, so no
+running Trino Gateway is needed.
+
+```
+pnpm exec playwright install chromium
+pnpm run test
+```
+
+Each test also fails on any uncaught exception or console error in the browser.
+Run the tests before and after a dependency update.
+
+# Dependencies
+
+Dependencies are pinned to exact versions. The versions of the packages shared
+with the [Trino web UI](https://github.com/trinodb/trino/tree/master/core/trino-web-ui)
+follow that project, since the web UI here is planned to embed the Trino query
+editor, which shares its React stack with the Trino web UI. Report the
+differences with:
+
+```
+pnpm run sync:check
+```
+
+Drift is advisory. Major version updates of the shared packages land here
+only after the Trino web UI adopted them.
 
 # Package
 
+The folder is also the `webapp` Maven module. The Maven build installs Node.js
+and pnpm into `target/node`, builds the production bundle into `target/dist`,
+and packages it as a JAR that the `gateway-ha` module depends on.
+
 ```
-# If you want the web to start with the project, you can execute 
+# Build everything, from the root of the repository
 ./mvnw clean install
 
-# If you want to run the web project alone, you can execute 
-cd ./webapp
-pnpm install
-pnpm run build
+# Build and check only the web UI, from the root of the repository
+./mvnw install -pl webapp
 ```
+
+To use the Node.js and pnpm versions that Maven installed with the commands in
+this file, add them to the path:
+
+```
+export PATH="$PWD/target/node:$PATH"
+```
+
+The [development documentation](../docs/development.md#web-ui) has more
+details.
 
 # Guidelines
 

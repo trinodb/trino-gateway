@@ -17,6 +17,10 @@ or execute the following command:
 ./mvnw test-compile exec:java -pl gateway-ha -Dexec.classpathScope=test -Dexec.mainClass="io.trino.gateway.TrinoGatewayRunner"
 ```
 
+The command uses the web UI from the `webapp` module in your local Maven
+repository. Build that module first, as described in the [web UI](#web-ui)
+section.
+
 ### Build and run
 
 #### Locally
@@ -43,6 +47,83 @@ java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../config.yaml
 
 Follow the separate instructions for building the container and running Trino
 Gateway with docker compose from the `README.md` file in the `docker` folder.
+
+### Web UI
+
+The web UI is a React application in the `webapp` folder. The folder is also
+the `webapp` Maven module, so you can build it with Maven or with the native
+tools.
+
+#### Build with Maven
+
+The Maven build needs no local Node.js installation. It installs the required
+versions of Node.js and pnpm into `webapp/target/node`, builds the production
+bundle into `webapp/target/dist`, and packages it as a JAR. The `gateway-ha`
+module depends on that JAR and serves the web UI from it.
+
+Build everything from the root of the repository:
+
+```shell
+./mvnw clean install
+```
+
+Build only the web UI:
+
+```shell
+./mvnw install -pl webapp
+```
+
+The build also runs the type check and lint. Add `-DskipTests` to skip them.
+
+A build of only the `gateway-ha` module with `-pl gateway-ha` uses the web UI
+from your local Maven repository. Build the `webapp` module first, and again
+after any change to the web UI, or add `-am` to build both modules.
+
+#### Build with pnpm
+
+Use [pnpm](https://pnpm.io/) in the `webapp` folder for work on the web UI
+itself. To use the Node.js and pnpm versions from the Maven build without a
+separate installation, add them to the path:
+
+```shell
+cd webapp
+export PATH="$PWD/target/node:$PATH"
+```
+
+Install the dependencies, run the type check and lint, and build the bundle:
+
+```shell
+pnpm install
+pnpm run check
+pnpm run build
+```
+
+#### Run the development server
+
+The development server reloads the web UI in the browser on every change. It
+forwards all requests for the API to a Trino Gateway on
+`http://localhost:8080`, so start Trino Gateway first, for example with the
+`TrinoGatewayRunner` class.
+
+```shell
+cd webapp
+pnpm run dev
+```
+
+Open the web UI at `http://localhost:5173/trino-gateway/`. Change the address
+of Trino Gateway with `VITE_BASE_URL` in the `webapp/.env.development` file.
+
+#### Test
+
+The functional tests use [Playwright](https://playwright.dev/) and run against
+the production bundle with a mocked backend, so they need no running Trino
+Gateway:
+
+```shell
+cd webapp
+pnpm exec playwright install chromium
+pnpm run test
+```
 
 ## Contact, help, and issues
 
