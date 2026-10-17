@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.resource;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
@@ -229,6 +230,10 @@ public class GatewayWebAppResource
         if (isRulesEngineEnabled && ruleType == RulesType.EXTERNAL) {
             return Response.status(Response.Status.NO_CONTENT)
                     .entity(Result.fail("Routing rules are managed by an external service")).build();
+        }
+        if (!isRulesEngineEnabled) {
+            // No rules file has to be configured when the rules engine is not in use
+            return Response.ok(Result.ok(ImmutableList.of())).build();
         }
         List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
         return Response.ok(Result.ok(routingRulesList)).build();
