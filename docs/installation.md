@@ -334,6 +334,26 @@ The following pages are available:
 - `history`
 - `routing-rules`
 
+### Link queries to the Trino Web UI
+
+The query history page links each query to the Web UI of its backend. Trino 483
+replaced the Web UI, and the page the default link points to returns 404 there,
+even with `web-ui.legacy.enabled`. Set `queryLinkType` to match the Trino
+version of your clusters:
+
+```yaml
+uiConfiguration:
+  queryLinkType: PREVIEW
+```
+
+- `LEGACY` links to `/ui/query.html?<queryId>`, the query page of Trino 482 and
+  earlier. This is the default.
+- `PREVIEW` links to `/ui/#/queries/<queryId>`, the query page of the default
+  Web UI in Trino 483 and later.
+
+The setting applies to all backends. If your clusters run Trino releases on both
+sides of 483, links to one of the groups do not open the query.
+
 ## Configure behind a load balancer
 
 A possible deployment of Trino Gateway is to run multiple instances of Trino 

@@ -4,9 +4,10 @@ import Locale from "../locales";
 import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
-import { HistoryData, HistoryDetail } from "../types/history";
+import { HistoryData, HistoryDetail, QueryLinkType } from "../types/history";
 import { formatTimestamp } from "../utils/time";
 import { backendsApi } from "../api/webapp/cluster";
+import { getUIConfiguration } from "../api/webapp/login";
 import { Role, useAccessStore } from "../store";
 import { BackendData } from "../types/cluster";
 import { TimezoneContext } from "./TimezoneContext";
@@ -27,6 +28,7 @@ export function History() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedText, setSelectedText] = useState<string>("");
   const [okText, setOkText] = useState("Copy to Clipboard");
+  const [queryLinkType, setQueryLinkType] = useState<QueryLinkType>("LEGACY");
 
   useEffect(() => {
     backendsApi({})
@@ -40,6 +42,15 @@ export function History() {
           mapping[backend.externalUrl] = backend.name;
         }
         setBackendMapping(mapping);
+      }).catch(() => { });
+  }, []);
+
+  useEffect(() => {
+    getUIConfiguration()
+      .then(config => {
+        if (config?.queryLinkType) {
+          setQueryLinkType(config.queryLinkType);
+        }
       }).catch(() => { });
   }, []);
 
@@ -63,8 +74,11 @@ export function History() {
   }
 
   const linkQueryRender = (text: string, record: HistoryDetail) => {
+    const href = queryLinkType === "PREVIEW"
+      ? `${record.externalUrl}/ui/#/queries/${text}`
+      : `${record.externalUrl}/ui/query.html?${text}`;
     return (
-      <Text link={{ href: `${record.externalUrl}/ui/query.html?${text}`, target: '_blank' }} underline>{text}</Text>
+      <Text link={{ href, target: '_blank' }} underline>{text}</Text>
     );
   }
 
