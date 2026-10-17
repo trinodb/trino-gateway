@@ -80,13 +80,12 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testForcesReAuthAndDropsPinWhenPinnedBackendUnavailable()
+    void testForcesReAuthAndDropsPinWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
-        when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
         HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
 
@@ -102,13 +101,12 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendUnavailable()
+    void testForcesReAuthWithUnauthorizedForInitiateLegWhenPinnedBackendGone()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         when(store.findBackend(INITIATE_PIN_KEY)).thenReturn(Optional.of("http://dead:8080"));
-        // No longer active and healthy (deactivated, unhealthy, or removed from the fleet).
-        when(routingManager.isBackendActiveAndHealthy("http://dead:8080")).thenReturn(false);
+        when(routingManager.isBackendActive("http://dead:8080")).thenReturn(false);
 
         HttpServletRequest request = oauthRequest("/oauth2/token/initiate/" + INITIATE_AUTH_ID_HASH);
 
@@ -123,13 +121,13 @@ final class TestRoutingTargetHandlerOAuth2
     }
 
     @Test
-    void testRoutesToPinnedBackendWhenActiveAndHealthy()
+    void testRoutesToPinnedBackendWhenActive()
     {
         RoutingManager routingManager = mock(RoutingManager.class);
         OAuth2RoutingStore store = mock(OAuth2RoutingStore.class);
         when(store.findBackend(POLL_PIN_KEY)).thenReturn(Optional.of("http://live:8080"));
-        // Active and healthy -> route the in-flight handshake there.
-        when(routingManager.isBackendActiveAndHealthy("http://live:8080")).thenReturn(true);
+        // Active, whatever its health -> route the in-flight handshake there.
+        when(routingManager.isBackendActive("http://live:8080")).thenReturn(true);
 
         HttpServletRequest request = oauthRequest("/oauth2/token/" + POLL_AUTH_ID);
 
@@ -147,7 +145,7 @@ final class TestRoutingTargetHandlerOAuth2
         // The callback carries no id in its path; it is pinned by the authIdHash inside the state JWT,
         // reusing the pin recorded for the initiate leg.
         when(store.findBackend(CALLBACK_PIN_KEY)).thenReturn(Optional.of("http://minting:8080"));
-        when(routingManager.isBackendActiveAndHealthy("http://minting:8080")).thenReturn(true);
+        when(routingManager.isBackendActive("http://minting:8080")).thenReturn(true);
 
         HttpServletRequest request = oauthRequest("/oauth2/callback");
         when(request.getQueryString()).thenReturn("code=abc&state=" + stateJwt(CALLBACK_AUTH_ID_HASH));

@@ -110,13 +110,13 @@ public interface RoutingManager
     ProxyBackendConfiguration provideBackendConfiguration(String routingGroup, String user);
 
     /**
-     * Whether {@code backendUrl} currently maps to an active, healthy backend. Matching is by scheme
-     * and authority (host/port) only and is case-insensitive, so a proxy-to URL that carries a base
-     * path or differs in host case still resolves to its backend (e.g. an OAuth2 pin, which is a
+     * Whether {@code backendUrl} maps to an active backend, whatever its health status. Matching is by
+     * scheme and authority (host/port) only and is case-insensitive, so a proxy-to URL that carries a
+     * base path or differs in host case still resolves to its backend (e.g. an OAuth2 pin, which is a
      * bare {@code scheme://authority}).
      *
      * @param backendUrl the backend URL to resolve
-     * @return true if an active backend with the same scheme and authority is healthy
+     * @return true if an active backend has the same scheme and authority
      */
-    boolean isBackendActiveAndHealthy(String backendUrl);
+    boolean isBackendActive(String backendUrl);
 }
