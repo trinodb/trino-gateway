@@ -96,6 +96,12 @@
                 <artifactId>jersey-server</artifactId>
                 <version>4.0.3</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>26.1.0</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
