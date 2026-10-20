@@ -21,19 +21,23 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.SQLException;
 import java.util.stream.IntStream;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestHaOAuth2RoutingStore
 {
-    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     private DataStoreConfiguration dataStoreConfig;
     private JdbcConnectionManager connectionManager;
@@ -43,7 +47,7 @@ final class TestHaOAuth2RoutingStore
     @BeforeAll
     void setUp()
     {
-        dataStoreConfig = dataStoreConfig(postgres);
+        dataStoreConfig = dataStoreConfig(POSTGRESQL);
         connectionManager = new JdbcConnectionManager(dataStoreConfig);
         store = new HaOAuth2RoutingStore(connectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());
     }
@@ -59,7 +63,6 @@ final class TestHaOAuth2RoutingStore
         if (otherPodConnectionManager != null) {
             otherPodConnectionManager.close();
         }
-        postgres.close();
     }
 
     @Test
@@ -113,7 +116,7 @@ final class TestHaOAuth2RoutingStore
     @Test
     void testPinsWithConnectionPool()
     {
-        DataStoreConfiguration pooledConfig = dataStoreConfig(postgres);
+        DataStoreConfiguration pooledConfig = dataStoreConfig(POSTGRESQL);
         pooledConfig.setMaxPoolSize(2);
         try (JdbcConnectionManager pooledConnectionManager = new JdbcConnectionManager(pooledConfig)) {
             OAuth2RoutingStore pooledStore = new HaOAuth2RoutingStore(pooledConnectionManager.getJdbi(), unlimitedWritesConfig(), new OAuth2RoutingStats());

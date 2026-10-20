@@ -26,8 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +43,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,8 +66,7 @@ final class TestLbJwtManagerIntegration
     @TempDir
     static Path tempDir;
 
-    private final PostgreSQLContainer<?> postgresql = new PostgreSQLContainer<>("postgres:17")
-            .waitingFor(Wait.forLogMessage(".*ready to accept connections.*", 1));
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
     private int routerPort = 21002 + (int) (Math.random() * 1000);
     private OkHttpClient httpClient;
     private KeyPair keyPair;

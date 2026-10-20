@@ -21,21 +21,24 @@ import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.trino.gateway.ha.TestingJdbcConnectionManager.createTestingPostgresContainer;
 import static io.trino.gateway.ha.TestingJdbcConnectionManager.dataStoreConfig;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestQueryCountBasedRouter
 {
@@ -49,9 +52,11 @@ final class TestQueryCountBasedRouter
     static final int LEAST_QUEUED_COUNT = 1;
     static final int SAME_QUERY_COUNT = 5;
 
-    private final PostgreSQLContainer postgres = createTestingPostgresContainer();
-    private final DataStoreConfiguration dataStoreConfig = dataStoreConfig(postgres);
-    private final JdbcConnectionManager connectionManager = new JdbcConnectionManager(dataStoreConfig);
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
+    private DataStoreConfiguration dataStoreConfig;
+    private JdbcConnectionManager connectionManager;
 
     GatewayBackendManager backendManager;
     QueryHistoryManager historyManager;
@@ -183,10 +188,11 @@ final class TestQueryCountBasedRouter
         return proxyBackend;
     }
 
-    @AfterAll
-    public final void close()
+    @BeforeAll
+    void setUp()
     {
-        postgres.close();
+        dataStoreConfig = dataStoreConfig(POSTGRESQL);
+        connectionManager = new JdbcConnectionManager(dataStoreConfig);
     }
 
     @BeforeEach

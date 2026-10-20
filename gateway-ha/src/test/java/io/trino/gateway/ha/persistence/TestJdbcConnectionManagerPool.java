@@ -21,13 +21,13 @@ import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.ArrayList;
@@ -45,22 +45,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestJdbcConnectionManagerPool
 {
-    private final PostgreSQLContainer container = createPostgreSqlContainer();
-
-    @BeforeAll
-    void setUp()
-    {
-        container.start();
-    }
-
-    @AfterAll
-    void tearDown()
-    {
-        container.stop();
-    }
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     @Test
     void testJdbiReusesPoolAndBlocksWhenExceedingMaxPoolSize()
@@ -280,10 +270,10 @@ final class TestJdbcConnectionManagerPool
     private DataStoreConfiguration createConfiguration(Integer maxPoolSize)
     {
         return new DataStoreConfiguration(
-                container.getJdbcUrl(),
-                container.getUsername(),
-                container.getPassword(),
-                container.getDriverClassName(),
+                POSTGRESQL.getJdbcUrl(),
+                POSTGRESQL.getUsername(),
+                POSTGRESQL.getPassword(),
+                POSTGRESQL.getDriverClassName(),
                 true,
                 4,
                 true,

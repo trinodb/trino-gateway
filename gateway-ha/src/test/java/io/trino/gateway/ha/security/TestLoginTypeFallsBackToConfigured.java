@@ -26,6 +26,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
@@ -45,12 +47,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The fact that {@link BeforeAll} boots successfully is itself part of the assertion:
  * {@code /loginType} advertises {@code form}, and form/basic auth still authenticates.
  */
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestLoginTypeFallsBackToConfigured
 {
     private static final OkHttpClient httpClient = new OkHttpClient();
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     private final int routerPort = 27001 + (int) (Math.random() * 1000);
 
@@ -58,8 +62,7 @@ final class TestLoginTypeFallsBackToConfigured
     void setup()
             throws Exception
     {
-        postgresql.start();
-        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "auth/oauth-scalar-form-only-test-config.yml");
+        File testConfigFile = HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "auth/oauth-scalar-form-only-test-config.yml");
         String[] args = {testConfigFile.getAbsolutePath()};
         // Before the fallback fix this call threw from LoginResource's constructor and the
         // gateway never started; a successful boot here is part of what this test guards.

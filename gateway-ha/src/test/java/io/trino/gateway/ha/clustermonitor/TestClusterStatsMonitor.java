@@ -25,10 +25,10 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.trino.TrinoContainer;
 
 import java.util.Map;
@@ -39,26 +39,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(PER_CLASS)
 final class TestClusterStatsMonitor
 {
-    private TrinoContainer trino;
+    // Deliberately pinned instead of using TestcontainersUtils.createTrinoContainer, because the
+    // cluster stats monitors do not work against Trino 477 and later. The JMX monitor breaks
+    // because Trino 477 removed the DiscoveryNodeManager MBean, see
+    // https://github.com/trinodb/trino-gateway/issues/773, the metrics monitor looks for a metric
+    // of the same name, see https://github.com/trinodb/trino-gateway/issues/1155, and the HTTP
+    // monitor fails as well. Switch to createTrinoContainer once the monitors are fixed.
+    // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
+    private static final String PINNED_TRINO_IMAGE = "trinodb/trino:476";
 
-    @BeforeAll
-    void setUp()
-    {
-        // TODO https://github.com/trinodb/trino-gateway/issues/773 Update Trino version
-        trino = new TrinoContainer("trinodb/trino:476");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties");
-        trino.withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
-        trino.start();
-    }
-
-    @AfterAll
-    void setup()
-    {
-        trino.close();
-    }
+    @Container
+    private static final TrinoContainer TRINO = new TrinoContainer(PINNED_TRINO_IMAGE)
+            .withCopyFileToContainer(forClasspathResource("trino-config-with-rmi.properties"), "/etc/trino/config.properties")
+            .withCopyFileToContainer(forClasspathResource("jvm-with-rmi.config"), "/etc/trino/jvm.config");
 
     @Test
     void testHttpMonitor()
@@ -169,7 +166,7 @@ final class TestClusterStatsMonitor
         ClusterStatsMonitor monitor = monitorFactory.apply(backendStateConfiguration);
 
         ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
-        proxyBackend.setProxyTo("http://localhost:" + trino.getMappedPort(8080));
+        proxyBackend.setProxyTo("http://localhost:" + TRINO.getMappedPort(8080));
         proxyBackend.setName("test_cluster");
 
         ClusterStats stats = monitor.monitor(proxyBackend);
@@ -200,7 +197,7 @@ final class TestClusterStatsMonitor
         backendStateConfiguration.setUsername("test_user");
 
         ProxyBackendConfiguration proxyBackend = new ProxyBackendConfiguration();
-        proxyBackend.setProxyTo("http://localhost:" + trino.getMappedPort(8080));
+        proxyBackend.setProxyTo("http://localhost:" + TRINO.getMappedPort(8080));
         proxyBackend.setName("test_cluster");
 
         MonitorConfiguration monitorConfiguration = new MonitorConfiguration();

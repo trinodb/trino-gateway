@@ -15,11 +15,13 @@ package io.trino.gateway.ha.persistence;
 
 import org.testcontainers.mysql.MySQLContainer;
 
+import static io.trino.gateway.ha.util.TestcontainersUtils.MYSQL_IMAGE;
+
 final class TestOAuth2RoutingSweepMySql
         extends BaseTestOAuth2RoutingSweep
 {
     TestOAuth2RoutingSweepMySql()
     {
-        super(new MySQLContainer("mysql:8.0.36"));
+        super(new MySQLContainer(MYSQL_IMAGE));
     }
 }

@@ -17,19 +17,9 @@ import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
-
 public final class TestingJdbcConnectionManager
 {
     private TestingJdbcConnectionManager() {}
-
-    public static PostgreSQLContainer createTestingPostgresContainer()
-    {
-        PostgreSQLContainer postgres = createPostgreSqlContainer()
-                .withDatabaseName("testdb");
-        postgres.start();
-        return postgres;
-    }
 
     public static DataStoreConfiguration dataStoreConfig(PostgreSQLContainer postgres)
     {

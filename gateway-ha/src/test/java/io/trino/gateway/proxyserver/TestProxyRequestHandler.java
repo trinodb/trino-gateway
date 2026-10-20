@@ -28,6 +28,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
@@ -48,12 +50,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
+@Testcontainers
 @TestInstance(PER_CLASS)
 final class TestProxyRequestHandler
 {
     private final OkHttpClient httpClient = new OkHttpClient();
     private final MockWebServer mockTrinoServer = new MockWebServer();
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
 
     private final int routerPort = 21001 + (int) (Math.random() * 1000);
     private final int customBackendPort = 21000 + (int) (Math.random() * 1000);
@@ -97,9 +101,7 @@ final class TestProxyRequestHandler
             }
         });
 
-        postgresql.start();
-
-        File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-template.yml");
+        File testConfigFile = buildGatewayConfig(POSTGRESQL, routerPort, "test-config-template.yml");
 
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
