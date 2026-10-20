@@ -2,6 +2,184 @@
 
 ## 2026
 
+### Trino Gateway 23 (Planned Date) { id="23" }
+
+Artifacts:
+
+* [JAR file gateway-ha-23-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/23/gateway-ha-23-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:23`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/23.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/23.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.23.0`
+
+Changes:
+
+**General**
+
+* Add support for
+  [rejecting requests instead of routing them to the default routing group](routing-rules.md)
+  with the `routing.unmatchedRequestFallbackEnabled` and
+  `routing.unavailableGroupFallbackEnabled` configuration properties.
+  ([#1319](https://github.com/trinodb/trino-gateway/issues/1319))
+* Add [gzip compression](installation.md#configure-http-compression) for
+  responses from Trino clusters. This can be deactivated by setting the
+  `proxy.http-client.gzip-compression.enabled` configuration property to
+  `false`.
+  ([#765](https://github.com/trinodb/trino-gateway/pull/765))
+* [:warning: Breaking change:](#breaking) Add a
+  [session timeout for form authentication](security.md#formbasic-authentication),
+  which ends sessions 30 minutes after login by default. Set the
+  `sessionTimeout` configuration property to change the duration. Users must
+  log in again after the upgrade.
+  ([#717](https://github.com/trinodb/trino-gateway/issues/717))
+* Add support for EC keys in [JWT authentication](security.md#jwt-authentication)
+  and in OIDC ID token verification.
+  ([#1425](https://github.com/trinodb/trino-gateway/issues/1425))
+* Add support for
+  [buffering the query history in memory](installation.md#query-history-write-buffer)
+  while the database is unavailable, with the `writeBuffer.enabled`
+  configuration property.
+  ([#794](https://github.com/trinodb/trino-gateway/pull/794))
+* Add support for extracting the user from Trino OAuth2
+  [refresh tokens](routing-rules.md#trinorequestuser) with the
+  `requestAnalyzerConfig.oauthRefreshTokensSecretKey` configuration property.
+  ([#1402](https://github.com/trinodb/trino-gateway/issues/1402))
+* Add support for choosing the claim of the
+  [user info response](routing-rules.md#trinorequestuser) that is used as the
+  user, with the `requestAnalyzerConfig.oauthTokenInfoUserField` configuration
+  property.
+  ([#1342](https://github.com/trinodb/trino-gateway/pull/1342))
+* Add support for reading the `USING` parameters of `EXECUTE` and
+  `EXECUTE IMMEDIATE` statements in [routing rules](routing-rules.md#trinoqueryproperties)
+  with `getBoundBody()`.
+  ([#1334](https://github.com/trinodb/trino-gateway/issues/1334))
+* Add support for setting the number of
+  [threads for health checks](installation.md#health-checks-on-trino-clusters)
+  with the `monitor.threadPoolSize` configuration property.
+  ([#1405](https://github.com/trinodb/trino-gateway/pull/1405))
+* [:warning: Breaking change:](#breaking) Add the `unqualifiedNames` and
+  `boundBody` fields to the query properties that Trino Gateway sends to an
+  [external routing service](routing-rules.md). Update services that reject
+  unknown fields.
+  ([#1333](https://github.com/trinodb/trino-gateway/issues/1333))
+  ([#1334](https://github.com/trinodb/trino-gateway/issues/1334))
+* [:warning: Breaking change:](#breaking) Reject
+  [routing rules](routing-rules.md#configure-routing-rules-with-a-file) that use
+  reflection, class loading, `import` statements, or classes other than the
+  documented ones. Rewrite affected rules to use only the documented classes.
+  ([#1374](https://github.com/trinodb/trino-gateway/pull/1374))
+* [:warning: Breaking change:](#breaking) Require a user with the `ADMIN` or
+  `API` role for the [metrics and JMX endpoints](operation.md#monitoring) when
+  authentication is configured. Add the credentials of such a user to the
+  configuration of Prometheus or other monitoring systems. The same applies to
+  resources of custom modules without a `@RolesAllowed` annotation.
+  ([#1450](https://github.com/trinodb/trino-gateway/pull/1450))
+* [:warning: Breaking change:](#breaking) Check the
+  [health of Trino clusters](installation.md#health-checks-on-trino-clusters)
+  only for active Trino clusters by default, and report deactivated Trino
+  clusters with the `UNKNOWN` status. Set the `monitor.checkInactiveBackends`
+  configuration property to `true` to also check deactivated Trino clusters.
+  ([#1404](https://github.com/trinodb/trino-gateway/pull/1404))
+* Update the Java runtime in the Docker image to Amazon Corretto 25.0.5.1.2 to
+  fix CVE-2026-114938.
+  ([#1438](https://github.com/trinodb/trino-gateway/issues/1438))
+* Return HTTP 503 instead of HTTP 502 when a request fails because its Trino
+  cluster is deactivated, such as a cluster scaled down to zero.
+  ([#1156](https://github.com/trinodb/trino-gateway/pull/1156))
+* Return HTTP 403 instead of HTTP 200 for failed logins to the web UI, and log
+  them.
+  ([#1453](https://github.com/trinodb/trino-gateway/pull/1453))
+* Return HTTP 403 instead of HTTP 200 when a user lacks the role for a request
+  to the web UI or the Trino Gateway API.
+  ([#1484](https://github.com/trinodb/trino-gateway/issues/1484))
+* Improve performance of the query history page when filtering by user.
+  ([#1421](https://github.com/trinodb/trino-gateway/pull/1421))
+* Reduce load on Trino clusters from requests for unknown queries.
+  ([#1442](https://github.com/trinodb/trino-gateway/pull/1442))
+* Prevent other websites from using the web UI login session of a user to send
+  requests to Trino Gateway.
+  ([#1377](https://github.com/trinodb/trino-gateway/pull/1377))
+* Prevent the web UI login session cookie from overriding the credentials in
+  the `Authorization` header of requests to the web UI and the Trino Gateway
+  API.
+  ([#1451](https://github.com/trinodb/trino-gateway/pull/1451))
+* Prevent requests from hanging when the
+  [user info endpoint](routing-rules.md#trinorequestuser) in
+  `requestAnalyzerConfig.oauthTokenInfoUrl` does not respond. Set the timeout
+  with the `requestAnalyzerConfig.oauthRequestTimeout` configuration property,
+  `5s` by default.
+  ([#1330](https://github.com/trinodb/trino-gateway/pull/1330))
+* Prevent routing to Trino clusters whose
+  [health check](installation.md#health-checks-on-trino-clusters) does not
+  complete within the monitor `taskDelay`, and prevent a slow health check from
+  delaying the status updates of other Trino clusters.
+  ([#1405](https://github.com/trinodb/trino-gateway/pull/1405))
+* Prevent sending headers listed in `excludeHeaders` to the
+  [external routing service](routing-rules.md#use-an-external-service-for-routing-rules)
+  when the client uses a different casing for the header name, such as
+  `authorization`.
+  ([#1419](https://github.com/trinodb/trino-gateway/pull/1419))
+* Prevent logging the values of headers that the external routing service
+  changes.
+  ([#1419](https://github.com/trinodb/trino-gateway/pull/1419))
+* Fix internal error when the default routing group has no healthy Trino
+  cluster. The request fails with HTTP 503 instead.
+  ([#1320](https://github.com/trinodb/trino-gateway/pull/1320))
+* Fix the web UI login session staying in the browser after a user logs out
+  with [OAuth authentication](security.md#oauthopenidconnect).
+  ([#1443](https://github.com/trinodb/trino-gateway/pull/1443))
+* Fix internal error for `system.runtime.kill_query` calls when
+  `requestAnalyzerConfig.analyzeRequest` is `false`.
+  ([#1442](https://github.com/trinodb/trino-gateway/pull/1442))
+* Fix request failures when the `requestAnalyzerConfig.tokenUserField` claim
+  of a JWT bearer token is not a string, such as a number.
+  ([#1492](https://github.com/trinodb/trino-gateway/pull/1492))
+* Fix query submission failures when the query history cannot be written to
+  the database.
+  ([#1418](https://github.com/trinodb/trino-gateway/pull/1418))
+* Fix corruption of binary responses from Trino clusters, such as the segments
+  of the spooling protocol.
+  ([#1279](https://github.com/trinodb/trino-gateway/pull/1279))
+* Fix truncated responses when a response from a Trino cluster is larger than
+  the `proxyResponseConfiguration.responseSize` configuration property. The
+  request fails instead.
+  ([#1279](https://github.com/trinodb/trino-gateway/pull/1279))
+* Fix the `METRICS` cluster monitor for Trino 477 and later, which renamed the
+  metric for the number of active nodes.
+  ([#1155](https://github.com/trinodb/trino-gateway/issues/1155))
+* Fix the `UI_API` cluster monitor for Trino 483 and later, which changed the
+  login of the Trino web UI.
+  ([#1219](https://github.com/trinodb/trino-gateway/issues/1219))
+* Fix routing of `ALTER TABLE`, `ALTER VIEW`, and `ALTER MATERIALIZED VIEW`
+  statements that rename to a fully qualified name, or rename a materialized
+  view without a catalog.
+  ([#1389](https://github.com/trinodb/trino-gateway/pull/1389))
+* Fix failures of query parsing for routing rules when a query uses names that
+  cannot be qualified from the request headers. These names are available with
+  `getUnqualifiedNames()` in [routing rules](routing-rules.md).
+  ([#1333](https://github.com/trinodb/trino-gateway/issues/1333))
+* Fix duplicated headers sent to Trino clusters when the external routing
+  service returns a header with a different casing than the client request.
+  ([#1419](https://github.com/trinodb/trino-gateway/pull/1419))
+
+**UI**
+
+* Add support for linking queries in the query history to the
+  [web UI of Trino 483 and later](installation.md#link-queries-to-the-trino-web-ui)
+  with the `uiConfiguration.queryLinkType` configuration property.
+  ([#1331](https://github.com/trinodb/trino-gateway/issues/1331))
+* Update the dashboard charts with a new color palette and move the legend
+  below the charts.
+  ([#1326](https://github.com/trinodb/trino-gateway/pull/1326))
+* Fix error on the routing rules page when the rules engine is not in use.
+  ([#1328](https://github.com/trinodb/trino-gateway/issues/1328))
+
+More details and a list of all merged pull requests are [available in the milestone 23
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A23+is%3Aclosed)
+and the [GitHub release section for version
+23](https://github.com/trinodb/trino-gateway/releases/tag/23).
+
 ### Trino Gateway 22 (20 Oct 2026) { id="22" }
 
 Artifacts:
