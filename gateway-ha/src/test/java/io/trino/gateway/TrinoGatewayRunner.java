@@ -34,7 +34,9 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static io.trino.gateway.ha.util.TestcontainersUtils.MYSQL_IMAGE;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
 public final class TrinoGatewayRunner
@@ -55,11 +57,11 @@ public final class TrinoGatewayRunner
         Logging.initialize();
         Logger log = Logger.get(TrinoGatewayRunner.class);
 
-        TrinoContainer trino1 = new TrinoContainer("trinodb/trino:466");
+        TrinoContainer trino1 = createTrinoContainer();
         trino1.setPortBindings(List.of("8081:8080"));
         trino1.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino1.start();
-        TrinoContainer trino2 = new TrinoContainer("trinodb/trino:466");
+        TrinoContainer trino2 = createTrinoContainer();
         trino2.setPortBindings(List.of("8082:8080"));
         trino2.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
         trino2.start();
@@ -71,7 +73,7 @@ public final class TrinoGatewayRunner
         postgres.setPortBindings(List.of("5432:5432"));
         postgres.start();
 
-        MySQLContainer mysql = new MySQLContainer("mysql:5.7");
+        MySQLContainer mysql = new MySQLContainer(MYSQL_IMAGE);
         mysql.withUsername("root");
         mysql.withPassword("root123");
         mysql.withDatabaseName("trinogateway");

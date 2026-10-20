@@ -20,41 +20,45 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.trino.TrinoContainer;
 
 import java.io.File;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TestGatewayHaWithRoutingRulesSingleBackend
 {
     private final OkHttpClient httpClient = new OkHttpClient();
-    private TrinoContainer trino;
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+
+    @Container
+    private static final TrinoContainer TRINO = createTrinoContainer()
+            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
     int routerPort = 21001 + (int) (Math.random() * 1000);
 
     @BeforeAll
     void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-        trino.start();
-        postgresql.start();
-
-        int backendPort = trino.getMappedPort(8080);
+        int backendPort = TRINO.getMappedPort(8080);
 
         // seed database
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-routing-template.yml");
+                HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "test-config-with-routing-template.yml");
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
@@ -97,11 +101,5 @@ final class TestGatewayHaWithRoutingRulesSingleBackend
         assertThat(backendConfiguration).hasSize(1);
         assertThat(backendConfiguration[0].isActive()).isTrue();
         assertThat(backendConfiguration[0].getRoutingGroup()).isNotEqualTo("adhoc");
-    }
-
-    @AfterAll
-    void cleanup()
-    {
-        trino.close();
     }
 }

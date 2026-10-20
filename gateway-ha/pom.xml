@@ -423,6 +423,12 @@
 
         <dependency>
             <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-mysql</artifactId>
             <scope>test</scope>
         </dependency>
@@ -447,6 +453,25 @@
     </dependencies>
 
     <build>
+        <testResources>
+            <!-- Filter test-versions.properties only. The other test resources contain
+                 placeholders that are substituted at test runtime, not by Maven. -->
+            <testResource>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>test-versions.properties</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <filtering>false</filtering>
+                <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>test-versions.properties</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

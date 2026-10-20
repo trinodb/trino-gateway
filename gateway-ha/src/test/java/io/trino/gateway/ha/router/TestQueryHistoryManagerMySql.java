@@ -13,17 +13,19 @@
  */
 package io.trino.gateway.ha.router;
 
-import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.mysql.MySQLContainer;
+
+import static io.trino.gateway.ha.util.TestcontainersUtils.MYSQL_IMAGE;
 
 public class TestQueryHistoryManagerMySql
         extends BaseTestQueryHistoryManager
 {
-    @Override
-    protected final JdbcDatabaseContainer<?> startContainer()
+    @Container
+    private static final MySQLContainer MYSQL = new MySQLContainer(MYSQL_IMAGE);
+
+    public TestQueryHistoryManagerMySql()
     {
-        JdbcDatabaseContainer<?> container = new MySQLContainer("mysql:8.0.36");
-        container.start();
-        return container;
+        super(MYSQL);
     }
 }

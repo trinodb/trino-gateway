@@ -13,13 +13,19 @@
  */
 package io.trino.gateway.ha.router;
 
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.oracle.OracleContainer;
+
 import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 
 public class TestExternalUrlQueryHistoryOracle
         extends BaseExternalUrlQueryHistoryTest
 {
+    @Container
+    private static final OracleContainer ORACLE = getOracleContainer();
+
     public TestExternalUrlQueryHistoryOracle()
     {
-        super(getOracleContainer());
+        super(ORACLE);
     }
 }

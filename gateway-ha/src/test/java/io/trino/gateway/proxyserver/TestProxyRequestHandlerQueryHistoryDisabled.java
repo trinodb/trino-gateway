@@ -16,9 +16,11 @@ package io.trino.gateway.proxyserver;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.jdbc.TrinoResultSet;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.trino.TrinoContainer;
 
@@ -34,44 +36,38 @@ import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterrup
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
+import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
+@Testcontainers
 @TestInstance(PER_CLASS)
 final class TestProxyRequestHandlerQueryHistoryDisabled
 {
-    private final int routerPort = 22001 + (int) (Math.random() * 1000);
-    private final TrinoContainer trino;
-    private final PostgreSQLContainer postgresql;
-    private final Jdbi jdbi;
+    @Container
+    private static final TrinoContainer TRINO = createTrinoContainer()
+            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
 
-    TestProxyRequestHandlerQueryHistoryDisabled()
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
+    private final int routerPort = 22001 + (int) (Math.random() * 1000);
+    private Jdbi jdbi;
+
+    @BeforeAll
+    void setup()
             throws Exception
     {
-        trino = new TrinoContainer("trinodb/trino:476");
-        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-        trino.start();
-
-        postgresql = createPostgreSqlContainer();
-        postgresql.start();
-
-        File testConfigFile = buildGatewayConfig(postgresql, routerPort, "test-config-with-query-history-disabled.yml");
+        File testConfigFile = buildGatewayConfig(POSTGRESQL, routerPort, "test-config-with-query-history-disabled.yml");
 
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
 
-        setUpBackend("trino", "http://localhost:" + trino.getMappedPort(8080), "externalUrl", true, "adhoc", routerPort);
+        setUpBackend("trino", "http://localhost:" + TRINO.getMappedPort(8080), "externalUrl", true, "adhoc", routerPort);
 
-        jdbi = Jdbi.create(postgresql.getJdbcUrl(), postgresql.getUsername(), postgresql.getPassword());
-    }
-
-    @AfterAll
-    void cleanup()
-    {
-        trino.close();
-        postgresql.close();
+        jdbi = Jdbi.create(POSTGRESQL.getJdbcUrl(), POSTGRESQL.getUsername(), POSTGRESQL.getPassword());
     }
 
     @Test

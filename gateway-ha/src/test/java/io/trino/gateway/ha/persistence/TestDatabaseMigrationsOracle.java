@@ -15,6 +15,8 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.collect.ImmutableList;
 import org.jdbi.v3.core.Handle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.oracle.OracleContainer;
 
 import java.util.List;
 
@@ -23,9 +25,12 @@ import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 final class TestDatabaseMigrationsOracle
         extends BaseTestDatabaseMigrations
 {
+    @Container
+    private static final OracleContainer ORACLE = getOracleContainer();
+
     public TestDatabaseMigrationsOracle()
     {
-        super(getOracleContainer(), "TEST");
+        super(ORACLE, "TEST");
     }
 
     @Override
