@@ -17,8 +17,8 @@ ARG TRINO_GATEWAY_BUILD_IMAGE
 
 FROM --platform=$BUILDPLATFORM ${TRINO_GATEWAY_BUILD_IMAGE} AS jdk-download
 ARG JDK_DOWNLOAD_LINK
-ARG JDK_RELEASE_NAME
-ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
+ARG JDK_VERSION
+ENV JAVA_HOME="/usr/lib/jvm/${JDK_VERSION}"
 
 RUN \
     set -xeuo pipefail && \
@@ -50,8 +50,8 @@ RUN \
 FROM ${TRINO_GATEWAY_BASE_IMAGE}
 WORKDIR /usr/lib/trino-gateway
 
-ARG JDK_RELEASE_NAME
-ENV JAVA_HOME="/usr/lib/jvm/jdk-${JDK_RELEASE_NAME}"
+ARG JDK_VERSION
+ENV JAVA_HOME="/usr/lib/jvm/${JDK_VERSION}"
 ENV PATH=$PATH:$JAVA_HOME/bin
 COPY --from=jdk-download $JAVA_HOME $JAVA_HOME
 COPY --from=packages /tmp/overlay /

@@ -41,6 +41,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.targetJdk>25</project.build.targetJdk>
         <air.java.version>25.0.1</air.java.version>
+        <!-- Temurin JVM release used in the docker image -->
+        <!-- https://api.adoptium.net/q/swagger-ui/#/Release%20Info/getReleaseNames -->
+        <temurin.release>jdk-25.0.4+7</temurin.release>
         <air.check.skip-spotbugs>true</air.check.skip-spotbugs>
         <air.check.skip-pmd>true</air.check.skip-pmd>
         <air.modernizer.java-version>25</air.modernizer.java-version>
