@@ -498,10 +498,16 @@ empty, or `NONE` (case-insensitive) resolves unrecognized users to no privileges
 so they are denied access regardless of the `admin`, `user`, and `api` regexes.
 This makes the deny-by-default intent explicit while the feature is otherwise
 enabled.
+
 ## User mapping
 
-User mapping transforms the authenticated user identity before it is used for
-authorization decisions. This is useful for:
+User mapping for [JWT authentication](#jwt-authentication) transforms the
+principal from the token before it is used for authorization decisions. OAuth2
+and form authentication do not support user mapping. The client certificate JWT
+bridge has separate user mapping properties, described in
+[certificate identity and user mapping](#certificate-identity-and-user-mapping).
+
+User mapping is useful for:
 
 - Extracting usernames from email addresses (e.g., `john.doe@company.com` → `john.doe`)
 - Normalizing usernames to a specific case
@@ -510,10 +516,8 @@ authorization decisions. This is useful for:
 
 ### How user mapping works
 
-1. **Input**: The principal extracted from the authentication source
-   - For JWT: The value of the claim specified by `principalField` (default: `sub`)
-   - For OAuth: The value of `userIdField` claim
-   - For Form/LDAP: The authenticated username
+1. **Input**: The value of the JWT claim specified by `principalField`
+   (default: `sub`)
 
 2. **Transformation**: The principal is matched against user mapping rules
    - Rules are evaluated in order until a match is found
