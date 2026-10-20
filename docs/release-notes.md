@@ -2,6 +2,49 @@
 
 ## 2026
 
+### Trino Gateway 23 (Planned Date) { id="23" }
+
+Artifacts:
+
+* [JAR file gateway-ha-23-jar-with-dependencies.jar](https://repo1.maven.org/maven2/io/trino/gateway/gateway-ha/23/gateway-ha-23-jar-with-dependencies.jar)
+* Container image `trinodb/trino-gateway:23`
+* Source code as
+  [tar.gz](https://github.com/trinodb/trino-gateway/archive/refs/tags/23.tar.gz)
+  or [zip](https://github.com/trinodb/trino-gateway/archive/refs/tags/23.zip)
+* [Trino Helm chart](https://trinodb.github.io/charts/) `trino/trino-gateway` version `1.23.0`
+
+Changes:
+
+**General**
+
+* Add support for
+  [rejecting requests instead of routing them to the default routing group](routing-rules.md)
+  with the `routing.unmatchedRequestFallbackEnabled` and
+  `routing.unavailableGroupFallbackEnabled` configuration properties.
+  ([#1319](https://github.com/trinodb/trino-gateway/issues/1319))
+* Add [gzip compression](installation.md#configure-http-compression) for
+  responses from Trino clusters. This can be deactivated by setting the
+  `proxy.http-client.gzip-compression.enabled` configuration property to
+  `false`. ([#765](https://github.com/trinodb/trino-gateway/pull/765))
+* Update the Java runtime in the Docker image to 25.0.4.
+  ([#1350](https://github.com/trinodb/trino-gateway/pull/1350))
+* Fix internal error when the default routing group has no healthy Trino
+  cluster. The request fails with HTTP 503 instead.
+  ([#1320](https://github.com/trinodb/trino-gateway/pull/1320))
+
+**UI**
+
+* Update the dashboard charts with a new color palette and move the legend
+  below the charts.
+  ([#1326](https://github.com/trinodb/trino-gateway/pull/1326))
+* Fix error on the routing rules page when the rules engine is not in use.
+  ([#1328](https://github.com/trinodb/trino-gateway/issues/1328))
+
+More details and a list of all merged pull requests are [available in the milestone 23
+list](https://github.com/trinodb/trino-gateway/pulls?q=is%3Apr+milestone%3A23+is%3Aclosed)
+and the [GitHub release section for version
+23](https://github.com/trinodb/trino-gateway/releases/tag/23).
+
 ### Trino Gateway 22 (20 Oct 2026) { id="22" }
 
 Artifacts:
