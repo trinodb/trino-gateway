@@ -26,6 +26,10 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okio.Buffer;
+import okio.BufferedSink;
+import okio.GzipSink;
+import okio.Okio;
 import org.testcontainers.oracle.OracleContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -33,6 +37,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -66,6 +71,18 @@ public class HaGatewayTestUtils
                 .setBody(expectedResponse)
                 .addHeader(CONTENT_ENCODING, PLAIN_TEXT_UTF_8)
                 .setResponseCode(200));
+    }
+
+    public static Buffer gzip(String body)
+    {
+        Buffer buffer = new Buffer();
+        try (BufferedSink sink = Okio.buffer(new GzipSink(buffer))) {
+            sink.writeUtf8(body);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return buffer;
     }
 
     public static File buildGatewayConfig(PostgreSQLContainer postgreSqlContainer, int routerPort, String configFile)
