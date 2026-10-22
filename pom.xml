@@ -55,7 +55,7 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>bom</artifactId>
-                <version>452</version>
+                <version>453</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
