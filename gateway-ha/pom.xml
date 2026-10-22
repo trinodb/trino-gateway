@@ -26,6 +26,7 @@
         <dep.flyway.version>13.10.3</dep.flyway.version>
         <dep.mockito.version>5.24.0</dep.mockito.version>
         <dep.okhttp3.version>5.5.0</dep.okhttp3.version>
+        <dep.okio.version>3.18.1</dep.okio.version>
         <dep.trino.version>484</dep.trino.version>
     </properties>
 
@@ -104,6 +105,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio-jvm</artifactId>
+            <version>${dep.okio.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>7.1.0</version>
@@ -123,6 +130,11 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>concurrent</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>configuration</artifactId>
         </dependency>
 
         <dependency>
@@ -503,6 +515,17 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>none</doclint>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <ignoredNonTestScopedDependencies>
+                        <!-- Only the tests use okio directly, but okhttp needs it at runtime -->
+                        <ignoredNonTestScopedDependency>com.squareup.okio:okio-jvm</ignoredNonTestScopedDependency>
+                    </ignoredNonTestScopedDependencies>
                 </configuration>
             </plugin>
 
