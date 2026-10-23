@@ -18,8 +18,6 @@
     <properties>
         <environments>development</environments>
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
-        <frontend.project.name>webapp</frontend.project.name>
-        <frontend.pnpmRegistryURL>https://registry.npmmirror.com</frontend.pnpmRegistryURL>
 
         <!-- dependency versions -->
         <dep.bouncycastle.version>1.86</dep.bouncycastle.version>
@@ -314,6 +312,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- The web UI, served from /static on the classpath -->
+        <dependency>
+            <groupId>io.trino.gateway</groupId>
+            <artifactId>webapp</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-oracle</artifactId>
@@ -475,24 +480,6 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>../${frontend.project.name}/dist</directory>
-                        </fileset>
-                        <fileset>
-                            <directory>../${frontend.project.name}/node</directory>
-                        </fileset>
-                        <fileset>
-                            <directory>../${frontend.project.name}/node_modules</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>none</doclint>
@@ -551,70 +538,6 @@
                         <ignoredResourcePattern>aircompressor.*</ignoredResourcePattern>
                     </ignoredResourcePatterns>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy static</id>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <phase>prepare-package</phase>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
-                            <overwrite>true</overwrite>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/../${frontend.project.name}/dist</directory>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>2.0.2</version>
-                <configuration>
-                    <workingDirectory>${project.basedir}/../${frontend.project.name}</workingDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>install node and pnpm</id>
-                        <goals>
-                            <goal>install-node-and-pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <nodeVersion>v24.12.0</nodeVersion>
-                            <pnpmVersion>11.13.1</pnpmVersion>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <arguments>install --ignore-scripts</arguments>
-                            <pnpmRegistryURL>${frontend.pnpmRegistryURL}</pnpmRegistryURL>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>build</id>
-                        <goals>
-                            <goal>pnpm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
