@@ -15,6 +15,8 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.collect.ImmutableList;
 import org.jdbi.v3.core.Handle;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.oracle.OracleContainer;
 
@@ -33,16 +35,10 @@ final class TestDatabaseMigrationsOracle
         super(ORACLE, "TEST");
     }
 
+    @Test
     @Override
-    public void testMigrationWithExistingGatewaySchema()
-    {
-        /*
-         * We do not need to run this test with Oracle since Oracle
-         * backend DB support did not exist before so there
-         * can be no existing deployments of gateway using
-         * Oracle as the backend database.
-         */
-    }
+    @Disabled("Oracle support was added together with Flyway, so no pre-Flyway Oracle schema can exist")
+    public void testMigrationWithExistingGatewaySchema() {}
 
     @Override
     protected void dropAllTables()
