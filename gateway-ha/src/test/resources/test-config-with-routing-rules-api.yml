@@ -32,6 +32,7 @@ requestAnalyzerConfig:
 uiConfiguration:
   disablePages:
     - 'routing-rules'
+  queryLinkType: PREVIEW
 
 routingRules:
   rulesEngineEnabled: true
