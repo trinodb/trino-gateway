@@ -374,6 +374,37 @@ proxyResponseConfiguration:
   responseSize: 50MB
 ```
 
+## Configure HTTP compression
+
+Trino Gateway requests gzip compressed responses from the Trino clusters and
+decompresses them before they are returned to the client. Trino Gateway
+compresses the responses for clients that send an `Accept-Encoding` header,
+with gzip, brotli, or zstd.
+
+The response size limits apply to the decompressed response, so compression
+does not raise them. Responses larger than
+`proxy.http-client.max-response-content-length` in `serverConfig`, 16MB by
+default, fail with a `Buffering capacity exceeded` error. Increase it together
+with `responseSize` in `proxyResponseConfiguration` to allow larger responses.
+
+Configure the compression between Trino Gateway and the Trino clusters with the
+`proxy.http-client` properties in `serverConfig`, and the compression between
+the clients and Trino Gateway with the `http-server` properties:
+
+```yaml
+serverConfig:
+  proxy.http-client.gzip-compression.enabled: true
+  proxy.http-client.brotli-compression.enabled: false
+  proxy.http-client.zstd-compression.enabled: false
+  http-server.gzip-compression.enabled: true
+  http-server.brotli-compression.enabled: true
+  http-server.zstd-compression.enabled: true
+```
+
+The values in the preceding example are the defaults. Set
+`http-server.compression.enabled` to `false` in `serverConfig` to disable all
+compression of the responses to the clients at once.
+
 ## Running Trino Gateway
 
 Start Trino Gateway with the following java command in the directory of the

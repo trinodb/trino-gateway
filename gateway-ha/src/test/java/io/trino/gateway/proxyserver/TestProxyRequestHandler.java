@@ -35,12 +35,16 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.io.File;
 import java.net.URI;
 import java.util.Optional;
+import java.util.zip.GZIPInputStream;
 
+import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
+import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
+import static io.trino.gateway.ha.HaGatewayTestUtils.gzip;
 import static io.trino.gateway.ha.HaGatewayTestUtils.prepareMockBackend;
 import static io.trino.gateway.ha.HaGatewayTestUtils.setUpBackend;
 import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
@@ -66,6 +70,9 @@ final class TestProxyRequestHandler
     private static final int NOT_FOUND = 404;
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
     private static final String HEAD_ENDPOINT = "/v1/query";
+    private static final String COMPRESSION_ENDPOINT = "/v1/custom/compression";
+    private static final String RECEIVED_ACCEPT_ENCODING = "X-Received-Accept-Encoding";
+    private static final String COMPRESSIBLE_BODY = "{\"data\": \"%s\"}".formatted("trino".repeat(1000));
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
     private final String healthCheckEndpoint = "/v1/info";
@@ -95,6 +102,17 @@ final class TestProxyRequestHandler
                 if (request.getMethod().equals("HEAD") && request.getPath().equals(HEAD_ENDPOINT)) {
                     return new MockResponse().setResponseCode(200)
                             .setHeader(CONTENT_TYPE, JSON_UTF_8);
+                }
+
+                if (request.getPath().equals(COMPRESSION_ENDPOINT)) {
+                    String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
+                    MockResponse response = new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setHeader(RECEIVED_ACCEPT_ENCODING, String.valueOf(acceptEncoding));
+                    if (acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        return response.setHeader(CONTENT_ENCODING, "gzip").setBody(gzip(COMPRESSIBLE_BODY));
+                    }
+                    return response.setBody(COMPRESSIBLE_BODY);
                 }
 
                 return new MockResponse().setResponseCode(NOT_FOUND);
@@ -150,6 +168,41 @@ final class TestProxyRequestHandler
         Request getRequest = new Request.Builder().url(url).get().build();
         try (Response response = httpClient.newCall(getRequest).execute()) {
             assertThat(response.code()).isEqualTo(NOT_FOUND);
+        }
+    }
+
+    @Test
+    void testBackendResponseCompression()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + COMPRESSION_ENDPOINT;
+
+        // The client asks for an uncompressed response, but Trino Gateway still requests gzip from the backend
+        Request request = new Request.Builder().url(url).get().header(ACCEPT_ENCODING, "identity").build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.header(RECEIVED_ACCEPT_ENCODING)).contains("gzip");
+            assertThat(response.header(CONTENT_ENCODING)).isNull();
+            assertThat(response.body()).isNotNull();
+            assertThat(response.body().string()).isEqualTo(COMPRESSIBLE_BODY);
+        }
+    }
+
+    @Test
+    void testClientResponseCompression()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + COMPRESSION_ENDPOINT;
+
+        // Setting Accept-Encoding explicitly disables the transparent decompression of OkHttp
+        Request request = new Request.Builder().url(url).get().header(ACCEPT_ENCODING, "gzip").build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.header(CONTENT_ENCODING)).isEqualTo("gzip");
+            assertThat(response.body()).isNotNull();
+            try (GZIPInputStream inputStream = new GZIPInputStream(response.body().byteStream())) {
+                assertThat(new String(inputStream.readAllBytes(), UTF_8)).isEqualTo(COMPRESSIBLE_BODY);
+            }
         }
     }
 
