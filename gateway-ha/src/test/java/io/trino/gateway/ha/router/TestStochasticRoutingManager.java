@@ -128,4 +128,49 @@ final class TestStochasticRoutingManager
         backendManager.addBackend(backend);
         return backend;
     }
+
+    @Test
+    void testFindInactiveUnhealthyBackendName()
+    {
+        // Inactive and unhealthy -> out of service. A proxyTo carrying a base path and a mixed-case
+        // host still match the scheme://authority the proxy fails against.
+        addBackend("down-a", "http://Down-A:8080/gateway", false);
+        haRoutingManager.updateBackEndHealth("down-a", TrinoStatus.UNHEALTHY);
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://down-a:8080")).contains("down-a");
+
+        // A deactivated backend that is no longer tracked reports UNKNOWN, which is not healthy.
+        addBackend("down-b", "http://down-b:8080", false);
+        haRoutingManager.updateBackEndHealth("down-b", TrinoStatus.UNKNOWN);
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://down-b:8080")).contains("down-b");
+
+        // Active backends are serving traffic, healthy or not.
+        addBackend("up-a", "http://up-a:8080", true);
+        haRoutingManager.updateBackEndHealth("up-a", TrinoStatus.UNHEALTHY);
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://up-a:8080")).isEmpty();
+
+        // Inactive but still reporting healthy is not treated as scaled down.
+        addBackend("down-healthy", "http://down-healthy:8080", false);
+        haRoutingManager.updateBackEndHealth("down-healthy", TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://down-healthy:8080")).isEmpty();
+
+        // An active backend sharing the address means the cluster is still served.
+        addBackend("shared-down", "http://shared:8080", false);
+        haRoutingManager.updateBackEndHealth("shared-down", TrinoStatus.UNHEALTHY);
+        addBackend("shared-up", "http://shared:8080", true);
+        haRoutingManager.updateBackEndHealth("shared-up", TrinoStatus.HEALTHY);
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://shared:8080")).isEmpty();
+
+        assertThat(haRoutingManager.findInactiveUnhealthyBackendName("http://does-not-exist:8080")).isEmpty();
+    }
+
+    private void addBackend(String name, String proxyTo, boolean active)
+    {
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName(name);
+        backend.setProxyTo(proxyTo);
+        backend.setExternalUrl("https://ext.example");
+        backend.setRoutingGroup("inactive-lookup-group");
+        backend.setActive(active);
+        backendManager.addBackend(backend);
+    }
 }

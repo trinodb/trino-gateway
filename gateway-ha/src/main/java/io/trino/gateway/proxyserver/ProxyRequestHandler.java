@@ -55,7 +55,6 @@ import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
-import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.http.client.HeaderNames.VIA;
 import static io.airlift.http.client.HeaderNames.X_FORWARDED_FOR;
@@ -74,6 +73,7 @@ import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
+import static jakarta.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE;
 import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
@@ -212,7 +212,7 @@ public class ProxyRequestHandler
         setupAsyncResponse(
                 asyncResponse,
                 future.transform(response -> buildResponse(response, cookieBuilder.build()), executor)
-                        .catching(ProxyException.class, e -> handleProxyException(request, e), directExecutor()));
+                        .catching(ProxyException.class, e -> handleProxyException(request, e, routingDestination), executor));
     }
 
     private ImmutableList<NewCookie> getOAuth2GatewayCookie(URI remoteUri, HttpServletRequest servletRequest)
@@ -265,10 +265,31 @@ public class ProxyRequestHandler
         return FluentFuture.from(httpClient.executeAsync(request, new ProxyResponseHandler(proxyResponseConfiguration)));
     }
 
-    private static Response handleProxyException(Request request, ProxyException e)
+    @VisibleForTesting
+    Response handleProxyException(Request request, ProxyException e, RoutingDestination routingDestination)
     {
+        Optional<String> inactiveBackend = findInactiveUnhealthyBackendName(routingDestination.clusterHost());
+        if (inactiveBackend.isPresent()) {
+            log.debug(e, "Proxy request failed, backend is inactive and unreachable: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
+            throw new WebApplicationException(
+                    Response.status(SERVICE_UNAVAILABLE)
+                            .type(TEXT_PLAIN_TYPE)
+                            .entity("Backend cluster %s is inactive and unreachable".formatted(inactiveBackend.get()))
+                            .build());
+        }
         log.warn(e, "Proxy request failed: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
         throw badRequest(e.getMessage());
+    }
+
+    private Optional<String> findInactiveUnhealthyBackendName(String clusterHost)
+    {
+        try {
+            return routingManager.findInactiveUnhealthyBackendName(clusterHost);
+        }
+        catch (RuntimeException e) {
+            log.debug(e, "Failed to look up backend state for %s", clusterHost);
+            return Optional.empty();
+        }
     }
 
     /**

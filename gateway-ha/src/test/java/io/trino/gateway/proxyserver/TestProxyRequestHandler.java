@@ -13,8 +13,14 @@
  */
 package io.trino.gateway.proxyserver;
 
+import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
+import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
+import io.trino.gateway.ha.router.RoutingManager;
+import jakarta.ws.rs.WebApplicationException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -38,6 +44,7 @@ import java.util.Optional;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildGatewayConfig;
@@ -48,7 +55,10 @@ import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Testcontainers
 @TestInstance(PER_CLASS)
@@ -196,5 +206,67 @@ final class TestProxyRequestHandler
                 .isEqualTo("https://coord-a:8443/trino/oauth2/token/<redacted>");
         assertThat(ProxyRequestHandler.redactUriForLog(URI.create("https://coord-a:8443/v1/statement")))
                 .isEqualTo("https://coord-a:8443/v1/statement");
+    }
+
+    @Test
+    void testProxyFailureReturns503ForInactiveUnhealthyBackend()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        when(routingManager.findInactiveUnhealthyBackendName("http://trino-a:8080")).thenReturn(Optional.of("trino-a"));
+
+        assertThatThrownBy(() -> handler(routingManager)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(503);
+                    assertThat((String) e.getResponse().getEntity()).isEqualTo("Backend cluster trino-a is inactive and unreachable");
+                });
+    }
+
+    @Test
+    void testProxyFailureReturns502WhenNoInactiveBackend()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        when(routingManager.findInactiveUnhealthyBackendName("http://trino-a:8080")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> handler(routingManager)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(502);
+                    assertThat((String) e.getResponse().getEntity()).isEqualTo("connection refused");
+                });
+    }
+
+    @Test
+    void testProxyFailureReturns502WhenBackendLookupFails()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        when(routingManager.findInactiveUnhealthyBackendName("http://trino-a:8080")).thenThrow(new IllegalStateException("cache load failed"));
+
+        assertThatThrownBy(() -> handler(routingManager)
+                .handleProxyException(proxyRequest(destination), new ProxyException("connection refused"), destination))
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(502));
+    }
+
+    private static RoutingDestination destination()
+    {
+        return new RoutingDestination("adhoc", "http://trino-a:8080", URI.create("http://trino-a:8080/v1/statement"), "http://trino-a:8080");
+    }
+
+    private static io.airlift.http.client.Request proxyRequest(RoutingDestination destination)
+    {
+        return prepareGet().setUri(destination.clusterUri()).build();
+    }
+
+    private static ProxyRequestHandler handler(RoutingManager routingManager)
+    {
+        return new ProxyRequestHandler(
+                mock(HttpClient.class),
+                routingManager,
+                mock(QueryHistoryManager.class),
+                mock(OAuth2RoutingStore.class),
+                new HaGatewayConfiguration());
     }
 }
