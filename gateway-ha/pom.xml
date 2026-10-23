@@ -365,6 +365,13 @@
         </dependency>
 
         <dependency>
+            <groupId>io.airlift</groupId>
+            <artifactId>junit-extensions</artifactId>
+            <version>2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-client</artifactId>
             <version>${dep.trino.version}</version>
@@ -540,6 +547,9 @@
                 <configuration>
                     <!-- This is needed because we call main() in test setups. Otherwise Guice singleton won't work. -->
                     <reuseForks>false</reuseForks>
+                    <systemPropertyVariables>
+                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
 
