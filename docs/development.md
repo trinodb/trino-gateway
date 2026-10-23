@@ -28,7 +28,7 @@ Run `./mvnw clean install` to build `trino-gateway`. VM options required for
 compilation and testing are specified in `.mvn/jvm.config`.
 
 Edit the configuration file `config.yaml` in the `gateway-ha` folder
-and update the mysql db information.
+and update the database connection details.
 
 Note that tests using Oracle are disabled by default on non-x86_64 CPU architectures.
 To enable them, set the environment variable `TG_RUN_ORACLE_TESTS=true`. These tests
@@ -41,8 +41,8 @@ java -jar gateway-ha-{{VERSION}}-jar-with-dependencies.jar ../config.yaml
 
 #### In Docker
 
-Follow the separate instructions for building the container and running Trino
-Gateway with docker compose from the `README.md` file in the `docker` folder.
+Follow the separate [instructions for building the container and running Trino
+Gateway with Docker Compose](docker.md).
 
 ## Contact, help, and issues
 
