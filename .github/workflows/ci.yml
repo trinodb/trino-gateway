@@ -10,6 +10,13 @@ on:
     paths-ignore:
       - 'docs/**'
 
+# A new push to a pull request cancels the run for the previous push. Runs on
+# main get a group of their own per commit, so they never cancel or queue each
+# other and every merge commit is verified. Same approach as in Trino.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.number || github.sha }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash --noprofile --norc -Eeuo pipefail {0}
