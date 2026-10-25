@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@types/js-cookie": "3.0.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
