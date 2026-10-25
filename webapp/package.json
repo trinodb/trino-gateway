@@ -10,18 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.103.0",
-    "@douyinfe/semi-icons-lab": "^2.103.0",
-    "@douyinfe/semi-illustrations": "^2.103.0",
-    "@douyinfe/semi-ui": "^2.103.0",
-    "@vvo/tzdb": "^6.198.0",
+    "@douyinfe/semi-icons": "^2.104.0",
+    "@douyinfe/semi-icons-lab": "^2.104.0",
+    "@douyinfe/semi-illustrations": "^2.104.0",
+    "@douyinfe/semi-ui": "^2.104.0",
+    "@vvo/tzdb": "^6.201.1",
     "echarts": "^5.6.0",
     "js-cookie": "^3.0.8",
     "moment": "^2.31.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.6",
-    "sass": "^1.105.0",
+    "sass": "^1.105.2",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
