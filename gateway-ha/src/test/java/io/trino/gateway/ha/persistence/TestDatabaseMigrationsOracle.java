@@ -15,8 +15,6 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.collect.ImmutableList;
 import org.jdbi.v3.core.Handle;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.oracle.OracleContainer;
 
@@ -24,6 +22,7 @@ import java.util.List;
 
 import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 
+// Oracle support arrived together with Flyway, so there is no pre-Flyway schema to migrate from
 final class TestDatabaseMigrationsOracle
         extends BaseTestDatabaseMigrations
 {
@@ -34,11 +33,6 @@ final class TestDatabaseMigrationsOracle
     {
         super(ORACLE, "TEST");
     }
-
-    @Test
-    @Override
-    @Disabled("Oracle support was added together with Flyway, so no pre-Flyway Oracle schema can exist")
-    public void testMigrationWithExistingGatewaySchema() {}
 
     @Override
     protected void dropAllTables()
@@ -55,15 +49,5 @@ final class TestDatabaseMigrationsOracle
         tables.forEach(table -> jdbiHandle.execute("DROP TABLE " + table));
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
-    }
-
-    @Override
-    protected void createGatewaySchema()
-    {
-        /*
-         * we do not create a schema because we are not running the testMigrationWithExistingGatewaySchema
-         * test against Oracle. This is the only test we need to create the gateway schema
-         * manually for.
-         */
     }
 }

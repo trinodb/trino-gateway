@@ -37,8 +37,6 @@ import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 @Isolated
 public abstract class BaseTestDatabaseMigrations
 {
-    protected abstract void createGatewaySchema();
-
     private final JdbcDatabaseContainer<?> container;
     protected final String schema;
     protected Jdbi jdbi;
@@ -85,16 +83,6 @@ public abstract class BaseTestDatabaseMigrations
         dropAllTables();
     }
 
-    @Test
-    public void testMigrationWithExistingGatewaySchema()
-    {
-        createGatewaySchema();
-        DataStoreConfiguration config = dataStoreConfiguration();
-        FlywayMigration.migrate(config);
-        verifyGatewaySchema();
-        dropAllTables();
-    }
-
     protected void verifyGatewaySchema()
     {
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
@@ -126,7 +114,7 @@ public abstract class BaseTestDatabaseMigrations
         jdbiHandle.close();
     }
 
-    private DataStoreConfiguration dataStoreConfiguration()
+    protected DataStoreConfiguration dataStoreConfiguration()
     {
         return new DataStoreConfiguration(
                 container.getJdbcUrl(),
