@@ -13,14 +13,13 @@
  */
 package io.trino.gateway.ha.persistence;
 
-import org.jdbi.v3.core.Handle;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 
 final class TestDatabaseMigrationsPostgreSql
-        extends BaseTestDatabaseMigrations
+        extends BaseTestDatabaseMigrationsWithLegacySchema
 {
     @Container
     private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
@@ -28,33 +27,5 @@ final class TestDatabaseMigrationsPostgreSql
     public TestDatabaseMigrationsPostgreSql()
     {
         super(POSTGRESQL, "public");
-    }
-
-    @Override
-    protected void createGatewaySchema()
-    {
-        String gatewayBackendTable =
-                """
-                CREATE TABLE gateway_backend (
-                     name VARCHAR(256) PRIMARY KEY,
-                     routing_group VARCHAR (256),
-                     backend_url VARCHAR (256),
-                     external_url VARCHAR (256),
-                     active BOOLEAN
-                );""";
-        String queryHistoryTable =
-                """
-                CREATE TABLE query_history (
-                     query_id VARCHAR(256) PRIMARY KEY,
-                     query_text VARCHAR (256),
-                     created bigint,
-                     backend_url VARCHAR (256),
-                     user_name VARCHAR(256),
-                     source VARCHAR(256)
-                );""";
-        Handle jdbiHandle = jdbi.open();
-        jdbiHandle.execute(gatewayBackendTable);
-        jdbiHandle.execute(queryHistoryTable);
-        jdbiHandle.close();
     }
 }
