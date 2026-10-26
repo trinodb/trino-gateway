@@ -22,6 +22,7 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -36,10 +37,12 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,6 +55,7 @@ import static org.mockito.Mockito.when;
 class TestRoutingTargetHandler
 {
     private RoutingManager routingManager;
+    private GatewayBackendManager gatewayBackendManager;
     private HttpClient httpClient;
     private HttpServletRequest request;
 
@@ -110,6 +114,7 @@ class TestRoutingTargetHandler
         config = provideGatewayConfiguration();
         httpClient = Mockito.mock(HttpClient.class);
         routingManager = Mockito.mock(RoutingManager.class);
+        gatewayBackendManager = Mockito.mock(GatewayBackendManager.class);
         request = prepareMockRequest();
 
         // Initialize the handler with the configuration
@@ -117,6 +122,7 @@ class TestRoutingTargetHandler
                 routingManager,
                 Mockito.mock(OAuth2RoutingStore.class),
                 RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()),
+                gatewayBackendManager,
                 config);
     }
 
@@ -124,8 +130,52 @@ class TestRoutingTargetHandler
     void resetMocks()
     {
         Mockito.reset(routingManager);
+        Mockito.reset(gatewayBackendManager);
         when(routingManager.provideBackendConfiguration(any(), any())).thenReturn(new ProxyBackendConfiguration());
         config.getRoutingRules().getRulesExternalConfiguration().setPropagateErrors(false);
+    }
+
+    @Test
+    void testSpooledRequestRoutedByBackendParameterWithoutQueryHistory()
+    {
+        String backendUrl = "https://trino-b.example.com";
+        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
+        backend.setName("trino-b");
+        backend.setProxyTo(backendUrl);
+        when(gatewayBackendManager.getBackendByName("trino-b")).thenReturn(Optional.of(backend));
+
+        HttpServletRequest spooledRequest = prepareSpooledMockRequest(
+                "queryId=20260828_100000_00001_abcde&spooledBackend=trino-b", "trino-b");
+
+        RoutingTargetResponse response = handler.resolveRouting(spooledRequest);
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+        // routing must not depend on the queryId -> backend mapping, which may have expired
+        Mockito.verify(routingManager, Mockito.never()).findBackendForQueryId(any());
+    }
+
+    @Test
+    void testSpooledBackendParameterMustMatchConfiguredBackend()
+    {
+        when(gatewayBackendManager.getBackendByName("unknown")).thenReturn(Optional.empty());
+        String queryId = "20260828_100000_00001_abcde";
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn("https://trino-a.example.com");
+
+        HttpServletRequest spooledRequest = prepareSpooledMockRequest(
+                "queryId=" + queryId + "&spooledBackend=unknown", "unknown");
+
+        // unknown backend parameter is ignored and routing falls back to the queryId lookup
+        RoutingTargetResponse response = handler.resolveRouting(spooledRequest);
+        assertThat(response.routingDestination().clusterHost()).isEqualTo("https://trino-a.example.com");
+    }
+
+    private static HttpServletRequest prepareSpooledMockRequest(String queryString, String spooledBackendParameter)
+    {
+        HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class, Mockito.withSettings().strictness(Strictness.LENIENT));
+        when(mockRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequest.getRequestURI()).thenReturn("/v1/spooled/download/token1");
+        when(mockRequest.getQueryString()).thenReturn(queryString);
+        when(mockRequest.getParameter("spooledBackend")).thenReturn(spooledBackendParameter);
+        return mockRequest;
     }
 
     @Test
@@ -347,6 +397,7 @@ class TestRoutingTargetHandler
                 routingManager,
                 Mockito.mock(OAuth2RoutingStore.class),
                 RoutingGroupSelector.byRoutingExternal(httpClient, config.getRoutingRules().getRulesExternalConfiguration(), config.getRequestAnalyzerConfig()),
+                gatewayBackendManager,
                 config);
     }
 }
