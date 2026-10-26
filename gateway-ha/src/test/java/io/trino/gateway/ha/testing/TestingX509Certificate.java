@@ -48,6 +48,7 @@ public class TestingX509Certificate
         return principal;
     }
 
+    @Deprecated
     @Override
     public Principal getSubjectDN()
     {
@@ -76,6 +77,7 @@ public class TestingX509Certificate
         return BigInteger.ONE;
     }
 
+    @Deprecated
     @Override
     public Principal getIssuerDN()
     {

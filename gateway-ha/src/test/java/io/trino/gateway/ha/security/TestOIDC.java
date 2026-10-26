@@ -30,7 +30,6 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
@@ -54,6 +53,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static io.trino.gateway.ha.HaGatewayTestUtils.buildPostgresVars;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
@@ -96,8 +96,7 @@ final class TestOIDC
             .withStartupCheckStrategy(new OneShotStartupCheckStrategy());
 
     @Container
-    private static final FixedHostPortGenericContainer<?> HYDRA_CONSENT = new FixedHostPortGenericContainer<>("python:3.10.1-alpine")
-            .withFixedExposedPort(3000, 3000)
+    private static final GenericContainer<?> HYDRA_CONSENT = withFixedPorts(new GenericContainer<>("python:3.10.1-alpine"), 3000)
             .withNetwork(NETWORK)
             .withNetworkAliases("hydra-consent")
             .withExposedPorts(3000)
@@ -106,9 +105,7 @@ final class TestOIDC
             .waitingFor(Wait.forHttp("/healthz").forPort(3000).forStatusCode(200));
 
     @Container
-    private static final FixedHostPortGenericContainer<?> HYDRA = new FixedHostPortGenericContainer<>(HYDRA_IMAGE)
-            .withFixedExposedPort(4444, 4444)
-            .withFixedExposedPort(4445, 4445)
+    private static final GenericContainer<?> HYDRA = withFixedPorts(new GenericContainer<>(HYDRA_IMAGE), 4444, 4445)
             .withNetwork(NETWORK)
             .withNetworkAliases("hydra")
             .withEnv("LOG_LEVEL", "debug")
@@ -129,6 +126,13 @@ final class TestOIDC
                     .withStrategy(Wait.forLogMessage(".*Setting up http server on :4444.*", 1))
                     .withStrategy(Wait.forLogMessage(".*Setting up http server on :4445.*", 1)))
             .withStartupTimeout(java.time.Duration.ofMinutes(3));
+
+    // Hydra and its consent app are addressed by fixed localhost ports in the issuer and callback URLs
+    private static GenericContainer<?> withFixedPorts(GenericContainer<?> container, int... ports)
+    {
+        container.setPortBindings(IntStream.of(ports).mapToObj("%1$s:%1$s"::formatted).toList());
+        return container;
+    }
 
     // Started by the Testcontainers extension, which reads the field reflectively
     @SuppressWarnings("UnusedVariable")
