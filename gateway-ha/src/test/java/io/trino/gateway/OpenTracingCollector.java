@@ -13,8 +13,9 @@
  */
 package io.trino.gateway;
 
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Volume;
 import io.airlift.units.DataSize;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 
 import java.io.File;
@@ -50,16 +51,16 @@ public class OpenTracingCollector
                 "--badger.directory-key=/badger/data",
                 "--badger.directory-value=/badger/data",
                 "--badger.maintenance-interval=30s");
-        container.withCreateContainerCmdModifier(command -> command.getHostConfig()
-                .withMemory(DataSize.of(1, GIGABYTE).toBytes()));
 
         try {
             this.storageDirectory = Files.createTempDirectory("tracing-collector");
-            container.addFileSystemBind(storageDirectory.toString(), "/badger", BindMode.READ_WRITE);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        container.withCreateContainerCmdModifier(command -> command.getHostConfig()
+                .withMemory(DataSize.of(1, GIGABYTE).toBytes())
+                .withBinds(new Bind(storageDirectory.toString(), new Volume("/badger"))));
     }
 
     public void start()
