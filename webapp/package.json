@@ -22,8 +22,8 @@
     "echarts": "6.1.0",
     "js-cookie": "3.0.8",
     "moment": "2.31.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-router-dom": "7.18.4",
     "sass": "1.105.2",
     "zustand": "5.0.15"
