@@ -34,7 +34,14 @@ updates:
     # package.json on every update rather than only touching the lockfile.
     versioning-strategy: increase
     # Updates are deliberately not grouped. A grouped pull request fails as a
-    # whole when a single update breaks, and cannot be merged in parts.
+    # whole when a single update breaks, and cannot be merged in parts. The one
+    # exception is React, which requires react and react-dom at the exact same
+    # version and fails on every page otherwise.
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
     ignore:
       # Never run ahead of the Trino web UI on a major version of the packages
       # shared with it. Majors land when the web UI adopts them, while minor
