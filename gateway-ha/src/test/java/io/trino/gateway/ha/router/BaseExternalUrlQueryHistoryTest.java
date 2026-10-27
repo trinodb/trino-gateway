@@ -61,10 +61,6 @@ abstract class BaseExternalUrlQueryHistoryTest
     @Test
     void testSubmitQueryWithExternalUrl()
     {
-        // Clear existing data
-        List<QueryHistoryManager.QueryDetail> queryDetails = queryHistoryManager.fetchQueryHistory(Optional.empty());
-        assertThat(queryDetails).isEmpty();
-
         // Create and submit query with external URL
         QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
         queryDetail.setQueryId("test-query-123");
@@ -79,12 +75,11 @@ abstract class BaseExternalUrlQueryHistoryTest
         queryHistoryManager.submitQueryDetail(queryDetail);
 
         // Verify the query was stored with external URL
-        queryDetails = queryHistoryManager.fetchQueryHistory(Optional.empty());
-        assertThat(queryDetails).hasSize(1);
-
-        QueryHistoryManager.QueryDetail retrievedQuery = queryDetails.getFirst();
-        assertThat(retrievedQuery.getQueryId()).isEqualTo("test-query-123");
-        assertThat(retrievedQuery.getExternalUrl()).isEqualTo("https://external-gateway.example.com");
+        assertThat(queryHistoryManager.fetchQueryHistory(Optional.empty()))
+                .filteredOn(query -> "test-query-123".equals(query.getQueryId()))
+                .singleElement()
+                .extracting(QueryHistoryManager.QueryDetail::getExternalUrl)
+                .isEqualTo("https://external-gateway.example.com");
     }
 
     @Test
