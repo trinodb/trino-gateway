@@ -16,6 +16,8 @@ package io.trino.gateway.ha.security;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
+import static jakarta.ws.rs.core.NewCookie.SameSite.LAX;
+
 public final class SessionCookie
 {
     static final String OAUTH_ID_TOKEN = "token";
@@ -32,6 +34,7 @@ public final class SessionCookie
                 .comment("")
                 .maxAge(60 * 60 * 24)
                 .secure(true)
+                .sameSite(LAX)
                 .build();
     }
 
@@ -44,6 +47,7 @@ public final class SessionCookie
                 .comment("")
                 .maxAge(0)
                 .secure(true)
+                .sameSite(LAX)
                 .build();
         return Response.ok("You are logged out successfully.")
                 .cookie(cookie)
