@@ -22,7 +22,7 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.SecurityContext;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
@@ -45,7 +45,7 @@ final class TestLbFilter
     private AuthorizationManager authorizationManager;
     private ContainerRequestContext requestContext;
 
-    @BeforeAll
+    @BeforeEach
     void setup()
             throws Exception
     {
