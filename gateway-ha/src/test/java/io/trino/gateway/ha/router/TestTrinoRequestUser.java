@@ -106,4 +106,52 @@ final class TestTrinoRequestUser
 
         assertThat(trinoRequestUser.getUser()).hasValue(username);
     }
+
+    @Test
+    void testMalformedBasicAuthHeaderDoesNotThrow()
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+
+        // "Basic" with no space and no credentials previously threw ArrayIndexOutOfBoundsException
+        // on header.split(" ")[1]; it must now degrade to no extracted user.
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic")
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).isEmpty();
+    }
+
+    @Test
+    void testBasicAuthHeaderWithEmptyCredentials()
+    {
+        for (String header : new String[] {"Basic ", "Basic Og=="}) {
+            HttpServletRequest mockRequest = new QueryRequestMock()
+                    .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                    .httpHeader(USER_HEADER, null)
+                    .httpHeader(AUTHORIZATION, header)
+                    .getHttpServletRequest();
+
+            TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+            assertThat(trinoRequestUser.getUser()).isEmpty();
+        }
+    }
+
+    @Test
+    void testBasicAuthSchemeIsCaseInsensitive()
+    {
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "basic " + Base64.getEncoder().encodeToString("alice:secret".getBytes(UTF_8)))
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).hasValue("alice");
+    }
 }

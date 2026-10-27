@@ -170,13 +170,19 @@ public class TrinoRequestUser
             return Optional.empty();
         }
 
-        if (header.contains("Basic")) {
+        // Match the scheme before the first space, like the bearer path. Do not simplify to
+        // header.split(" ")[1]: a "Basic" header with no space would throw
+        // ArrayIndexOutOfBoundsException instead of being ignored as unparseable.
+        int space = header.indexOf(' ');
+        if (space > 0 && header.substring(0, space).equalsIgnoreCase("basic")) {
             try {
-                return Optional.of(new String(Base64.getDecoder().decode(header.split(" ")[1]), StandardCharsets.UTF_8).split(":")[0]);
+                String credentials = new String(Base64.getDecoder().decode(header.substring(space + 1).trim()), StandardCharsets.UTF_8);
+                String user = credentials.split(":", 2)[0];
+                return user.isEmpty() ? Optional.empty() : Optional.of(user);
             }
             catch (IllegalArgumentException e) {
-                log.error(e, "Authorization: Basic header contains invalid base64");
-                log.debug("Invalid header value: " + header.split(" ")[1]);
+                // The header comes from the client, so log it without a stack trace
+                log.warn("Authorization: Basic header contains invalid base64");
                 return Optional.empty();
             }
         }
