@@ -712,6 +712,24 @@ final class TestTrinoQueryProperties
                 .anyMatch(method -> method.getParameterCount() == 0 && method.getReturnType().equals(QualifiedName.class));
     }
 
+    @Test
+    void testDeeplyNestedBodyDegradesGracefully()
+    {
+        // A deeply nested statement overflows the parser stack, but SqlParser catches that and throws
+        // a ParsingException ("statement is too large"), which TrinoQueryProperties catches. The
+        // request analyzer degrades to empty properties with an error message rather than throwing.
+        int depth = 5_000;
+        String query = "SELECT " + "(".repeat(depth) + "1" + ")".repeat(depth);
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("default_catalog");
+        when(mockRequest.getHeaderString(TRINO_SCHEMA_HEADER_NAME)).thenReturn("default_schema");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getErrorMessage()).isPresent();
+    }
+
     private ContainerRequestContext prepareMockRequest(String query)
     {
         return prepareMockRequest(query, MediaType.valueOf("application/json; charset=UTF-8"));
