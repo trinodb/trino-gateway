@@ -106,4 +106,22 @@ final class TestTrinoRequestUser
 
         assertThat(trinoRequestUser.getUser()).hasValue(username);
     }
+
+    @Test
+    void testMalformedBasicAuthHeaderDoesNotThrow()
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+
+        // "Basic" with no space and no credentials previously threw ArrayIndexOutOfBoundsException
+        // on header.split(" ")[1]; it must now degrade to no extracted user.
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic")
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).isEmpty();
+    }
 }
