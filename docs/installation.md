@@ -573,18 +573,29 @@ to one of the following values.
 #### INFO_API (default)
 
 By default Trino Gateway uses the `v1/info` REST endpoint. A successful check is
-defined as a 200 response with `starting: false`. Connection timeout parameters 
-can be defined through the `monitor` node, for example
+defined as a 200 response with `starting: false`. The check uses the `monitor`
+HTTP client, so its timeouts are set with the `monitor.http-client` properties
+in `serverConfig`. The `METRICS` and `JMX` monitors use the same HTTP client,
+so these properties apply to them too. How often the checks run is set with
+`taskDelay` in the `monitor` node, 1 minute by default. For example
 
 ```yaml
+serverConfig:
+  monitor.http-client.connect-timeout: 5s
+  monitor.http-client.request-timeout: 10s
+  monitor.http-client.idle-timeout: 10s
 monitor:
-  connectTimeoutSeconds: 5
-  requestTimeoutSeconds: 10
-  idleTimeoutSeconds: 1
+  taskDelay: 30s
   retries: 1
 ```
 
-All timeout parameters are optional.
+All parameters are optional. The defaults are `connect-timeout` 5s,
+`request-timeout` 5m and `idle-timeout` 1m, so without them a backend that
+stops responding is only marked `UNHEALTHY` after 1 minute. A backend whose
+check times out is marked `UNHEALTHY`. Each round of checks waits for every
+backend before it updates their status, so a backend that stops responding
+delays the status of all backends until its check times out. `retries` only
+applies to 502, 503, and 504 responses.
 
 #### METRICS
 
