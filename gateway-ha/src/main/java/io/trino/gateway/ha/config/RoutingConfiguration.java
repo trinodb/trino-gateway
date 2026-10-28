@@ -26,8 +26,9 @@ public class RoutingConfiguration
 
     private String defaultRoutingGroup = "adhoc";
 
-    // On (default): a request matching no routing rule or header goes to the default routing group.
-    // Off: it is rejected, so every request must be explicitly routed.
+    // On (default): a query submission matching no routing rule or header goes to the default routing group.
+    // Off: such a query submission is rejected, so every query must be explicitly routed. Other requests
+    // (Web UI, OAuth2) still go to the default routing group.
     private boolean unmatchedRequestFallbackEnabled = true;
 
     // On (default): a routing group with no healthy backend falls back to the default routing group.
