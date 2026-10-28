@@ -117,7 +117,7 @@
         <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>aircompressor-v3</artifactId>
-            <version>3.13</version>
+            <version>3.14</version>
         </dependency>
 
         <dependency>
