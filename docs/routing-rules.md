@@ -324,7 +324,19 @@ object:
   was qualified. A single-part table function name, such as `exclude_columns`,
   is resolved by Trino through the SQL path, which the gateway does not read,
   so it is neither listed here nor included in `getTables()`
-* `String getBody()`: the raw request body
+* `String getBody()`: the raw request body. For `EXECUTE` and `EXECUTE
+  IMMEDIATE`, the statement being executed, with its parameter markers
+* `Optional<String> getBoundBody()`: for `EXECUTE` and `EXECUTE IMMEDIATE`,
+  the statement in `getBody()` with the `USING` parameters bound in place of
+  its parameter markers, for example `SELECT * FROM t WHERE a = ?` with
+  `USING 'x'` becomes `SELECT * FROM t WHERE (a = 'x')`, spread over several
+  lines. The statement is formatted with the Trino SQL formatter, so comments
+  are dropped and the formatting differs from `getBody()`. An integer bound to an `ORDER BY` or
+  `GROUP BY` marker is written as `CAST(2 AS bigint)`, because Trino reads a
+  plain `2` there as an output column position. Empty for other statements,
+  when the number of parameters does not match the markers, or when the bound
+  statement cannot be written as SQL, for example `LIMIT ?` bound to
+  `CAST(10 AS bigint)`
 
 ### Configuration
 
