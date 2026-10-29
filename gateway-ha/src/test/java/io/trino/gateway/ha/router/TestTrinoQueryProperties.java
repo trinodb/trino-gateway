@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import io.airlift.json.JsonCodec;
+import io.trino.sql.SqlFormatter;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.Call;
 import io.trino.sql.tree.DropFunction;
@@ -39,6 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_PREPARED_STATEMENT_HEADER_NAME;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_CATALOG;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_FUNCTION;
@@ -79,7 +82,8 @@ final class TestTrinoQueryProperties
                 ImmutableSet.of("c.s"),
                 true,
                 Optional.empty(),
-                ImmutableMap.of(UNQUALIFIED_TABLE, ImmutableSet.of("t2", "s.t3")));
+                ImmutableMap.of(UNQUALIFIED_TABLE, ImmutableSet.of("t2", "s.t3")),
+                Optional.of("SELECT c1 FROM c.s.t1 WHERE c2 = 'x'"));
 
         String trinoQueryPropertiesJson = codec.toJson(trinoQueryProperties);
         TrinoQueryProperties deserializedTrinoQueryProperties = codec.fromJson(trinoQueryPropertiesJson);
@@ -97,6 +101,7 @@ final class TestTrinoQueryProperties
         assertThat(deserializedTrinoQueryProperties.isQueryParsingSuccessful()).isEqualTo(trinoQueryProperties.isQueryParsingSuccessful());
         assertThat(deserializedTrinoQueryProperties.getErrorMessage()).isEqualTo(trinoQueryProperties.getErrorMessage());
         assertThat(deserializedTrinoQueryProperties.getUnqualifiedNames()).isEqualTo(trinoQueryProperties.getUnqualifiedNames());
+        assertThat(deserializedTrinoQueryProperties.getBoundBody()).isEqualTo(trinoQueryProperties.getBoundBody());
     }
 
     @Test
@@ -115,7 +120,8 @@ final class TestTrinoQueryProperties
                 ImmutableSet.of(),
                 true,
                 Optional.empty(),
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                Optional.empty());
 
         String trinoQueryPropertiesJson = codec.toJson(trinoQueryProperties);
         TrinoQueryProperties deserializedTrinoQueryProperties = codec.fromJson(trinoQueryPropertiesJson);
@@ -133,6 +139,7 @@ final class TestTrinoQueryProperties
         assertThat(deserializedTrinoQueryProperties.isQueryParsingSuccessful()).isEqualTo(trinoQueryProperties.isQueryParsingSuccessful());
         assertThat(deserializedTrinoQueryProperties.getErrorMessage()).isEqualTo(trinoQueryProperties.getErrorMessage());
         assertThat(deserializedTrinoQueryProperties.getUnqualifiedNames()).isEqualTo(trinoQueryProperties.getUnqualifiedNames());
+        assertThat(deserializedTrinoQueryProperties.getBoundBody()).isEqualTo(trinoQueryProperties.getBoundBody());
     }
 
     @Test
@@ -1093,6 +1100,145 @@ final class TestTrinoQueryProperties
         TrinoQueryProperties comment = new TrinoQueryProperties(prepareMockRequest("COMMENT ON COLUMN s.t.a IS 'x'"), false, 1024 * 1024);
         assertThat(comment.isQueryParsingSuccessful()).isTrue();
         assertThat(comment.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("s.t")));
+    }
+
+    @Test
+    void testExecuteImmediateBoundBody()
+    {
+        String query = "EXECUTE IMMEDIATE 'SELECT * FROM c.s.t -- comment\nWHERE a = ? AND b = ''?''' USING 'x'";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getBody()).isEqualTo("SELECT * FROM c.s.t -- comment\nWHERE a = ? AND b = '?'");
+        assertBoundBody(properties, "SELECT * FROM c.s.t WHERE a = 'x' AND b = '?'");
+        assertThat(properties.getTables()).containsExactly(QualifiedName.of("c", "s", "t"));
+    }
+
+    @Test
+    void testExecutePreparedStatementBoundBody()
+    {
+        ContainerRequestContext request = prepareMockRequest("EXECUTE stmt USING 1, DATE '2026-01-01'");
+        request.getHeaders().add(
+                TRINO_PREPARED_STATEMENT_HEADER_NAME,
+                "stmt=" + URLEncoder.encode("SELECT * FROM c.s.t WHERE a = ? AND dt = ?", StandardCharsets.UTF_8));
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(request, false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getBody()).isEqualTo("SELECT * FROM c.s.t WHERE a = ? AND dt = ?");
+        assertBoundBody(properties, "SELECT * FROM c.s.t WHERE a = 1 AND dt = DATE '2026-01-01'");
+    }
+
+    @Test
+    void testExecuteBoundInSourceOrder()
+    {
+        // Like Trino, the markers are bound in the order they appear in the text, including subqueries and LIMIT
+        String query = "EXECUTE IMMEDIATE 'SELECT * FROM c.s.t WHERE a IN (SELECT b FROM c.s.u WHERE c = ?) AND d = ? LIMIT ?' USING 'x', 1 + 2, 10";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT * FROM c.s.t WHERE a IN (SELECT b FROM c.s.u WHERE c = 'x') AND d = (1 + 2) LIMIT 10");
+    }
+
+    @Test
+    void testExecuteOrdinalPositionsStayConstants()
+    {
+        // ORDER BY 2 would sort by the second column, but Trino sorts ORDER BY ? bound to 2 by the constant 2
+        String query = "EXECUTE IMMEDIATE 'SELECT a, count(*) FROM c.s.t GROUP BY ? ORDER BY ?' USING 1, 2";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT a, count(*) FROM c.s.t GROUP BY CAST(1 AS bigint) ORDER BY CAST(2 AS bigint)");
+    }
+
+    @Test
+    void testExecuteOrdinalPositionInSetOperation()
+    {
+        String query = "EXECUTE IMMEDIATE 'SELECT a FROM c.s.t UNION ALL SELECT b FROM c.s.u ORDER BY ?' USING 1";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT a FROM c.s.t UNION ALL SELECT b FROM c.s.u ORDER BY CAST(1 AS bigint)");
+    }
+
+    @Test
+    void testExecuteParameterOutsideOrdinalPositionIsNotWrapped()
+    {
+        // A window ORDER BY and a non-literal sort key take no output column position
+        String query = "EXECUTE IMMEDIATE 'SELECT row_number() OVER (ORDER BY ?) FROM c.s.t ORDER BY ? + 0' USING 1, 2";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT row_number() OVER (ORDER BY 1) FROM c.s.t ORDER BY 2 + 0");
+    }
+
+    @Test
+    void testExecuteWithoutParametersBoundBody()
+    {
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest("EXECUTE IMMEDIATE 'SELECT * FROM c.s.t'"), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT * FROM c.s.t");
+    }
+
+    @Test
+    void testExecuteParameterAfterSupplementaryCharacter()
+    {
+        // The parser counts columns in code points
+        String query = "EXECUTE IMMEDIATE 'SELECT \"\uD83D\uDE00\" FROM c.s.t WHERE a = ?' USING 1";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertBoundBody(properties, "SELECT \"\uD83D\uDE00\" FROM c.s.t WHERE a = 1");
+    }
+
+    @Test
+    void testExecuteParameterCountMismatchHasNoBoundBody()
+    {
+        // Trino reports a wrong number of parameters during analysis, so this is not a parsing failure
+        String query = "EXECUTE IMMEDIATE 'SELECT * FROM c.s.t WHERE a = ? AND b = ?' USING 1";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getBody()).isEqualTo("SELECT * FROM c.s.t WHERE a = ? AND b = ?");
+        assertThat(properties.getBoundBody()).isEmpty();
+        assertThat(properties.getTables()).containsExactly(QualifiedName.of("c", "s", "t"));
+    }
+
+    @Test
+    void testExecuteBoundStatementThatIsNotSqlHasNoBoundBody()
+    {
+        // Trino evaluates LIMIT ? as any constant, but LIMIT CAST(10 AS bigint) is not valid SQL
+        String query = "EXECUTE IMMEDIATE 'SELECT * FROM c.s.t LIMIT ?' USING CAST(10 AS bigint)";
+
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest(query), false, 1024 * 1024);
+
+        assertThat(properties.isQueryParsingSuccessful()).isTrue();
+        assertThat(properties.getBoundBody()).isEmpty();
+        assertThat(properties.getTables()).containsExactly(QualifiedName.of("c", "s", "t"));
+    }
+
+    @Test
+    void testNoBoundBodyForOtherStatements()
+    {
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest("SELECT * FROM c.s.t"), false, 1024 * 1024);
+
+        assertThat(properties.getBoundBody()).isEmpty();
+    }
+
+    @Test
+    void testBoundBodyJsonShape()
+    {
+        TrinoQueryProperties properties = new TrinoQueryProperties(prepareMockRequest("EXECUTE IMMEDIATE 'SELECT ?' USING 'x'"), false, 1024 * 1024);
+
+        String json = JsonCodec.jsonCodec(TrinoQueryProperties.class).toJson(properties);
+        assertThat(json).contains("\"boundBody\" : \"SELECT 'x'\"");
+    }
+
+    private static void assertBoundBody(TrinoQueryProperties properties, @Language("SQL") String expectedSql)
+    {
+        assertThat(properties.getBoundBody()).hasValue(SqlFormatter.formatSql(new SqlParser().createStatement(expectedSql)).stripTrailing());
     }
 
     private ContainerRequestContext prepareMockRequest(String query)
