@@ -308,7 +308,22 @@ object:
   example `testcat.testschema.testtable`
 * `Set<QualifiedName> getTables()`: the set of tables used in the query. These
   are fully qualified, any partially qualified table reference in the SQL
-  will be qualified by the default catalog and schema.
+  will be qualified by the default catalog and schema. References that cannot
+  be qualified are listed in `getUnqualifiedNames()` instead.
+* `Map<String, Set<String>> getUnqualifiedNames()`: names that could not be
+  qualified because the request has no default catalog or schema for them,
+  keyed by the kind of reference: `catalog`, `schema`, `table`, `function` or
+  `procedure`. Each name keeps the parts it has, in the same form as
+  `getTables()`, and is empty when the statement names nothing, for example
+  `{"table": ["my_table", "my_schema.my_table"]}`,
+  `{"function": ["system.query"]}` for a table function, or `{"schema": [""]}`
+  for `SHOW TABLES`. Trino may still resolve them from its server defaults
+  (`sql.default-catalog` and `sql.default-schema`), so they do not fail the
+  query parsing. They are not included in `getTables()`, `getCatalogs()` or
+  `getSchemas()`. An empty map means that every reference the gateway extracts
+  was qualified. A single-part table function name, such as `exclude_columns`,
+  is resolved by Trino through the SQL path, which the gateway does not read,
+  so it is neither listed here nor included in `getTables()`
 * `String getBody()`: the raw request body
 
 ### Configuration

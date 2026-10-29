@@ -24,6 +24,8 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Maps;
 import io.airlift.compress.v3.MalformedInputException;
 import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
@@ -115,6 +117,11 @@ public class TrinoQueryProperties
     public static final String TRINO_CATALOG_HEADER_NAME = "X-Trino-Catalog";
     public static final String TRINO_SCHEMA_HEADER_NAME = "X-Trino-Schema";
     public static final String TRINO_PREPARED_STATEMENT_HEADER_NAME = "X-Trino-Prepared-Statement";
+    public static final String UNQUALIFIED_CATALOG = "catalog";
+    public static final String UNQUALIFIED_SCHEMA = "schema";
+    public static final String UNQUALIFIED_TABLE = "table";
+    public static final String UNQUALIFIED_FUNCTION = "function";
+    public static final String UNQUALIFIED_PROCEDURE = "procedure";
 
     // Same splitting as io.trino.server.HttpRequestSessionContextFactory: proxies that merge repeated headers
     // join them with ", ", so entries and the name=value halves are trimmed and empty entries dropped.
@@ -138,6 +145,7 @@ public class TrinoQueryProperties
     private boolean isNewQuerySubmission;
     private Optional<String> errorMessage = Optional.empty();
     private Optional<String> queryId = Optional.empty();
+    private Map<String, Set<String>> unqualifiedNames = ImmutableMap.of();
 
     @JsonCreator
     public TrinoQueryProperties(
@@ -151,7 +159,8 @@ public class TrinoQueryProperties
             @JsonProperty("schemas") Set<String> schemas,
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
-            @JsonProperty("errorMessage") Optional<String> errorMessage)
+            @JsonProperty("errorMessage") Optional<String> errorMessage,
+            @JsonProperty("unqualifiedNames") Map<String, Set<String>> unqualifiedNames)
     {
         this.body = requireNonNullElse(body, "");
         this.queryType = requireNonNullElse(queryType, "");
@@ -165,6 +174,9 @@ public class TrinoQueryProperties
         this.catalogSchemas = requireNonNullElse(catalogSchemas, ImmutableSet.of());
         this.isNewQuerySubmission = isNewQuerySubmission;
         this.errorMessage = requireNonNullElse(errorMessage, Optional.empty());
+        this.unqualifiedNames = ImmutableMap.copyOf(Maps.transformValues(
+                requireNonNullElse(unqualifiedNames, ImmutableMap.<String, Set<String>>of()),
+                names -> ImmutableSet.copyOf(requireNonNullElse(names, ImmutableSet.of()))));
         isClientsUseV2Format = false;
         maxBodySize = -1;
     }
@@ -181,7 +193,8 @@ public class TrinoQueryProperties
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 false,
-                Optional.empty());
+                Optional.empty(),
+                ImmutableMap.of());
     }
 
     public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize)
@@ -258,9 +271,11 @@ public class TrinoQueryProperties
             ImmutableSet.Builder<String> schemaBuilder = ImmutableSet.builder();
             ImmutableSet.Builder<String> catalogSchemaBuilder = ImmutableSet.builder();
             Set<QualifiedName> temporaryTables = new HashSet<>();
+            Names names = new Names(tableBuilder);
 
-            visitNode(statement, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
+            visitNode(statement, names, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
             tables = tableBuilder.build();
+            unqualifiedNames = names.unqualifiedNames();
             catalogBuilder.addAll(tables.stream().map(q -> q.getParts().getFirst()).iterator());
             catalogs = catalogBuilder.build();
             schemaBuilder.addAll(tables.stream().map(q -> q.getParts().get(1)).iterator());
@@ -412,7 +427,7 @@ public class TrinoQueryProperties
 
     private void visitNode(
             Node node,
-            ImmutableSet.Builder<QualifiedName> tableBuilder,
+            Names names,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
             ImmutableSet.Builder<String> catalogSchemaBuilder,
@@ -420,85 +435,80 @@ public class TrinoQueryProperties
             throws RequestParsingException
     {
         switch (node) {
-            case AddColumn s -> tableBuilder.add(qualifyName(s.getName()));
-            case Analyze s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case Call call -> queryId = extractQueryIdFromCall(call);
+            case AddColumn s -> names.add(s.getName());
+            case Analyze s -> names.add(s.getTableName());
+            case Call call -> queryId = extractQueryIdFromCall(call, names);
             case CreateCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
-            case CreateMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
-            case CreateSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
-            case CreateTable s -> tableBuilder.add(qualifyName(s.getName()));
-            case CreateView s -> tableBuilder.add(qualifyName(s.getName()));
-            case CreateTableAsSelect s -> tableBuilder.add(qualifyName(s.getName()));
+            case CreateMaterializedView s -> names.add(s.getName());
+            case CreateSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            case CreateTable s -> names.add(s.getName());
+            case CreateView s -> names.add(s.getName());
+            case CreateTableAsSelect s -> names.add(s.getName());
             case DropCatalog s -> catalogBuilder.add(s.getCatalogName().getValue());
-            case DropSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
-            case DropTable s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case Insert s -> tableBuilder.add(qualifyName(s.getTarget()));
+            case DropSchema s -> setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(s.getSchemaName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            case DropTable s -> names.add(s.getTableName());
+            case Insert s -> names.add(s.getTarget());
             case Query q -> q.getWith().ifPresent(with -> temporaryTables.addAll(with.getQueries().stream().map(WithQuery::getName).map(Identifier::getValue).map(QualifiedName::of).toList()));
-            case RenameMaterializedView s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
+            case RenameMaterializedView s -> names.addRenamed(s.getSource(), s.getTarget());
             case RenameSchema s -> {
-                setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
-                QualifiedName targetSchema;
-                if (s.getSource().getParts().size() == 1) {
-                    if (defaultCatalog.isPresent()) {
-                        targetSchema = QualifiedName.of(defaultCatalog.orElseThrow(), s.getTarget().getValue());
-                    }
-                    else {
-                        errorMessage = Optional.of("defaultCatalog is not present");
-                        return;
-                    }
+                setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+                // The target schema stays in the catalog of the source
+                Optional<String> targetCatalog = s.getSource().getParts().size() == 1 ? defaultCatalog : Optional.of(s.getSource().getParts().getFirst());
+                if (targetCatalog.isPresent()) {
+                    setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(QualifiedName.of(targetCatalog.get(), s.getTarget().getValue())), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
                 }
                 else {
-                    targetSchema = QualifiedName.of(s.getSource().getParts().getFirst(), s.getTarget().getValue());
+                    names.addUnqualified(UNQUALIFIED_SCHEMA, QualifiedName.of(s.getTarget().getValue()));
                 }
-                setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(targetSchema), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             }
-            case RenameTable s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
-            case RenameView s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
-            case SetProperties s -> tableBuilder.add(qualifyName(s.getName()));
-            case ShowColumns s -> tableBuilder.add(qualifyName(s.getTable()));
+            case RenameTable s -> names.addRenamed(s.getSource(), s.getTarget());
+            case RenameView s -> names.addRenamed(s.getSource(), s.getTarget());
+            case SetProperties s -> names.add(s.getName());
+            case ShowColumns s -> names.add(s.getTable());
             case ShowCreate s -> {
                 if (s.getType() == ShowCreate.Type.SCHEMA) {
-                    setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+                    setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(s.getName()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
                 }
                 else {
-                    tableBuilder.add(qualifyName(s.getName()));
+                    names.add(s.getName());
                 }
             }
-            case ShowSchemas s -> catalogBuilder.add(s.getCatalog().map(Identifier::getValue).or(() -> defaultCatalog).orElseThrow(this::unsetDefaultExceptionSupplier));
-            case ShowTables s -> setCatalogAndSchemaNameFromSchemaQualifiedName(s.getSchema(), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+            case ShowSchemas s -> s.getCatalog().map(Identifier::getValue).or(() -> defaultCatalog)
+                    .ifPresentOrElse(catalogBuilder::add, () -> names.addUnqualified(UNQUALIFIED_CATALOG, ""));
+            case ShowTables s -> setCatalogAndSchemaNameFromSchemaQualifiedName(names, s.getSchema(), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             case SetAuthorizationStatement setAuthorization -> {
                 if (setAuthorization.getOwnedEntityKind().equals("SCHEMA")) {
-                    setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(setAuthorization.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
+                    setCatalogAndSchemaNameFromSchemaQualifiedName(names, Optional.of(setAuthorization.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
                 }
                 else {
-                    tableBuilder.add(qualifyName(setAuthorization.getSource()));
+                    names.add(setAuthorization.getSource());
                 }
             }
             case Table s -> {
                 // ignore temporary tables as they can have various table parts
                 if (!temporaryTables.contains(s.getName())) {
-                    tableBuilder.add(qualifyName(s.getName()));
+                    names.add(s.getName());
                 }
             }
-            case TableFunctionInvocation s -> tableBuilder.add(qualifyName(s.getName()));
-            case TruncateTable s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case DropView s -> tableBuilder.add(qualifyName(s.getName()));
-            case DropMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
-            case MaterializedViewExecute s -> tableBuilder.add(qualifyName(s.getName()));
-            case RefreshMaterializedView s -> tableBuilder.add(qualifyName(s.getName()));
-            case RefreshView s -> tableBuilder.add(qualifyName(s.getName()));
+            case TableFunctionInvocation s -> names.addTableFunction(s.getName());
+            case TruncateTable s -> names.add(s.getTableName());
+            case DropView s -> names.add(s.getName());
+            case DropMaterializedView s -> names.add(s.getName());
+            case MaterializedViewExecute s -> names.add(s.getName());
+            case RefreshMaterializedView s -> names.add(s.getName());
+            case RefreshView s -> names.add(s.getName());
             // ALTER TABLE ... column operations: the modified table is what routing cares about
-            case DropColumn s -> tableBuilder.add(qualifyName(s.getTable()));
-            case RenameColumn s -> tableBuilder.add(qualifyName(s.getTable()));
-            case SetColumnType s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case SetDefaultValue s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case DropDefaultValue s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case DropNotNullConstraint s -> tableBuilder.add(qualifyName(s.getTable()));
+            case DropColumn s -> names.add(s.getTable());
+            case RenameColumn s -> names.add(s.getTable());
+            case SetColumnType s -> names.add(s.getTableName());
+            case SetDefaultValue s -> names.add(s.getTableName());
+            case DropDefaultValue s -> names.add(s.getTableName());
+            case DropNotNullConstraint s -> names.add(s.getTable());
             // Branch DDL operates on a table
-            case CreateBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case DropBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case FastForwardBranch s -> tableBuilder.add(qualifyName(s.getTableName()));
-            case ShowBranches s -> tableBuilder.add(qualifyName(s.getTableName()));
+            case CreateBranch s -> names.add(s.getTableName());
+            case DropBranch s -> names.add(s.getTableName());
+            case FastForwardBranch s -> names.add(s.getTableName());
+            case ShowBranches s -> names.add(s.getTableName());
             case Comment s -> {
                 if (s.getType() == Comment.Type.COLUMN) {
                     // For a column comment the QualifiedName is the column path (...schema.table.column);
@@ -507,26 +517,30 @@ public class TrinoQueryProperties
                     // an empty QualifiedName, which would throw).
                     Optional<QualifiedName> tableName = s.getName().getPrefix();
                     if (tableName.isPresent()) {
-                        tableBuilder.add(qualifyName(tableName.get()));
+                        names.add(tableName.get());
                     }
                 }
                 else {
-                    tableBuilder.add(qualifyName(s.getName()));
+                    names.add(s.getName());
                 }
             }
             default -> {}
         }
 
         for (Node child : node.getChildren()) {
-            visitNode(child, tableBuilder, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
+            visitNode(child, names, catalogBuilder, schemaBuilder, catalogSchemaBuilder, temporaryTables);
         }
     }
 
-    private Optional<String> extractQueryIdFromCall(Call call)
+    private Optional<String> extractQueryIdFromCall(Call call, Names names)
             throws RequestParsingException
     {
-        QualifiedName callName = qualifyName(call.getName());
-        if (callName.equals(QualifiedName.of("system", "runtime", "kill_query"))) {
+        Optional<QualifiedName> callName = tryQualifyName(call.getName());
+        if (callName.isEmpty()) {
+            names.addUnqualified(UNQUALIFIED_PROCEDURE, call.getName());
+            return Optional.empty();
+        }
+        if (callName.get().equals(QualifiedName.of("system", "runtime", "kill_query"))) {
             Expression argument = call.getArguments().getFirst().getValue();
             checkArgument(argument instanceof StringLiteral, "Unable to route kill_query procedures where the first argument is not a String Literal");
             return Optional.of(((StringLiteral) argument).getValue());
@@ -535,26 +549,33 @@ public class TrinoQueryProperties
     }
 
     private void setCatalogAndSchemaNameFromSchemaQualifiedName(
+            Names names,
             Optional<QualifiedName> schemaOptional,
             ImmutableSet.Builder<String> catalogBuilder,
             ImmutableSet.Builder<String> schemaBuilder,
             ImmutableSet.Builder<String> catalogSchemaBuilder)
-            throws RequestParsingException
     {
         if (schemaOptional.isEmpty()) {
-            schemaBuilder.add(defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier));
-            catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-            catalogSchemaBuilder.add("%s.%s".formatted(
-                    defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier),
-                    defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier)));
+            if (defaultCatalog.isEmpty() || defaultSchema.isEmpty()) {
+                // Nothing is written in the SQL, so the reference has an empty name
+                names.addUnqualified(UNQUALIFIED_SCHEMA, "");
+                return;
+            }
+            schemaBuilder.add(defaultSchema.get());
+            catalogBuilder.add(defaultCatalog.get());
+            catalogSchemaBuilder.add("%s.%s".formatted(defaultCatalog.get(), defaultSchema.get()));
         }
         else {
             QualifiedName schema = schemaOptional.orElseThrow();
             switch (schema.getParts().size()) {
                 case 1 -> {
+                    if (defaultCatalog.isEmpty()) {
+                        names.addUnqualified(UNQUALIFIED_SCHEMA, schema);
+                        return;
+                    }
                     schemaBuilder.add(schema.getParts().getFirst());
-                    catalogBuilder.add(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier));
-                    catalogSchemaBuilder.add("%s.%s".formatted(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), schema.getParts().getFirst()));
+                    catalogBuilder.add(defaultCatalog.get());
+                    catalogSchemaBuilder.add("%s.%s".formatted(defaultCatalog.get(), schema.getParts().getFirst()));
                 }
                 case 2 -> {
                     schemaBuilder.add(schema.getParts().get(1));
@@ -566,41 +587,100 @@ public class TrinoQueryProperties
         }
     }
 
-    private RequestParsingException unsetDefaultExceptionSupplier()
-    {
-        return new RequestParsingException("Name not fully qualified");
-    }
-
-    private QualifiedName qualifyName(QualifiedName name)
+    /**
+     * Qualifies a table, table function or procedure name with the default catalog and schema from the request headers.
+     * Empty when a needed default is not set: Trino may still resolve the name from its own server defaults, which the
+     * gateway does not know.
+     */
+    private Optional<QualifiedName> tryQualifyName(QualifiedName name)
             throws RequestParsingException
     {
         List<String> nameParts = name.getParts();
         return switch (nameParts.size()) {
-            case 1 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), defaultSchema.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst());
-            case 2 -> QualifiedName.of(defaultCatalog.orElseThrow(this::unsetDefaultExceptionSupplier), nameParts.getFirst(), nameParts.get(1));
-            case 3 -> QualifiedName.of(nameParts.getFirst(), nameParts.get(1), nameParts.get(2));
+            case 1 -> defaultCatalog.flatMap(catalog -> defaultSchema.map(schema -> QualifiedName.of(catalog, schema, nameParts.getFirst())));
+            case 2 -> defaultCatalog.map(catalog -> QualifiedName.of(catalog, nameParts.getFirst(), nameParts.get(1)));
+            case 3 -> Optional.of(QualifiedName.of(nameParts.getFirst(), nameParts.get(1), nameParts.get(2)));
             default -> throw new RequestParsingException("Unexpected qualified name: " + name.getParts());
         };
     }
 
     /**
-     * Adds the source and the target of a table, view or materialized view rename. Like Trino's
-     * {@code MetadataUtil.createTargetQualifiedObjectName}, the target takes the parts it does not have from the source,
-     * not from the session defaults.
+     * Collects table names, and keeps apart the names that cannot be qualified from the request defaults.
      */
-    private void addRenamedObject(QualifiedName source, QualifiedName target, ImmutableSet.Builder<QualifiedName> tableBuilder)
-            throws RequestParsingException
+    private class Names
     {
-        QualifiedName qualifiedSource = qualifyName(source);
-        tableBuilder.add(qualifiedSource);
-        List<String> sourceParts = qualifiedSource.getParts();
-        List<String> targetParts = target.getParts();
-        tableBuilder.add(switch (targetParts.size()) {
-            case 1 -> QualifiedName.of(sourceParts.getFirst(), sourceParts.get(1), targetParts.getFirst());
-            case 2 -> QualifiedName.of(sourceParts.getFirst(), targetParts.getFirst(), targetParts.get(1));
-            case 3 -> QualifiedName.of(targetParts.getFirst(), targetParts.get(1), targetParts.get(2));
-            default -> throw new RequestParsingException("Unexpected qualified name: " + targetParts);
-        });
+        private final ImmutableSet.Builder<QualifiedName> tableBuilder;
+        private final ImmutableSetMultimap.Builder<String, String> unqualifiedNameBuilder = ImmutableSetMultimap.builder();
+
+        private Names(ImmutableSet.Builder<QualifiedName> tableBuilder)
+        {
+            this.tableBuilder = tableBuilder;
+        }
+
+        private void add(QualifiedName name)
+                throws RequestParsingException
+        {
+            tryQualifyName(name).ifPresentOrElse(tableBuilder::add, () -> addUnqualified(UNQUALIFIED_TABLE, name));
+        }
+
+        /**
+         * Trino resolves a single-part table function name through the SQL path rather than the session catalog and
+         * schema, and the gateway does not read the path, so only names with a schema part are recorded.
+         */
+        private void addTableFunction(QualifiedName name)
+                throws RequestParsingException
+        {
+            if (name.getParts().size() > 1) {
+                tryQualifyName(name).ifPresentOrElse(tableBuilder::add, () -> addUnqualified(UNQUALIFIED_FUNCTION, name));
+            }
+        }
+
+        /**
+         * Adds the source and the target of a table, view or materialized view rename. Like Trino's
+         * {@code MetadataUtil.createTargetQualifiedObjectName}, the target takes the parts it does not have from the
+         * source, not from the session defaults.
+         */
+        private void addRenamed(QualifiedName source, QualifiedName target)
+                throws RequestParsingException
+        {
+            List<String> targetParts = target.getParts();
+            if (targetParts.size() > 3) {
+                throw new RequestParsingException("Unexpected qualified name: " + targetParts);
+            }
+            Optional<QualifiedName> qualifiedSource = tryQualifyName(source);
+            if (qualifiedSource.isEmpty()) {
+                addUnqualified(UNQUALIFIED_TABLE, source);
+                if (targetParts.size() == 3) {
+                    add(target);
+                }
+                else {
+                    addUnqualified(UNQUALIFIED_TABLE, target);
+                }
+                return;
+            }
+            tableBuilder.add(qualifiedSource.get());
+            List<String> sourceParts = qualifiedSource.get().getParts();
+            tableBuilder.add(switch (targetParts.size()) {
+                case 1 -> QualifiedName.of(sourceParts.getFirst(), sourceParts.get(1), targetParts.getFirst());
+                case 2 -> QualifiedName.of(sourceParts.getFirst(), targetParts.getFirst(), targetParts.get(1));
+                default -> QualifiedName.of(targetParts.getFirst(), targetParts.get(1), targetParts.get(2));
+            });
+        }
+
+        private void addUnqualified(String kind, QualifiedName name)
+        {
+            addUnqualified(kind, name.toString());
+        }
+
+        private void addUnqualified(String kind, String name)
+        {
+            unqualifiedNameBuilder.put(kind, name);
+        }
+
+        private Map<String, Set<String>> unqualifiedNames()
+        {
+            return ImmutableMap.copyOf(Maps.transformValues(unqualifiedNameBuilder.build().asMap(), ImmutableSet::copyOf));
+        }
     }
 
     @JsonProperty
@@ -728,6 +808,22 @@ public class TrinoQueryProperties
     public Optional<String> getErrorMessage()
     {
         return errorMessage;
+    }
+
+    /**
+     * Names that could not be qualified because the request has no default catalog or schema for them, keyed by
+     * the kind of reference: {@link #UNQUALIFIED_CATALOG}, {@link #UNQUALIFIED_SCHEMA}, {@link #UNQUALIFIED_TABLE},
+     * {@link #UNQUALIFIED_FUNCTION} or {@link #UNQUALIFIED_PROCEDURE}. Each name keeps the parts it has, in the same form
+     * as {@link #getTables()}, and is empty when the statement names nothing, as in {@code SHOW TABLES}. Trino may still
+     * resolve them from its server defaults, so they are reported here instead of failing the parsing, and they are not
+     * part of {@link #getTables()}, {@link #getCatalogs()} or {@link #getSchemas()}. An empty map means that every
+     * reference the gateway extracts was qualified. It does not cover a single-part function name, which Trino resolves
+     * through the SQL path.
+     */
+    @JsonProperty
+    public Map<String, Set<String>> getUnqualifiedNames()
+    {
+        return unqualifiedNames;
     }
 
     @JsonIgnore
