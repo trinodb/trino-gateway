@@ -610,6 +610,26 @@ final class TestRoutingGroupSelector
                         ImmutableSet.of("schem", "schem2"),
                         ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"), QualifiedName.of("cat", "schem2", "vw2"))),
                 Arguments.of(
+                        "ALTER TABLE cat.schem.tbl RENAME TO cat.schem2.tbl2",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("schem", "schem2"),
+                        ImmutableSet.of(QualifiedName.of("cat", "schem", "tbl"), QualifiedName.of("cat", "schem2", "tbl2"))),
+                Arguments.of(
+                        "ALTER VIEW cat.schem.vw RENAME TO cat.schem2.vw2",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("schem", "schem2"),
+                        ImmutableSet.of(QualifiedName.of("cat", "schem", "vw"), QualifiedName.of("cat", "schem2", "vw2"))),
+                Arguments.of(
+                        "ALTER MATERIALIZED VIEW cat.mvschem.mv RENAME TO mvschem2.mv2",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("mvschem", "mvschem2"),
+                        ImmutableSet.of(QualifiedName.of("cat", "mvschem", "mv"), QualifiedName.of("cat", "mvschem2", "mv2"))),
+                Arguments.of(
+                        "ALTER MATERIALIZED VIEW cat.mvschem.mv RENAME TO mv2",
+                        ImmutableSet.of("cat"),
+                        ImmutableSet.of("mvschem"),
+                        ImmutableSet.of(QualifiedName.of("cat", "mvschem", "mv"), QualifiedName.of("cat", "mvschem", "mv2"))),
+                Arguments.of(
                         "ALTER TABLE cat.schem.tbl SET PROPERTIES property_name = 'expression'",
                         ImmutableSet.of("cat"),
                         ImmutableSet.of("schem"),
