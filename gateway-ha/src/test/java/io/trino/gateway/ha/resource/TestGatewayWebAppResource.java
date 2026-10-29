@@ -31,11 +31,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.io.File;
@@ -46,12 +47,15 @@ import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlConta
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+@Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestGatewayWebAppResource
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
+    @Container
+    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
+
     private final OkHttpClient httpClient = new OkHttpClient();
     private final int routerPort = 28001 + (int) (Math.random() * 1000);
 
@@ -59,17 +63,10 @@ final class TestGatewayWebAppResource
     void setup()
             throws Exception
     {
-        postgresql.start();
         // This configuration has no routing rules section, so the rules engine is not in use
         File configFile = HaGatewayTestUtils.buildGatewayConfig(
-                postgresql, routerPort, "test-config-no-monitor-template.yml");
+                POSTGRESQL, routerPort, "test-config-no-monitor-template.yml");
         HaGatewayLauncher.main(new String[] {configFile.getAbsolutePath()});
-    }
-
-    @AfterAll
-    void cleanup()
-    {
-        postgresql.close();
     }
 
     @Test
