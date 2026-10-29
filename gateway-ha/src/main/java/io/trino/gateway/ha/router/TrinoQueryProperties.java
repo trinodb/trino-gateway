@@ -30,6 +30,8 @@ import io.airlift.compress.v3.MalformedInputException;
 import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
+import io.trino.sql.ExpressionFormatter;
+import io.trino.sql.SqlFormatter;
 import io.trino.sql.parser.ParsingException;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AddColumn;
@@ -43,6 +45,7 @@ import io.trino.sql.tree.CreateSchema;
 import io.trino.sql.tree.CreateTable;
 import io.trino.sql.tree.CreateTableAsSelect;
 import io.trino.sql.tree.CreateView;
+import io.trino.sql.tree.DefaultTraversalVisitor;
 import io.trino.sql.tree.DropBranch;
 import io.trino.sql.tree.DropCatalog;
 import io.trino.sql.tree.DropColumn;
@@ -58,11 +61,15 @@ import io.trino.sql.tree.Expression;
 import io.trino.sql.tree.FastForwardBranch;
 import io.trino.sql.tree.Identifier;
 import io.trino.sql.tree.Insert;
+import io.trino.sql.tree.LongLiteral;
 import io.trino.sql.tree.MaterializedViewExecute;
 import io.trino.sql.tree.Node;
 import io.trino.sql.tree.NodeLocation;
+import io.trino.sql.tree.OrderBy;
+import io.trino.sql.tree.Parameter;
 import io.trino.sql.tree.QualifiedName;
 import io.trino.sql.tree.Query;
+import io.trino.sql.tree.QuerySpecification;
 import io.trino.sql.tree.RefreshMaterializedView;
 import io.trino.sql.tree.RefreshView;
 import io.trino.sql.tree.RenameColumn;
@@ -79,6 +86,8 @@ import io.trino.sql.tree.ShowColumns;
 import io.trino.sql.tree.ShowCreate;
 import io.trino.sql.tree.ShowSchemas;
 import io.trino.sql.tree.ShowTables;
+import io.trino.sql.tree.SimpleGroupBy;
+import io.trino.sql.tree.SortItem;
 import io.trino.sql.tree.Statement;
 import io.trino.sql.tree.StringLiteral;
 import io.trino.sql.tree.Table;
@@ -96,7 +105,9 @@ import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +157,7 @@ public class TrinoQueryProperties
     private Optional<String> errorMessage = Optional.empty();
     private Optional<String> queryId = Optional.empty();
     private Map<String, Set<String>> unqualifiedNames = ImmutableMap.of();
+    private Optional<String> boundBody = Optional.empty();
 
     @JsonCreator
     public TrinoQueryProperties(
@@ -160,7 +172,8 @@ public class TrinoQueryProperties
             @JsonProperty("catalogSchemas") Set<String> catalogSchemas,
             @JsonProperty("isNewQuerySubmission") boolean isNewQuerySubmission,
             @JsonProperty("errorMessage") Optional<String> errorMessage,
-            @JsonProperty("unqualifiedNames") Map<String, Set<String>> unqualifiedNames)
+            @JsonProperty("unqualifiedNames") Map<String, Set<String>> unqualifiedNames,
+            @JsonProperty("boundBody") Optional<String> boundBody)
     {
         this.body = requireNonNullElse(body, "");
         this.queryType = requireNonNullElse(queryType, "");
@@ -177,6 +190,7 @@ public class TrinoQueryProperties
         this.unqualifiedNames = ImmutableMap.copyOf(Maps.transformValues(
                 requireNonNullElse(unqualifiedNames, ImmutableMap.<String, Set<String>>of()),
                 names -> ImmutableSet.copyOf(requireNonNullElse(names, ImmutableSet.of()))));
+        this.boundBody = requireNonNullElse(boundBody, Optional.empty());
         isClientsUseV2Format = false;
         maxBodySize = -1;
     }
@@ -194,7 +208,8 @@ public class TrinoQueryProperties
                 ImmutableSet.of(),
                 false,
                 Optional.empty(),
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                Optional.empty());
     }
 
     public TrinoQueryProperties(ContainerRequestContext requestContext, boolean isClientsUseV2Format, int maxBodySize)
@@ -250,7 +265,8 @@ public class TrinoQueryProperties
 
             Statement statement = parser.createStatement(body);
             if (statement.getClass() == Execute.class) {
-                String statementName = ((Execute) statement).getName().getValue();
+                Execute execute = (Execute) statement;
+                String statementName = execute.getName().getValue();
                 if (!preparedStatements.containsKey(statementName)) {
                     log.error("No prepared statement matching execute: %s", body);
                     queryType = "Execute";
@@ -258,10 +274,12 @@ public class TrinoQueryProperties
                 }
                 body = preparedStatements.get(statementName);
                 statement = parser.createStatement(body);
+                boundBody = bindParameters(parser, statement, execute.getParameters());
             }
             else if (statement instanceof ExecuteImmediate executeImmediate) {
                 body = executeImmediate.getStatement().getValue();
                 statement = parser.createStatement(body);
+                boundBody = bindParameters(parser, statement, executeImmediate.getParameters());
             }
 
             queryType = statement.getClass().getSimpleName();
@@ -824,6 +842,149 @@ public class TrinoQueryProperties
     public Map<String, Set<String>> getUnqualifiedNames()
     {
         return unqualifiedNames;
+    }
+
+    /**
+     * For {@code EXECUTE} and {@code EXECUTE IMMEDIATE}, the statement in {@link #getBody()} with the {@code USING}
+     * parameters bound in place of its parameter markers, formatted with Trino's {@link SqlFormatter}. Comments are
+     * dropped and the formatting is normalized. Empty for other statements, when the number of parameters does not match
+     * the markers, or when the bound statement cannot be written as SQL, as with {@code LIMIT ?} bound to an expression
+     * that is not an integer literal.
+     */
+    @JsonProperty
+    public Optional<String> getBoundBody()
+    {
+        return boundBody;
+    }
+
+    /**
+     * Binds the USING parameters the way Trino does in {@code QueryPreparer} and {@code ParameterExtractor}: the markers
+     * are numbered in the order they appear in the text, and their count must match the parameters. Trino keeps the
+     * parameters apart from the statement, so the bound SQL is written here: the statement is formatted with
+     * {@link SqlFormatter}, which Trino keeps parseable back to the same tree, and each marker in the formatted SQL is
+     * replaced with its parameter.
+     */
+    private Optional<String> bindParameters(SqlParser parser, Statement statement, List<Expression> values)
+    {
+        List<Parameter> parameters = extractParameters(statement);
+        if (parameters.size() != values.size()) {
+            log.debug("Incorrect number of parameters: expected %s but found %s", parameters.size(), values.size());
+            return Optional.empty();
+        }
+        Set<Integer> ordinalKeys = extractOrdinalKeys(statement);
+        Map<Integer, String> boundValues = new HashMap<>();
+        for (int i = 0; i < parameters.size(); i++) {
+            Expression value = values.get(i);
+            String formattedValue = ExpressionFormatter.formatExpression(value);
+            // ORDER BY 2 and GROUP BY 2 name an output column, but Trino reads ORDER BY ? bound to 2 as the constant 2
+            if (ordinalKeys.contains(parameters.get(i).getId()) && value instanceof LongLiteral) {
+                formattedValue = "CAST(%s AS bigint)".formatted(formattedValue);
+            }
+            boundValues.put(parameters.get(i).getId(), formattedValue);
+        }
+
+        try {
+            String formatted = SqlFormatter.formatSql(statement);
+            List<Parameter> formattedParameters = extractParameters(parser.createStatement(formatted));
+            List<Integer> lineOffsets = new ArrayList<>();
+            lineOffsets.add(0);
+            for (int i = 0; i < formatted.length(); i++) {
+                if (formatted.charAt(i) == '\n') {
+                    lineOffsets.add(i + 1);
+                }
+            }
+            StringBuilder bound = new StringBuilder();
+            int copied = 0;
+            for (Parameter parameter : formattedParameters) {
+                NodeLocation location = parameter.getLocation().orElseThrow();
+                // The parser counts columns in code points, not in UTF-16 chars
+                int offset = formatted.offsetByCodePoints(lineOffsets.get(location.line() - 1), location.column() - 1);
+                String value = boundValues.get(parameter.getId());
+                if (formatted.charAt(offset) != '?' || value == null) {
+                    log.debug("Unexpected parameter marker in formatted statement at %s", location);
+                    return Optional.empty();
+                }
+                bound.append(formatted, copied, offset).append(value);
+                copied = offset + 1;
+            }
+            bound.append(formatted, copied, formatted.length());
+            String boundSql = bound.toString().stripTrailing();
+            parser.createStatement(boundSql);
+            return Optional.of(boundSql);
+        }
+        catch (ParsingException e) {
+            // LIMIT ? takes any constant in Trino, but LIMIT only accepts an integer literal in SQL
+            log.debug("Bound statement does not parse: %s", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * The parameter markers of a statement in the order they appear in the text, like Trino's {@code ParameterExtractor}.
+     */
+    private static List<Parameter> extractParameters(Statement statement)
+    {
+        List<Parameter> parameters = new ArrayList<>();
+        new DefaultTraversalVisitor<Void>()
+        {
+            @Override
+            protected Void visitParameter(Parameter node, Void context)
+            {
+                parameters.add(node);
+                return null;
+            }
+        }.process(statement, null);
+        parameters.sort(Comparator.comparing(
+                parameter -> parameter.getLocation().orElseThrow(),
+                Comparator.comparingInt(NodeLocation::line).thenComparingInt(NodeLocation::column)));
+        return parameters;
+    }
+
+    /**
+     * The ids of the parameter markers that Trino would read as an output column position if they were an integer
+     * literal: the sort keys of the ORDER BY of a query and the expressions of a simple GROUP BY. A window or
+     * aggregation ORDER BY takes no position.
+     */
+    private static Set<Integer> extractOrdinalKeys(Statement statement)
+    {
+        Set<Integer> keys = new HashSet<>();
+        new DefaultTraversalVisitor<Void>()
+        {
+            @Override
+            protected Void visitQuery(Query node, Void context)
+            {
+                node.getOrderBy().ifPresent(this::addSortKeys);
+                return super.visitQuery(node, null);
+            }
+
+            @Override
+            protected Void visitQuerySpecification(QuerySpecification node, Void context)
+            {
+                node.getOrderBy().ifPresent(this::addSortKeys);
+                return super.visitQuerySpecification(node, null);
+            }
+
+            @Override
+            protected Void visitSimpleGroupBy(SimpleGroupBy node, Void context)
+            {
+                for (Expression expression : node.getExpressions()) {
+                    if (expression instanceof Parameter parameter) {
+                        keys.add(parameter.getId());
+                    }
+                }
+                return super.visitSimpleGroupBy(node, null);
+            }
+
+            private void addSortKeys(OrderBy orderBy)
+            {
+                for (SortItem item : orderBy.getSortItems()) {
+                    if (item.getSortKey() instanceof Parameter parameter) {
+                        keys.add(parameter.getId());
+                    }
+                }
+            }
+        }.process(statement, null);
+        return keys;
     }
 
     @JsonIgnore
