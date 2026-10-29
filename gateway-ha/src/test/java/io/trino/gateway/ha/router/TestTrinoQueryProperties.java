@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import io.airlift.json.JsonCodec;
@@ -50,7 +51,13 @@ import java.util.stream.Stream;
 
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_CATALOG_HEADER_NAME;
 import static io.trino.gateway.ha.router.TrinoQueryProperties.TRINO_SCHEMA_HEADER_NAME;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_CATALOG;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_FUNCTION;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_PROCEDURE;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_SCHEMA;
+import static io.trino.gateway.ha.router.TrinoQueryProperties.UNQUALIFIED_TABLE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +78,8 @@ final class TestTrinoQueryProperties
                 ImmutableSet.of("s"),
                 ImmutableSet.of("c.s"),
                 true,
-                Optional.empty());
+                Optional.empty(),
+                ImmutableMap.of(UNQUALIFIED_TABLE, ImmutableSet.of("t2", "s.t3")));
 
         String trinoQueryPropertiesJson = codec.toJson(trinoQueryProperties);
         TrinoQueryProperties deserializedTrinoQueryProperties = codec.fromJson(trinoQueryPropertiesJson);
@@ -88,6 +96,7 @@ final class TestTrinoQueryProperties
         assertThat(deserializedTrinoQueryProperties.isNewQuerySubmission()).isEqualTo(trinoQueryProperties.isNewQuerySubmission());
         assertThat(deserializedTrinoQueryProperties.isQueryParsingSuccessful()).isEqualTo(trinoQueryProperties.isQueryParsingSuccessful());
         assertThat(deserializedTrinoQueryProperties.getErrorMessage()).isEqualTo(trinoQueryProperties.getErrorMessage());
+        assertThat(deserializedTrinoQueryProperties.getUnqualifiedNames()).isEqualTo(trinoQueryProperties.getUnqualifiedNames());
     }
 
     @Test
@@ -105,7 +114,8 @@ final class TestTrinoQueryProperties
                 ImmutableSet.of(),
                 ImmutableSet.of(),
                 true,
-                Optional.empty());
+                Optional.empty(),
+                ImmutableMap.of());
 
         String trinoQueryPropertiesJson = codec.toJson(trinoQueryProperties);
         TrinoQueryProperties deserializedTrinoQueryProperties = codec.fromJson(trinoQueryPropertiesJson);
@@ -122,6 +132,7 @@ final class TestTrinoQueryProperties
         assertThat(deserializedTrinoQueryProperties.isNewQuerySubmission()).isEqualTo(trinoQueryProperties.isNewQuerySubmission());
         assertThat(deserializedTrinoQueryProperties.isQueryParsingSuccessful()).isEqualTo(trinoQueryProperties.isQueryParsingSuccessful());
         assertThat(deserializedTrinoQueryProperties.getErrorMessage()).isEqualTo(trinoQueryProperties.getErrorMessage());
+        assertThat(deserializedTrinoQueryProperties.getUnqualifiedNames()).isEqualTo(trinoQueryProperties.getUnqualifiedNames());
     }
 
     @Test
@@ -242,10 +253,12 @@ final class TestTrinoQueryProperties
 
         TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
 
-        // The exception is caught and stored in errorMessage, not re-thrown
-        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
-        assertThat(trinoQueryProperties.getErrorMessage()).isPresent();
-        assertThat(trinoQueryProperties.getErrorMessage().get()).contains("Name not fully qualified");
+        // Trino may still resolve the schema from its server defaults, so the gateway reports the name instead of failing
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getErrorMessage()).isEmpty();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getSchemas()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_SCHEMA, ImmutableSet.of("myschema")));
     }
 
     @Test
@@ -710,6 +723,376 @@ final class TestTrinoQueryProperties
     {
         return Arrays.stream(clazz.getMethods())
                 .anyMatch(method -> method.getParameterCount() == 0 && method.getReturnType().equals(QualifiedName.class));
+    }
+
+    @Test
+    void testUnqualifiedTableDoesNotFailParsing()
+    {
+        // Only the catalog is sent, so a one part name cannot be qualified.
+        // Trino may still resolve it from its server defaults, so the gateway reports the name instead of failing.
+        String query = "WITH w AS (SELECT * FROM c.s.t1) SELECT * FROM w a JOIN orders b ON a.id = b.id";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("other");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getErrorMessage()).isEmpty();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("c", "s", "t1"));
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("c");
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("orders")));
+    }
+
+    @Test
+    void testTwoPartNameWithoutCatalogIsUnqualified()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM db.t");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("db.t")));
+    }
+
+    @Test
+    void testQualifiedNamesLeaveNoUnqualifiedNames()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM c.s.t1 JOIN t2 ON t1.id = t2.id");
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("c");
+        when(mockRequest.getHeaderString(TRINO_SCHEMA_HEADER_NAME)).thenReturn("s");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.getTables()).containsExactlyInAnyOrder(QualifiedName.of("c", "s", "t1"), QualifiedName.of("c", "s", "t2"));
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testRenameTableWithUnqualifiedSource()
+    {
+        // The target is qualified from the source, so neither can be qualified.
+        ContainerRequestContext mockRequest = prepareMockRequest("ALTER TABLE t RENAME TO t2");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("t", "t2")));
+    }
+
+    @Test
+    void testSyntaxErrorStillFailsParsing()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELEC * FROM t");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testCatalogOnlyQualifiesTwoPartNames()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM db.t1 JOIN t2 ON t1.id = t2.id");
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("c");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("c", "db", "t1"));
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("c");
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("t2")));
+    }
+
+    @Test
+    void testSchemaOnlyLeavesNamesUnqualified()
+    {
+        // A schema without a catalog qualifies nothing, as in Trino
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM t");
+        when(mockRequest.getHeaderString(TRINO_SCHEMA_HEADER_NAME)).thenReturn("s");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("t")));
+    }
+
+    @Test
+    void testUnqualifiedInsertTargetAndTableFunction()
+    {
+        // Statement targets go through the same qualification as other table references
+        String query = "INSERT INTO t SELECT * FROM TABLE(exclude_columns(input => TABLE(c.s.u), columns => DESCRIPTOR(a)))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("c", "s", "u"));
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("t")));
+    }
+
+    @Test
+    void testSinglePartTableFunctionWithoutDefaults()
+    {
+        String query = "SELECT * FROM TABLE(sequence(start => 1, stop => 3))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testSinglePartTableFunctionIgnoresDefaults()
+    {
+        // Trino resolves a single-part table function name through the SQL path, not the session catalog and schema
+        String query = "SELECT * FROM TABLE(exclude_columns(input => TABLE(c.s.u), columns => DESCRIPTOR(a)))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("hive");
+        when(mockRequest.getHeaderString(TRINO_SCHEMA_HEADER_NAME)).thenReturn("default");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("c", "s", "u"));
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("c");
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testTableFunctionArgumentStillUnqualified()
+    {
+        String query = "SELECT * FROM TABLE(exclude_columns(input => TABLE(orders), columns => DESCRIPTOR(a)))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("orders")));
+    }
+
+    @Test
+    void testTwoPartTableFunctionUsesDefaultCatalog()
+    {
+        String query = "SELECT * FROM TABLE(system.sequence(start => 1, stop => 3))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("hive");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("hive", "system", "sequence"));
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testTwoPartTableFunctionWithoutDefaults()
+    {
+        // A name with a schema part always belongs to a catalog, which Trino takes from the session
+        String query = "SELECT * FROM TABLE(system.sequence(start => 1, stop => 3))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_FUNCTION, ImmutableSet.of("system.sequence")));
+    }
+
+    @Test
+    void testFullyQualifiedTableFunction()
+    {
+        String query = "SELECT * FROM TABLE(postgresql.system.query(query => 'select 1'))";
+        ContainerRequestContext mockRequest = prepareMockRequest(query);
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("postgresql", "system", "query"));
+        assertThat(trinoQueryProperties.getCatalogs()).containsExactly("postgresql");
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testRenameViewWithUnqualifiedSource()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("ALTER VIEW s.v RENAME TO v2");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.getTables()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("s.v", "v2")));
+    }
+
+    @Test
+    void testNameWithTooManyPartsStillFailsParsing()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM a.b.c.d");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getErrorMessage()).hasValue("Unexpected qualified name: [a, b, c, d]");
+    }
+
+    @Test
+    void testUnqualifiedProcedureDoesNotFailParsing()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("CALL runtime.kill_query('20240101_000000_00000_abcde')");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getQueryId()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_PROCEDURE, ImmutableSet.of("runtime.kill_query")));
+    }
+
+    @Test
+    void testProcedureQualifiedWithDefaultCatalog()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("CALL runtime.kill_query('20240101_000000_00000_abcde')");
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("system");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getQueryId()).hasValue("20240101_000000_00000_abcde");
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).isEmpty();
+    }
+
+    @Test
+    void testShowTablesWithoutDefaults()
+    {
+        // Nothing is written in the SQL, so the unqualified schema reference is an empty name
+        ContainerRequestContext mockRequest = prepareMockRequest("SHOW TABLES");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_SCHEMA, ImmutableSet.of("")));
+    }
+
+    @Test
+    void testShowTablesWithoutDefaultSchema()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SHOW TABLES");
+        when(mockRequest.getHeaderString(TRINO_CATALOG_HEADER_NAME)).thenReturn("hive");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getSchemas()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_SCHEMA, ImmutableSet.of("")));
+    }
+
+    @Test
+    void testShowTablesFromSchemaWithoutDefaults()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SHOW TABLES FROM s");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getSchemas()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_SCHEMA, ImmutableSet.of("s")));
+    }
+
+    @Test
+    void testShowSchemasWithoutDefaults()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SHOW SCHEMAS");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_CATALOG, ImmutableSet.of("")));
+    }
+
+    @Test
+    void testRenameSchemaWithoutDefaults()
+    {
+        // Trino takes the target catalog from the source, so the target is unqualified when the source is
+        ContainerRequestContext mockRequest = prepareMockRequest("ALTER SCHEMA s RENAME TO s2");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getCatalogs()).isEmpty();
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_SCHEMA, ImmutableSet.of("s", "s2")));
+    }
+
+    @Test
+    void testRenameTableWithUnqualifiedSourceAndFullyQualifiedTarget()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("ALTER TABLE a RENAME TO c.s.b");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isTrue();
+        assertThat(trinoQueryProperties.getTables()).containsExactly(QualifiedName.of("c", "s", "b"));
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("a")));
+    }
+
+    @Test
+    void testRenameTableTargetWithTooManyPartsFailsParsing()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("ALTER TABLE c.s.a RENAME TO w.x.y.z");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getErrorMessage()).hasValue("Unexpected qualified name: [w, x, y, z]");
+    }
+
+    @Test
+    void testUnqualifiedNamesJsonShape()
+    {
+        // The external router reads this field, so pin the wire format.
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM db.t");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        String json = JsonCodec.jsonCodec(TrinoQueryProperties.class).toJson(trinoQueryProperties).replaceAll("\\s", "");
+        assertThat(json).contains("\"unqualifiedNames\":{\"table\":[\"db.t\"]}");
+    }
+
+    @Test
+    void testNoUnqualifiedNamesJsonShape()
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest("SELECT * FROM c.s.t");
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        String json = JsonCodec.jsonCodec(TrinoQueryProperties.class).toJson(trinoQueryProperties).replaceAll("\\s", "");
+        assertThat(json).contains("\"unqualifiedNames\":{}");
+    }
+
+    @Test
+    void testUnqualifiedNamesWithNullValueFromJson()
+    {
+        TrinoQueryProperties trinoQueryProperties = JsonCodec.jsonCodec(TrinoQueryProperties.class).fromJson("{\"unqualifiedNames\":{\"table\":null}}");
+
+        assertThat(trinoQueryProperties.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of()));
+    }
+
+    @Test
+    void testUnqualifiedDdlTargets()
+    {
+        TrinoQueryProperties truncate = new TrinoQueryProperties(prepareMockRequest("TRUNCATE TABLE t"), false, 1024 * 1024);
+        assertThat(truncate.isQueryParsingSuccessful()).isTrue();
+        assertThat(truncate.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("t")));
+
+        TrinoQueryProperties comment = new TrinoQueryProperties(prepareMockRequest("COMMENT ON COLUMN s.t.a IS 'x'"), false, 1024 * 1024);
+        assertThat(comment.isQueryParsingSuccessful()).isTrue();
+        assertThat(comment.getUnqualifiedNames()).containsExactly(entry(UNQUALIFIED_TABLE, ImmutableSet.of("s.t")));
     }
 
     private ContainerRequestContext prepareMockRequest(String query)
