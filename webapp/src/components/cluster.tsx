@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styles from './cluster.module.scss';
 import Locale from "../locales";
 import { backendDeleteApi, backendSaveApi, backendUpdateApi, backendsApi } from "../api/webapp/cluster";
-import { Button, ButtonGroup, Card, Form, Modal, Switch, Table, Tag, Toast, Typography } from "@douyinfe/semi-ui";
+import { Button, ButtonGroup, Card, Form, Modal, Popconfirm, Switch, Table, Tag, Toast, Typography } from "@douyinfe/semi-ui";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { FormApi } from "@douyinfe/semi-ui/lib/es/form";
 import { Role, useAccessStore } from "../store";
 import { BackendData } from "../types/cluster";
 import { TagColor } from "@douyinfe/semi-ui/lib/es/tag";
+import { ACTION, COMMENT_VALIDATION_RULES } from "../constant";
+
+type CommentValues = { comment: string };
 
 export function Cluster() {
   const { Text } = Typography;
@@ -19,6 +22,7 @@ export function Cluster() {
   const [visibleDelete, setVisibleDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BackendData>();
+  const deleteFormApiRef = useRef<FormApi<CommentValues> | null>(null);
 
   useEffect(() => {
     list();
@@ -33,14 +37,18 @@ export function Cluster() {
 
   const remove = () => {
     if (deleteTarget === undefined || deleting) return;
-    setDeleting(true);
-    backendDeleteApi({ name: deleteTarget.name })
-      .then(() => {
-        list();
-        Toast.success(Locale.Cluster.Delete);
-        setVisibleDelete(false);
-      }).catch(() => { Toast.error(Locale.Cluster.ErrorDelete) })
-      .finally(() => { setDeleting(false) });
+    const api = deleteFormApiRef.current;
+    if (!api) return;
+    return api.validate(['comment']).then(({ comment }) => {
+      setDeleting(true);
+      return backendDeleteApi({ name: deleteTarget.name, action: ACTION.DELETE, comment: comment })
+        .then(() => {
+          list();
+          Toast.success(Locale.Cluster.Delete);
+          setVisibleDelete(false);
+        }).catch(() => { Toast.error(Locale.Cluster.ErrorDelete) })
+        .finally(() => { setDeleting(false) });
+    }).catch(() => { });
   }
 
   const linkRender = (text: string) => {
@@ -166,14 +174,14 @@ export function Cluster() {
           style={{ paddingRight: '20px' }}
           onSubmit={(values) => {
             if (form === undefined) {
-              backendSaveApi(values)
+              backendSaveApi({...values, action: ACTION.CREATE})
                 .then(() => {
                   list();
                   Toast.success(Locale.Cluster.Create);
                   setVisibleForm(false);
                 }).catch(() => { Toast.error(Locale.Cluster.ErrorCreate) });
             } else {
-              backendUpdateApi(values)
+              backendUpdateApi({...values, action: ACTION.UPDATE})
                 .then(() => {
                   list();
                   Toast.success(Locale.Cluster.Update);
@@ -232,6 +240,14 @@ export function Cluster() {
             placeholder="Type a tag and press Enter"
           />
           <Form.Switch label="Active" field='active' initValue={form?.active || false} />
+          <Form.Input
+            field="comment"
+            label="Provide a reason for this action"
+            trigger='blur'
+            rules={COMMENT_VALIDATION_RULES}
+            initValue={""}
+            key={form?.name ?? 'create'}
+          />
         </Form>
       </Modal>
       <Modal
@@ -239,6 +255,7 @@ export function Cluster() {
         visible={visibleDelete}
         onOk={remove}
         onCancel={() => { setVisibleDelete(false) }}
+        afterClose={() => { deleteFormApiRef.current?.reset() }}
         okText={Locale.UI.Delete}
         cancelText={Locale.UI.Cancel}
         okButtonProps={{ type: 'danger', theme: 'solid', loading: deleting, disabled: deleting }}
@@ -253,6 +270,21 @@ export function Cluster() {
         <div style={{ marginTop: '8px' }}>
           <Text type="danger">{Locale.UI.DeleteContent}</Text>
         </div>
+        <Form<CommentValues>
+          getFormApi={(api) => (deleteFormApiRef.current = api)}
+          initValues={{ comment: '' }}
+          labelPosition="top"
+          labelAlign="left"
+          key={deleteTarget?.name ?? 'delete'}
+        >
+          <Form.Input
+            field="comment"
+            label="Provide a reason for this action"
+            trigger="blur"
+            rules={COMMENT_VALIDATION_RULES}
+            disabled={deleting}
+          />
+        </Form>
       </Modal>
     </>
   );
@@ -265,11 +297,12 @@ const SwitchRender = (props: {
 }) => {
   const access = useAccessStore();
   const [loading, setLoading] = useState(false);
+  const formApiRef = useRef<FormApi<CommentValues> | null>(null);
 
-  const handleSwitchChange = (v: boolean) => {
+  const handleSwitchChange = (v: boolean, comment: string) => {
     setLoading(true);
     props.record.active = v;
-    backendUpdateApi(props.record)
+    backendUpdateApi({...props.record, action: v ? ACTION.ACTIVATE : ACTION.DEACTIVATE, comment: comment})
       .then(() => {
         setLoading(false);
         props.list();
@@ -277,12 +310,36 @@ const SwitchRender = (props: {
   };
 
   return (
-    <Switch
-      loading={loading}
-      onChange={handleSwitchChange}
-      checked={props.text}
-      disabled={!access.hasRole(Role.ADMIN)}
-      aria-label="active switch"
-    />
+    <Popconfirm
+      position="bottomRight"
+      title={props.record.active ? Locale.UI.SwitchActiveTitle : Locale.UI.SwitchInActiveTitle}
+      content={
+        <Form<CommentValues>
+          getFormApi={(api) => (formApiRef.current = api)}
+          initValues={{ comment: '' }}
+          labelPosition="top"
+          labelAlign="left">
+          <Form.Input
+            field="comment"
+            label="Provide a reason for this action."
+            trigger="blur"
+            rules={COMMENT_VALIDATION_RULES}/>
+        </Form>
+      }
+      onConfirm={() => {
+        const api = formApiRef.current;
+        if (!api) return;
+        return api.validate(['comment']).then(({ comment }) => handleSwitchChange(!props.text, comment));
+      }}
+      onVisibleChange={(v: boolean) => { if (!v) formApiRef.current?.reset() }}>
+      <span>
+        <Switch
+          loading={loading}
+          checked={props.text}
+          disabled={!access.hasRole(Role.ADMIN)}
+          aria-label="active switch"
+        />
+      </span>
+    </Popconfirm>
   );
 }
