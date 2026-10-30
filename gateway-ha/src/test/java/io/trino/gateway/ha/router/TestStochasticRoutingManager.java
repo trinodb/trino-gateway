@@ -90,10 +90,20 @@ final class TestStochasticRoutingManager
     {
         RoutingConfiguration noFallbackConfig = new RoutingConfiguration();
         noFallbackConfig.setUnavailableGroupFallbackEnabled(false);
+        ProxyBackendConfiguration defaultBackend = new ProxyBackendConfiguration();
+        defaultBackend.setActive(true);
+        defaultBackend.setRoutingGroup(noFallbackConfig.getDefaultRoutingGroup());
+        defaultBackend.setName("fallback-disabled-healthy-default-backend");
+        defaultBackend.setProxyTo("fallback-disabled-healthy-default-backend.trino.example.com");
+        defaultBackend.setExternalUrl("trino.example.com");
+        backendManager.addBackend(defaultBackend);
         RoutingManager noFallbackRoutingManager = new StochasticRoutingManager(backendManager, historyManager, noFallbackConfig);
+        // The default group is healthy, so only the disabled fallback can cause the rejection
+        noFallbackRoutingManager.updateBackEndHealth(defaultBackend.getName(), TrinoStatus.HEALTHY);
 
         assertThatThrownBy(() -> noFallbackRoutingManager.provideBackendConfiguration("no_backends_configured_for_this_group", ""))
-                .isInstanceOf(NoHealthyBackendException.class);
+                .isInstanceOf(NoHealthyBackendException.class)
+                .hasMessage("No healthy backend found for routing group [no_backends_configured_for_this_group] and fallback to the default routing group is disabled");
     }
 
     @Test
@@ -119,21 +129,13 @@ final class TestStochasticRoutingManager
     }
 
     @Test
-    void testUnavailableGroupFallbackDisabledWithUnhealthyDefaultGroup()
+    void testDefaultGroupWithoutHealthyBackend()
     {
-        RoutingConfiguration noFallbackConfig = new RoutingConfiguration();
-        noFallbackConfig.setUnavailableGroupFallbackEnabled(false);
-        ProxyBackendConfiguration backend = new ProxyBackendConfiguration();
-        backend.setActive(true);
-        backend.setRoutingGroup(noFallbackConfig.getDefaultRoutingGroup());
-        backend.setName("default-group-unhealthy-backend");
-        backend.setProxyTo("default-group-unhealthy-backend.trino.example.com");
-        backend.setExternalUrl("trino.example.com");
-        backendManager.addBackend(backend);
-        RoutingManager noFallbackRoutingManager = new StochasticRoutingManager(backendManager, historyManager, noFallbackConfig);
-        noFallbackRoutingManager.updateBackEndHealth(backend.getName(), TrinoStatus.UNHEALTHY);
+        RoutingConfiguration routingConfiguration = new RoutingConfiguration();
+        // Health is tracked per RoutingManager instance, so no backend is healthy on a fresh one
+        RoutingManager routingManager = new StochasticRoutingManager(backendManager, historyManager, routingConfiguration);
 
-        assertThatThrownBy(() -> noFallbackRoutingManager.provideBackendConfiguration(noFallbackConfig.getDefaultRoutingGroup(), ""))
+        assertThatThrownBy(() -> routingManager.provideBackendConfiguration(routingConfiguration.getDefaultRoutingGroup(), ""))
                 .isInstanceOf(NoHealthyBackendException.class)
                 .hasMessage("No healthy backend found for default routing group [adhoc]");
     }
