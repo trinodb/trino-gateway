@@ -35,6 +35,9 @@ public class MonitorConfiguration
 
     private String metricsEndpoint = "/metrics";
 
+    // Endpoint probed by the ClusterStatsPingMonitor for HTTP ping/pong liveness checks
+    private String pingPath = "/v1/ping";
+
     private String runningQueriesMetricName = "trino_execution_name_QueryManager_RunningQueries";
 
     private String queuedQueriesMetricName = "trino_execution_name_QueryManager_QueuedQueries";
@@ -94,6 +97,16 @@ public class MonitorConfiguration
     public void setMetricsEndpoint(String metricsEndpoint)
     {
         this.metricsEndpoint = metricsEndpoint;
+    }
+
+    public String getPingPath()
+    {
+        return pingPath;
+    }
+
+    public void setPingPath(String pingPath)
+    {
+        this.pingPath = pingPath;
     }
 
     public String getRunningQueriesMetricName()
