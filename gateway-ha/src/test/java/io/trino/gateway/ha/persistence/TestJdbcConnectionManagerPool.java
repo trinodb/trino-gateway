@@ -16,6 +16,7 @@ package io.trino.gateway.ha.persistence;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.HaQueryHistoryManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -105,7 +106,7 @@ final class TestJdbcConnectionManagerPool
                 )
                 """));
 
-        QueryHistoryManager queryHistoryManager = new HaQueryHistoryManager(connectionManager.getJdbi(), configuration);
+        QueryHistoryManager queryHistoryManager = new HaQueryHistoryManager(connectionManager.getJdbi(), configuration, new WriteBufferConfiguration());
         try (ExecutorService executorService = Executors.newSingleThreadExecutor();
                 Handle heldHandle = jdbi.open()) {
             Future<List<QueryHistoryManager.QueryDetail>> queryHistory = executorService.submit(() -> queryHistoryManager.fetchQueryHistory(Optional.empty()));
