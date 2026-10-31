@@ -235,6 +235,10 @@ public class TrinoQueryProperties
                 }
             }
 
+            // Parsing is best-effort. SqlParser turns a stack overflow from deeply nested input into
+            // a ParsingException, which the catch below degrades to empty properties. A very large
+            // nested body can still exhaust parser memory; that is a Trino-parser limit, bounded here
+            // only by maxBodySize.
             Statement statement = parser.createStatement(body);
             if (statement.getClass() == Execute.class) {
                 String statementName = ((Execute) statement).getName().getValue();

@@ -73,6 +73,9 @@ public class QueryMetadataParser
         jerseyRequest.bufferEntity();
 
         TrinoQueryProperties queryProps;
+        // Best-effort: a body that will not parse degrades to empty properties rather than failing
+        // the request. TrinoQueryProperties contains the parse, including the ParsingException for a
+        // statement too large to parse.
         try {
             queryProps = new TrinoQueryProperties(requestContext, isClientsUseV2Format, maxBodySize);
         }
