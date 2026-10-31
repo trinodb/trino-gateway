@@ -129,6 +129,49 @@ the lock and run the database migrations with `Flyway`. Other Trino Gateway
 instances might fail during startup while migrations are running but once migrations
 are completed they will start as expected.
 
+### Query history write buffer
+
+By default, Trino Gateway writes a query history record to the database as part
+of routing each query, and the write fails when the database is unavailable.
+Configure the write buffer to keep routing queries during a temporary database
+outage. A query history record that fails to write because of a connection
+problem is buffered in memory. A background task retries writing all buffered
+records at every `flushInterval`, so they are persisted shortly after the
+database is reachable again.
+
+```yaml
+writeBuffer:
+  enabled: true
+  maxCapacity: 10000
+  flushInterval: 2s
+```
+
+The buffer is deactivated by default. It holds at most `maxCapacity` records,
+with a default of `10000`, so memory use is bounded even during a prolonged
+outage. This limits the memory overhead to a few megabytes of query history
+records, while covering a multi-minute outage at typical query rates. Use
+`queryHistoryMaxQueryTextLength` to bound the size of each record when large
+query text values are common, since records are truncated before they are
+buffered. When the buffer is full, the oldest record is dropped to make room for
+a new one, and an error is logged.
+
+The first query that fails to write its record waits for the database
+connection timeout before the record is buffered. While the buffer holds
+records, Trino Gateway buffers new records directly without connecting to the
+database, so later queries are not delayed. Writes go to the database again once
+the background task has flushed the buffer.
+
+The flush of all buffered records is attempted at the configured
+`flushInterval`, with a default of `2s`, so buffered history becomes visible
+shortly after the database recovers, without adding significant load. The value
+accepts Airlift-style durations such as `500ms` or `10s`. A buffered record that
+fails to write for a reason other than a connection problem, such as a duplicate
+query ID, is dropped and an error is logged.
+
+Trino Gateway attempts a final flush of the buffered records on shutdown. If the
+database is still unavailable, the remaining records are lost, and an error with
+their number is logged.
+
 ### Trino clusters
 
 The proxied Trino clusters behind the Trino Gateway must support the Trino JDBC
