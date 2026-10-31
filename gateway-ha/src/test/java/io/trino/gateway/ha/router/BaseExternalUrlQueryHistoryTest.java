@@ -14,6 +14,7 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,7 +56,7 @@ abstract class BaseExternalUrlQueryHistoryTest
                 null);
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = new JdbcConnectionManager(config);
-        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config);
+        queryHistoryManager = new HaQueryHistoryManager(jdbcConnectionManager.getJdbi(), config, new WriteBufferConfiguration());
     }
 
     @Test
