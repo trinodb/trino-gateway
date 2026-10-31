@@ -14,11 +14,14 @@
 package io.trino.gateway.ha.router;
 
 import io.trino.gateway.ha.config.DataStoreConfiguration;
+import io.trino.gateway.ha.config.WriteBufferConfiguration;
 import io.trino.gateway.ha.domain.TableData;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.persistence.FlywayMigration;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
+import io.trino.gateway.ha.persistence.dao.QueryHistoryDao;
+import org.jdbi.v3.core.ConnectionException;
 import org.jdbi.v3.core.Jdbi;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,18 +32,36 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 abstract class BaseTestQueryHistoryManager
 {
+    private static final String BACKEND_URL = "http://localhost:9999";
+    private static final String SQL_WORKBENCH = "sqlWorkbench";
+    private static final String USER = "test@ea.com";
+    private static final String SELECT_1 = "select 1";
+    private static final String OTHER_USER = "other-user";
+    private static final String ROUTING_GROUP = "routing-group";
+    private static final String EXTERNAL_URL = "https://example.com";
+
     private final JdbcDatabaseContainer<?> container;
+    private DataStoreConfiguration config;
     private QueryHistoryManager queryHistoryManager;
     private Jdbi jdbi;
 
@@ -52,7 +73,8 @@ abstract class BaseTestQueryHistoryManager
     @BeforeAll
     void setUp()
     {
-        DataStoreConfiguration config = new DataStoreConfiguration(
+        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration();
+        config = new DataStoreConfiguration(
                 container.getJdbcUrl(),
                 container.getUsername(),
                 container.getPassword(),
@@ -64,7 +86,7 @@ abstract class BaseTestQueryHistoryManager
         FlywayMigration.migrate(config);
         JdbcConnectionManager jdbcConnectionManager = new JdbcConnectionManager(config);
         jdbi = jdbcConnectionManager.getJdbi();
-        queryHistoryManager = new HaQueryHistoryManager(jdbi, config);
+        queryHistoryManager = new HaQueryHistoryManager(jdbi, config, writeBufferConfig);
     }
 
     @BeforeEach
@@ -80,10 +102,10 @@ abstract class BaseTestQueryHistoryManager
                 queryHistoryManager.fetchQueryHistory(Optional.empty());
         assertThat(queryDetails).isEmpty();
         QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
-        queryDetail.setBackendUrl("http://localhost:9999");
-        queryDetail.setSource("sqlWorkbench");
-        queryDetail.setUser("test@ea.com");
-        queryDetail.setQueryText("select 1");
+        queryDetail.setBackendUrl(BACKEND_URL);
+        queryDetail.setSource(SQL_WORKBENCH);
+        queryDetail.setUser(USER);
+        queryDetail.setQueryText(SELECT_1);
         for (int i = 0; i < 2; i++) {
             queryDetail.setQueryId(String.valueOf(System.currentTimeMillis()));
             queryDetail.setCaptureTime(System.currentTimeMillis());
@@ -91,7 +113,7 @@ abstract class BaseTestQueryHistoryManager
         }
 
         // Add a query from other user
-        queryDetail.setUser("other-user");
+        queryDetail.setUser(OTHER_USER);
         queryDetail.setQueryId(String.valueOf(System.currentTimeMillis()));
         queryDetail.setCaptureTime(System.currentTimeMillis());
         queryHistoryManager.submitQueryDetail(queryDetail);
@@ -101,7 +123,7 @@ abstract class BaseTestQueryHistoryManager
         // All queries when user is empty
         assertThat(queryDetails).hasSize(3);
 
-        queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of("other-user"));
+        queryDetails = queryHistoryManager.fetchQueryHistory(Optional.of(OTHER_USER));
         // Only 1 query when user is 'other-user'
         assertThat(queryDetails).hasSize(1);
     }
@@ -112,7 +134,7 @@ abstract class BaseTestQueryHistoryManager
         DataStoreConfiguration config = new DataStoreConfiguration();
         config.setJdbcUrl(container.getJdbcUrl());
         config.setQueryHistoryMaxQueryTextLength(10);
-        QueryHistoryManager truncatingManager = new HaQueryHistoryManager(jdbi, config);
+        QueryHistoryManager truncatingManager = new HaQueryHistoryManager(jdbi, config, new WriteBufferConfiguration());
 
         QueryHistoryManager.QueryDetail longQuery = new QueryHistoryManager.QueryDetail();
         longQuery.setQueryId("truncation_long");
@@ -146,7 +168,7 @@ abstract class BaseTestQueryHistoryManager
         DataStoreConfiguration config = new DataStoreConfiguration();
         config.setJdbcUrl(container.getJdbcUrl());
         config.setQueryHistoryMaxQueryTextLength(8);
-        QueryHistoryManager truncatingManager = new HaQueryHistoryManager(jdbi, config);
+        QueryHistoryManager truncatingManager = new HaQueryHistoryManager(jdbi, config, new WriteBufferConfiguration());
 
         QueryHistoryManager.QueryDetail exact = new QueryHistoryManager.QueryDetail();
         exact.setQueryId("truncation_exact");
@@ -177,7 +199,7 @@ abstract class BaseTestQueryHistoryManager
         DataStoreConfiguration config = new DataStoreConfiguration();
         config.setJdbcUrl(container.getJdbcUrl());
         config.setQueryHistoryMaxQueryTextLength(0);
-        assertThatThrownBy(() -> new HaQueryHistoryManager(jdbi, config))
+        assertThatThrownBy(() -> new HaQueryHistoryManager(jdbi, config, new WriteBufferConfiguration()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("queryHistoryMaxQueryTextLength must be greater than 0");
     }
@@ -190,13 +212,7 @@ abstract class BaseTestQueryHistoryManager
         // Should return empty list
         assertThat(resList).isEmpty();
 
-        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
-        queryDetail.setBackendUrl("http://localhost:9999");
-        queryDetail.setSource("sqlWorkbench");
-        queryDetail.setUser("test@ea.com");
-        queryDetail.setQueryText("select 1");
-        queryDetail.setQueryId(String.valueOf(System.currentTimeMillis()));
-        queryDetail.setCaptureTime(System.currentTimeMillis());
+        QueryHistoryManager.QueryDetail queryDetail = createQueryDetail();
         queryHistoryManager.submitQueryDetail(queryDetail);
 
         // Should return 1 entry
@@ -268,5 +284,81 @@ abstract class BaseTestQueryHistoryManager
         String mysqlTimestamp = "30338641";
         long parsedMysqlMinute = new BigDecimal(mysqlTimestamp).longValue();
         assertThat(parsedMysqlMinute).isEqualTo(expectedMinuteBucket);
+    }
+
+    private static void stubInsertThenSucceed(QueryHistoryDao delegate, RuntimeException first)
+    {
+        doThrow(first)
+                .doNothing()
+                .when(delegate)
+                .insertHistory(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyString());
+    }
+
+    @Test
+    void testBuffersOnConnectionExceptionAndFlushesOnStop()
+    {
+        QueryHistoryDao delegate = mock(QueryHistoryDao.class);
+        stubInsertThenSucceed(delegate, new ConnectionException(new SQLException("network error", "08006")));
+
+        Jdbi mockJdbi = mock(Jdbi.class);
+        when(mockJdbi.onDemand(QueryHistoryDao.class)).thenReturn(delegate);
+
+        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration();
+        writeBufferConfig.setEnabled(true);
+        HaQueryHistoryManager manager = new HaQueryHistoryManager(mockJdbi, config, writeBufferConfig);
+        // First call buffers (no throw), then stop() flushes once and succeeds
+        QueryHistoryManager.QueryDetail queryDetail = createQueryDetail();
+        try {
+            manager.submitQueryDetail(queryDetail);
+            manager.stop();
+            verify(delegate, times(2)).insertHistory(anyString(), eq(SELECT_1), eq(BACKEND_URL), eq(USER), eq(SQL_WORKBENCH), anyLong(), anyString(), anyString());
+        }
+        finally {
+            // idempotent
+            manager.stop();
+        }
+    }
+
+    @Test
+    void testRethrowsNonConnectionException()
+    {
+        QueryHistoryDao delegate = mock(QueryHistoryDao.class);
+        doThrow(new IllegalStateException("bad input"))
+                .when(delegate)
+                .insertHistory(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyString());
+
+        Jdbi mockJdbi = mock(Jdbi.class);
+        when(mockJdbi.onDemand(QueryHistoryDao.class)).thenReturn(delegate);
+        WriteBufferConfiguration writeBufferConfig = new WriteBufferConfiguration();
+        writeBufferConfig.setEnabled(true);
+        HaQueryHistoryManager manager = new HaQueryHistoryManager(mockJdbi, config, writeBufferConfig);
+
+        QueryHistoryManager.QueryDetail queryDetail = createQueryDetail();
+        try {
+            assertThatThrownBy(() -> manager.submitQueryDetail(queryDetail))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("bad input");
+
+            // Should not have buffered, so no retry on stop
+            manager.stop();
+            verify(delegate, times(1)).insertHistory(anyString(), eq(SELECT_1), eq(BACKEND_URL), eq(USER), eq(SQL_WORKBENCH), anyLong(), anyString(), anyString());
+        }
+        finally {
+            manager.stop();
+        }
+    }
+
+    private static QueryHistoryManager.QueryDetail createQueryDetail()
+    {
+        QueryHistoryManager.QueryDetail queryDetail = new QueryHistoryManager.QueryDetail();
+        queryDetail.setQueryId(String.valueOf(System.currentTimeMillis()));
+        queryDetail.setQueryText(SELECT_1);
+        queryDetail.setBackendUrl(BACKEND_URL);
+        queryDetail.setUser(USER);
+        queryDetail.setSource(SQL_WORKBENCH);
+        queryDetail.setCaptureTime(System.currentTimeMillis());
+        queryDetail.setRoutingGroup(ROUTING_GROUP);
+        queryDetail.setExternalUrl(EXTERNAL_URL);
+        return queryDetail;
     }
 }
