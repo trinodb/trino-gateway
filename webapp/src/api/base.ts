@@ -1,9 +1,11 @@
 import { useAccessStore } from "../store";
 import Locale, { getServerLang } from "../locales";
 import { Toast } from "@douyinfe/semi-ui";
+import { isTokenExpired } from "../utils/session";
 
 export class ClientApi {
   async get(url: string, params: Record<string, any> = {}): Promise<any> {
+    this.validateTokenBeforeRequest(url);
     let queryString = "";
     if (Object.keys(params).length > 0) {
       queryString = "?" + new URLSearchParams(params).toString();
@@ -48,6 +50,7 @@ export class ClientApi {
   }
 
   async post(url: string, body: Record<string, any> = {}): Promise<any> {
+    this.validateTokenBeforeRequest(url);
     const res: Response = await fetch(
       this.path(url),
       {
@@ -84,6 +87,7 @@ export class ClientApi {
   }
 
   async postForm(url: string, formData: FormData = new FormData()): Promise<any> {
+    this.validateTokenBeforeRequest(url);
     const res: Response = await fetch(
       this.path(url),
       {
@@ -110,6 +114,17 @@ export class ClientApi {
       throw new Error(resJson.msg);
     }
     return resJson.data;
+  }
+
+  // Logs the user out instead of sending a request with an expired token
+  private validateTokenBeforeRequest(url: string): void {
+    if (url === '/login' || url === '/loginType') {
+      return;
+    }
+    const accessStore = useAccessStore.getState();
+    if (accessStore.token && isTokenExpired(accessStore.token)) {
+      this.authErrorHandler();
+    }
   }
 
   path(path: string): string {

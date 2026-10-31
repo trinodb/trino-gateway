@@ -15,6 +15,7 @@ package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import io.airlift.log.Logger;
@@ -26,6 +27,9 @@ import java.util.Optional;
 public final class LbTokenUtil
 {
     private static final Logger log = Logger.get(LbTokenUtil.class);
+
+    // Tolerate small clock differences between Trino Gateway instances when checking expiration
+    private static final long CLOCK_SKEW_LEEWAY_SECONDS = 60;
 
     /**
      * Cookie key to pass the token.
@@ -43,7 +47,8 @@ public final class LbTokenUtil
             }
 
             Algorithm algorithm = LbKeyProvider.verificationAlgorithm(publicKey);
-            Verification verification = JWT.require(algorithm);
+            Verification verification = JWT.require(algorithm)
+                    .acceptLeeway(CLOCK_SKEW_LEEWAY_SECONDS);
             if (issuer != null && !issuer.isBlank()) {
                 verification.withIssuer(issuer);
             }
@@ -51,6 +56,10 @@ public final class LbTokenUtil
             audiences.ifPresent(auds -> verification.withAnyOfAudience(auds.toArray(new String[0])));
 
             verification.build().verify(idToken);
+        }
+        catch (TokenExpiredException exc) {
+            log.debug("Token expired: %s", exc.getMessage());
+            return false;
         }
         catch (Exception exc) {
             log.error(exc, "Could not validate token.");

@@ -298,6 +298,19 @@ authentication:
       publicKey: <public_key_path>
 ```
 
+A login session expires `sessionTimeout` after login, regardless of activity.
+It defaults to `30m`, must be at least `1m`, and the user has to log in again.
+
+```yaml
+authentication:
+  defaultType: ["form"]
+  form:
+    sessionTimeout: 1h
+    selfSignKeyPair:
+      privateKey: <private_key_path>
+      publicKey: <public_key_path>
+```
+
 ### Form/LDAP
 
 LDAP requires both random key pair and config path for LDAP
