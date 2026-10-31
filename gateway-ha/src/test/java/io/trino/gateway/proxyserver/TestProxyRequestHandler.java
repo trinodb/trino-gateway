@@ -24,6 +24,7 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okio.Buffer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -38,8 +39,12 @@ import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 
 import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
+import static com.google.common.net.HttpHeaders.CONNECTION;
 import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
+import static com.google.common.net.HttpHeaders.CONTENT_LENGTH;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.KEEP_ALIVE;
+import static com.google.common.net.HttpHeaders.TRANSFER_ENCODING;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
@@ -73,8 +78,13 @@ final class TestProxyRequestHandler
     private static final String COMPRESSION_ENDPOINT = "/v1/custom/compression";
     private static final String RECEIVED_ACCEPT_ENCODING = "X-Received-Accept-Encoding";
     private static final String COMPRESSIBLE_BODY = "{\"data\": \"%s\"}".formatted("trino".repeat(1000));
+    private static final String HEAD_CONTENT_LENGTH = "1234";
+    private static final String HOP_BY_HOP_OPTION = "X-Hop-By-Hop";
+    // zstd frame magic followed by byte sequences that are not valid UTF-8
+    private static final byte[] BINARY_BODY = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, (byte) 0x00, (byte) 0xFF, (byte) 0x80, (byte) 0xC3, (byte) 0x28};
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
+    private final String customBinaryEndpoint = "/v1/custom/binary";
     private final String healthCheckEndpoint = "/v1/info";
 
     @BeforeAll
@@ -99,9 +109,20 @@ final class TestProxyRequestHandler
                             .setBody(OK);
                 }
 
+                if (request.getMethod().equals("GET") && request.getPath().equals(customBinaryEndpoint)) {
+                    // MockWebServer sets Content-Length from the body
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, "application/octet-stream")
+                            .setHeader(KEEP_ALIVE, "timeout=5")
+                            .setHeader(CONNECTION, HOP_BY_HOP_OPTION)
+                            .setHeader(HOP_BY_HOP_OPTION, "1")
+                            .setBody(new Buffer().write(BINARY_BODY));
+                }
+
                 if (request.getMethod().equals("HEAD") && request.getPath().equals(HEAD_ENDPOINT)) {
                     return new MockResponse().setResponseCode(200)
-                            .setHeader(CONTENT_TYPE, JSON_UTF_8);
+                            .setHeader(CONTENT_TYPE, JSON_UTF_8)
+                            .setHeader(CONTENT_LENGTH, HEAD_CONTENT_LENGTH);
                 }
 
                 if (request.getPath().equals(COMPRESSION_ENDPOINT)) {
@@ -163,6 +184,8 @@ final class TestProxyRequestHandler
         try (Response response = httpClient.newCall(headRequest).execute()) {
             assertThat(response.code()).isEqualTo(200);
             assertThat(response.header("Content-Type")).isEqualTo("application/json;charset=utf-8");
+            // HEAD has no body, so the backend's Content-Length is the only size information
+            assertThat(response.header(CONTENT_LENGTH)).isEqualTo(HEAD_CONTENT_LENGTH);
         }
 
         Request getRequest = new Request.Builder().url(url).get().build();
@@ -203,6 +226,26 @@ final class TestProxyRequestHandler
             try (GZIPInputStream inputStream = new GZIPInputStream(response.body().byteStream())) {
                 assertThat(new String(inputStream.readAllBytes(), UTF_8)).isEqualTo(COMPRESSIBLE_BODY);
             }
+        }
+    }
+
+    @Test
+    void testBinaryBodyIsForwardedUnchanged()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + customBinaryEndpoint;
+
+        Request getRequest = new Request.Builder().url(url).get().build();
+        try (Response response = httpClient.newCall(getRequest).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            // The gateway re-frames the body and sends it chunked, so the backend's Content-Length must not be forwarded
+            assertThat(response.header(TRANSFER_ENCODING)).isEqualTo("chunked");
+            assertThat(response.header(CONTENT_LENGTH)).isNull();
+            // Hop-by-hop headers of the backend connection, including those named in Connection, must not be forwarded
+            assertThat(response.header(KEEP_ALIVE)).isNull();
+            assertThat(response.header(HOP_BY_HOP_OPTION)).isNull();
+            assertThat(response.body()).isNotNull();
+            assertThat(response.body().bytes()).isEqualTo(BINARY_BODY);
         }
     }
 

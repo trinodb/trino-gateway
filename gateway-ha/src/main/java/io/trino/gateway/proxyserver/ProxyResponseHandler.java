@@ -24,7 +24,10 @@ import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static java.lang.Math.toIntExact;
 import static java.util.Objects.requireNonNull;
 
 public class ProxyResponseHandler
@@ -47,21 +50,51 @@ public class ProxyResponseHandler
     public ProxyResponse handle(Request request, Response response)
     {
         try {
-            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), new String(response.getInputStream().readNBytes((int) responseSize.toBytes()), StandardCharsets.UTF_8));
+            // Keep the body as raw bytes: responses such as spooled segment downloads are binary
+            // and would be corrupted by a round-trip through a String
+            byte[] body = response.getInputStream().readNBytes(toIntExact(responseSize.toBytes()));
+            if (response.getInputStream().read() != -1) {
+                // Never forward a truncated body together with the backend's Content-Length
+                // The message is returned to the client, so it must not name the backend URI
+                throw new ProxyException("Response from remote Trino server exceeds the configured proxyResponseConfiguration.responseSize of %s".formatted(responseSize));
+            }
+            return new ProxyResponse(response.getStatusCode(), response.getHeaders(), body);
         }
         catch (IOException e) {
             throw new ProxyException("Failed reading response from remote Trino server", e);
         }
     }
 
+    // The generated equals, hashCode and toString use the identity of the body array, not its content
     public record ProxyResponse(
             int statusCode,
             ListMultimap<HeaderName, String> headers,
-            String body)
+            byte[] body)
     {
+        private static final int MAX_LOGGED_BODY_BYTES = 4096;
+
         public ProxyResponse
         {
             requireNonNull(headers, "headers is null");
+            requireNonNull(body, "body is null");
+        }
+
+        /**
+         * Returns the body as text when the Content-Type identifies a textual payload,
+         * otherwise only its size, so binary bodies such as spooled segments never reach the logs.
+         * Text longer than {@value #MAX_LOGGED_BODY_BYTES} bytes is cut off.
+         */
+        public String bodyForLogging()
+        {
+            String contentType = headers.get(HeaderName.of(CONTENT_TYPE)).stream().findFirst().orElse("");
+            String normalizedContentType = contentType.toLowerCase(Locale.ENGLISH);
+            if (normalizedContentType.startsWith("text/") || normalizedContentType.contains("json") || normalizedContentType.contains("xml")) {
+                if (body.length <= MAX_LOGGED_BODY_BYTES) {
+                    return new String(body, StandardCharsets.UTF_8);
+                }
+                return new String(body, 0, MAX_LOGGED_BODY_BYTES, StandardCharsets.UTF_8) + "... <%s bytes total>".formatted(body.length);
+            }
+            return "<%s bytes of %s>".formatted(body.length, contentType.isEmpty() ? "unknown content type" : contentType);
         }
     }
 }

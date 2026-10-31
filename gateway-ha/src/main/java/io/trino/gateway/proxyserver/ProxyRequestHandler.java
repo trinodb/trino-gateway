@@ -15,7 +15,9 @@ package io.trino.gateway.proxyserver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
@@ -50,10 +52,14 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.net.HttpHeaders.CONNECTION;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
@@ -87,6 +93,15 @@ public class ProxyRequestHandler
     private static final List<String> PRESERVED_HEADERS_TO_SKIP = List.of(
             "Accept-Encoding",
             "Host");
+    // Hop-by-hop headers apply only to a single connection and must not be forwarded by a proxy (RFC 9110 section 7.6.1)
+    private static final Set<String> HOP_BY_HOP_HEADERS = ImmutableSet.of(
+            "connection",
+            "keep-alive",
+            "proxy-connection",
+            "te",
+            "trailer",
+            "transfer-encoding",
+            "upgrade");
 
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
@@ -211,7 +226,7 @@ public class ProxyRequestHandler
 
         setupAsyncResponse(
                 asyncResponse,
-                future.transform(response -> buildResponse(response, cookieBuilder.build()), executor)
+                future.transform(response -> buildResponse(response, cookieBuilder.build(), request.getMethod().equals(HttpMethod.HEAD)), executor)
                         .catching(ProxyException.class, e -> handleProxyException(request, e), directExecutor()));
     }
 
@@ -242,10 +257,27 @@ public class ProxyRequestHandler
         return "%s://%s".formatted(remoteUri.getScheme(), remoteUri.getAuthority());
     }
 
-    private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie)
+    private Response buildResponse(ProxyResponse response, ImmutableList<NewCookie> cookie, boolean headRequest)
     {
         Response.ResponseBuilder builder = Response.status(response.statusCode()).entity(response.body());
-        response.headers().forEach((headerName, value) -> builder.header(headerName.toString(), value));
+        // The body is re-framed from the buffered entity, so the backend's framing headers
+        // no longer describe it. Forwarding them produces responses with a stale Content-Length
+        // or with both Content-Length and Transfer-Encoding, which strict clients reject.
+        // A HEAD response has no body, so its Content-Length is the size of the resource and is kept.
+        // Headers named in the Connection header are hop-by-hop as well (RFC 9110 section 7.6.1).
+        Set<String> connectionOptions = response.headers().get(HeaderName.of(CONNECTION)).stream()
+                .flatMap(value -> Splitter.on(',').trimResults().omitEmptyStrings().splitToStream(value))
+                .map(option -> option.toLowerCase(Locale.ENGLISH))
+                .collect(toImmutableSet());
+        response.headers().forEach((headerName, value) -> {
+            String name = headerName.toString().toLowerCase(Locale.ENGLISH);
+            boolean skip = HOP_BY_HOP_HEADERS.contains(name)
+                    || connectionOptions.contains(name)
+                    || (name.equals("content-length") && !headRequest);
+            if (!skip) {
+                builder.header(headerName.toString(), value);
+            }
+        });
         cookie.forEach(builder::cookie);
         return builder.build();
     }
@@ -297,7 +329,9 @@ public class ProxyRequestHandler
             Optional<String> username,
             RoutingDestination routingDestination)
     {
-        log.debug("For Request [%s] got Response [%s]", redactUriForLog(request.getUri()), response.body());
+        if (log.isDebugEnabled()) {
+            log.debug("For Request [%s] got Response [%s]", redactUriForLog(request.getUri()), response.bodyForLogging());
+        }
 
         QueryHistoryManager.QueryDetail queryDetail = getQueryDetailsFromRequest(request, username);
 
@@ -313,11 +347,11 @@ public class ProxyRequestHandler
                 log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
-                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
+                log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.bodyForLogging(), response.statusCode());
             }
         }
         else {
-            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.body(), response.statusCode(), username.orElse(null));
+            log.error("Non OK HTTP Status code with response [%s] , Status code [%s], user: [%s]", response.bodyForLogging(), response.statusCode(), username.orElse(null));
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
