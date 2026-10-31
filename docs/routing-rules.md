@@ -189,8 +189,19 @@ whole routing rule is redundant.
 The condition and actions are written in [MVEL](http://mvel.documentnode.com/),
 an expression language with Java-like syntax. Classes from `java.util`, data-type 
 classes from `java.lang` such as `Integer` and `String`, as well as `java.lang.Math`
-and `java.lang.StrictMath` are available in rules. Rules may not use `java.lang.System`
-and other classes that allow access the Java runtime and operating system.
+and `java.lang.StrictMath` are available in rules. The engine rejects expressions
+that use reflection, class loading, or process and runtime access, such as
+`getClass`, `Class.forName`, `Runtime`, and `ProcessBuilder`, and an expression that
+uses them is not accepted through the API and is not loaded from the file. This
+check runs when a rule is submitted through the API or loaded from the file, not
+when a request is routed, so it adds no per-request routing overhead.
+
+MVEL expressions are functionally equivalent to Java, and MVEL does not provide a
+sandbox. Rejecting reflection and runtime access is hardening that blocks the common
+escape routes, not a guarantee of isolation. Treat the ability to author routing
+rules as equivalent to running code inside the Trino Gateway process, and restrict
+the `ADMIN` role and write access to the rules file accordingly.
+
 In most cases, you can write
 conditions and actions in Java syntax and expect it to work. One exception is 
 parametrized types. Exclude type parameters, for example to add a `HashSet` to the

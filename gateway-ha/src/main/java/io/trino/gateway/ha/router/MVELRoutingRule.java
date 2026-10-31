@@ -55,7 +55,7 @@ public class MVELRoutingRule
         this.description = requireNonNullElse(description, "");
         this.priority = requireNonNullElse(priority, 0);
         this.condition = requireNonNull(
-                condition instanceof String stringCondition ? compileExpression(stringCondition, parserContext) : condition,
+                condition instanceof String stringCondition ? validateAndCompile(stringCondition) : condition,
                 "condition is null");
         this.actions = actions.stream().map(this::compileExpressionIfNecessary).collect(toImmutableList());
     }
@@ -63,16 +63,25 @@ public class MVELRoutingRule
     private Serializable compileExpressionIfNecessary(Serializable expression)
     {
         if (expression instanceof String stringExpression) {
-            return compileExpression(stringExpression, parserContext);
+            return validateAndCompile(stringExpression);
         }
         return expression;
+    }
+
+    private Serializable validateAndCompile(String expression)
+    {
+        MvelExpressionValidator.validate(name, expression);
+        return compileExpression(expression, parserContext);
     }
 
     private void initializeParserContext(ParserContext parserContext)
     {
         parserContext.addPackageImport("java.util");
 
-        // Members of java.lang, excluding potential security hazards such as Process and Runtime
+        // This import allow-list is a convenience, not a security boundary: MVEL does not restrict
+        // method or property access, so leaving Process and Runtime out of the imports does not stop
+        // an expression from reaching them through reflection. MvelExpressionValidator is what rejects
+        // those reflective routes.
         parserContext.addImport(Boolean.class);
         parserContext.addImport(Byte.class);
         parserContext.addImport(Character.class);
