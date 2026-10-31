@@ -45,6 +45,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -93,10 +94,37 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
                     request);
-        }).orElseGet(() -> getRoutingTargetResponse(request));
+        }).orElseGet(() -> getRoutingTargetResponse(queryId, request));
 
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
+    }
+
+    /**
+     * Resolves the routing target when no sticky backend was found for the request.
+     *
+     * <p>A request that carries a query id targets an already-submitted query rather than creating a new one.
+     * Per the graceful-shutdown contract, deactivating a backend only stops <em>new</em> queries from being
+     * routed there; in-flight queries identified by their query id must keep resolving to the cluster that holds
+     * them, even when that cluster has been deactivated. The sticky lookup in {@link #getPreviousCluster} already
+     * searches all backends (including deactivated ones) for such a query, so reaching this method with a query id
+     * present means the query could not be located on any backend. In that case routing should surface a clean
+     * {@code 404 Not Found} instead of falling through to the new-query active-backend selection, which would
+     * route the poll to an unrelated backend or reject it as if it were a new query submission.
+     *
+     * <p>{@link RoutingManager#findBackendForQueryId} also returns null when the lookup itself fails, for example
+     * on a query history database error. That failure is only logged there, so the client gets the same 404.
+     */
+    private RoutingTargetResponse getRoutingTargetResponse(Optional<String> queryId, HttpServletRequest request)
+    {
+        if (queryId.isPresent()) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .type(TEXT_PLAIN_TYPE)
+                            .entity("Could not find any backend for query id: " + queryId.get())
+                            .build());
+        }
+        return getRoutingTargetResponse(request);
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
