@@ -22,12 +22,24 @@ test.describe('cluster', () => {
 
   test('deactivates a backend with the switch', async ({ page, api }) => {
     await page.getByRole('row').filter({ hasText: 'trino-1' }).getByRole('switch').click()
+    await page.locator('#comment').fill('draining for maintenance')
+    await page.getByRole('button', { name: 'Confirm' }).click()
 
     await expect.poll(() => api.callsTo('/webapp/updateBackend').length).toBe(1)
     expect(api.callsTo('/webapp/updateBackend')[0].body).toMatchObject({
       name: 'trino-1',
       active: false,
+      action: 'DEACTIVATE',
+      comment: 'draining for maintenance',
     })
+  })
+
+  test('requires a comment before deactivating a backend', async ({ page, api }) => {
+    await page.getByRole('row').filter({ hasText: 'trino-1' }).getByRole('switch').click()
+    await page.getByRole('button', { name: 'Confirm' }).click()
+
+    await expect(page.getByText('Comment is required')).toBeVisible()
+    expect(api.callsTo('/webapp/updateBackend')).toHaveLength(0)
   })
 
   test('creates a backend', async ({ page, api }) => {
@@ -37,6 +49,7 @@ test.describe('cluster', () => {
     await dialog.locator('#routingGroup').fill('adhoc')
     await dialog.locator('#proxyTo').fill('http://trino-3.internal:8080')
     await dialog.locator('#externalUrl').fill('https://trino-3.example.com')
+    await dialog.locator('#comment').fill('adding a new adhoc cluster')
     await dialog.locator('button', { hasText: 'Confirm' }).click()
 
     await expect(page.getByText('Cluster created successfully')).toBeVisible()
@@ -46,7 +59,22 @@ test.describe('cluster', () => {
       proxyTo: 'http://trino-3.internal:8080',
       externalUrl: 'https://trino-3.example.com',
       active: false,
+      action: 'CREATE',
+      comment: 'adding a new adhoc cluster',
     })
+  })
+
+  test('requires a comment before creating a backend', async ({ page, api }) => {
+    await page.getByRole('button', { name: 'Create' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.locator('#name').fill('trino-3')
+    await dialog.locator('#routingGroup').fill('adhoc')
+    await dialog.locator('#proxyTo').fill('http://trino-3.internal:8080')
+    await dialog.locator('#externalUrl').fill('https://trino-3.example.com')
+    await dialog.locator('button', { hasText: 'Confirm' }).click()
+
+    await expect(dialog.getByText('Comment is required')).toBeVisible()
+    expect(api.callsTo('/webapp/saveBackend')).toHaveLength(0)
   })
 
   test('edits a backend', async ({ page, api }) => {
@@ -55,6 +83,7 @@ test.describe('cluster', () => {
     await expect(dialog.locator('#name')).toBeDisabled()
     await expect(dialog.locator('#name')).toHaveValue('trino-1')
     await dialog.locator('#routingGroup').fill('etl')
+    await dialog.locator('#comment').fill('moving trino-1 to etl')
     await dialog.locator('button', { hasText: 'Confirm' }).click()
 
     await expect(page.getByText('Cluster updated successfully')).toBeVisible()
@@ -62,6 +91,8 @@ test.describe('cluster', () => {
       name: 'trino-1',
       routingGroup: 'etl',
       proxyTo: backends[0].proxyTo,
+      action: 'UPDATE',
+      comment: 'moving trino-1 to etl',
     })
   })
 
@@ -69,10 +100,24 @@ test.describe('cluster', () => {
     await page.getByRole('row').filter({ hasText: 'trino-2' }).getByRole('button', { name: 'Delete' }).click()
     const dialog = page.getByRole('dialog')
     await expect(dialog).toContainText('Are you sure you want to delete the cluster "trino-2"?')
+    await dialog.locator('#comment').fill('decommissioning trino-2')
     await dialog.locator('button', { hasText: 'Delete' }).click()
 
     await expect(page.getByText('Cluster deleted successfully')).toBeVisible()
-    expect(api.callsTo('/webapp/deleteBackend')[0].body).toEqual({ name: 'trino-2' })
+    expect(api.callsTo('/webapp/deleteBackend')[0].body).toEqual({
+      name: 'trino-2',
+      action: 'DELETE',
+      comment: 'decommissioning trino-2',
+    })
+  })
+
+  test('requires a comment before deleting a backend', async ({ page, api }) => {
+    await page.getByRole('row').filter({ hasText: 'trino-2' }).getByRole('button', { name: 'Delete' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.locator('button', { hasText: 'Delete' }).click()
+
+    await expect(dialog.getByText('Comment is required')).toBeVisible()
+    expect(api.callsTo('/webapp/deleteBackend')).toHaveLength(0)
   })
 })
 

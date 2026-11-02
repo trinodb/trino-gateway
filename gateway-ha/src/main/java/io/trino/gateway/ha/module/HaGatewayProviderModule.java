@@ -21,6 +21,10 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.server.HttpServer;
+import io.trino.gateway.ha.audit.AuditLogDispatcher;
+import io.trino.gateway.ha.audit.AuditLogger;
+import io.trino.gateway.ha.audit.DatabaseAuditLogger;
+import io.trino.gateway.ha.audit.LogAuditLogger;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -91,6 +95,11 @@ public class HaGatewayProviderModule
         binder().bind(JdbcConnectionManager.class).in(Scopes.SINGLETON);
         binder().bind(AuthorizationManager.class).in(Scopes.SINGLETON);
         binder().bind(PathFilter.class).in(Scopes.SINGLETON);
+        binder().bind(AuditLogDispatcher.class).in(Scopes.SINGLETON);
+
+        Multibinder<AuditLogger> auditLoggers = newSetBinder(binder(), AuditLogger.class);
+        auditLoggers.addBinding().to(DatabaseAuditLogger.class).in(Scopes.SINGLETON);
+        auditLoggers.addBinding().to(LogAuditLogger.class).in(Scopes.SINGLETON);
 
         Multibinder<TrinoClusterStatsObserver> observers = newSetBinder(binder(), TrinoClusterStatsObserver.class);
         observers.addBinding().to(HealthCheckObserver.class).in(Scopes.SINGLETON);
