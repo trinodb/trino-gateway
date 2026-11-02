@@ -268,10 +268,13 @@ public abstract class BaseRoutingManager
      * forwarding the client's would expose them to every backend, so a cluster that requires authentication
      * rejects it with {@code 401}, or {@code 403} when authentication over HTTP is disabled, before it looks up
      * the query. Those responses say nothing about whether the query is on that backend, and treating them as a
-     * match would cache whichever backend answered first.
+     * match would cache whichever backend answered first. When every backend rejects the probe the search has
+     * learned nothing, so it falls back to the first active backend of the default routing group, which is
+     * correct for a single cluster.
      *
-     * @return the backend holding the query, or null if no backend confirmed it. This value comes back through
-     *         the queryIdBackendCache loader and null is not cached, so the next request for the query searches again.
+     * @return the backend holding the query, the fallback above, or null if the search found no such backend. This
+     *         value comes back through the queryIdBackendCache loader and null is not cached, so the next request
+     *         for the query searches again.
      */
     @Nullable
     private String searchAllBackendForQuery(String queryId)
@@ -280,6 +283,7 @@ public abstract class BaseRoutingManager
 
         CompletionService<Integer> completionService = new ExecutorCompletionService<>(executorService);
         Map<Future<Integer>, String> probes = new LinkedHashMap<>();
+        int rejected = 0;
         for (ProxyBackendConfiguration backend : backends) {
             String target = backend.getProxyTo() + "/v1/query/" + queryId;
 
@@ -319,6 +323,9 @@ public abstract class BaseRoutingManager
                         // whose return value is cached, and a put on the same cache would be a recursive update.
                         return backend;
                     }
+                    if (responseCode == 401 || responseCode == 403) {
+                        rejected++;
+                    }
                     log.debug("Query id [%s] not confirmed on backend [%s]: HTTP %s", queryId, backend, responseCode);
                 }
                 catch (ExecutionException e) {
@@ -334,6 +341,13 @@ public abstract class BaseRoutingManager
             // Stop probing once the search is over. Probes run on virtual threads, so cancel() also interrupts
             // a probe blocked in HttpURLConnection, which closes its socket.
             probes.keySet().forEach(probe -> probe.cancel(true));
+        }
+        if (rejected > 0 && rejected == probes.size()) {
+            log.debug("Every backend rejected the probe for query id [%s]. Falling back to the default routing group", queryId);
+            return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
+                    .findFirst()
+                    .map(ProxyBackendConfiguration::getProxyTo)
+                    .orElse(null);
         }
         log.warn("Query id [%s] not found on any backend", queryId);
         return null;

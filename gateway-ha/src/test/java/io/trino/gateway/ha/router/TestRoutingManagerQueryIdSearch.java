@@ -34,6 +34,8 @@ import static org.mockito.Mockito.when;
 
 final class TestRoutingManagerQueryIdSearch
 {
+    private static final String UNRELATED_ACTIVE_BACKEND = "http://unrelated-active-backend.example.com";
+
     @Test // regression test for https://github.com/trinodb/trino-gateway/issues/943
     void testFindBackendForQueryIdOnDeactivatedBackend()
             throws Exception
@@ -146,10 +148,6 @@ final class TestRoutingManagerQueryIdSearch
         StochasticRoutingManager routingManager = null;
         try {
             List<ProxyBackendConfiguration> rejecting = List.of(backend(url(unauthorized), true), backend(url(forbidden), true));
-            routingManager = createRoutingManager(rejecting);
-            assertThat(routingManager.findBackendForQueryId("20240101_000000_00007_ggggg")).isNull();
-            routingManager.shutdown();
-
             List<ProxyBackendConfiguration> backends = new ArrayList<>(rejecting);
             backends.add(backend(url(holder), false));
             routingManager = createRoutingManager(backends);
@@ -165,11 +163,74 @@ final class TestRoutingManagerQueryIdSearch
         }
     }
 
+    @Test
+    void testFindBackendForQueryIdFallsBackWhenEveryBackendRejectsTheProbe()
+            throws Exception
+    {
+        HttpServer unauthorized = startQueryServer(new AtomicInteger(401));
+        HttpServer forbidden = startQueryServer(new AtomicInteger(403));
+        StochasticRoutingManager routingManager = null;
+        try {
+            routingManager = createRoutingManager(List.of(backend(url(unauthorized), true), backend(url(forbidden), true)));
+            assertThat(routingManager.findBackendForQueryId("20240101_000000_00009_iiiii")).isEqualTo(UNRELATED_ACTIVE_BACKEND);
+        }
+        finally {
+            if (routingManager != null) {
+                routingManager.shutdown();
+            }
+            unauthorized.stop(0);
+            forbidden.stop(0);
+        }
+    }
+
+    @Test
+    void testFindBackendForQueryIdDoesNotFallBackWhenABackendAnswered()
+            throws Exception
+    {
+        HttpServer unauthorized = startQueryServer(new AtomicInteger(401));
+        HttpServer gone = startQueryServer(new AtomicInteger(410));
+        StochasticRoutingManager routingManager = null;
+        try {
+            routingManager = createRoutingManager(List.of(backend(url(unauthorized), true), backend(url(gone), true)));
+            assertThat(routingManager.findBackendForQueryId("20240101_000000_00010_jjjjj")).isNull();
+        }
+        finally {
+            if (routingManager != null) {
+                routingManager.shutdown();
+            }
+            unauthorized.stop(0);
+            gone.stop(0);
+        }
+    }
+
+    @Test
+    void testFindBackendForQueryIdHasNoFallbackWithoutActiveBackend()
+            throws Exception
+    {
+        HttpServer unauthorized = startQueryServer(new AtomicInteger(401));
+        StochasticRoutingManager routingManager = null;
+        try {
+            routingManager = createRoutingManager(List.of(backend(url(unauthorized), false)), List.of());
+            assertThat(routingManager.findBackendForQueryId("20240101_000000_00011_kkkkk")).isNull();
+        }
+        finally {
+            if (routingManager != null) {
+                routingManager.shutdown();
+            }
+            unauthorized.stop(0);
+        }
+    }
+
     private static StochasticRoutingManager createRoutingManager(List<ProxyBackendConfiguration> backends)
+    {
+        return createRoutingManager(backends, List.of(backend(UNRELATED_ACTIVE_BACKEND, true)));
+    }
+
+    private static StochasticRoutingManager createRoutingManager(List<ProxyBackendConfiguration> backends, List<ProxyBackendConfiguration> activeBackends)
     {
         GatewayBackendManager backendManager = Mockito.mock(GatewayBackendManager.class);
         when(backendManager.getAllBackends()).thenReturn(backends);
-        when(backendManager.getActiveBackends(any())).thenReturn(List.of(backend("http://unrelated-active-backend.example.com", true)));
+        when(backendManager.getActiveBackends(any())).thenReturn(activeBackends);
         return new StochasticRoutingManager(backendManager, Mockito.mock(QueryHistoryManager.class), new RoutingConfiguration());
     }
 
