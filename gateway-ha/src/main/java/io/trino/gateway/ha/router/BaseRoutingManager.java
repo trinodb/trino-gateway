@@ -272,6 +272,9 @@ public abstract class BaseRoutingManager
      * learned nothing, so it falls back to the first active backend of the default routing group, which is
      * correct for a single cluster.
      *
+     * <p>This runs inside the queryIdBackendCache loader, so a cache miss can block the request thread for up to
+     * {@link #QUERY_SEARCH_TIMEOUT_MILLIS}, and concurrent requests for the same query id wait on the same load.
+     *
      * @return the backend holding the query, the fallback above, or null if the search found no such backend. This
      *         value comes back through the queryIdBackendCache loader and null is not cached, so the next request
      *         for the query searches again.

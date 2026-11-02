@@ -26,6 +26,7 @@ import io.trino.gateway.ha.router.NoHealthyBackendException;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.TrinoQueryProperties;
 import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.proxyserver.MultiReadHttpServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +44,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -451,6 +454,44 @@ class TestRoutingTargetHandler
                 .isInstanceOf(WebApplicationException.class)
                 .satisfies(thrown -> assertThat(((WebApplicationException) thrown).getResponse().getStatus())
                         .isEqualTo(Response.Status.NOT_FOUND.getStatusCode()));
+    }
+
+    @Test // regression test for https://github.com/trinodb/trino-gateway/issues/943
+    void testPollForExistingQueryWithNoActiveBackendsReturnsNotFound()
+    {
+        String queryId = "20240101_000000_00012_lllll";
+
+        HttpServletRequest pollRequest = Mockito.mock(HttpServletRequest.class);
+        when(pollRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(pollRequest.getRequestURI()).thenReturn("/v1/statement/executing/" + queryId + "/y0123456789/1");
+
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(null);
+
+        assertThatThrownBy(() -> handler.resolveRouting(pollRequest))
+                .isInstanceOf(WebApplicationException.class)
+                .satisfies(thrown -> assertThat(((WebApplicationException) thrown).getResponse().getStatus())
+                        .isEqualTo(Response.Status.NOT_FOUND.getStatusCode()));
+    }
+
+    @Test
+    void testKillQueryForUnknownQueryIdIsRoutedAsNewStatement()
+    {
+        String queryId = "20240101_000000_00009_iiiii";
+        HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getMethod()).thenReturn(HttpMethod.POST);
+        when(mockRequest.getRequestURI()).thenReturn("/v1/statement");
+        TrinoQueryProperties queryProperties = Mockito.mock(TrinoQueryProperties.class);
+        when(queryProperties.getQueryId()).thenReturn(Optional.of(queryId));
+        when(mockRequest.getAttribute(TRINO_QUERY_PROPERTIES)).thenReturn(queryProperties);
+        HttpServletRequest killRequest = new MultiReadHttpServletRequest(
+                mockRequest, "CALL system.runtime.kill_query(query_id => '" + queryId + "')");
+
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(null);
+        when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse(null, List.of(), ImmutableMap.of()));
+
+        handler.resolveRouting(killRequest);
+
+        verify(routingManager).provideBackendConfiguration(any(), any());
     }
 
     private RoutingTargetHandler createHandlerWithPropagateErrorsTrue()

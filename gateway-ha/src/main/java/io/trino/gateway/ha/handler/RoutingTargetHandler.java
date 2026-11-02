@@ -94,7 +94,7 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
                     request);
-        }).orElseGet(() -> getRoutingTargetResponse(queryId, request));
+        }).orElseGet(() -> resolveNonStickyRouting(queryId, request));
 
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
@@ -114,10 +114,14 @@ public class RoutingTargetHandler
      *
      * <p>{@link RoutingManager#findBackendForQueryId} also returns null when the lookup itself fails, for example
      * on a query history database error. That failure is only logged there, so the client gets the same 404.
+     *
+     * <p>A {@code kill_query} statement carries the id of another query in its body, but it is itself a new
+     * statement submission. It keeps routing as a new query, so the backend returns a regular Trino error when
+     * the id is unknown.
      */
-    private RoutingTargetResponse getRoutingTargetResponse(Optional<String> queryId, HttpServletRequest request)
+    private RoutingTargetResponse resolveNonStickyRouting(Optional<String> queryId, HttpServletRequest request)
     {
-        if (queryId.isPresent()) {
+        if (queryId.isPresent() && !isStatementSubmission(request)) {
             throw new WebApplicationException(
                     Response.status(Response.Status.NOT_FOUND)
                             .type(TEXT_PLAIN_TYPE)
