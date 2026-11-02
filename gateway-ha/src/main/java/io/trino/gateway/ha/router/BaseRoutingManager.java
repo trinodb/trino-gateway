@@ -44,6 +44,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static io.trino.gateway.ha.router.TrinoRequestUser.TRINO_USER_HEADER_NAME;
+
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
  * request object. Default implementation comes here.
@@ -52,6 +54,7 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
+    private static final String PROBE_USER = "trino-gateway";
     private static final long PROBE_CONNECT_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
     private static final long PROBE_READ_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
     // Overall bound for locating a query id across all backends. Slightly above the probe's combined
@@ -260,10 +263,12 @@ public abstract class BaseRoutingManager
 
     /**
      * This tries to find out which backend has info about given query id. Only a {@code 200} response counts
-     * as a match. The probe sends no credentials, so Trino rejects it with {@code 401}, or {@code 403} when
-     * authentication over HTTP is disabled, before it looks up the query. Those responses say nothing about
-     * whether the query is on that backend, and treating them as a match would cache whichever backend
-     * answered first.
+     * as a match. The probe sends {@code X-Trino-User}, which is enough for a cluster without authentication to
+     * answer {@code 200} when it holds the query and {@code 410} when it does not. It sends no credentials, since
+     * forwarding the client's would expose them to every backend, so a cluster that requires authentication
+     * rejects it with {@code 401}, or {@code 403} when authentication over HTTP is disabled, before it looks up
+     * the query. Those responses say nothing about whether the query is on that backend, and treating them as a
+     * match would cache whichever backend answered first.
      *
      * @return the backend holding the query, or null if no backend confirmed it. This value comes back through
      *         the queryIdBackendCache loader and null is not cached, so the next request for the query searches again.
@@ -286,6 +291,7 @@ public abstract class BaseRoutingManager
                                 conn.setConnectTimeout((int) PROBE_CONNECT_TIMEOUT_MILLIS);
                                 conn.setReadTimeout((int) PROBE_READ_TIMEOUT_MILLIS);
                                 conn.setRequestMethod(HttpMethod.HEAD);
+                                conn.setRequestProperty(TRINO_USER_HEADER_NAME, PROBE_USER);
                                 return conn.getResponseCode();
                             });
             probes.put(probe, backend.getProxyTo());

@@ -196,7 +196,9 @@ final class TestRoutingManagerQueryIdSearch
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            exchange.sendResponseHeaders(status.get(), -1);
+            // Like Trino without authentication, answer about the query only when a user is provided
+            boolean hasUser = exchange.getRequestHeaders().containsKey("X-Trino-User");
+            exchange.sendResponseHeaders(hasUser ? status.get() : 401, -1);
             exchange.close();
         });
         server.start();
