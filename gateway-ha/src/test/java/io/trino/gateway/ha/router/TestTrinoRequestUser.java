@@ -15,12 +15,24 @@ package io.trino.gateway.ha.router;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.nimbusds.jose.EncryptionMethod;
+import com.nimbusds.jose.JWEAlgorithm;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.AESEncrypter;
+import com.nimbusds.jose.util.Base64URL;
+import io.airlift.compress.v3.zstd.ZstdOutputStream;
 import io.airlift.json.JsonCodec;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.util.QueryRequestMock;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 
+import javax.crypto.spec.SecretKeySpec;
+
+import java.io.ByteArrayOutputStream;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
@@ -105,5 +117,60 @@ final class TestTrinoRequestUser
         TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
 
         assertThat(trinoRequestUser.getUser()).hasValue(username);
+    }
+
+    @Test
+    void testUserFromTrinoJweToken()
+            throws Exception
+    {
+        byte[] key = new byte[32];
+        new SecureRandom().nextBytes(key);
+
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthRefreshTokensSecretKey(Base64.getEncoder().encodeToString(key));
+
+        String claims = "{\"email\":\"user@example.com\",\"aud\":[\"trino_client\"],\"iss\":\"Trino_coordinator\",\"access_token\":\"opaque\"}";
+
+        assertThat(userFromBearerToken(requestAnalyzerConfig, trinoJwe(key, claims))).hasValue("user@example.com");
+    }
+
+    @Test
+    void testTrinoJweTokenWithWrongKey()
+            throws Exception
+    {
+        byte[] key = new byte[32];
+        byte[] otherKey = new byte[32];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(key);
+        random.nextBytes(otherKey);
+
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+        requestAnalyzerConfig.setOauthRefreshTokensSecretKey(Base64.getEncoder().encodeToString(otherKey));
+
+        assertThat(userFromBearerToken(requestAnalyzerConfig, trinoJwe(key, "{\"email\":\"user@example.com\"}"))).isEmpty();
+    }
+
+    private static Optional<String> userFromBearerToken(RequestAnalyzerConfig requestAnalyzerConfig, String token)
+    {
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Bearer " + token)
+                .getHttpServletRequest();
+        return ((TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
+    }
+
+    // Make a token in the same format as Trino JweTokenSerializer.
+    private static String trinoJwe(byte[] key, String claimsJson)
+            throws Exception
+    {
+        ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+        try (ZstdOutputStream out = new ZstdOutputStream(compressed)) {
+            out.write(claimsJson.getBytes(UTF_8));
+        }
+        String innerJwt = Base64URL.encode("{\"alg\":\"none\",\"zip\":\"ZSTD\"}") + "." + Base64URL.encode(compressed.toByteArray()) + ".";
+        JWEObject jwe = new JWEObject(new JWEHeader(JWEAlgorithm.A256GCMKW, EncryptionMethod.A256GCM), new Payload(innerJwt));
+        jwe.encrypt(new AESEncrypter(new SecretKeySpec(key, "AES")));
+        return jwe.serialize();
     }
 }
