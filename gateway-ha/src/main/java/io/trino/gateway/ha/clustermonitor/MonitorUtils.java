@@ -13,6 +13,9 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import io.airlift.log.Logger;
+import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
@@ -27,5 +30,40 @@ public final class MonitorUtils
             case HTTP_BAD_GATEWAY, HTTP_UNAVAILABLE, HTTP_GATEWAY_TIMEOUT -> true;
             default -> false;
         };
+    }
+
+    /**
+     * Logs a health check failure as an error for active backends. Inactive
+     * backends are often intentionally offline, so their failures are only
+     * logged at debug level.
+     */
+    public static void logHealthCheckError(Logger log, ProxyBackendConfiguration backend, String message)
+    {
+        if (backend.isActive()) {
+            log.error(message);
+        }
+        else {
+            log.debug(message);
+        }
+    }
+
+    public static void logHealthCheckError(Logger log, ProxyBackendConfiguration backend, Throwable throwable, String message)
+    {
+        if (backend.isActive()) {
+            log.error(throwable, message);
+        }
+        else {
+            log.debug(throwable, message);
+        }
+    }
+
+    public static void logHealthCheckWarning(Logger log, ProxyBackendConfiguration backend, Throwable throwable, String message)
+    {
+        if (backend.isActive()) {
+            log.warn(throwable, message);
+        }
+        else {
+            log.debug(throwable, message);
+        }
     }
 }

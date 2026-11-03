@@ -27,6 +27,7 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
 import static io.trino.gateway.ha.clustermonitor.MonitorUtils.shouldRetry;
 import static java.util.Objects.requireNonNull;
 
@@ -47,21 +48,21 @@ public class ClusterStatsInfoApiMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        return ClusterStats.builder(backend.getName()).trinoStatus(checkStatus(backend.getProxyTo()))
+        return ClusterStats.builder(backend.getName()).trinoStatus(checkStatus(backend))
                 .proxyTo(backend.getProxyTo())
                 .externalUrl(backend.getExternalUrl())
                 .routingGroup(backend.getRoutingGroup()).build();
     }
 
-    private TrinoStatus checkStatus(String baseUrl)
+    private TrinoStatus checkStatus(ProxyBackendConfiguration backend)
     {
-        return checkStatus(baseUrl, retries);
+        return checkStatus(backend, retries);
     }
 
-    private TrinoStatus checkStatus(String baseUrl, int retriesRemaining)
+    private TrinoStatus checkStatus(ProxyBackendConfiguration backend, int retriesRemaining)
     {
         Request request = prepareGet()
-                .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
+                .setUri(uriBuilderFrom(URI.create(backend.getProxyTo())).appendPath("/v1/info").build())
                 .build();
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
@@ -71,18 +72,18 @@ public class ClusterStatsInfoApiMonitor
             if (shouldRetry(e.getStatusCode())) {
                 if (retriesRemaining > 0) {
                     log.warn("Retrying health check on error: %s, ", e.toString());
-                    return checkStatus(baseUrl, retriesRemaining - 1);
+                    return checkStatus(backend, retriesRemaining - 1);
                 }
                 else {
-                    log.error("Encountered error %s, no retries remaining", e.toString());
+                    logHealthCheckError(log, backend, "Encountered error %s, no retries remaining".formatted(e.toString()));
                 }
             }
             else {
-                log.error(e, "Health check failed with non-retryable response. %s", e.toString());
+                logHealthCheckError(log, backend, e, "Health check failed with non-retryable response. %s".formatted(e.toString()));
             }
         }
         catch (Exception e) {
-            log.error(e, "Exception checking %s for health", request.getUri());
+            logHealthCheckError(log, backend, e, "Exception checking %s for health".formatted(request.getUri()));
         }
         return TrinoStatus.UNHEALTHY;
     }
