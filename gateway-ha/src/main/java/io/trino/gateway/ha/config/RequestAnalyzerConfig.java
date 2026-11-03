@@ -25,6 +25,7 @@ public class RequestAnalyzerConfig
     private String clientCertificateUserMappingFile;
     private String tokenUserField = "email";
     private String oauthTokenInfoUrl;
+    private String oauthRefreshTokensSecretKey;
     private boolean isAnalyzeRequest;
 
     public RequestAnalyzerConfig() {}
@@ -88,6 +89,16 @@ public class RequestAnalyzerConfig
     public void setOauthTokenInfoUrl(String oauthTokenInfoUrl)
     {
         this.oauthTokenInfoUrl = oauthTokenInfoUrl;
+    }
+
+    public String getOauthRefreshTokensSecretKey()
+    {
+        return oauthRefreshTokensSecretKey;
+    }
+
+    public void setOauthRefreshTokensSecretKey(String oauthRefreshTokensSecretKey)
+    {
+        this.oauthRefreshTokensSecretKey = oauthRefreshTokensSecretKey;
     }
 
     public boolean isClientsUseV2Format()
