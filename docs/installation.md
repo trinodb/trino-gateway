@@ -541,6 +541,17 @@ state of a backend. The active/inactive state indicates whether a backend is
 manually turned on or off, whereas TrinoStatus is programmatically determined
 by the health check process.
 
+By default, health checks are only performed on backends that are marked as
+active, and inactive backends report an `UNKNOWN` TrinoStatus. Set
+`checkInactiveBackends` to `true` to also check inactive backends, so that
+their TrinoStatus is up to date in the UI before they are activated. Inactive
+backends never receive traffic, regardless of their TrinoStatus.
+
+```yaml
+monitor:
+  checkInactiveBackends: true
+```
+
 See [TrinoStatus](routing-rules.md#trinostatus) for more details on 
 what each Trino status means.
 
