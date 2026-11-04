@@ -27,6 +27,8 @@ public class MonitorConfiguration
 
     private int retries;
 
+    private int threadPoolSize = 20;
+
     private Duration queryTimeout = new Duration(10, SECONDS);
 
     private Duration clusterMetricsRegistryRefreshPeriod = new Duration(30, SECONDS);
@@ -66,6 +68,18 @@ public class MonitorConfiguration
     public void setRetries(int retries)
     {
         this.retries = retries;
+    }
+
+    /// The number of monitor threads that run the health checks of the backends in each cycle.
+    /// Set it to at least the number of backends, so that every check can start before the `taskDelay` ends.
+    public int getThreadPoolSize()
+    {
+        return threadPoolSize;
+    }
+
+    public void setThreadPoolSize(int threadPoolSize)
+    {
+        this.threadPoolSize = threadPoolSize;
     }
 
     public Duration getQueryTimeout()

@@ -606,6 +606,14 @@ reference documentation](https://github.com/trinodb/charts/blob/main/charts/gate
 The Trino Gateway periodically performs health checks and maintains
 an in-memory TrinoStatus for each backend. If a backend fails a health check,
 it is marked as UNHEALTHY, and the Trino Gateway stops routing requests to it.
+A health check that does not complete within the monitor `taskDelay` is
+cancelled, and the backend is marked as UNHEALTHY. A health check that does not
+start within the `taskDelay`, because all monitor threads are busy, is cancelled,
+and the backend keeps its previous TrinoStatus. The health checks run in a
+random order in each cycle, so the same backends do not wait for a monitor
+thread in every cycle. The `threadPoolSize` in the `monitor` node sets the number
+of monitor threads, 20 by default. Set it to at least the number of backends, so
+that every health check can start in each cycle.
 
 It is important to distinguish TrinoStatus from the active/inactive
 state of a backend. The active/inactive state indicates whether a backend is
@@ -663,10 +671,10 @@ monitor:
 All parameters are optional. The defaults are `connect-timeout` 5s,
 `request-timeout` 5m and `idle-timeout` 1m, so without them a backend that
 stops responding is only marked `UNHEALTHY` after 1 minute. A backend whose
-check times out is marked `UNHEALTHY`. Each round of checks waits for every
-backend before it updates their status, so a backend that stops responding
-delays the status of all backends until its check times out. `retries` only
-applies to 502, 503, and 504 responses.
+check times out is marked `UNHEALTHY`. The status of each backend is updated as
+soon as its check completes, so a backend that stops responding does not delay
+the status of the other backends. `retries` only applies to 502, 503, and 504
+responses.
 
 #### METRICS
 
