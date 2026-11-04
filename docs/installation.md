@@ -125,6 +125,37 @@ the lock and run the database migrations with `Flyway`. Other Trino Gateway
 instances might fail during startup while migrations are running but once migrations
 are completed they will start as expected.
 
+### Query history write buffer
+
+By default, Trino Gateway writes a query history record to the database as part
+of routing each query, and the write fails when the database is unavailable.
+Configure the write buffer to keep query processing unaffected by a temporary
+database outage. A query history record that fails to write because of a
+connection problem is buffered in memory. A background task retries writing all
+buffered records at every `flushInterval`, so they are persisted shortly after
+the database is reachable again. Trino Gateway also attempts a final flush of
+any remaining buffered records on shutdown.
+
+```yaml
+writeBuffer:
+  enabled: true
+  maxCapacity: 10000
+  flushInterval: 2s
+```
+
+The buffer is deactivated by default. It holds at most `maxCapacity` records,
+with a default of `10000`, so memory use is bounded even during a prolonged
+outage. This limits the memory overhead to a few megabytes of query history
+records, while covering a multi-minute outage at typical query rates. Use
+`queryHistoryMaxQueryTextLength` to bound the size of each record when large
+query text values are common. When the buffer is full, the oldest record is
+dropped to make room for a new one, and an error is logged.
+
+The flush of all buffered records is attempted at the configured
+`flushInterval`, with a default of `2s`, so buffered history becomes visible
+shortly after the database recovers, without adding significant load. The value
+accepts Airlift-style durations such as `500ms` or `10s`.
+
 ### Trino clusters
 
 The proxied Trino clusters behind the Trino Gateway must support the Trino JDBC
