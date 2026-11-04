@@ -19,6 +19,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.FormAuthConfiguration;
 import io.trino.gateway.ha.config.LdapConfiguration;
 import io.trino.gateway.ha.config.UserConfiguration;
@@ -26,6 +27,8 @@ import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +36,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.Locale.ENGLISH;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class LbFormAuthManager
 {
@@ -44,6 +48,7 @@ public class LbFormAuthManager
     private final Map<String, UserConfiguration> presetUsers;
     private final Map<String, String> pagePermissions;
     private final LbLdapClient lbLdapClient;
+    private final Duration sessionTimeout;
 
     public LbFormAuthManager(
             FormAuthConfiguration configuration,
@@ -58,9 +63,11 @@ public class LbFormAuthManager
         if (configuration != null) {
             this.lbKeyProvider = new LbKeyProvider(configuration
                     .getSelfSignKeyPair());
+            this.sessionTimeout = configuration.getSessionTimeout();
         }
         else {
             this.lbKeyProvider = null;
+            this.sessionTimeout = null;
         }
 
         if (configuration != null && configuration.getLdapConfigPath() != null) {
@@ -105,6 +112,11 @@ public class LbFormAuthManager
             DecodedJWT jwt = JWT.decode(idToken);
 
             if (LbTokenUtil.validateToken(idToken, lbKeyProvider.publicKey(), jwt.getIssuer(), Optional.empty())) {
+                // Reject tokens issued before expiration was added; the verifier only checks exp when present
+                if (jwt.getExpiresAt() == null) {
+                    log.debug("Token has no expiration");
+                    return Optional.empty();
+                }
                 return Optional.of(jwt.getClaims());
             }
         }
@@ -123,10 +135,15 @@ public class LbFormAuthManager
 
             Map<String, Object> headers = Map.of("alg", lbKeyProvider.jwtAlgorithmName());
 
+            Instant now = Instant.now();
+            Instant expiration = now.plusSeconds(sessionTimeout.roundTo(SECONDS));
+
             token = JWT.create()
                     .withHeader(headers)
                     .withIssuer(SessionCookie.SELF_ISSUER_ID)
                     .withSubject(username)
+                    .withIssuedAt(Date.from(now))
+                    .withExpiresAt(Date.from(expiration))
                     .sign(algorithm);
         }
         catch (JWTCreationException exception) {

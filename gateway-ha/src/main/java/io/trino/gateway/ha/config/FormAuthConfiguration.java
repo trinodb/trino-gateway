@@ -13,10 +13,18 @@
  */
 package io.trino.gateway.ha.config;
 
+import io.airlift.units.Duration;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MINUTES;
+
 public class FormAuthConfiguration
 {
     private SelfSignKeyPairConfiguration selfSignKeyPair;
     private String ldapConfigPath;
+    // Absolute lifetime of a login session, counted from login; activity does not extend it
+    private Duration sessionTimeout = new Duration(30, MINUTES);
 
     public FormAuthConfiguration(SelfSignKeyPairConfiguration selfSignKeyPair, String ldapConfigPath)
     {
@@ -44,5 +52,18 @@ public class FormAuthConfiguration
     public void setLdapConfigPath(String ldapConfigPath)
     {
         this.ldapConfigPath = ldapConfigPath;
+    }
+
+    public Duration getSessionTimeout()
+    {
+        return sessionTimeout;
+    }
+
+    public void setSessionTimeout(Duration sessionTimeout)
+    {
+        // Bean validation does not run on this configuration, so check explicitly
+        requireNonNull(sessionTimeout, "sessionTimeout is null");
+        checkArgument(sessionTimeout.compareTo(new Duration(1, MINUTES)) >= 0, "sessionTimeout must be at least 1m");
+        this.sessionTimeout = sessionTimeout;
     }
 }
