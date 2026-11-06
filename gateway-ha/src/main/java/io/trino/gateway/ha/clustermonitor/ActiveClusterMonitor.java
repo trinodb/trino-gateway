@@ -42,6 +42,7 @@ public class ActiveClusterMonitor
     private final GatewayBackendManager gatewayBackendManager;
 
     private final Duration taskDelay;
+    private final boolean checkInactiveBackends;
     private final ClusterStatsMonitor clusterStatsMonitor;
     private final ExecutorService executorService = Executors.newFixedThreadPool(DEFAULT_THREAD_POOL_SIZE);
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -57,6 +58,7 @@ public class ActiveClusterMonitor
         this.clusterStatsObservers = requireNonNull(clusterStatsObservers, "clusterStatsObservers is null");
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.taskDelay = monitorConfiguration.getTaskDelay();
+        this.checkInactiveBackends = monitorConfiguration.isCheckInactiveBackends();
     }
 
     @PostConstruct
@@ -65,11 +67,17 @@ public class ActiveClusterMonitor
         log.info("Running cluster monitor with connection task delay of %s", taskDelay);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                log.info("Getting stats for all clusters");
-                List<ProxyBackendConfiguration> allClusters =
-                        gatewayBackendManager.getAllBackends();
+                List<ProxyBackendConfiguration> clusters;
+                if (checkInactiveBackends) {
+                    log.info("Getting stats for all clusters");
+                    clusters = gatewayBackendManager.getAllBackends();
+                }
+                else {
+                    log.info("Getting stats for all active clusters");
+                    clusters = gatewayBackendManager.getAllActiveBackends();
+                }
                 List<Future<ClusterStats>> futures = new ArrayList<>();
-                for (ProxyBackendConfiguration backend : allClusters) {
+                for (ProxyBackendConfiguration backend : clusters) {
                     Future<ClusterStats> call = executorService.submit(() -> clusterStatsMonitor.monitor(backend));
                     futures.add(call);
                 }
