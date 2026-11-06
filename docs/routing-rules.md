@@ -12,50 +12,34 @@ routing:
     defaultRoutingGroup: "test-group"
 ```
 
-Trino Gateway sends a request to the `defaultRoutingGroup` in two cases, each
-controlled by its own setting:
-
-* `unmatchedRequestFallbackEnabled`: a query submission matches no routing rule
-  or routing group header. When set to `false`, such a query submission is
-  rejected with HTTP 400, so every query submission must be explicitly routed.
-  Other proxied requests, such as Web UI and OAuth2 requests, still go to the
-  default routing group.
-* `unavailableGroupFallbackEnabled`: the request's routing group has no healthy
-  backend, including a group with no backends configured. When set to `false`,
-  such a request is rejected with HTTP 503 instead of running on a backend
-  outside the group it asked for.
-
-Both default to `true`. For example, to keep sending unmatched requests to the
-default group while never letting a request for a specific group spill over
-into it:
-
-```yaml
-routing:
-    unavailableGroupFallbackEnabled: false
-```
-
 The routing rules engine feature enables you to either write custom logic to
 route requests based on the request info such as any of the [request
 headers](https://trino.io/docs/current/develop/client-protocol.html#client-request-headers),
 or set a URL address to make an HTTP POST request and route based on the
 returned result.
 
-Routing rules are defined in a configuration file or implemented in separate,
-custom service application. The connection to the separate service is configured
-as a URL. It can implement any dynamic rule changes or other behavior.
+Routing rules are defined in a configuration file, stored in the Trino Gateway
+database, or implemented in separate, custom service application. The connection
+to the separate service is configured as a URL. It can implement any dynamic
+rule changes or other behavior.
 
 ### Enabling the routing rules engine
 
 To enable the routing rules engine, find the following lines in
 `config.yaml`:
 
-* Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE` or `EXTERNAL`.
+* Set `rulesEngineEnabled` to `true`, then `rulesType` as `FILE`, `EXTERNAL`,
+  or `DATABASE`.
 * If you set `rulesType: FILE`, then set `rulesConfigPath` to the path to your
   rules config file.
 * The rules file will be re-read every minute by default. You may change this by setting
   `rulesRefreshPeriod: Duration`, where duration is an airlift style Duration such as `30s`.
 * If you set `rulesType: EXTERNAL`, set `rulesExternalConfiguration` to the URL
   of an external service for routing rules processing.
+* If you set `rulesType: DATABASE`, rules are read from the `routing_rules`
+  table in the database configured under `dataStore`. `rulesRefreshPeriod`
+  applies the same way. See
+  [Store routing rules in the database](#store-routing-rules-in-the-database).
 * `rulesType` is by default `FILE` unless specified.
 
 ```yaml
@@ -79,9 +63,21 @@ routingRules:
 * Set `propagateErrors` to `true` to forward routing service errors to  
   clients if present in the response.
 
-If there is error parsing the routing rules configuration file, an error is
-logged, and requests are routed using the routing group header
-`X-Trino-Routing-Group` as default.
+If the routing rules cannot be loaded when Trino Gateway starts, for example
+because the rules file cannot be parsed or the database is unreachable, an
+error is logged, and requests are routed using the routing group header
+`X-Trino-Routing-Group` as default. Loading is retried every
+`rulesRefreshPeriod`, and rule-based routing starts as soon as a load
+succeeds. If a later reload fails, a warning is logged and the previously
+loaded rules stay in use until a reload succeeds.
+
+`FILE` and `DATABASE` rules are loaded and checked the same way. A single rule
+that is not valid is logged and skipped, and the remaining rules still apply.
+A rule is not valid if its condition is blank, it has no actions, an action is
+blank, or its condition or an action fails to compile. The **Routing rules**
+page marks skipped rules as **Not applied** and shows the reason. Rules are
+evaluated by ascending `priority`; rules with equal priority keep the order of
+the file, or are ordered by name for `DATABASE` rules.
 
 ### Configuring API requests with HTTP client config
 
@@ -217,6 +213,125 @@ condition: 'request.getHeader("X-Trino-Client-Tags") contains "label=foo"'
 ```
 
 If no rules match, then the request is routed to the configured default routing group.
+
+### Store routing rules in the database
+
+With `rulesType: DATABASE`, rules live in the `routing_rules` table, which
+Trino Gateway creates in its database (PostgreSQL, MySQL, or Oracle) through
+its schema migrations. Rules keep the same semantics as file-based rules, and
+every Trino Gateway replica reads the same rules, so changes do not require a
+restart or redeployment.
+
+```yaml
+routingRules:
+    rulesEngineEnabled: true
+    rulesType: DATABASE
+    rulesRefreshPeriod: 30s
+```
+
+| Column           | Description                                                     |
+|------------------|-----------------------------------------------------------------|
+| `name`           | Primary key. Unique rule name.                                  |
+| `description`    | Optional description.                                           |
+| `priority`       | Required integer. See [Rule priority](#rule-priority).          |
+| `actions`        | JSON array of MVEL action strings.                              |
+| `rule_condition` | MVEL condition. Named `rule_condition` because `CONDITION` is a reserved word in MySQL. |
+
+Rules are evaluated in ascending `priority`. Rules with the same priority are
+evaluated in ascending `name` order, compared case-sensitively and
+independently of the database collation. Among equal-priority rules that set
+`routingGroup`, the rule whose name sorts last wins.
+
+Users with the `ADMIN` role can add, edit, and delete rules on the
+**Routing rules** page of the Trino Gateway UI, or with the following API
+endpoints. These work for both `FILE` and `DATABASE` rules. Rules that are not
+valid, as described above, are rejected with the same reason the
+**Routing rules** page would show. This check does not run
+the rule, so a rule that compiles but fails when evaluated, for example a
+condition that does not return a boolean, is still saved. At routing time,
+a rule that throws fails the request, as it always has, so a rule can throw
+on purpose to reject a query. The first failure of each rule is logged as a
+warning; later failures of the same rule are logged at debug level until the
+rule changes. Until then, the **Routing rules** page marks the rule with
+**Errors** and shows the first error. The rule stays active, because it still
+applies to the requests it does not fail on. This reflects the requests
+handled by the replica serving the page.
+
+| Endpoint                          | Body                                  |
+|-----------------------------------|---------------------------------------|
+| `POST /webapp/createRoutingRule`  | A rule; fails if the name exists      |
+| `POST /webapp/updateRoutingRules` | A rule; fails if the name is unknown  |
+| `POST /webapp/deleteRoutingRule`  | `{"name": "..."}`                     |
+
+Each endpoint returns the full list of rules on success. On failure, the
+response body has a non-200 `code` and the reason in `msg`. If the change is
+saved but the rule list cannot be read back afterwards, `code` is 200 and
+`msg` says that the list could not be reloaded.
+
+Rules can also be managed with SQL against the Trino Gateway database, for
+example:
+
+```sql
+INSERT INTO routing_rules (name, description, priority, actions, rule_condition)
+VALUES (
+    'airflow',
+    'if query from airflow, route to etl group',
+    0,
+    '["result.put(\"routingGroup\", \"etl\")"]',
+    'request.getHeader("X-Trino-Source") == "airflow"');
+
+DELETE FROM routing_rules WHERE name = 'airflow';
+```
+
+Rules written with SQL are not validated before they are saved. A row that is
+not valid is logged and skipped at the next refresh, and the remaining rules
+stay active. If `actions` is not a JSON array of strings, the rule is read as
+having no actions, so it is skipped and shown as **Not applied** with the reason
+"actions is not a JSON array of strings"; edit the rule to replace its actions. Rule conditions and actions run inside Trino Gateway, so restrict
+write access to the `routing_rules` table to the operators who are allowed to
+change routing.
+
+A rule change is applied right away on the replica that handled the API
+request. Other replicas apply it at their next refresh, up to
+`rulesRefreshPeriod` later.
+
+#### Monitor routing rules
+
+`FILE` and `DATABASE` rules export the following metrics on the `/metrics`
+endpoint:
+
+| Metric | Description |
+|--------|-------------|
+| `io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_RefreshFailures` | Number of failed rule loads since startup. |
+| `io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_SecondsSinceLastSuccessfulRefresh` | Seconds since the rules were last loaded successfully, or `-1` if they have never loaded. |
+| `io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_LoadedRulesCount` | Number of rules in use. |
+| `io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_SkippedRulesCount` | Number of stored rules skipped on the last load because they are not valid. |
+| `io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_RuleEvaluationFailures` | Number of times a rule threw while routing a request, since startup. |
+
+`RefreshFailures` and `RuleEvaluationFailures` only increase, but they are
+exported as gauges. Alert on their increase over time, for example with
+`increase()`, not on the raw value. Example Prometheus alerts:
+
+```yaml
+- alert: TrinoGatewayRoutingRulesRefreshFailing
+  expr: increase(io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_RefreshFailures[5m]) > 0
+  for: 5m
+- alert: TrinoGatewayRoutingRulesNeverLoaded
+  expr: io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_SecondsSinceLastSuccessfulRefresh == -1
+  for: 5m
+- alert: TrinoGatewayRoutingRulesStale
+  expr: io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_SecondsSinceLastSuccessfulRefresh > 600
+- alert: TrinoGatewayRoutingRulesSkipped
+  expr: io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_SkippedRulesCount > 0
+- alert: TrinoGatewayRoutingRuleEvaluationFailing
+  expr: increase(io_trino_gateway_ha_router_name_RulesEngineRoutingGroupSelector_RuleEvaluationFailures[5m]) > 0
+```
+
+`RuleEvaluationFailures` also counts rules that throw on purpose to reject a
+query, so with such a rule, `TrinoGatewayRoutingRuleEvaluationFailing` fires
+every time a query is rejected. In that case, raise the threshold above the
+number of rejections you expect in the window, for example `> 10` if a few
+rejected queries every five minutes are normal.
 
 ### TrinoStatus
 
@@ -378,8 +493,9 @@ you to express your routing logic.
 #### Rule priority
 
 You can assign an integer value `priority` to a rule. The lower this integer is,
-the earlier it fires. If the priority is not specified, the priority defaults to
-`INT_MAX`. Following is an example with priorities:
+the earlier it fires. In a rules file, if the priority is not specified, the
+priority defaults to `0`. In the `routing_rules` table, `priority` is required.
+Following is an example with priorities:
 
 ```yaml
 ---

@@ -21,6 +21,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.multibindings.OptionalBinder;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.server.HttpServer;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ActiveClusterMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsHttpMonitor;
 import io.trino.gateway.ha.clustermonitor.ClusterStatsInfoApiMonitor;
@@ -41,8 +42,11 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
+import io.trino.gateway.ha.router.DatabaseRoutingRulesStore;
+import io.trino.gateway.ha.router.FileRoutingRulesStore;
 import io.trino.gateway.ha.router.ForRouter;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -53,6 +57,9 @@ import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.PathFilter;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
+import io.trino.gateway.ha.router.RoutingRulesEngine;
+import io.trino.gateway.ha.router.RoutingRulesStore;
+import io.trino.gateway.ha.router.RulesEngineRoutingGroupSelector;
 import io.trino.gateway.ha.security.AuthorizationManager;
 import io.trino.gateway.ha.security.LbAuthorizer;
 import io.trino.gateway.ha.security.LbFormAuthManager;
@@ -65,17 +72,23 @@ import io.trino.gateway.ha.security.util.Authorizer;
 import io.trino.gateway.ha.security.util.ChainedAuthFilter;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import org.jdbi.v3.core.Jdbi;
+import org.weakref.jmx.MBeanExporter;
+
+import java.util.Optional;
 
 import static com.google.inject.multibindings.Multibinder.newSetBinder;
 import static io.airlift.jaxrs.JaxrsBinder.jaxrsBinder;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.INFO_API;
 import static io.trino.gateway.ha.config.ClusterStatsMonitorType.NOOP;
+import static io.trino.gateway.ha.config.RulesType.EXTERNAL;
 import static java.util.Objects.requireNonNull;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
 public class HaGatewayProviderModule
         extends AbstractModule
 {
+    private static final Logger log = Logger.get(HaGatewayProviderModule.class);
+
     private final HaGatewayConfiguration configuration;
 
     @Override
@@ -131,6 +144,18 @@ public class HaGatewayProviderModule
 
     @Provides
     @Singleton
+    public RoutingRulesStore getRoutingRulesStore(JdbcConnectionManager connectionManager)
+    {
+        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
+        if (routingRulesConfig.getRulesType() == RulesType.DATABASE) {
+            return new DatabaseRoutingRulesStore(connectionManager);
+        }
+        // Default to file-based storage (includes FILE and EXTERNAL types)
+        return new FileRoutingRulesStore(routingRulesConfig.getRulesConfigPath());
+    }
+
+    @Provides
+    @Singleton
     public static Authorizer getAuthorizer(HaGatewayConfiguration configuration)
     {
         AuthorizationConfiguration authorizationConfig = configuration.getAuthorization();
@@ -170,26 +195,60 @@ public class HaGatewayProviderModule
         return null;
     }
 
+    /**
+     * The selector for FILE and DATABASE routing rules, or empty when routing by header or by an EXTERNAL service.
+     */
     @Provides
     @Singleton
-    public static RoutingGroupSelector getRoutingGroupSelector(@ForRouter HttpClient httpClient, HaGatewayConfiguration configuration)
+    public static Optional<RulesEngineRoutingGroupSelector> getRulesEngineRoutingGroupSelector(
+            HaGatewayConfiguration configuration,
+            RoutingRulesStore routingRulesStore,
+            MBeanExporter exporter)
     {
         RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
-        if (routingRulesConfig.isRulesEngineEnabled()) {
+        if (!routingRulesConfig.isRulesEngineEnabled() || routingRulesConfig.getRulesType() == EXTERNAL) {
+            return Optional.empty();
+        }
+        try {
+            RulesEngineRoutingGroupSelector selector = new RulesEngineRoutingGroupSelector(
+                    routingRulesStore,
+                    routingRulesConfig.getRulesRefreshPeriod(),
+                    configuration.getRequestAnalyzerConfig());
+            selector.start();
+            exporter.exportWithGeneratedName(selector, RulesEngineRoutingGroupSelector.class);
+            return Optional.of(selector);
+        }
+        catch (Exception e) {
+            log.error(e, "Failed to initialize %s routing rules, falling back to the %s header", routingRulesConfig.getRulesType(), RoutingGroupSelector.ROUTING_GROUP_HEADER);
+            return Optional.empty();
+        }
+    }
+
+    @Provides
+    @Singleton
+    public static RoutingRulesEngine getRoutingRulesEngine(Optional<RulesEngineRoutingGroupSelector> rulesEngineSelector)
+    {
+        return rulesEngineSelector.<RoutingRulesEngine>map(selector -> selector).orElse(RoutingRulesEngine.NO_OP);
+    }
+
+    @Provides
+    @Singleton
+    public static RoutingGroupSelector getRoutingGroupSelector(
+            @ForRouter HttpClient httpClient,
+            HaGatewayConfiguration configuration,
+            Optional<RulesEngineRoutingGroupSelector> rulesEngineSelector)
+    {
+        if (rulesEngineSelector.isPresent()) {
+            return rulesEngineSelector.get();
+        }
+        RoutingRulesConfiguration routingRulesConfig = configuration.getRoutingRules();
+        if (routingRulesConfig.isRulesEngineEnabled() && routingRulesConfig.getRulesType() == EXTERNAL) {
             try {
-                return switch (routingRulesConfig.getRulesType()) {
-                    case FILE -> RoutingGroupSelector.byRoutingRulesEngine(
-                            routingRulesConfig.getRulesConfigPath(),
-                            routingRulesConfig.getRulesRefreshPeriod(),
-                            configuration.getRequestAnalyzerConfig());
-                    case EXTERNAL -> {
-                        RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
-                        yield RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
-                    }
-                };
+                RulesExternalConfiguration rulesExternalConfiguration = routingRulesConfig.getRulesExternalConfiguration();
+                return RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, configuration.getRequestAnalyzerConfig());
             }
             catch (Exception e) {
-                return RoutingGroupSelector.byRoutingGroupHeader();
+                log.error(e, "Failed to initialize %s routing rules, falling back to the %s header", EXTERNAL, RoutingGroupSelector.ROUTING_GROUP_HEADER);
             }
         }
         return RoutingGroupSelector.byRoutingGroupHeader();

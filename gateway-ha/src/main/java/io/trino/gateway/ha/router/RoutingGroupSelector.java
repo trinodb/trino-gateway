@@ -42,7 +42,18 @@ public interface RoutingGroupSelector
      */
     static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new FileBasedRoutingGroupSelector(rulesConfigPath, rulesRefreshPeriod, requestAnalyzerConfig);
+        return byRoutingRulesStore(new FileRoutingRulesStore(rulesConfigPath), rulesRefreshPeriod, requestAnalyzerConfig);
+    }
+
+    /**
+     * Routing group selector that evaluates the routing rules held by a store,
+     * such as a YAML file or the database.
+     */
+    static RoutingGroupSelector byRoutingRulesStore(RoutingRulesStore store, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
+    {
+        RulesEngineRoutingGroupSelector selector = new RulesEngineRoutingGroupSelector(store, rulesRefreshPeriod, requestAnalyzerConfig);
+        selector.start();
+        return selector;
     }
 
     /**
