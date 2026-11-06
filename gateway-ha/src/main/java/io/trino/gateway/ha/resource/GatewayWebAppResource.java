@@ -13,8 +13,8 @@
  */
 package io.trino.gateway.ha.resource;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -25,6 +25,7 @@ import io.trino.gateway.ha.config.UIConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
 import io.trino.gateway.ha.domain.TableData;
+import io.trino.gateway.ha.domain.request.DeleteRoutingRuleRequest;
 import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.BackendResponse;
@@ -34,6 +35,7 @@ import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingRulesManager;
+import io.trino.gateway.ha.router.RoutingRulesReloadException;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -45,7 +47,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -53,6 +54,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -61,6 +63,7 @@ import static java.util.Objects.requireNonNullElse;
 @Path("/webapp")
 public class GatewayWebAppResource
 {
+    private static final Logger log = Logger.get(GatewayWebAppResource.class);
     private static final LocalDateTime START_TIME = LocalDateTime.now(ZoneId.systemDefault());
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
     private final GatewayBackendManager gatewayBackendManager;
@@ -225,18 +228,12 @@ public class GatewayWebAppResource
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/getRoutingRules")
     public Response getRoutingRules()
-            throws IOException
     {
-        if (!isRulesEngineEnabled) {
-            // No rules file has to be configured when the rules engine is not in use
-            return Response.ok(Result.ok(ImmutableList.of())).build();
-        }
-        if (ruleType == RulesType.EXTERNAL) {
+        if (isRulesEngineEnabled && ruleType == RulesType.EXTERNAL) {
             return Response.status(Response.Status.NO_CONTENT)
                     .entity(Result.fail("Routing rules are managed by an external service")).build();
         }
-        List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
-        return Response.ok(Result.ok(routingRulesList)).build();
+        return Response.ok(Result.ok(routingRulesManager.getRoutingRulesWithStatus())).build();
     }
 
     @POST
@@ -245,18 +242,50 @@ public class GatewayWebAppResource
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/updateRoutingRules")
     public Response updateRoutingRules(RoutingRule routingRule)
-            throws IOException
     {
-        if (!isRulesEngineEnabled) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Result.fail("Routing rules engine is not enabled")).build();
+        return modifyRoutingRules(() -> routingRulesManager.updateRoutingRule(routingRule));
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/createRoutingRule")
+    public Response createRoutingRule(RoutingRule routingRule)
+    {
+        return modifyRoutingRules(() -> routingRulesManager.createRoutingRule(routingRule));
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/deleteRoutingRule")
+    public Response deleteRoutingRule(DeleteRoutingRuleRequest request)
+    {
+        return modifyRoutingRules(() -> routingRulesManager.deleteRoutingRule(request == null ? null : request.name()));
+    }
+
+    private Response modifyRoutingRules(Supplier<List<RoutingRule>> modification)
+    {
+        if (isRulesEngineEnabled && ruleType == RulesType.EXTERNAL) {
+            return Response.ok(Result.fail("Routing rules are managed by an external service")).build();
         }
-        if (ruleType == RulesType.EXTERNAL) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Result.fail("Routing rules are managed by an external service")).build();
+        // Failures are reported in the Result body so the UI shows the message
+        try {
+            return Response.ok(Result.ok(modification.get())).build();
         }
-        List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
-        return Response.ok(Result.ok(routingRulesList)).build();
+        catch (IllegalArgumentException e) {
+            return Response.ok(Result.fail(e.getMessage())).build();
+        }
+        catch (RoutingRulesReloadException e) {
+            log.warn(e, "Routing rule change was saved, but the rule list could not be reloaded");
+            return Response.ok(Result.ok(e.getMessage())).build();
+        }
+        catch (RuntimeException e) {
+            log.error(e, "Failed to change routing rules");
+            return Response.ok(Result.fail("Failed to change routing rules: " + e.getMessage())).build();
+        }
     }
 
     @GET

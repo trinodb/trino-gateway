@@ -15,6 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.mvel2.ParserContext;
 import org.mvel2.debug.DebugTools;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -60,6 +62,32 @@ public class MVELRoutingRule
         this.actions = actions.stream().map(this::compileExpressionIfNecessary).collect(toImmutableList());
     }
 
+    /**
+     * Validates and compiles a stored routing rule. This is the single check shared by writes,
+     * routing, and the UI's rule status, so they all reject the same rules for the same reason.
+     *
+     * @throws IllegalArgumentException if the condition is blank, there are no actions, an action
+     *         is blank, or the condition or an action is not valid MVEL
+     */
+    public static MVELRoutingRule fromRoutingRule(io.trino.gateway.ha.domain.RoutingRule routingRule)
+    {
+        checkArgument(!routingRule.condition().isBlank(), "Routing rule '%s' must have a condition", routingRule.name());
+        checkArgument(!routingRule.actions().isEmpty() && routingRule.actions().stream().noneMatch(String::isBlank),
+                "Routing rule '%s' must have at least one action, and actions cannot be blank",
+                routingRule.name());
+        try {
+            return new MVELRoutingRule(
+                    routingRule.name(),
+                    routingRule.description(),
+                    routingRule.priority(),
+                    routingRule.condition(),
+                    ImmutableList.<Serializable>copyOf(routingRule.actions()));
+        }
+        catch (RuntimeException e) {
+            throw new IllegalArgumentException("Invalid MVEL in routing rule '%s': %s".formatted(routingRule.name(), e.getMessage()), e);
+        }
+    }
+
     private Serializable compileExpressionIfNecessary(Serializable expression)
     {
         if (expression instanceof String stringExpression) {
@@ -89,6 +117,13 @@ public class MVELRoutingRule
         parserContext.addImport(StringBuffer.class);
         parserContext.addImport(StringBuilder.class);
         parserContext.addImport(FileBasedRoutingGroupSelector.class);
+        parserContext.addImport(RulesEngineRoutingGroupSelector.class);
+    }
+
+    @Override
+    public String getName()
+    {
+        return name;
     }
 
     @Override
