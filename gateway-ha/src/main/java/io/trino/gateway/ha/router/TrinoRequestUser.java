@@ -26,6 +26,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Request;
+import com.nimbusds.oauth2.sdk.http.HTTPRequest;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
@@ -47,6 +48,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
+import static java.lang.Math.toIntExact;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
@@ -63,11 +65,11 @@ public class TrinoRequestUser
 
     private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
 
-    private TrinoRequestUser(ContainerRequestContext request, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
+    private TrinoRequestUser(ContainerRequestContext request, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache, String userInfoUserField)
             throws UserMappingException
     {
         this.userInfoCache = requireNonNull(userInfoCache);
-        user = extractUser(request, servletRequest, clientCertificateUserResolver, userField);
+        user = extractUser(request, servletRequest, clientCertificateUserResolver, userField, requireNonNull(userInfoUserField));
     }
 
     @JsonCreator
@@ -133,7 +135,7 @@ public class TrinoRequestUser
         });
     }
 
-    private Optional<String> extractUser(ContainerRequestContext requestContext, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField)
+    private Optional<String> extractUser(ContainerRequestContext requestContext, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, String userInfoUserField)
             throws UserMappingException
     {
         Optional<String> clientCertificateIdentity = extractUserFromClientCertificate(servletRequest, clientCertificateUserResolver);
@@ -146,7 +148,7 @@ public class TrinoRequestUser
             return Optional.of(header);
         }
 
-        Optional<String> user = extractUserFromAuthorizationHeader(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), userField);
+        Optional<String> user = extractUserFromAuthorizationHeader(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION), userField, userInfoUserField);
         if (user.isPresent()) {
             return user;
         }
@@ -164,7 +166,7 @@ public class TrinoRequestUser
         return clientCertificateUserResolver.resolveMappedUser(servletRequest);
     }
 
-    private Optional<String> extractUserFromAuthorizationHeader(String header, String userField)
+    private Optional<String> extractUserFromAuthorizationHeader(String header, String userField, String userInfoUserField)
     {
         if (header == null) {
             return Optional.empty();
@@ -182,12 +184,12 @@ public class TrinoRequestUser
         }
 
         if (header.toLowerCase(ENGLISH).contains("bearer")) {
-            return extractUserFromBearerAuth(header, userField);
+            return extractUserFromBearerAuth(header, userField, userInfoUserField);
         }
         return Optional.empty();
     }
 
-    private Optional<String> extractUserFromBearerAuth(String header, String userField)
+    private Optional<String> extractUserFromBearerAuth(String header, String userField, String userInfoUserField)
     {
         log.debug("Trying to extract user from bearer token");
         int space = header.indexOf(' ');
@@ -212,8 +214,8 @@ public class TrinoRequestUser
 
         if (userInfoCache.isPresent()) {
             try {
-                userInfo = Optional.of(userInfoCache.orElseThrow().get(token));
-                return Optional.of(userInfo.orElseThrow().getSubject().toString());
+                userInfo = Optional.ofNullable(userInfoCache.orElseThrow().get(token));
+                return userInfo.map(info -> userFromUserInfo(info, userInfoUserField));
             }
             catch (RuntimeException e) {
                 log.error(e, "Could not get userInfo");
@@ -222,13 +224,25 @@ public class TrinoRequestUser
         return Optional.empty();
     }
 
+    private static String userFromUserInfo(UserInfo userInfo, String userField)
+    {
+        String user = userInfo.getStringClaim(userField);
+        if (user == null || user.isBlank()) {
+            return userInfo.getSubject().getValue();
+        }
+        // Nimbus trims sub the same way
+        return user.trim();
+    }
+
     public static class TrinoRequestUserProvider
     {
         private static final Logger log = Logger.get(TrinoRequestUserProvider.class);
         private final String userField;
+        private final String userInfoUserField;
         private final ClientCertificateUserResolver clientCertificateUserResolver;
         private final Optional<URI> oauthUserInfoUrl;
         private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
+        private final int userInfoTimeoutMillis;
 
         public TrinoRequestUserProvider(RequestAnalyzerConfig config)
         {
@@ -238,7 +252,9 @@ public class TrinoRequestUser
         public TrinoRequestUserProvider(RequestAnalyzerConfig config, ClientCertificateUserResolver clientCertificateUserResolver)
         {
             userField = config.getTokenUserField();
+            userInfoUserField = config.getOauthTokenInfoUserField();
             this.clientCertificateUserResolver = clientCertificateUserResolver;
+            userInfoTimeoutMillis = toIntExact(config.getOauthRequestTimeout().toMillis());
             if (config.getOauthTokenInfoUrl() != null) {
                 oauthUserInfoUrl = Optional.of(URI.create(config.getOauthTokenInfoUrl()));
                 userInfoCache = Optional.of(Caffeine.newBuilder()
@@ -255,7 +271,7 @@ public class TrinoRequestUser
         public TrinoRequestUser getInstance(ContainerRequestContext request, HttpServletRequest servletRequest)
         {
             try {
-                return new TrinoRequestUser(request, servletRequest, clientCertificateUserResolver, userField, userInfoCache);
+                return new TrinoRequestUser(request, servletRequest, clientCertificateUserResolver, userField, userInfoCache, userInfoUserField);
             }
             catch (UserMappingException e) {
                 throw new IllegalArgumentException(e.getMessage(), e);
@@ -265,8 +281,11 @@ public class TrinoRequestUser
         private UserInfo getUserInfo(String token)
         {
             Request nimbusRequest = new UserInfoRequest(oauthUserInfoUrl.orElseThrow(), new BearerAccessToken(token));
+            HTTPRequest httpRequest = nimbusRequest.toHTTPRequest();
+            httpRequest.setConnectTimeout(userInfoTimeoutMillis);
+            httpRequest.setReadTimeout(userInfoTimeoutMillis);
             try {
-                UserInfoResponse userInfoResponse = parse(nimbusRequest.toHTTPRequest().send());
+                UserInfoResponse userInfoResponse = parse(httpRequest.send());
                 if (!userInfoResponse.indicatesSuccess()) {
                     log.error("Received bad response from userinfo endpoint: %s", userInfoResponse.toErrorResponse().getErrorObject());
                     return null;
@@ -274,7 +293,7 @@ public class TrinoRequestUser
                 return userInfoResponse.toSuccessResponse().getUserInfo();
             }
             catch (IOException ex) {
-                log.debug("Call to access token endpoint failed: %s", ex.getMessage());
+                log.warn("Request to userinfo endpoint failed: %s", ex.getMessage());
             }
             catch (ParseException e) {
                 throw new RuntimeException(e);
