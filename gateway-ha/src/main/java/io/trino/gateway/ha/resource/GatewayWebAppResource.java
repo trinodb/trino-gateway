@@ -32,6 +32,7 @@ import io.trino.gateway.ha.domain.response.DistributionResponse;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
+import io.trino.gateway.ha.router.MvelExpressionValidator;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingRulesManager;
 import jakarta.annotation.security.RolesAllowed;
@@ -254,6 +255,15 @@ public class GatewayWebAppResource
         if (ruleType == RulesType.EXTERNAL) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Result.fail("Routing rules are managed by an external service")).build();
+        }
+        try {
+            MvelExpressionValidator.validate(routingRule.name(), routingRule.condition());
+            for (String action : routingRule.actions()) {
+                MvelExpressionValidator.validate(routingRule.name(), action);
+            }
+        }
+        catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Result.fail(e.getMessage())).build();
         }
         List<RoutingRule> routingRulesList = routingRulesManager.updateRoutingRule(routingRule);
         return Response.ok(Result.ok(routingRulesList)).build();
