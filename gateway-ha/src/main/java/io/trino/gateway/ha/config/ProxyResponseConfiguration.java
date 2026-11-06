@@ -15,6 +15,7 @@ package io.trino.gateway.ha.config;
 
 import io.airlift.units.DataSize;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
 
 public class ProxyResponseConfiguration
@@ -30,6 +31,10 @@ public class ProxyResponseConfiguration
 
     public void setResponseSize(DataSize responseSize)
     {
+        // The response body is buffered in a byte array, so a misconfigured size must fail when the configuration is loaded
+        checkArgument(responseSize.toBytes() <= Integer.MAX_VALUE - 8,
+                "proxyResponseConfiguration.responseSize must be less than 2GB: %s",
+                responseSize);
         this.responseSize = responseSize;
     }
 }
