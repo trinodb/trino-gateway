@@ -535,6 +535,10 @@ reference documentation](https://github.com/trinodb/charts/blob/main/charts/gate
 The Trino Gateway periodically performs health checks and maintains
 an in-memory TrinoStatus for each backend. If a backend fails a health check,
 it is marked as UNHEALTHY, and the Trino Gateway stops routing requests to it.
+A health check that does not complete within the monitor `taskDelay` is
+cancelled, and the backend is marked as UNHEALTHY. A health check that does not
+start within the `taskDelay`, because all monitor threads are busy, is cancelled
+without changing the TrinoStatus of the backend.
 
 It is important to distinguish TrinoStatus from the active/inactive
 state of a backend. The active/inactive state indicates whether a backend is
