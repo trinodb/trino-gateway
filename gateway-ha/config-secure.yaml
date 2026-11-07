@@ -1,0 +1,57 @@
+# Variant of config.yaml with HTTPS and form authentication, used by TrinoGatewaySecureRunner.
+# The runner generates the certificate, the signing key pair and the routing rules file under
+# gateway-ha/target/secure-runner on first use, so no key material is committed here.
+# The preset passwords below are for local development only.
+serverConfig:
+  node.environment: test
+  http-server.http.enabled: false
+  http-server.https.enabled: true
+  http-server.https.port: 8443
+  http-server.https.keystore.path: gateway-ha/target/secure-runner/keystore.p12
+  http-server.https.keystore.key: changeit
+  tracing.enabled: true
+  otel.exporter.endpoint: http://localhost:4318/v1/traces
+  otel.exporter.protocol: http/protobuf
+
+routingRules:
+  rulesEngineEnabled: true
+  rulesType: FILE
+  # The routing rules API in the UI rewrites this file
+  rulesConfigPath: gateway-ha/target/secure-runner/routing-rules.yml
+
+requestAnalyzerConfig:
+  analyzeRequest: true
+
+dataStore:
+  jdbcUrl: jdbc:postgresql://localhost:5432/trino_gateway_db
+  user: trino_gateway_db_admin
+  password: P0stG&es
+  driver: org.postgresql.Driver
+  queryHistoryHoursRetention: 24
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelay: 1m
+  clusterMetricsRegistryRefreshPeriod: 30s
+
+authentication:
+  defaultType: ["form"]
+  form:
+    selfSignKeyPair:
+      privateKey: gateway-ha/target/secure-runner/jwt-private.pem
+      publicKey: gateway-ha/target/secure-runner/jwt-public.pem
+
+authorization:
+  admin: (.*)ADMIN(.*)
+  user: (.*)USER(.*)
+  api: (.*)API(.*)
+
+presetUsers:
+  admin:
+    password: admin-Passw0rd
+    privileges: ADMIN_USER_API
+  user:
+    password: user-Passw0rd
+    privileges: USER
