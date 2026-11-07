@@ -21,6 +21,55 @@ The command uses the web UI from the `webapp` module in your local Maven
 repository. Build that module first, as described in the [web UI](#web-ui)
 section.
 
+#### Running Trino Gateway with HTTPS and authentication
+
+`TrinoGatewayRunner` serves plain HTTP without authentication. To work on
+anything that requires TLS, such as the login page, form authentication, or
+the authorization roles, run the `TrinoGatewaySecureRunner` class instead:
+
+```shell
+./mvnw test-compile exec:java -pl gateway-ha -Dexec.classpathScope=test -Dexec.mainClass="io.trino.gateway.TrinoGatewaySecureRunner"
+```
+
+It reads the configuration file `config-secure.yaml` in the `gateway-ha`
+folder, and starts the same Trino backends, databases, and tracing collector
+as `TrinoGatewayRunner`. The differences are:
+
+* HTTPS on port 8443, with HTTP switched off.
+* Form authentication with two preset users.
+* The routing rules engine and the request analyzer are switched on. The
+  Trino cluster `trino-1` is in the `adhoc` routing group and `trino-2` in the
+  `etl` group, so a query with the `X-Trino-Source: airflow` header shows the
+  example routing rules sending it to `trino-2`.
+
+The web UI is available at `https://localhost:8443/trino-gateway`. Sign in
+with one of the preset users:
+
+| User | Password | Privileges |
+| --- | --- | --- |
+| `admin` | `admin-Passw0rd` | `ADMIN`, `USER`, and `API` |
+| `user` | `user-Passw0rd` | `USER` |
+
+On first use, the runner generates a self-signed certificate, an RSA key pair
+for signing the session tokens, and a copy of the example routing rules in
+`gateway-ha/target/secure-runner`. Delete that folder to generate them again.
+The certificate is valid for one year, and the runner generates a new one when
+it has expired. Export the new certificate again for command line clients.
+No key material is stored in the repository, and the passwords in
+`config-secure.yaml` are intended for local development only.
+
+Browsers warn about the self-signed certificate. Command line clients need
+the certificate, which you can export from the generated keystore:
+
+```shell
+openssl pkcs12 -in gateway-ha/target/secure-runner/keystore.p12 \
+  -passin pass:changeit -nokeys -clcerts | openssl x509 > gateway.crt
+curl --cacert gateway.crt https://localhost:8443/trino-gateway
+```
+
+The certificate also covers `host.docker.internal`, so a client running in a
+container can verify it.
+
 ### Build and run
 
 #### Locally
