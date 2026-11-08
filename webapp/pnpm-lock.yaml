@@ -42,8 +42,8 @@ importers:
         specifier: 7.18.4
         version: 7.18.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       sass:
-        specifier: 1.106.1
-        version: 1.106.1
+        specifier: 1.107.1
+        version: 1.107.1
       zustand:
         specifier: 5.0.16
         version: 5.0.16(@types/react@19.3.0)(react@19.3.1)(use-sync-external-store@1.6.0(react@19.3.1))
@@ -71,7 +71,7 @@ importers:
         version: 8.72.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
       '@vitejs/plugin-react':
         specifier: 5.2.0
-        version: 5.2.0(supports-color@7.2.0)(vite@7.3.7(sass@1.106.1))
+        version: 5.2.0(supports-color@7.2.0)(vite@7.3.7(sass@1.107.1))
       eslint:
         specifier: 9.39.5
         version: 9.39.5(supports-color@7.2.0)
@@ -89,10 +89,10 @@ importers:
         version: 6.0.3
       vite:
         specifier: 7.3.7
-        version: 7.3.7(sass@1.106.1)
+        version: 7.3.7(sass@1.107.1)
       vite-plugin-svgr:
         specifier: 5.2.0
-        version: 5.2.0(rollup@4.59.1)(supports-color@7.2.0)(typescript@6.0.3)(vite@7.3.7(sass@1.106.1))
+        version: 5.2.0(rollup@4.59.1)(supports-color@7.2.0)(typescript@6.0.3)(vite@7.3.7(sass@1.107.1))
 
 packages:
 
@@ -2051,8 +2051,8 @@ packages:
   rope-sequence@1.3.4:
     resolution: {integrity: sha512-UT5EDe2cu2E/6O4igUr5PSFs23nvvukicWHx6GnOPlHAiiYbzNuCRQCuiUdHJQcqKalLKlrYJnjY0ySGsXNQXQ==}
 
-  sass@1.106.1:
-    resolution: {integrity: sha512-kD+Gi66vycZcbJt+42NC4z4PXNMcCajVrJPhqoKKXy5cOBMmJQt052CxIBcRjwYXeImHYOpu/ydWWGZQIenl7A==}
+  sass@1.107.1:
+    resolution: {integrity: sha512-aJ1/LvxOOb04YhmiBjzZn3jVwdHKol+OVhoMV6fFl02fF9T3i+5Mg9l/CnzqtM+NX5Jn5o3lAbs/ZJivTCLHfQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -3326,7 +3326,7 @@ snapshots:
 
   '@ungap/structured-clone@1.4.0': {}
 
-  '@vitejs/plugin-react@5.2.0(supports-color@7.2.0)(vite@7.3.7(sass@1.106.1))':
+  '@vitejs/plugin-react@5.2.0(supports-color@7.2.0)(vite@7.3.7(sass@1.107.1))':
     dependencies:
       '@babel/core': 7.29.0(supports-color@7.2.0)
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.0(supports-color@7.2.0))
@@ -3334,7 +3334,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-rc.3
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 7.3.7(sass@1.106.1)
+      vite: 7.3.7(sass@1.107.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -4624,7 +4624,7 @@ snapshots:
 
   rope-sequence@1.3.4: {}
 
-  sass@1.106.1:
+  sass@1.107.1:
     dependencies:
       chokidar: 5.0.0
       immutable: 5.1.9
@@ -4768,18 +4768,18 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-plugin-svgr@5.2.0(rollup@4.59.1)(supports-color@7.2.0)(typescript@6.0.3)(vite@7.3.7(sass@1.106.1)):
+  vite-plugin-svgr@5.2.0(rollup@4.59.1)(supports-color@7.2.0)(typescript@6.0.3)(vite@7.3.7(sass@1.107.1)):
     dependencies:
       '@rollup/pluginutils': 5.3.0(rollup@4.59.1)
       '@svgr/core': 8.1.0(supports-color@7.2.0)(typescript@6.0.3)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(supports-color@7.2.0)(typescript@6.0.3))(supports-color@7.2.0)
-      vite: 7.3.7(sass@1.106.1)
+      vite: 7.3.7(sass@1.107.1)
     transitivePeerDependencies:
       - rollup
       - supports-color
       - typescript
 
-  vite@7.3.7(sass@1.106.1):
+  vite@7.3.7(sass@1.107.1):
     dependencies:
       esbuild: 0.28.2
       fdir: 6.5.0(picomatch@4.0.7)
@@ -4789,7 +4789,7 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       fsevents: 2.3.3
-      sass: 1.106.1
+      sass: 1.107.1
 
   w3c-keyname@2.2.8: {}
 
