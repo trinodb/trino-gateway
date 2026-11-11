@@ -248,8 +248,10 @@ Kerberos and Certificate authentication are not currently supported. If the
 request contains the `Authorization: Bearer` header, an attempt is made to treat
 the token as a JWT and deserialize it. If this is successful, the value of the
 claim named in `requestAnalyzerConfig.tokenUserField` is used as the username.
-By default, this is the `email` claim. If the token is not a valid JWT, and
-`requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token is
+By default, this is the `email` claim. If the token is a JWE issued by Trino,
+and `requestAnalyzerConfig.oauthRefreshTokensSecretKey` is configured, then the
+token is decrypted and the same claim is used. If the token is not a valid JWT,
+and `requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token is
 exchanged with the Info URL. Responses are cached for 10 minutes to avoid
 triggering rate limits.
 
@@ -347,6 +349,18 @@ By default, the `email` claim is used.
 If configured, Trino Gateway attempts to retrieve the user info by exchanging
 potential authorization tokens with this URL. Responses are cached for 10
 minutes to avoid triggering rate limits.
+
+`oauthRefreshTokensSecretKey`:
+
+If configured, Trino Gateway decrypts the bearer tokens that Trino issues when
+OAuth2 refresh tokens are enabled, and reads the `tokenUserField` claim. Set
+this property to the value of the
+`http-server.authentication.oauth2.refresh-tokens.secret-key` property of the
+Trino coordinators. All coordinators behind Trino Gateway must use the same
+key. Set `tokenUserField` to the value of the
+`http-server.authentication.oauth2.principal-field` property of the
+coordinators. This key can decrypt the tokens of all users. Keep it secret, for
+example with an environment variable.
 
 ### Execution of rules
 

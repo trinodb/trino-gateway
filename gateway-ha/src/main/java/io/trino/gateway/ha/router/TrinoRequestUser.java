@@ -24,12 +24,20 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWEDecrypter;
+import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.KeyLengthException;
+import com.nimbusds.jose.crypto.AESDecrypter;
+import com.nimbusds.jose.util.Base64URL;
+import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.Request;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import io.airlift.compress.v3.zstd.ZstdInputStream;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.security.ClientCertificateUserResolver;
@@ -38,13 +46,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
 
+import javax.crypto.spec.SecretKeySpec;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.InflaterInputStream;
 
 import static com.nimbusds.openid.connect.sdk.UserInfoResponse.parse;
 import static java.util.Locale.ENGLISH;
@@ -62,11 +75,13 @@ public class TrinoRequestUser
     private static final Logger log = Logger.get(TrinoRequestUser.class);
 
     private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
+    private final Optional<JWEDecrypter> jweDecrypter;
 
-    private TrinoRequestUser(ContainerRequestContext request, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache)
+    private TrinoRequestUser(ContainerRequestContext request, HttpServletRequest servletRequest, ClientCertificateUserResolver clientCertificateUserResolver, String userField, Optional<LoadingCache<String, UserInfo>> userInfoCache, Optional<JWEDecrypter> jweDecrypter)
             throws UserMappingException
     {
         this.userInfoCache = requireNonNull(userInfoCache);
+        this.jweDecrypter = requireNonNull(jweDecrypter);
         user = extractUser(request, servletRequest, clientCertificateUserResolver, userField);
     }
 
@@ -86,6 +101,7 @@ public class TrinoRequestUser
             }
         });
         userInfoCache = Optional.empty();
+        jweDecrypter = Optional.empty();
     }
 
     @SuppressWarnings("unused")
@@ -210,6 +226,13 @@ public class TrinoRequestUser
             }
         }
 
+        if (jweDecrypter.isPresent() && token.split("\\.").length == 5) { // Trino sends a JWE token when refresh tokens are enabled
+            Optional<String> user = extractUserFromTrinoJwe(token, userField);
+            if (user.isPresent()) {
+                return user;
+            }
+        }
+
         if (userInfoCache.isPresent()) {
             try {
                 userInfo = Optional.of(userInfoCache.orElseThrow().get(token));
@@ -222,6 +245,24 @@ public class TrinoRequestUser
         return Optional.empty();
     }
 
+    // The JWE payload is an unsecured JWT. Trino compresses the JWT claims with ZSTD. Old Trino versions use DEF.
+    private Optional<String> extractUserFromTrinoJwe(String token, String userField)
+    {
+        try {
+            JWEObject jwe = JWEObject.parse(token);
+            jwe.decrypt(jweDecrypter.orElseThrow());
+            String[] jwt = jwe.getPayload().toString().split("\\.");
+            String zip = JSONObjectUtils.getString(JSONObjectUtils.parse(Base64URL.from(jwt[0]).decodeToString()), "zip");
+            InputStream compressed = new ByteArrayInputStream(Base64URL.from(jwt[1]).decode());
+            byte[] claims = ("ZSTD".equals(zip) ? new ZstdInputStream(compressed) : new InflaterInputStream(compressed)).readAllBytes();
+            return Optional.ofNullable(JSONObjectUtils.getString(JSONObjectUtils.parse(new String(claims, StandardCharsets.UTF_8)), userField));
+        }
+        catch (java.text.ParseException | JOSEException | IOException | RuntimeException e) {
+            log.debug("Could not extract user from JWE token: %s", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     public static class TrinoRequestUserProvider
     {
         private static final Logger log = Logger.get(TrinoRequestUserProvider.class);
@@ -229,6 +270,7 @@ public class TrinoRequestUser
         private final ClientCertificateUserResolver clientCertificateUserResolver;
         private final Optional<URI> oauthUserInfoUrl;
         private final Optional<LoadingCache<String, UserInfo>> userInfoCache;
+        private final Optional<JWEDecrypter> jweDecrypter;
 
         public TrinoRequestUserProvider(RequestAnalyzerConfig config)
         {
@@ -239,6 +281,8 @@ public class TrinoRequestUser
         {
             userField = config.getTokenUserField();
             this.clientCertificateUserResolver = clientCertificateUserResolver;
+            jweDecrypter = Optional.ofNullable(config.getOauthRefreshTokensSecretKey())
+                    .map(TrinoRequestUserProvider::createJweDecrypter);
             if (config.getOauthTokenInfoUrl() != null) {
                 oauthUserInfoUrl = Optional.of(URI.create(config.getOauthTokenInfoUrl()));
                 userInfoCache = Optional.of(Caffeine.newBuilder()
@@ -255,10 +299,20 @@ public class TrinoRequestUser
         public TrinoRequestUser getInstance(ContainerRequestContext request, HttpServletRequest servletRequest)
         {
             try {
-                return new TrinoRequestUser(request, servletRequest, clientCertificateUserResolver, userField, userInfoCache);
+                return new TrinoRequestUser(request, servletRequest, clientCertificateUserResolver, userField, userInfoCache, jweDecrypter);
             }
             catch (UserMappingException e) {
                 throw new IllegalArgumentException(e.getMessage(), e);
+            }
+        }
+
+        private static JWEDecrypter createJweDecrypter(String base64Key)
+        {
+            try {
+                return new AESDecrypter(new SecretKeySpec(Base64.getDecoder().decode(base64Key), "AES"));
+            }
+            catch (KeyLengthException e) {
+                throw new IllegalArgumentException("requestAnalyzerConfig.oauthRefreshTokensSecretKey must be a 128, 192 or 256 bit key", e);
             }
         }
 
