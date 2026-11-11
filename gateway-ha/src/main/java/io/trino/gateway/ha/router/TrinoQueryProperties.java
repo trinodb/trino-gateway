@@ -434,10 +434,7 @@ public class TrinoQueryProperties
             case DropTable s -> tableBuilder.add(qualifyName(s.getTableName()));
             case Insert s -> tableBuilder.add(qualifyName(s.getTarget()));
             case Query q -> q.getWith().ifPresent(with -> temporaryTables.addAll(with.getQueries().stream().map(WithQuery::getName).map(Identifier::getValue).map(QualifiedName::of).toList()));
-            case RenameMaterializedView s -> {
-                tableBuilder.add(qualifyName(s.getSource()));
-                tableBuilder.add(qualifyName(s.getTarget()));
-            }
+            case RenameMaterializedView s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
             case RenameSchema s -> {
                 setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(s.getSource()), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
                 QualifiedName targetSchema;
@@ -455,28 +452,8 @@ public class TrinoQueryProperties
                 }
                 setCatalogAndSchemaNameFromSchemaQualifiedName(Optional.of(targetSchema), catalogBuilder, schemaBuilder, catalogSchemaBuilder);
             }
-            case RenameTable s -> {
-                QualifiedName qualifiedSource = qualifyName(s.getSource());
-                tableBuilder.add(qualifiedSource);
-                QualifiedName target = s.getTarget();
-                if (target.getParts().size() == 1) {
-                    tableBuilder.add(QualifiedName.of(qualifiedSource.getParts().getFirst(), qualifiedSource.getParts().get(1), target.getParts().getFirst()));
-                }
-                else {
-                    tableBuilder.add(QualifiedName.of(qualifiedSource.getParts().getFirst(), target.getParts().getFirst(), target.getParts().get(1)));
-                }
-            }
-            case RenameView s -> {
-                QualifiedName qualifiedSource = qualifyName(s.getSource());
-                tableBuilder.add(qualifiedSource);
-                QualifiedName target = s.getTarget();
-                if (target.getParts().size() == 1) {
-                    tableBuilder.add(QualifiedName.of(qualifiedSource.getParts().getFirst(), qualifiedSource.getParts().get(1), target.getParts().getFirst()));
-                }
-                else {
-                    tableBuilder.add(QualifiedName.of(qualifiedSource.getParts().getFirst(), target.getParts().getFirst(), target.getParts().get(1)));
-                }
-            }
+            case RenameTable s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
+            case RenameView s -> addRenamedObject(s.getSource(), s.getTarget(), tableBuilder);
             case SetProperties s -> tableBuilder.add(qualifyName(s.getName()));
             case ShowColumns s -> tableBuilder.add(qualifyName(s.getTable()));
             case ShowCreate s -> {
@@ -604,6 +581,26 @@ public class TrinoQueryProperties
             case 3 -> QualifiedName.of(nameParts.getFirst(), nameParts.get(1), nameParts.get(2));
             default -> throw new RequestParsingException("Unexpected qualified name: " + name.getParts());
         };
+    }
+
+    /**
+     * Adds the source and the target of a table, view or materialized view rename. Like Trino's
+     * {@code MetadataUtil.createTargetQualifiedObjectName}, the target takes the parts it does not have from the source,
+     * not from the session defaults.
+     */
+    private void addRenamedObject(QualifiedName source, QualifiedName target, ImmutableSet.Builder<QualifiedName> tableBuilder)
+            throws RequestParsingException
+    {
+        QualifiedName qualifiedSource = qualifyName(source);
+        tableBuilder.add(qualifiedSource);
+        List<String> sourceParts = qualifiedSource.getParts();
+        List<String> targetParts = target.getParts();
+        tableBuilder.add(switch (targetParts.size()) {
+            case 1 -> QualifiedName.of(sourceParts.getFirst(), sourceParts.get(1), targetParts.getFirst());
+            case 2 -> QualifiedName.of(sourceParts.getFirst(), targetParts.getFirst(), targetParts.get(1));
+            case 3 -> QualifiedName.of(targetParts.getFirst(), targetParts.get(1), targetParts.get(2));
+            default -> throw new RequestParsingException("Unexpected qualified name: " + targetParts);
+        });
     }
 
     @JsonProperty
