@@ -7,8 +7,9 @@ import {Dashboard} from './components/dashboard';
 import {Cluster} from './components/cluster';
 import {History} from './components/history';
 import {AccessControlStore, Role} from "./store";
-import {IconHistory, IconList} from "@douyinfe/semi-icons";
+import {IconHistory, IconList, IconUser} from "@douyinfe/semi-icons";
 import {RoutingRules} from "./components/routing-rules.tsx";
+import {BlockedUsers} from "./components/blockedUsers.tsx";
 
 export interface SubItemItem extends NavItemPropsWithItems {
   routeProps: RouteProps,
@@ -72,7 +73,17 @@ export const routers: RouterItems = [
       path: '/routing-rules',
       element: < RoutingRules />
     },
-   }
+  },
+  {
+    itemKey: 'blocked-users',
+    text: Locale.Menu.Sider.BlockedUsers,
+    icon: <IconUser className={styles.icon}/>,
+    roles: [Role.ADMIN],
+    routeProps: {
+      path: '/blocked-users',
+      element: < BlockedUsers />
+    },
+  }
 ]
 
 export const routersMapper: Record<string | number, RouterItem | SubRouterItem> = routers.reduce((mapper, item) => {

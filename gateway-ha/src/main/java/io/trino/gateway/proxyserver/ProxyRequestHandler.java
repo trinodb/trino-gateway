@@ -28,6 +28,7 @@ import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyResponseConfiguration;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.OAuth2GatewayCookie;
@@ -70,6 +71,7 @@ import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerat
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
 import static jakarta.ws.rs.core.Response.Status.OK;
@@ -87,6 +89,7 @@ public class ProxyRequestHandler
     private static final List<String> PRESERVED_HEADERS_TO_SKIP = List.of(
             "Accept-Encoding",
             "Host");
+    private static final String BLOCKED_USER_RESPONSE = "{\"error\":\"User is not permitted to submit queries. Contact your administrator.\"}";
 
     private final Duration asyncTimeout;
     private final ExecutorService executor = newCachedThreadPool(daemonThreadsNamed("proxy-%s"));
@@ -94,6 +97,7 @@ public class ProxyRequestHandler
     private final RoutingManager routingManager;
     private final QueryHistoryManager queryHistoryManager;
     private final OAuth2RoutingStore oauth2RoutingStore;
+    private final BlockedUserService blockedUserService;
     private final boolean cookiesEnabled;
     private final boolean oauth2RoutingEnabled;
     private final boolean forwardedHeadersEnabled;
@@ -107,12 +111,14 @@ public class ProxyRequestHandler
             RoutingManager routingManager,
             QueryHistoryManager queryHistoryManager,
             OAuth2RoutingStore oauth2RoutingStore,
+            BlockedUserService blockedUserService,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
         this.routingManager = requireNonNull(routingManager, "routingManager is null");
         this.queryHistoryManager = requireNonNull(queryHistoryManager, "queryHistoryManager is null");
         this.oauth2RoutingStore = requireNonNull(oauth2RoutingStore, "oauth2RoutingStore is null");
+        this.blockedUserService = requireNonNull(blockedUserService, "blockedUserService is null");
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         oauth2RoutingEnabled = haGatewayConfiguration.getRouting().isOauth2RoutingEnabled();
         asyncTimeout = haGatewayConfiguration.getRouting().getAsyncTimeout();
@@ -195,14 +201,23 @@ public class ProxyRequestHandler
                 .setFollowRedirects(false)
                 .build();
 
+        boolean isStatementPost = statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST);
+        Optional<String> username = getRequestUser(servletRequest);
+        if (isStatementPost) {
+            if (username.isPresent() && !username.orElseThrow().isBlank() && blockedUserService.isBlocked(username.orElseThrow(), routingDestination.routingGroup())) {
+                log.warn("Blocked query submission for user %s to routing group %s", username.orElseThrow(), routingDestination.routingGroup());
+                asyncResponse.resume(blockedUserResponse());
+                return;
+            }
+        }
+
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
         if (oauth2RoutingEnabled) {
             future = future.transform(response -> recordOAuth2Challenge(remoteUri, response), executor);
         }
 
-        if (statementPaths.stream().anyMatch(request.getUri().getPath()::startsWith) && request.getMethod().equals(HttpMethod.POST)) {
-            Optional<String> username = ((TrinoRequestUser) servletRequest.getAttribute(TRINO_REQUEST_USER)).getUser();
+        if (isStatementPost) {
             future = future.transform(response -> recordBackendForQueryId(request, response, username, routingDestination), executor);
             if (includeClusterInfoInResponse) {
                 cookieBuilder.add(new NewCookie.Builder("trinoClusterHost").value(remoteUri.getHost()).build());
@@ -248,6 +263,23 @@ public class ProxyRequestHandler
         response.headers().forEach((headerName, value) -> builder.header(headerName.toString(), value));
         cookie.forEach(builder::cookie);
         return builder.build();
+    }
+
+    private static Response blockedUserResponse()
+    {
+        return Response.status(Response.Status.FORBIDDEN)
+                .type(APPLICATION_JSON_TYPE)
+                .entity(BLOCKED_USER_RESPONSE)
+                .build();
+    }
+
+    private static Optional<String> getRequestUser(HttpServletRequest servletRequest)
+    {
+        Object user = servletRequest.getAttribute(TRINO_REQUEST_USER);
+        if (user instanceof TrinoRequestUser trinoRequestUser) {
+            return trinoRequestUser.getUser();
+        }
+        return Optional.empty();
     }
 
     private void setupAsyncResponse(AsyncResponse asyncResponse, ListenableFuture<Response> future)

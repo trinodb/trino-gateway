@@ -31,6 +31,7 @@ public class ProxyServerModule
     protected void configure()
     {
         jaxrsBinder(binder()).bind(RouteToBackendResource.class);
+        jaxrsBinder(binder()).bind(BlockedUserFilter.class);
         jaxrsBinder(binder()).bind(RouterPreMatchContainerRequestFilter.class);
         jaxrsBinder(binder()).bind(ProxyRequestHandler.class);
         // The proxy client advertises gzip to the backend and decodes the response, so Trino Gateway can read

@@ -33,7 +33,8 @@ const en_US = {
       Dashboard: "Dashboard",
       Cluster: "Cluster",
       History: "History",
-      RoutingRules: "Routing rules"
+      RoutingRules: "Routing rules",
+      BlockedUsers: "Blocked users"
     }
   },
   Auth: {
@@ -88,6 +89,25 @@ const en_US = {
       Update: "Routing rule updated successfully",
       ErrorUpdate: "Failed to update routing rule",
       ErrorFetch: "Failed to fetch routing rules"
+  },
+  BlockedUsers: {
+      Username: "Username",
+      Scope: "Scope",
+      ScopeValue: "Scope value",
+      GlobalScope: "Global",
+      RoutingGroupScope: "Routing group",
+      Reason: "Reason",
+      BlockedBy: "Blocked by",
+      BlockedAt: "Blocked at",
+      BlockAction: "Block user",
+      UnblockAction: "Unblock",
+      Block: "User blocked successfully",
+      Unblock: "User unblocked successfully",
+      ErrorBlock: "Failed to block user",
+      ErrorUnblock: "Failed to unblock user",
+      ErrorFetch: "Failed to fetch blocked users",
+      UnblockTitle: "Are you sure you want to unblock this user?",
+      UnblockContent: "The user will be able to submit new queries again",
   },
 };
 

@@ -22,6 +22,7 @@ import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesType;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.RoutingRule;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -118,6 +119,7 @@ final class TestGatewayWebAppResource
                 mock(QueryHistoryManager.class),
                 mock(BackendStateManager.class),
                 mock(RoutingRulesManager.class),
+                mock(BlockedUserService.class),
                 configuration);
 
         jakarta.ws.rs.core.Response response = resource.updateRoutingRules(

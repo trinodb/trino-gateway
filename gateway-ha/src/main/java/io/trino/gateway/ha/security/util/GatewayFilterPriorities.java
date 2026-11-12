@@ -18,5 +18,6 @@ public final class GatewayFilterPriorities
     private GatewayFilterPriorities() {}
 
     public static final int PRE_AUTHENTICATION = 500;
+    public static final int USER_BLOCKING = 1000;
     public static final int PRE_AUTHORIZATION = 1500;
 }
