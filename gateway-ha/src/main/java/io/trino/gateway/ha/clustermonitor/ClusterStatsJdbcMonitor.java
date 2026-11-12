@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ClusterStatsJdbcMonitor
@@ -100,10 +101,10 @@ public class ClusterStatsJdbcMonitor
                     .build();
         }
         catch (TimeoutException e) {
-            log.error(e, "Timed out fetching status for %s backend", url);
+            logHealthCheckError(log, backend, e, "Timed out fetching status for %s backend".formatted(url));
         }
         catch (Exception e) {
-            log.error(e, "Could not fetch status for %s backend", url);
+            logHealthCheckError(log, backend, e, "Could not fetch status for %s backend".formatted(url));
         }
         return clusterStats.build();
     }
