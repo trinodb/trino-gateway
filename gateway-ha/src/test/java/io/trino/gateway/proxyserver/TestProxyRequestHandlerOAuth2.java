@@ -19,6 +19,7 @@ import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.OAuth2RoutingUtils;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -136,6 +137,7 @@ final class TestProxyRequestHandlerOAuth2
                 mock(RoutingManager.class),
                 mock(QueryHistoryManager.class),
                 store,
+                mock(BlockedUserService.class),
                 config);
         handlers.add(handler);
         return handler;

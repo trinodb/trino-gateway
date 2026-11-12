@@ -41,6 +41,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.OAuth2GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.RoutingRulesConfiguration;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.persistence.JdbcConnectionManager;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.ForRouter;
@@ -91,6 +92,7 @@ public class HaGatewayProviderModule
         binder().bind(JdbcConnectionManager.class).in(Scopes.SINGLETON);
         binder().bind(AuthorizationManager.class).in(Scopes.SINGLETON);
         binder().bind(PathFilter.class).in(Scopes.SINGLETON);
+        binder().bind(BlockedUserService.class).in(Scopes.SINGLETON);
 
         Multibinder<TrinoClusterStatsObserver> observers = newSetBinder(binder(), TrinoClusterStatsObserver.class);
         observers.addBinding().to(HealthCheckObserver.class).in(Scopes.SINGLETON);

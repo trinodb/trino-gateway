@@ -16,6 +16,7 @@ package io.trino.gateway.proxyserver;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -320,6 +321,7 @@ final class TestProxyRequestHandler
                 routingManager,
                 mock(QueryHistoryManager.class),
                 mock(OAuth2RoutingStore.class),
+                mock(BlockedUserService.class),
                 new HaGatewayConfiguration());
     }
 }

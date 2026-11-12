@@ -29,6 +29,8 @@ import io.trino.gateway.ha.domain.request.QueryDistributionRequest;
 import io.trino.gateway.ha.domain.request.QueryHistoryRequest;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
+import io.trino.gateway.ha.handler.BlockedUserService;
+import io.trino.gateway.ha.model.BlockedUser;
 import io.trino.gateway.ha.router.BackendStateManager;
 import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.HaGatewayManager;
@@ -71,6 +73,7 @@ public class GatewayWebAppResource
     // TODO Avoid putting mutable objects in fields
     private final UIConfiguration uiConfiguration;
     private final RoutingRulesManager routingRulesManager;
+    private final BlockedUserService blockedUserService;
 
     @Inject
     public GatewayWebAppResource(
@@ -78,6 +81,7 @@ public class GatewayWebAppResource
             QueryHistoryManager queryHistoryManager,
             BackendStateManager backendStateManager,
             RoutingRulesManager routingRulesManager,
+            BlockedUserService blockedUserService,
             HaGatewayConfiguration configuration)
     {
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
@@ -85,6 +89,7 @@ public class GatewayWebAppResource
         this.backendStateManager = requireNonNull(backendStateManager, "backendStateManager is null");
         this.uiConfiguration = configuration.getUiConfiguration();
         this.routingRulesManager = requireNonNull(routingRulesManager, "routingRulesManager is null");
+        this.blockedUserService = requireNonNull(blockedUserService, "blockedUserService is null");
         RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
         isRulesEngineEnabled = routingRules.isRulesEngineEnabled();
         ruleType = routingRules.getRulesType();
@@ -220,6 +225,47 @@ public class GatewayWebAppResource
         return Response.ok(Result.ok(true)).build();
     }
 
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/getBlockedUsers")
+    public Response getBlockedUsers()
+    {
+        List<BlockedUser> blockedUsers = blockedUserService.listBlockedUsers();
+        return Response.ok(Result.ok(blockedUsers)).build();
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/blockUser")
+    public Response blockUser(BlockUserRequest request, @Context SecurityContext securityContext)
+    {
+        String blockedBy = requireNonNull(securityContext.getUserPrincipal(), "userPrincipal is null").getName();
+        BlockedUser blockedUser = blockedUserService.blockUser(
+                request.username(),
+                requireNonNullElse(request.scopeType(), "GLOBAL"),
+                requireNonNullElse(request.scopeValue(), "*"),
+                request.reason(),
+                blockedBy);
+        return Response.ok(Result.ok(blockedUser)).build();
+    }
+
+    @POST
+    @RolesAllowed("ADMIN")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/unblockUser")
+    public Response unblockUser(UnblockUserRequest request)
+    {
+        return Response.ok(Result.ok(blockedUserService.unblockUser(
+                request.username(),
+                requireNonNullElse(request.scopeType(), "GLOBAL"),
+                requireNonNullElse(request.scopeValue(), "*")))).build();
+    }
+
     @GET
     @RolesAllowed("ADMIN")
     @Produces(MediaType.APPLICATION_JSON)
@@ -267,4 +313,8 @@ public class GatewayWebAppResource
     {
         return Response.ok(Result.ok(uiConfiguration)).build();
     }
+
+    public record BlockUserRequest(String username, String scopeType, String scopeValue, String reason) {}
+
+    public record UnblockUserRequest(String username, String scopeType, String scopeValue) {}
 }
