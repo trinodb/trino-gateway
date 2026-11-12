@@ -15,7 +15,7 @@ package io.trino.gateway.ha.router;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Multimap;
 import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
@@ -49,6 +49,7 @@ import static io.airlift.http.client.Request.Builder.preparePost;
 import static io.airlift.json.JsonCodec.jsonCodec;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
+import static java.lang.String.CASE_INSENSITIVE_ORDER;
 import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
 
@@ -69,7 +70,8 @@ public class ExternalRoutingGroupSelector
     ExternalRoutingGroupSelector(HttpClient httpClient, RulesExternalConfiguration rulesExternalConfiguration, RequestAnalyzerConfig requestAnalyzerConfig)
     {
         this.httpClient = requireNonNull(httpClient, "httpClient is null");
-        this.excludeHeaders = ImmutableSet.<String>builder()
+        // HTTP header names are case-insensitive
+        this.excludeHeaders = ImmutableSortedSet.orderedBy(CASE_INSENSITIVE_ORDER)
                 .add("Content-Length")
                 .addAll(rulesExternalConfiguration.getExcludeHeaders())
                 .build();
