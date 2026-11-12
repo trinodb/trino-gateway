@@ -105,7 +105,9 @@ You can use an external service for processing your routing by setting the
 Trino Gateway then sends all headers, other than those specified in
 `excludeHeaders`, as a map in the body of a POST request to the external
 service. If `requestAnalyzerConfig.analyzeRequest` is set to `true`,
-`TrinoRequestUser` and `TrinoQueryProperties` are also included.
+`TrinoRequestUser` and `TrinoQueryProperties` are also included. Trino Gateway
+trusts the external service with these headers, including credentials, as
+described in [Trusted external routing service](security.md#trusted-external-routing-service).
 
 Additionally, the following HTTP information is included:
 

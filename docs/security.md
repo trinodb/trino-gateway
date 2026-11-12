@@ -26,6 +26,24 @@ roles give the same control over Trino clusters, through the web UI and the
 [Gateway API](gateway-api.md), so grant both only to users you trust with this
 access, as described in [Authorization](#authorization).
 
+## Trusted external routing service
+
+Trino Gateway trusts the [external routing service](routing-rules.md#use-an-external-service-for-routing-rules)
+configured in `rulesExternalConfiguration`. Anyone who operates the external
+routing service is trusted like an operator of Trino Gateway itself:
+
+- Trino Gateway sends all request headers to the external routing service,
+  except the headers listed in `excludeHeaders`. This includes credentials such
+  as the `Authorization` header.
+- The external routing service can override any header that Trino Gateway
+  sends to the Trino clusters, including credentials such as the
+  `Authorization` header and the user in the `X-Trino-User` header, unless the
+  header is listed in `excludeHeaders`.
+
+Use only an external routing service that you operate or trust. Add the
+headers that the external routing service does not need, such as
+`Authorization`, to `excludeHeaders`.
+
 ## Client certificate JWT bridge
 
 For environments where clients authenticate to Trino with mTLS certificates,
