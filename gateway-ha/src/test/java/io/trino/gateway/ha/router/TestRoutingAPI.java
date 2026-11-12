@@ -28,33 +28,24 @@ import okhttp3.Response;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.trino.TrinoContainer;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
-import static io.trino.gateway.ha.util.TestcontainersUtils.createTrinoContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.testcontainers.utility.MountableFile.forClasspathResource;
 
-@Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 final class TestRoutingAPI
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final OkHttpClient httpClient = new OkHttpClient();
-
-    @Container
-    private static final TrinoContainer TRINO = createTrinoContainer()
-            .withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
-
-    @Container
-    private static final PostgreSQLContainer POSTGRESQL = createPostgreSqlContainer();
-
+    private TrinoContainer trino;
+    private final PostgreSQLContainer postgresql = createPostgreSqlContainer();
     int routerPort = 21001 + (int) (Math.random() * 1000);
     int backendPort;
 
@@ -62,11 +53,17 @@ final class TestRoutingAPI
     void setup()
             throws Exception
     {
-        backendPort = TRINO.getMappedPort(8080);
+        trino = new TrinoContainer("trinodb/trino");
+        trino.withCopyFileToContainer(forClasspathResource("trino-config.properties"), "/etc/trino/config.properties");
+        trino.start();
+
+        backendPort = trino.getMappedPort(8080);
+
+        postgresql.start();
 
         // seed database
         File testConfigFile =
-                HaGatewayTestUtils.buildGatewayConfig(POSTGRESQL, routerPort, "test-config-with-routing-rules-api.yml");
+                HaGatewayTestUtils.buildGatewayConfig(postgresql, routerPort, "test-config-with-routing-rules-api.yml");
         // Start Gateway
         String[] args = {testConfigFile.getAbsolutePath()};
         HaGatewayLauncher.main(args);
@@ -90,15 +87,19 @@ final class TestRoutingAPI
         JsonNode rootNode = OBJECT_MAPPER.readTree(responseBody);
         JsonNode dataNode = rootNode.path("data");
 
-        JsonCodec<RoutingRule[]> responseCodec = JsonCodec.jsonCodec(RoutingRule[].class);
-        RoutingRule[] routingRules = responseCodec.fromJson(dataNode.toString());
-
         assertThat(response.code()).isEqualTo(200);
-        assertThat(routingRules[0].name()).isEqualTo("airflow");
-        assertThat(routingRules[0].description()).isEqualTo("if query from airflow, route to etl group");
-        assertThat(routingRules[0].priority()).isEqualTo(0);
-        assertThat(routingRules[0].condition()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"airflow\"");
-        assertThat(routingRules[0].actions()).first().isEqualTo("result.put(\"routingGroup\", \"etl\")");
+        // The UI reads the rule's fields at the top level, next to the status
+        JsonNode firstRule = dataNode.get(0);
+        assertThat(firstRule.get("name").asText()).isEqualTo("airflow");
+        assertThat(firstRule.get("description").asText()).isEqualTo("if query from airflow, route to etl group");
+        assertThat(firstRule.get("priority").asInt()).isEqualTo(0);
+        assertThat(firstRule.get("condition").asText()).isEqualTo("request.getHeader(\"X-Trino-Source\") == \"airflow\"");
+        assertThat(firstRule.get("actions").get(0).asText()).isEqualTo("result.put(\"routingGroup\", \"etl\")");
+        assertThat(firstRule.has("rule")).isFalse();
+        assertThat(dataNode).allSatisfy(rule -> {
+            assertThat(rule.get("active").asBoolean()).isTrue();
+            assertThat(rule.hasNonNull("error")).isFalse();
+        });
     }
 
     @Test
@@ -148,6 +149,62 @@ final class TestRoutingAPI
                 .post(requestBody3)
                 .build();
         httpClient.newCall(request3).execute();
+    }
+
+    @Test
+    void testCreateAndDeleteRoutingRuleAPI()
+            throws Exception
+    {
+        RoutingRule newRule = new RoutingRule("api-created", "created through the API", 5, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(\"X-Trino-Source\") == \"api\"");
+
+        try {
+            JsonNode created = postJson("/webapp/createRoutingRule", newRule);
+            assertThat(created.path("code").asInt()).isEqualTo(200);
+            assertThat(created.path("data").findValuesAsText("name")).contains("api-created");
+
+            JsonNode duplicate = postJson("/webapp/createRoutingRule", newRule);
+            assertThat(duplicate.path("code").asInt()).isNotEqualTo(200);
+            assertThat(duplicate.path("msg").asText()).contains("already exists");
+
+            RoutingRule invalidRule = new RoutingRule("api-invalid", "", 5, List.of("result.put(\"routingGroup\", \"etl\")"), "request.getHeader(");
+            JsonNode invalid = postJson("/webapp/createRoutingRule", invalidRule);
+            assertThat(invalid.path("code").asInt()).isNotEqualTo(200);
+            assertThat(invalid.path("msg").asText()).contains("Invalid MVEL");
+
+            JsonNode deleted = postJson("/webapp/deleteRoutingRule", Map.of("name", "api-created"));
+            assertThat(deleted.path("code").asInt()).isEqualTo(200);
+            assertThat(deleted.path("data").findValuesAsText("name")).doesNotContain("api-created");
+
+            JsonNode deletedAgain = postJson("/webapp/deleteRoutingRule", Map.of("name", "api-created"));
+            assertThat(deletedAgain.path("code").asInt()).isNotEqualTo(200);
+            assertThat(deletedAgain.path("msg").asText()).contains("not found");
+
+            JsonNode deleteWithoutName = postJson("/webapp/deleteRoutingRule", Map.of());
+            assertThat(deleteWithoutName.path("code").asInt()).isNotEqualTo(200);
+            assertThat(deleteWithoutName.path("msg").asText()).isEqualTo("Routing rule name is required");
+
+            JsonNode deleteWithNullBody = postJson("/webapp/deleteRoutingRule", null);
+            assertThat(deleteWithNullBody.path("code").asInt()).isNotEqualTo(200);
+            assertThat(deleteWithNullBody.path("msg").asText()).isEqualTo("Routing rule name is required");
+        }
+        finally {
+            // The API test config writes to a checked-in rules file, so never leave the rule behind
+            postJson("/webapp/deleteRoutingRule", Map.of("name", "api-created"));
+        }
+    }
+
+    private JsonNode postJson(String path, Object body)
+            throws Exception
+    {
+        RequestBody requestBody = RequestBody.create(OBJECT_MAPPER.writeValueAsString(body), MediaType.parse("application/json; charset=utf-8"));
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + path)
+                .post(requestBody)
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            return OBJECT_MAPPER.readTree(response.body().string());
+        }
     }
 
     @Test

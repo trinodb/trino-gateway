@@ -19,10 +19,11 @@ package io.trino.gateway.ha.config;
  * <p>By default, requests are routed based on the `X-Trino-Routing-Group` header,
  * or to the default routing group (adhoc) if the header is absent.</p>
  *
- * <p>Routing rules can be defined in two ways:</p>
+ * <p>Routing rules can be defined in three ways:</p>
  * <ul>
  *   <li><strong>FILE:</strong> Rules are specified in a configuration file.</li>
  *   <li><strong>EXTERNAL:</strong> Rules are fetched from an external service via an HTTP POST request.</li>
+ *   <li><strong>DATABASE:</strong> Rules are stored in the gateway database's {@code routing_rules} table.</li>
  * </ul>
  */
 public enum RulesType
@@ -37,4 +38,10 @@ public enum RulesType
      * The service URL can implement dynamic rule changes.
      */
     EXTERNAL,
+
+    /**
+     * Routing rules stored in the database (PostgreSQL, MySQL, or Oracle).
+     * Provides persistent storage across pod restarts.
+     */
+    DATABASE,
 }

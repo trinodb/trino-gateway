@@ -88,6 +88,7 @@ public abstract class BaseTestDatabaseMigrations
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
         verifyResultSetCount("SELECT query_id FROM query_history", 0);
         verifyResultSetCount("SELECT pin_key FROM oauth2_routing", 0);
+        verifyResultSetCount("SELECT name FROM routing_rules", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
@@ -102,13 +103,15 @@ public abstract class BaseTestDatabaseMigrations
         String gatewayBackendTable = "DROP TABLE IF EXISTS gateway_backend";
         String queryHistoryTable = "DROP TABLE IF EXISTS query_history";
         String oauth2RoutingTable = "DROP TABLE IF EXISTS oauth2_routing";
+        String routingRulesTable = "DROP TABLE IF EXISTS routing_rules";
         String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
         String sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'".formatted(schema);
-        verifyResultSetCount(sql, 4);
+        verifyResultSetCount(sql, 5);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
         jdbiHandle.execute(oauth2RoutingTable);
+        jdbiHandle.execute(routingRulesTable);
         jdbiHandle.execute(flywayHistoryTable);
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();

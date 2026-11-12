@@ -517,36 +517,85 @@ final class TestRoutingGroupSelector
                     - "result.put(\\"routingGroup\\", \\"etl\\")\"""");
         }
 
-        Duration refreshPeriod = new Duration(1, MILLISECONDS);
-        RoutingGroupSelector routingGroupSelector =
-                RoutingGroupSelector.byRoutingRulesEngine(file.getPath(), refreshPeriod, requestAnalyzerConfig);
+        Duration refreshPeriod = new Duration(50, MILLISECONDS);
+        FileBasedRoutingGroupSelector routingGroupSelector =
+                new FileBasedRoutingGroupSelector(file.getPath(), refreshPeriod, requestAnalyzerConfig);
+        routingGroupSelector.start();
+        try {
+            HttpServletRequest mockRequest = new QueryRequestMock()
+                    .httpHeader(TRINO_SOURCE_HEADER, "airflow")
+                    .requestAnalyzerConfig(requestAnalyzerConfig)
+                    .getHttpServletRequest();
 
-        HttpServletRequest mockRequest = new QueryRequestMock()
-                .httpHeader(TRINO_SOURCE_HEADER, "airflow")
-                .requestAnalyzerConfig(requestAnalyzerConfig)
-                .getHttpServletRequest();
+            String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+            assertThat(routingGroup).isEqualTo("etl");
 
-        String routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
-        assertThat(routingGroup).isEqualTo("etl");
+            try (BufferedWriter writer = Files.newBufferedWriter(tempPath, UTF_8)) {
+                writer.write(
+                        """
+                        ---
+                        name: "airflow2"
+                        description: "updated rule"
+                        condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
+                        actions:
+                        - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
+            }
 
+            // Trigger refresh and wait for it to complete
+            routingGroupSelector.triggerRefresh().get();
+
+            when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
+            routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+
+            assertThat(routingGroup).isEqualTo("etl2");
+        }
+        finally {
+            routingGroupSelector.stop();
+            file.deleteOnExit();
+        }
+    }
+
+    @Test
+    void testByRoutingRulesEngineSkipsRuleThatFailsToCompile()
+            throws Exception
+    {
+        Path tempPath = Files.createTempFile("routing_rules", ".yml");
+        File file = tempPath.toFile();
         try (BufferedWriter writer = Files.newBufferedWriter(tempPath, UTF_8)) {
             writer.write(
                     """
                     ---
-                    name: "airflow2"
-                    description: "updated rule"
+                    name: "good"
                     condition: "request.getHeader(\\"X-Trino-Source\\") == \\"airflow\\""
                     actions:
-                    - "result.put(\\"routingGroup\\", \\"etl2\\")\""""); // change from etl to etl2
+                    - "result.put(\\"routingGroup\\", \\"etl\\")"
+                    ---
+                    name: "broken"
+                    condition: "request.getHeader("
+                    actions:
+                    - "result.put(\\"routingGroup\\", \\"broken\\")"
+                    """);
         }
-        Thread.sleep(2 * refreshPeriod.toMillis());
 
-        when(mockRequest.getHeader(TRINO_SOURCE_HEADER)).thenReturn("airflow");
-        routingGroup = routingGroupSelector.findRoutingDestination(mockRequest).routingGroup();
+        // Matches DATABASE mode: the broken rule is skipped and the valid rule still applies
+        FileBasedRoutingGroupSelector routingGroupSelector =
+                new FileBasedRoutingGroupSelector(file.getPath(), new Duration(1, HOURS), requestAnalyzerConfig);
+        routingGroupSelector.start();
+        try {
+            HttpServletRequest mockRequest = new QueryRequestMock()
+                    .httpHeader(TRINO_SOURCE_HEADER, "airflow")
+                    .requestAnalyzerConfig(requestAnalyzerConfig)
+                    .getHttpServletRequest();
 
-        assertThat(routingGroup).isEqualTo("etl2");
-
-        file.deleteOnExit();
+            assertThat(routingGroupSelector.findRoutingDestination(mockRequest).routingGroup()).isEqualTo("etl");
+            assertThat(routingGroupSelector.getLoadedRulesCount()).isEqualTo(1);
+            assertThat(routingGroupSelector.getSkippedRulesCount()).isEqualTo(1);
+            assertThat(routingGroupSelector.getRefreshFailures()).isZero();
+        }
+        finally {
+            routingGroupSelector.stop();
+            file.deleteOnExit();
+        }
     }
 
     private Stream<Arguments> provideTableExtractionQueries()
