@@ -24,11 +24,7 @@ export const RootLayout = (props: {
 
   useEffect(() => {
       getUIConfiguration().then((res) => {
-          if (Object.keys(res).length == 0) {
-              setDisabledPages(res)
-          } else {
-              setDisabledPages(res.disablePages)
-          }
+          setDisabledPages(res?.disablePages ?? [])
       })
   }, []);
 
