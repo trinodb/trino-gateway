@@ -16,10 +16,6 @@ package io.trino.gateway.ha.router;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -86,6 +82,10 @@ import io.trino.sql.tree.WithQuery;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -806,8 +806,7 @@ public class TrinoQueryProperties
         }
 
         @Override
-        public void serialize(Set<QualifiedName> qualifiedNames, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-                throws IOException
+        public void serialize(Set<QualifiedName> qualifiedNames, JsonGenerator jsonGenerator, SerializationContext context)
         {
             jsonGenerator.writeArray(qualifiedNames.stream().map(QualifiedName::toString).toList().toArray(new String[0]), 0, qualifiedNames.size());
         }

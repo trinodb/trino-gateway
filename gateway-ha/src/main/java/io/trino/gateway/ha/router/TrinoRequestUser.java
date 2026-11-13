@@ -18,10 +18,6 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.nimbusds.oauth2.sdk.ParseException;
@@ -37,6 +33,10 @@ import io.trino.gateway.ha.security.UserMappingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 import java.net.URI;
@@ -297,26 +297,11 @@ public class TrinoRequestUser
         }
 
         @Override
-        public void serialize(Optional<UserInfo> userInfo, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-                throws IOException
+        public void serialize(Optional<UserInfo> userInfo, JsonGenerator jsonGenerator, SerializationContext context)
         {
             userInfo.ifPresentOrElse(
-                    u -> {
-                        try {
-                            jsonGenerator.writeString(u.toJSONString());
-                        }
-                        catch (IOException e) {
-                            log.error(e, "Error serializing userInfo");
-                        }
-                    },
-                    () -> {
-                        try {
-                            jsonGenerator.writeNull();
-                        }
-                        catch (IOException e) {
-                            log.error(e, "Error writing null for absent userInfo");
-                        }
-                    });
+                    u -> jsonGenerator.writeString(u.toJSONString()),
+                    jsonGenerator::writeNull);
         }
     }
 }
