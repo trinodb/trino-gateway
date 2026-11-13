@@ -24,8 +24,11 @@ import org.junit.jupiter.api.parallel.Isolated;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.sql.DatabaseMetaData;
 import java.util.List;
+import java.util.Objects;
 
+import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
@@ -88,6 +91,27 @@ public abstract class BaseTestDatabaseMigrations
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
         verifyResultSetCount("SELECT query_id FROM query_history", 0);
         verifyResultSetCount("SELECT pin_key FROM oauth2_routing", 0);
+        assertThat(indexColumns("query_history", "query_history_user_created_idx"))
+                .containsExactly("user_name", "created");
+    }
+
+    private List<String> indexColumns(String tableName, String indexName)
+    {
+        return jdbi.withHandle(handle -> {
+            boolean upperCase = handle.queryMetadata(DatabaseMetaData::storesUpperCaseIdentifiers);
+            String table = upperCase ? tableName.toUpperCase(ENGLISH) : tableName;
+            return handle.queryMetadata(metaData -> metaData.getIndexInfo(
+                            metaData.getConnection().getCatalog(),
+                            metaData.getConnection().getSchema(),
+                            table,
+                            false,
+                            true))
+                    .map((resultSet, _) -> indexName.equalsIgnoreCase(resultSet.getString("INDEX_NAME"))
+                            ? resultSet.getString("COLUMN_NAME").toLowerCase(ENGLISH)
+                            : null)
+                    .filter(Objects::nonNull)
+                    .list();
+        });
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
