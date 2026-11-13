@@ -13,8 +13,6 @@
  */
 package io.trino.gateway.ha;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.json.JsonMapperProvider;
@@ -28,6 +26,7 @@ import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.domain.response.BackendResponse;
 import io.trino.gateway.ha.domain.response.DistributionResponse;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 
@@ -39,7 +38,6 @@ final class TestObjectSerializable
 
     @Test
     void testServerInfo()
-            throws JsonProcessingException
     {
         assertThat(jsonMapper.writeValueAsString(new ServerInfo(true)))
                 .contains("starting");
@@ -47,7 +45,6 @@ final class TestObjectSerializable
 
     @Test
     void testProxyBackendConfiguration()
-            throws JsonProcessingException
     {
         ProxyBackendConfiguration proxyBackendConfiguration = new ProxyBackendConfiguration();
         proxyBackendConfiguration.setExternalUrl("http://localhost:8080");
@@ -59,7 +56,6 @@ final class TestObjectSerializable
 
     @Test
     void testResult()
-            throws JsonProcessingException
     {
         assertThat(jsonMapper.writeValueAsString(Result.ok()))
                 .contains(ImmutableList.of("code", "msg"));
@@ -71,7 +67,6 @@ final class TestObjectSerializable
 
     @Test
     void testTableData()
-            throws JsonProcessingException
     {
         TableData<String> tableData = new TableData<>(ImmutableList.of("t1", "t2"), 2);
         assertThat(jsonMapper.writeValueAsString(tableData))
@@ -80,7 +75,6 @@ final class TestObjectSerializable
 
     @Test
     void testQueryDistributionRequest()
-            throws JsonProcessingException
     {
         assertThat(jsonMapper.writeValueAsString(new QueryDistributionRequest(null)))
                 .contains("\"latestHour\":1");
@@ -90,7 +84,6 @@ final class TestObjectSerializable
 
     @Test
     void testQueryHistoryRequest()
-            throws JsonProcessingException
     {
         assertThat(jsonMapper.writeValueAsString(new QueryHistoryRequest(null, null, "user1", "url1", "query_id", "source")))
                 .contains(ImmutableList.of("\"page\":1", "\"size\":10", "user", "externalUrl", "queryId", "source"));
@@ -100,7 +93,6 @@ final class TestObjectSerializable
 
     @Test
     void testRestLoginRequest()
-            throws JsonProcessingException
     {
         assertThat(jsonMapper.writeValueAsString(new RestLoginRequest("user", "pass")))
                 .contains(ImmutableList.of("username", "password"));
@@ -108,7 +100,6 @@ final class TestObjectSerializable
 
     @Test
     void testBackendResponse()
-            throws JsonProcessingException
     {
         BackendResponse backendResponse = new BackendResponse();
         backendResponse.setQueued(4);
@@ -125,7 +116,6 @@ final class TestObjectSerializable
 
     @Test
     void testDistributionResponse()
-            throws JsonProcessingException
     {
         DistributionResponse.LineChart lineChart = new DistributionResponse.LineChart();
         lineChart.setEpochMillis(1711974896630L);
