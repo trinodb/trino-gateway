@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.proxyserver;
 
+import com.google.common.collect.ImmutableListMultimap;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -20,6 +21,7 @@ import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.proxyserver.ProxyResponseHandler.ProxyResponse;
 import jakarta.ws.rs.WebApplicationException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -61,7 +63,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Testcontainers
@@ -303,6 +308,28 @@ final class TestProxyRequestHandler
                 .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(502));
     }
 
+    @Test
+    void testQueryHistoryFailureDoesNotFailQuerySubmission()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        QueryHistoryManager queryHistoryManager = mock(QueryHistoryManager.class);
+        doThrow(new IllegalStateException("database unavailable")).when(queryHistoryManager).submitQueryDetail(any());
+
+        io.airlift.http.client.Request request = preparePost()
+                .setUri(destination.clusterUri())
+                .setBodyGenerator(createStaticBodyGenerator("SELECT 1", UTF_8))
+                .build();
+        ProxyResponse response = new ProxyResponse(200, ImmutableListMultimap.of(), "{\"id\":\"20260101_000000_00000_abcde\"}");
+
+        ProxyResponse result = handler(routingManager, queryHistoryManager)
+                .recordBackendForQueryId(request, response, Optional.of("test-user"), destination);
+
+        assertThat(result).isSameAs(response);
+        verify(queryHistoryManager).submitQueryDetail(any());
+        verify(routingManager).setBackendForQueryId("20260101_000000_00000_abcde", "http://trino-a:8080");
+    }
+
     private static RoutingDestination destination()
     {
         return new RoutingDestination("adhoc", "http://trino-a:8080", URI.create("http://trino-a:8080/v1/statement"), "http://trino-a:8080");
@@ -315,10 +342,15 @@ final class TestProxyRequestHandler
 
     private static ProxyRequestHandler handler(RoutingManager routingManager)
     {
+        return handler(routingManager, mock(QueryHistoryManager.class));
+    }
+
+    private static ProxyRequestHandler handler(RoutingManager routingManager, QueryHistoryManager queryHistoryManager)
+    {
         return new ProxyRequestHandler(
                 mock(HttpClient.class),
                 routingManager,
-                mock(QueryHistoryManager.class),
+                queryHistoryManager,
                 mock(OAuth2RoutingStore.class),
                 new HaGatewayConfiguration());
     }

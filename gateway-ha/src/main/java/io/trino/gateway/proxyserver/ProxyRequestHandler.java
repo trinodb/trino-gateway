@@ -317,7 +317,8 @@ public class ProxyRequestHandler
                         .build());
     }
 
-    private ProxyResponse recordBackendForQueryId(
+    @VisibleForTesting
+    ProxyResponse recordBackendForQueryId(
             Request request,
             ProxyResponse response,
             Optional<String> username,
@@ -347,7 +348,14 @@ public class ProxyRequestHandler
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
-        queryHistoryManager.submitQueryDetail(queryDetail);
+        try {
+            queryHistoryManager.submitQueryDetail(queryDetail);
+        }
+        catch (RuntimeException e) {
+            // Query history is best effort. The backend has already accepted the query, so failing
+            // here would hide a running query from the client and invite a duplicate resubmission.
+            log.warn(e, "Failed to record query history for query [%s]", queryDetail.getQueryId());
+        }
         return response;
     }
 
