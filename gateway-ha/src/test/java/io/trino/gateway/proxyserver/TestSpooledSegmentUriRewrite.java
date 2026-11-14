@@ -127,6 +127,30 @@ final class TestSpooledSegmentUriRewrite
     }
 
     @Test
+    void testBackendLookupFailureOnlyAddsQueryId()
+    {
+        GatewayBackendManager failingBackendManager = mock(GatewayBackendManager.class);
+        when(failingBackendManager.getAllBackends()).thenThrow(new RuntimeException("Failed to load backends from database to cache"));
+        ProxyRequestHandler failingHandler = new ProxyRequestHandler(
+                mock(HttpClient.class),
+                mock(RoutingManager.class),
+                failingBackendManager,
+                mock(QueryHistoryManager.class),
+                mock(OAuth2RoutingStore.class),
+                new HaGatewayConfiguration());
+        try {
+            ProxyResponse rewritten = failingHandler.rewriteSpooledSegmentUris(
+                    new ProxyResponse(200, ImmutableListMultimap.of(), SPOOLED_RESPONSE_BODY), CLUSTER_HOST);
+
+            assertThat(rewritten.body()).contains("http://gateway:8080/v1/spooled/download/token1?queryId=" + QUERY_ID + "\"");
+            assertThat(rewritten.body()).doesNotContain("spooledBackend");
+        }
+        finally {
+            failingHandler.shutdown();
+        }
+    }
+
+    @Test
     void testRewrittenUriIsRoutableByQueryId()
     {
         ProxyResponse rewritten = handler.rewriteSpooledSegmentUris(
