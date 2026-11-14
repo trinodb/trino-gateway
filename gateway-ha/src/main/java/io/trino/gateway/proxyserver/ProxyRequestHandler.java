@@ -418,7 +418,7 @@ public class ProxyRequestHandler
             if (queryId.isEmpty() || !segments.isArray()) {
                 return response;
             }
-            StringBuilder parameters = new StringBuilder("queryId=").append(queryId);
+            StringBuilder parameters = new StringBuilder("queryId=").append(URLEncoder.encode(queryId, UTF_8));
             findBackendName(clusterHost).ifPresent(backendName ->
                     parameters.append('&').append(SPOOLED_BACKEND_PARAMETER).append('=').append(URLEncoder.encode(backendName, UTF_8)));
             boolean rewritten = false;
@@ -442,8 +442,17 @@ public class ProxyRequestHandler
 
     private Optional<String> findBackendName(String clusterHost)
     {
-        // All backends rather than only active ones, so segments of a deactivated backend can still be collected
-        return gatewayBackendManager.getAllBackends().stream()
+        List<ProxyBackendConfiguration> backends;
+        try {
+            // All backends rather than only active ones, so segments of a deactivated backend can still be collected
+            backends = gatewayBackendManager.getAllBackends();
+        }
+        catch (RuntimeException e) {
+            // The backend list can fail to load from the database. Routing then falls back to the query id.
+            log.warn(e, "Failed to look up the backend name for spooled segment URIs, only the query id is added");
+            return Optional.empty();
+        }
+        return backends.stream()
                 .filter(backend -> clusterHost.equals(backend.getProxyTo()))
                 .map(ProxyBackendConfiguration::getName)
                 .findFirst();
