@@ -23,6 +23,7 @@ import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
 import io.airlift.http.client.Request;
 import io.airlift.http.client.StaticBodyGenerator;
+import io.airlift.http.client.StreamingResponse;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
@@ -42,8 +43,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.CompletionCallback;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,6 +57,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.net.HttpHeaders.TRANSFER_ENCODING;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
 import static io.airlift.http.client.HeaderNames.VIA;
@@ -69,6 +73,7 @@ import static io.airlift.http.client.Request.Builder.preparePut;
 import static io.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static io.airlift.jaxrs.AsyncResponseHandler.bindAsyncResponse;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_SPOOLED_PATH;
 import static io.trino.gateway.ha.handler.ProxyUtils.SOURCE_HEADER;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static jakarta.ws.rs.core.Response.Status.BAD_GATEWAY;
@@ -79,6 +84,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.list;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newCachedThreadPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ProxyRequestHandler
 {
@@ -188,12 +194,18 @@ public class ProxyRequestHandler
 
         setupRequestHeaders(servletRequest, requestBuilder);
 
-        ImmutableList.Builder<NewCookie> cookieBuilder = ImmutableList.builder();
-        cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
-
         Request request = requestBuilder
                 .setFollowRedirects(false)
                 .build();
+
+        // Gateway cookies are not used for spooled segments, so do not parse or verify them
+        if (request.getUri().getPath().startsWith(V1_SPOOLED_PATH)) {
+            streamSpooledResponse(request, asyncResponse);
+            return;
+        }
+
+        ImmutableList.Builder<NewCookie> cookieBuilder = ImmutableList.builder();
+        cookieBuilder.addAll(getOAuth2GatewayCookie(remoteUri, servletRequest));
 
         FluentFuture<ProxyResponse> future = executeHttp(request);
 
@@ -213,6 +225,57 @@ public class ProxyRequestHandler
                 asyncResponse,
                 future.transform(response -> buildResponse(response, cookieBuilder.build()), executor)
                         .catching(ProxyException.class, e -> handleProxyException(request, e, routingDestination), executor));
+    }
+
+    /**
+     * Streams a spooled segment from the backend to the client instead of buffering it.
+     * {@link HttpClient#executeStreaming} is used rather than {@link HttpClient#executeAsync}
+     * because it is not subject to the HTTP client's max content length, and because the
+     * returned response stays open until it is closed by the caller. Segments can be larger
+     * than the buffering limits, and buffering one blocks the client for the whole download,
+     * during which it cannot poll the statement endpoint that keeps the query alive.
+     */
+    private void streamSpooledResponse(Request request, AsyncResponse asyncResponse)
+    {
+        // The timeout only applies while the response is suspended, that is until the
+        // backend response headers arrive; it never interrupts a transfer in progress.
+        asyncResponse.setTimeoutHandler(response -> response.resume(timeoutResponse()));
+        asyncResponse.setTimeout(asyncTimeout.toMillis(), MILLISECONDS);
+
+        executor.execute(() -> {
+            StreamingResponse streamingResponse = null;
+            try {
+                streamingResponse = httpClient.executeStreaming(request);
+                // Jersey may write the entity after resume() returns, on another thread, so
+                // the backend response must only be closed once writing has completed or failed
+                StreamingResponse backendResponse = streamingResponse;
+                asyncResponse.register((CompletionCallback) _ -> backendResponse.close());
+
+                Response.ResponseBuilder builder = Response.status(backendResponse.getStatusCode())
+                        .entity((StreamingOutput) output -> backendResponse.getInputStream().transferTo(output));
+                backendResponse.getHeaders().forEach((headerName, value) -> {
+                    String name = headerName.toString();
+                    // The gateway applies its own transfer coding. Content-Length is kept, because the bytes are
+                    // copied unchanged: when the HTTP client decodes a gzip body, it removes Content-Length itself.
+                    if (!name.equalsIgnoreCase(TRANSFER_ENCODING)) {
+                        builder.header(name, value);
+                    }
+                });
+                if (!asyncResponse.resume(builder.build())) {
+                    // Already resumed by the timeout handler, so the completion callback may never fire
+                    backendResponse.close();
+                }
+            }
+            catch (RuntimeException e) {
+                log.warn(e, "Proxy request failed: %s %s", request.getMethod(), redactUriForLog(request.getUri()));
+                if (streamingResponse != null) {
+                    streamingResponse.close();
+                }
+                if (!asyncResponse.isDone()) {
+                    asyncResponse.resume(badGatewayResponse("Request to remote Trino server failed"));
+                }
+            }
+        });
     }
 
     private ImmutableList<NewCookie> getOAuth2GatewayCookie(URI remoteUri, HttpServletRequest servletRequest)
@@ -253,11 +316,20 @@ public class ProxyRequestHandler
     private void setupAsyncResponse(AsyncResponse asyncResponse, ListenableFuture<Response> future)
     {
         bindAsyncResponse(asyncResponse, future, executor)
-                .withTimeout(asyncTimeout, () -> Response
-                        .status(BAD_GATEWAY)
-                        .type(TEXT_PLAIN_TYPE)
-                        .entity("Request to remote Trino server timed out after" + asyncTimeout)
-                        .build());
+                .withTimeout(asyncTimeout, this::timeoutResponse);
+    }
+
+    private Response timeoutResponse()
+    {
+        return badGatewayResponse("Request to remote Trino server timed out after " + asyncTimeout);
+    }
+
+    private static Response badGatewayResponse(String message)
+    {
+        return Response.status(BAD_GATEWAY)
+                .type(TEXT_PLAIN_TYPE)
+                .entity(message)
+                .build();
     }
 
     private FluentFuture<ProxyResponse> executeHttp(Request request)
@@ -310,11 +382,7 @@ public class ProxyRequestHandler
 
     private static WebApplicationException badRequest(String message)
     {
-        throw new WebApplicationException(
-                Response.status(Response.Status.BAD_GATEWAY)
-                        .type(TEXT_PLAIN_TYPE)
-                        .entity(message)
-                        .build());
+        throw new WebApplicationException(badGatewayResponse(message));
     }
 
     private ProxyResponse recordBackendForQueryId(
