@@ -367,7 +367,11 @@ serverConfig:
 ## Configure larger proxy response size
 
 Trino Gateway reads the response from Trino in bytes (up to 32MB by default).
-It can be configured by setting:
+Responses larger than this limit fail with a `502 Bad Gateway` error instead
+of being forwarded truncated. The proxy HTTP client also limits the response
+size with `proxy.http-client.max-response-content-length` in `serverConfig`,
+16MB by default, so increase both to allow larger responses. `responseSize`
+can be configured by setting:
 
 ```yaml
 proxyResponseConfiguration:
