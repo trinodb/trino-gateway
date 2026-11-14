@@ -47,6 +47,7 @@ import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -106,6 +107,37 @@ class TestRoutingTargetHandler
         when(mockRequest.getHeaders("Cookie")).thenReturn(Collections.enumeration(List.of("session-id")));
 
         return mockRequest;
+    }
+
+    private static HttpServletRequest prepareCaseInsensitiveMockRequest(Map<String, String> headers)
+    {
+        // Servlet containers keep the header name casing sent by the client but look up headers case-insensitively
+        HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequest.getHeaderNames()).thenAnswer(_ -> Collections.enumeration(headers.keySet()));
+        when(mockRequest.getHeader(anyString())).thenAnswer(invocation -> {
+            List<String> values = headerValues(headers, invocation.getArgument(0));
+            return values.isEmpty() ? null : values.getFirst();
+        });
+        when(mockRequest.getHeaders(anyString())).thenAnswer(invocation -> Collections.enumeration(headerValues(headers, invocation.getArgument(0))));
+        return mockRequest;
+    }
+
+    private static List<String> headerValues(Map<String, String> headers, String name)
+    {
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
+                .map(Map.Entry::getValue)
+                .toList();
+    }
+
+    // Collects the values that would be forwarded to the backend, the same way ProxyRequestHandler copies headers
+    private static List<String> forwardedHeaderValues(HttpServletRequest request, String name)
+    {
+        return Collections.list(request.getHeaderNames()).stream()
+                .filter(headerName -> headerName.equalsIgnoreCase(name))
+                .flatMap(headerName -> Collections.list(request.getHeaders(headerName)).stream())
+                .toList();
     }
 
     @BeforeAll
@@ -178,6 +210,57 @@ class TestRoutingTargetHandler
                 .isEqualTo("secret-token");
         assertThat(response.modifiedRequest().getHeader("Cookie"))
                 .isEqualTo("session-id");
+    }
+
+    @Test
+    void testHeaderModificationIgnoresCase()
+            throws Exception
+    {
+        assertHeaderReplaced("X-Trino-Source", "x-trino-source");
+        assertHeaderReplaced("x-trino-source", "X-Trino-Source");
+    }
+
+    private void assertHeaderReplaced(String clientHeaderName, String routerHeaderName)
+            throws Exception
+    {
+        HttpServletRequest caseInsensitiveRequest = prepareCaseInsensitiveMockRequest(ImmutableMap.of(
+                USER_HEADER, "test-user",
+                clientHeaderName, "client-value"));
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                List.of(),
+                ImmutableMap.of(routerHeaderName, "router-value"));
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        RoutingTargetResponse response = handler.resolveRouting(caseInsensitiveRequest);
+
+        assertThat(response.modifiedRequest().getHeader("X-Trino-Source"))
+                .isEqualTo("router-value");
+        assertThat(forwardedHeaderValues(response.modifiedRequest(), "X-Trino-Source"))
+                .containsExactly("router-value");
+    }
+
+    @Test
+    void testExcludedHeadersIgnoreCase()
+            throws Exception
+    {
+        HttpServletRequest caseInsensitiveRequest = prepareCaseInsensitiveMockRequest(ImmutableMap.of(
+                USER_HEADER, "test-user",
+                "Authorization", "secret-token"));
+        ExternalRouterResponse mockResponse = new ExternalRouterResponse(
+                "test-group",
+                List.of(),
+                ImmutableMap.of(
+                        "authorization", "new-token",
+                        "X-New-Header", "new-value"));
+        when(httpClient.execute(any(), any())).thenReturn(mockResponse);
+
+        RoutingTargetResponse response = handler.resolveRouting(caseInsensitiveRequest);
+
+        assertThat(forwardedHeaderValues(response.modifiedRequest(), "Authorization"))
+                .containsExactly("secret-token");
+        assertThat(response.modifiedRequest().getHeader("X-New-Header"))
+                .isEqualTo("new-value");
     }
 
     @Test

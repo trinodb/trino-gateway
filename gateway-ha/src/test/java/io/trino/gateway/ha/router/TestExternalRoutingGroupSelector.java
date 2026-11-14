@@ -197,6 +197,31 @@ final class TestExternalRoutingGroupSelector
     }
 
     @Test
+    void testExcludeHeaderIgnoresCase()
+            throws IllegalAccessException, NoSuchMethodException, InvocationTargetException
+    {
+        RulesExternalConfiguration rulesExternalConfiguration = provideRoutingRuleExternalConfig();
+        rulesExternalConfiguration.setExcludeHeaders(List.of("Authorization"));
+
+        RoutingGroupSelector routingGroupSelector =
+                RoutingGroupSelector.byRoutingExternal(httpClient, rulesExternalConfiguration, requestAnalyzerConfig);
+
+        // HTTP/2 clients send lowercase header names
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getHeaderNames()).thenReturn(Collections.enumeration(List.of("authorization", "content-length", "x-trino-user")));
+        when(mockRequest.getHeaders("authorization")).thenReturn(Collections.enumeration(List.of("secret-token")));
+        when(mockRequest.getHeaders("content-length")).thenReturn(Collections.enumeration(List.of("42")));
+        when(mockRequest.getHeaders("x-trino-user")).thenReturn(Collections.enumeration(List.of("test-user")));
+
+        Method getValidHeaders = ExternalRoutingGroupSelector.class.getDeclaredMethod("getValidHeaders", HttpServletRequest.class);
+        getValidHeaders.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        Multimap<String, String> validHeaders = (Multimap<String, String>) getValidHeaders.invoke(routingGroupSelector, mockRequest);
+        assertThat(validHeaders.values()).containsExactly("test-user");
+    }
+
+    @Test
     void testFindRoutingDestinationWithHeaderValues()
             throws Exception
     {
