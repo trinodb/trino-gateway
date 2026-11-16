@@ -135,7 +135,7 @@ public class LbKeyProvider
         return ecPublicKey.getParams().getCurve().getField().getFieldSize();
     }
 
-    private static PublicKey readPublicKey(String path)
+    static PublicKey readPublicKey(String path)
             throws IOException
     {
         Object pemObject = readPemObject(path);

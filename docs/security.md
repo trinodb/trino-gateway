@@ -332,9 +332,13 @@ without interactive login. This is useful for integration with external identity
 
 JWT authentication supports three key sources:
 
-- **RSA public key file**: A PEM-encoded RSA public key file
+- **Public key file**: A PEM-encoded RSA or EC public key file
 - **HMAC secret file**: A file containing the HMAC secret
 - **JWKS URL**: A URL to a JSON Web Key Set (for dynamic key retrieval)
+
+Public key files and JWKS endpoints support RS256, ES256, ES384, and ES512.
+The gateway selects the verification algorithm from the public key type
+and EC curve.
 
 ```yaml
 authentication:
