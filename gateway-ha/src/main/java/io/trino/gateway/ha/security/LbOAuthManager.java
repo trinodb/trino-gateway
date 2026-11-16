@@ -41,7 +41,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.net.URI;
-import java.security.interfaces.RSAPublicKey;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -171,7 +171,7 @@ public class LbOAuthManager
             URI jwkEndpoint = oauthConfig.getJwkEndpoint();
             JwkProvider provider = new UrlJwkProvider(jwkEndpoint.toURL());
             Jwk jwk = provider.get(jwt.getKeyId());
-            RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
+            PublicKey publicKey = jwk.getPublicKey();
 
             if (LbTokenUtil.validateToken(idToken, publicKey, jwt.getIssuer(), Optional.ofNullable(oauthConfig.getAudiences()))) {
                 return Optional.of(jwt.getClaims());

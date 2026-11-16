@@ -19,6 +19,7 @@ import com.auth0.jwk.JwkProvider;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.JwtConfiguration;
 import jakarta.ws.rs.core.Response;
@@ -30,6 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -38,8 +42,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
@@ -49,10 +56,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.when;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -204,7 +213,7 @@ final class TestLbJwtManager
             JwtConfiguration config = createJwksJwtConfiguration(server.url(jwksPath).toString(), TEST_ISSUER, TEST_AUDIENCE);
             LbJwtManager manager = new LbJwtManager(config, Map.of());
 
-            assertThat(manager.getClaimsFromToken(createValidRSATokenWithKeyId())).isPresent();
+            assertThat(manager.getClaimsFromToken(createValidTokenWithKeyId(rsaAlgorithm))).isPresent();
             RecordedRequest request = server.takeRequest(5, TimeUnit.SECONDS);
             assertThat(request).isNotNull();
             assertThat(request.getPath()).isEqualTo(jwksPath);
@@ -305,7 +314,59 @@ final class TestLbJwtManager
         jwkProviderField.setAccessible(true);
         jwkProviderField.set(manager, jwkProvider);
 
-        String token = createValidRSATokenWithKeyId();
+        String token = createValidTokenWithKeyId(rsaAlgorithm);
+        Optional<Map<String, Claim>> result = manager.getClaimsFromToken(token);
+
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().get("sub").asString()).isEqualTo(TEST_SUBJECT);
+    }
+
+    @ParameterizedTest
+    @MethodSource("ecKeys")
+    void testVerifyValidECTokenWithPublicKeyFile(KeyPair ecKeyPair, Algorithm ecAlgorithm)
+            throws IOException
+    {
+        Path keyFile = tempDir.resolve("ec_public_key.pem");
+        Files.writeString(
+                keyFile,
+                """
+                -----BEGIN PUBLIC KEY-----
+                %s
+                -----END PUBLIC KEY-----
+                """.formatted(Base64.getEncoder().encodeToString(ecKeyPair.getPublic().getEncoded())),
+                UTF_8);
+        JwtConfiguration config = createJwtConfiguration(TEST_ISSUER, TEST_AUDIENCE);
+        config.setPublicKeyFile(keyFile.toString());
+        LbJwtManager manager = new LbJwtManager(config, Map.of());
+
+        Optional<Map<String, Claim>> result = manager.getClaimsFromToken(createValidTokenWithKeyId(ecAlgorithm));
+
+        assertThat(result).isPresent();
+        Map<String, Claim> claims = result.orElseThrow();
+        assertThat(claims.get("sub").asString()).isEqualTo(TEST_SUBJECT);
+        assertThat(claims.get("iss").asString()).isEqualTo(TEST_ISSUER);
+
+        Claim audienceClaim = claims.get("aud");
+        assertThat(audienceClaim).isNotNull();
+        assertThat(audienceClaim.asString()).isEqualTo(TEST_AUDIENCE);
+    }
+
+    @ParameterizedTest
+    @MethodSource("ecKeys")
+    void testVerifyValidECTokenWithJwks(KeyPair ecKeyPair, Algorithm ecAlgorithm)
+            throws Exception
+    {
+        when(jwk.getPublicKey()).thenReturn(ecKeyPair.getPublic());
+        when(jwkProvider.get(TEST_KEY_ID)).thenReturn(jwk);
+
+        JwtConfiguration config = createJwksJwtConfiguration("https://example.com/.well-known/jwks.json", TEST_ISSUER, TEST_AUDIENCE);
+        LbJwtManager manager = new LbJwtManager(config, new HashMap<>());
+
+        java.lang.reflect.Field jwkProviderField = LbJwtManager.class.getDeclaredField("jwkProvider");
+        jwkProviderField.setAccessible(true);
+        jwkProviderField.set(manager, jwkProvider);
+
+        String token = createValidTokenWithKeyId(ecAlgorithm);
         Optional<Map<String, Claim>> result = manager.getClaimsFromToken(token);
 
         assertThat(result).isPresent();
@@ -401,7 +462,7 @@ final class TestLbJwtManager
         jwkProviderField.setAccessible(true);
         jwkProviderField.set(manager, jwkProvider);
 
-        String token = createValidRSATokenWithKeyId();
+        String token = createValidTokenWithKeyId(rsaAlgorithm);
         Optional<Map<String, Claim>> result = manager.getClaimsFromToken(token);
 
         assertThat(result).isEmpty();
@@ -485,6 +546,25 @@ final class TestLbJwtManager
 
     // Helper methods
 
+    private static List<Arguments> ecKeys()
+            throws Exception
+    {
+        return ImmutableList.<Arguments>builder()
+                .add(ecKey("secp256r1", Algorithm::ECDSA256))
+                .add(ecKey("secp384r1", Algorithm::ECDSA384))
+                .add(ecKey("secp521r1", Algorithm::ECDSA512))
+                .build();
+    }
+
+    private static Arguments ecKey(String curve, BiFunction<ECPublicKey, ECPrivateKey, Algorithm> algorithm)
+            throws Exception
+    {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+        generator.initialize(new ECGenParameterSpec(curve));
+        KeyPair keyPair = generator.generateKeyPair();
+        return arguments(keyPair, algorithm.apply((ECPublicKey) keyPair.getPublic(), (ECPrivateKey) keyPair.getPrivate()));
+    }
+
     private JwtConfiguration createRsaJwtConfiguration(String publicKeyFile, String issuer, String audience)
     {
         JwtConfiguration config = createJwtConfiguration(issuer, audience);
@@ -554,7 +634,7 @@ final class TestLbJwtManager
                 .sign(rsaAlgorithm);
     }
 
-    private String createValidRSATokenWithKeyId()
+    private String createValidTokenWithKeyId(Algorithm algorithm)
     {
         return JWT.create()
                 .withKeyId(TEST_KEY_ID)
@@ -563,7 +643,7 @@ final class TestLbJwtManager
                 .withAudience(TEST_AUDIENCE)
                 .withIssuedAt(new Date())
                 .withExpiresAt(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .sign(rsaAlgorithm);
+                .sign(algorithm);
     }
 
     private String createValidHMACToken()

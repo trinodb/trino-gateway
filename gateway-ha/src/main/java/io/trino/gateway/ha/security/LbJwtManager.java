@@ -26,16 +26,10 @@ import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.JwtConfiguration;
 import jakarta.ws.rs.core.Response;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +37,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static io.trino.gateway.ha.security.LbKeyProvider.readPublicKey;
+import static io.trino.gateway.ha.security.LbKeyProvider.verificationAlgorithm;
 import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
@@ -98,9 +94,9 @@ public class LbJwtManager
 
             if (jwtConfig.getPublicKeyFile() != null) {
                 String publicKeyFile = jwtConfig.getPublicKeyFile();
-                RSAPublicKey publicKey = loadPublicKey(publicKeyFile);
-                algorithm = Algorithm.RSA256(publicKey, null);
-                log.info("Loaded RSA public key from: %s", publicKeyFile);
+                PublicKey publicKey = readPublicKey(publicKeyFile);
+                algorithm = verificationAlgorithm(publicKey);
+                log.info("Loaded public key from: %s", publicKeyFile);
                 return;
             }
 
@@ -142,23 +138,6 @@ public class LbJwtManager
         }
 
         jwtVerifier = verification.build();
-    }
-
-    private RSAPublicKey loadPublicKey(String publicKeyPath)
-            throws IOException, NoSuchAlgorithmException, InvalidKeySpecException
-    {
-        String publicKeyContent = new String(Files.readAllBytes(Path.of(publicKeyPath)), UTF_8);
-
-        publicKeyContent = publicKeyContent
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
-
-        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyContent);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-
-        return (RSAPublicKey) keyFactory.generatePublic(keySpec);
     }
 
     public String getPrincipalField()
@@ -219,12 +198,12 @@ public class LbJwtManager
             }
 
             // Get the public key from JWKS based on key ID
-            RSAPublicKey publicKey = (RSAPublicKey) jwkProvider.get(keyId).getPublicKey();
+            PublicKey publicKey = jwkProvider.get(keyId).getPublicKey();
 
-            Algorithm rsaAlgorithm = Algorithm.RSA256(publicKey, null);
+            Algorithm verificationAlgorithm = verificationAlgorithm(publicKey);
 
             // Create verifier with the specific key
-            var verification = JWT.require(rsaAlgorithm);
+            var verification = JWT.require(verificationAlgorithm);
 
             if (jwtConfig.getRequiredIssuer() != null) {
                 verification = verification.withIssuer(jwtConfig.getRequiredIssuer());
