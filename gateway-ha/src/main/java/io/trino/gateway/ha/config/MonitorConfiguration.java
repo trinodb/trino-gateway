@@ -33,6 +33,8 @@ public class MonitorConfiguration
 
     private boolean explicitPrepare;
 
+    private boolean checkInactiveBackends;
+
     private String metricsEndpoint = "/metrics";
 
     private String runningQueriesMetricName = "trino_execution_name_QueryManager_RunningQueries";
@@ -84,6 +86,16 @@ public class MonitorConfiguration
     public void setExplicitPrepare(boolean explicitPrepare)
     {
         this.explicitPrepare = explicitPrepare;
+    }
+
+    public boolean isCheckInactiveBackends()
+    {
+        return checkInactiveBackends;
+    }
+
+    public void setCheckInactiveBackends(boolean checkInactiveBackends)
+    {
+        this.checkInactiveBackends = checkInactiveBackends;
     }
 
     public String getMetricsEndpoint()

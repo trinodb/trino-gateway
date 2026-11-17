@@ -41,6 +41,7 @@ import static io.airlift.http.client.HeaderNames.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.ResponseHandlerUtils.propagate;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
 import static io.trino.gateway.ha.clustermonitor.MonitorUtils.shouldRetry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -101,9 +102,9 @@ public class ClusterStatsMetricsMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        Map<String, String> metrics = getMetrics(backend.getProxyTo(), retries);
+        Map<String, String> metrics = getMetrics(backend, retries);
         if (metrics.isEmpty()) {
-            log.error("No metrics available for %s!", backend.getName());
+            logHealthCheckError(log, backend, "No metrics available for %s!".formatted(backend.getName()));
             return getUnhealthyStats(backend);
         }
 
@@ -132,9 +133,9 @@ public class ClusterStatsMetricsMonitor
                 .build();
     }
 
-    private Map<String, String> getMetrics(String baseUrl, int retriesRemaining)
+    private Map<String, String> getMetrics(ProxyBackendConfiguration backend, int retriesRemaining)
     {
-        HttpUriBuilder uri = uriBuilderFrom(URI.create(baseUrl)).appendPath(metricsEndpoint);
+        HttpUriBuilder uri = uriBuilderFrom(URI.create(backend.getProxyTo())).appendPath(metricsEndpoint);
         for (String metric : metricNames) {
             uri.addParameter("name[]", metric);
         }
@@ -155,14 +156,14 @@ public class ClusterStatsMetricsMonitor
             if (shouldRetry(e.getStatusCode())) {
                 if (retriesRemaining > 0) {
                     log.warn("Retrying health check on error: %s, ", e.toString());
-                    return getMetrics(baseUrl, retriesRemaining - 1);
+                    return getMetrics(backend, retriesRemaining - 1);
                 }
-                log.error("Encountered error %s, no retries remaining", e.toString());
+                logHealthCheckError(log, backend, "Encountered error %s, no retries remaining".formatted(e.toString()));
             }
-            log.error(e, "Health check failed with non-retryable response.\n%s", e.toString());
+            logHealthCheckError(log, backend, e, "Health check failed with non-retryable response.\n%s".formatted(e.toString()));
         }
         catch (Exception e) {
-            log.error(e, "Exception checking %s for health", request.getUri());
+            logHealthCheckError(log, backend, e, "Exception checking %s for health".formatted(request.getUri()));
         }
         return ImmutableMap.of();
     }
