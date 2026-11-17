@@ -42,7 +42,9 @@ public interface RoutingGroupSelector
      */
     static RoutingGroupSelector byRoutingRulesEngine(String rulesConfigPath, Duration rulesRefreshPeriod, RequestAnalyzerConfig requestAnalyzerConfig)
     {
-        return new FileBasedRoutingGroupSelector(rulesConfigPath, rulesRefreshPeriod, requestAnalyzerConfig);
+        RulesEngineRoutingGroupSelector selector = new RulesEngineRoutingGroupSelector(new FileRoutingRulesStore(rulesConfigPath), rulesRefreshPeriod, requestAnalyzerConfig);
+        selector.start();
+        return selector;
     }
 
     /**

@@ -15,23 +15,28 @@ package io.trino.gateway.ha.persistence;
 
 import com.google.common.collect.ImmutableList;
 import org.jdbi.v3.core.Handle;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.oracle.OracleContainer;
 
 import java.util.List;
 
 import static io.trino.gateway.ha.HaGatewayTestUtils.getOracleContainer;
 
-// Oracle support arrived together with Flyway, so there is no pre-Flyway schema to migrate from
 final class TestDatabaseMigrationsOracle
         extends BaseTestDatabaseMigrations
 {
-    @Container
-    private static final OracleContainer ORACLE = getOracleContainer();
-
     public TestDatabaseMigrationsOracle()
     {
-        super(ORACLE, "TEST");
+        super(getOracleContainer(), "TEST");
+    }
+
+    @Override
+    public void testMigrationWithExistingGatewaySchema()
+    {
+        /*
+         * We do not need to run this test with Oracle since Oracle
+         * backend DB support did not exist before so there
+         * can be no existing deployments of gateway using
+         * Oracle as the backend database.
+         */
     }
 
     @Override
@@ -39,15 +44,25 @@ final class TestDatabaseMigrationsOracle
     {
         /*
          * Flyway configuration items including table names are case-sensitive.
-         * For this reason, if you remove the double quotes on flyway_schema_history,
+         * For this reason, if you remove the double quotes on gateway_flyway_schema_history,
          * you will get a table not found error.
          */
-        List<String> tables = ImmutableList.of("gateway_backend", "query_history", "oauth2_routing", "\"flyway_schema_history\"");
+        List<String> tables = ImmutableList.of("gateway_backend", "query_history", "oauth2_routing", "routing_rules", "\"gateway_flyway_schema_history\"");
         Handle jdbiHandle = jdbi.open();
         String sql = "SELECT 1 FROM all_tables WHERE owner = '%s'".formatted(schema);
-        verifyResultSetCount(sql, 4);
+        verifyResultSetCount(sql, 5);
         tables.forEach(table -> jdbiHandle.execute("DROP TABLE " + table));
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
+    }
+
+    @Override
+    protected void createGatewaySchema()
+    {
+        /*
+         * we do not create a schema because we are not running the testMigrationWithExistingGatewaySchema
+         * test against Oracle. This is the only test we need to create the gateway schema
+         * manually for.
+         */
     }
 }

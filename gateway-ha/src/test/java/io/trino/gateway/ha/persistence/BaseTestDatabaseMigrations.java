@@ -16,13 +16,12 @@ package io.trino.gateway.ha.persistence;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 
@@ -31,26 +30,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 
-@Testcontainers
 @TestInstance(PER_CLASS)
 @Execution(SAME_THREAD)
 @Isolated
 public abstract class BaseTestDatabaseMigrations
 {
+    protected abstract void createGatewaySchema();
+
     private final JdbcDatabaseContainer<?> container;
     protected final String schema;
-    protected Jdbi jdbi;
+    protected final Jdbi jdbi;
 
     public BaseTestDatabaseMigrations(JdbcDatabaseContainer<?> container, String schema)
     {
         this.container = requireNonNull(container, "container is null");
+        this.container.start();
         this.schema = requireNonNull(schema, "schema is null");
+        jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
     }
 
-    @BeforeAll
-    public final void setUpJdbi()
+    @AfterAll
+    public final void close()
     {
-        jdbi = Jdbi.create(container.getJdbcUrl(), container.getUsername(), container.getPassword());
+        container.close();
     }
 
     @Test
@@ -83,11 +85,22 @@ public abstract class BaseTestDatabaseMigrations
         dropAllTables();
     }
 
+    @Test
+    public void testMigrationWithExistingGatewaySchema()
+    {
+        createGatewaySchema();
+        DataStoreConfiguration config = dataStoreConfiguration();
+        FlywayMigration.migrate(config);
+        verifyGatewaySchema();
+        dropAllTables();
+    }
+
     protected void verifyGatewaySchema()
     {
         verifyResultSetCount("SELECT name FROM gateway_backend", 0);
         verifyResultSetCount("SELECT query_id FROM query_history", 0);
         verifyResultSetCount("SELECT pin_key FROM oauth2_routing", 0);
+        verifyResultSetCount("SELECT name FROM routing_rules", 0);
     }
 
     protected void verifyResultSetCount(String sql, int expectedCount)
@@ -102,19 +115,21 @@ public abstract class BaseTestDatabaseMigrations
         String gatewayBackendTable = "DROP TABLE IF EXISTS gateway_backend";
         String queryHistoryTable = "DROP TABLE IF EXISTS query_history";
         String oauth2RoutingTable = "DROP TABLE IF EXISTS oauth2_routing";
-        String flywayHistoryTable = "DROP TABLE IF EXISTS flyway_schema_history";
+        String routingRulesTable = "DROP TABLE IF EXISTS routing_rules";
+        String flywayHistoryTable = "DROP TABLE IF EXISTS gateway_flyway_schema_history";
         Handle jdbiHandle = jdbi.open();
         String sql = "SELECT 1 FROM information_schema.tables WHERE table_schema = '%s'".formatted(schema);
-        verifyResultSetCount(sql, 4);
+        verifyResultSetCount(sql, 5);
         jdbiHandle.execute(gatewayBackendTable);
         jdbiHandle.execute(queryHistoryTable);
         jdbiHandle.execute(oauth2RoutingTable);
+        jdbiHandle.execute(routingRulesTable);
         jdbiHandle.execute(flywayHistoryTable);
         verifyResultSetCount(sql, 0);
         jdbiHandle.close();
     }
 
-    protected DataStoreConfiguration dataStoreConfiguration()
+    private DataStoreConfiguration dataStoreConfiguration()
     {
         return new DataStoreConfiguration(
                 container.getJdbcUrl(),

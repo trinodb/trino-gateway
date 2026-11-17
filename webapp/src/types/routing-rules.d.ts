@@ -5,3 +5,8 @@ export interface RoutingRulesData {
     actions: string[];
     condition: string;
 }
+
+export interface RoutingRuleStatus extends RoutingRulesData {
+    active: boolean;
+    error: string | null;
+}

@@ -13,86 +13,145 @@
  */
 package io.trino.gateway.ha.router;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import io.trino.gateway.ha.config.HaGatewayConfiguration;
-import io.trino.gateway.ha.config.RoutingRulesConfiguration;
-import io.trino.gateway.ha.config.RulesType;
+import io.airlift.log.Logger;
 import io.trino.gateway.ha.domain.RoutingRule;
+import io.trino.gateway.ha.domain.response.RoutingRuleStatus;
+import jakarta.annotation.Nullable;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.READ;
-import static java.nio.file.StandardOpenOption.WRITE;
+import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * Manager for routing rules that validates rules before delegating to a {@link RoutingRulesStore}.
+ * The store implementation is determined by the configuration (FILE or DATABASE).
+ * After a successful modification, refreshes the routing group selector and waits for it,
+ * so the change is in effect on this pod, and shown in the rule status, when the call returns.
+ */
 public class RoutingRulesManager
 {
-    private final String rulesConfigPath;
+    private static final Logger log = Logger.get(RoutingRulesManager.class);
+
+    // Matches the routing_rules.name column size
+    private static final int MAX_NAME_BYTES = 256;
+    // Bounds how long a write waits for the reload, so a slow or hung store cannot hold the request
+    private static final long REFRESH_WAIT_SECONDS = 5;
+
+    private final RoutingRulesStore store;
+    private final RoutingRulesEngine rulesEngine;
 
     @Inject
-    public RoutingRulesManager(HaGatewayConfiguration configuration)
+    public RoutingRulesManager(RoutingRulesStore store, RoutingRulesEngine rulesEngine)
     {
-        RoutingRulesConfiguration routingRules = configuration.getRoutingRules();
-        this.rulesConfigPath = routingRules.getRulesConfigPath();
-        checkArgument(!routingRules.isRulesEngineEnabled() || routingRules.getRulesType() != RulesType.FILE || rulesConfigPath != null,
-                "rulesConfigPath is required when rulesType is FILE");
+        this.store = requireNonNull(store, "store is null");
+        this.rulesEngine = requireNonNull(rulesEngine, "rulesEngine is null");
     }
 
     public List<RoutingRule> getRoutingRules()
     {
-        YAMLFactory yamlFactory = new YAMLFactory();
-        ObjectMapper yamlReader = new ObjectMapper(yamlFactory);
-        ImmutableList.Builder<RoutingRule> routingRulesBuilder = ImmutableList.builder();
-        try {
-            String content = Files.readString(Path.of(rulesConfigPath), UTF_8);
-            YAMLParser parser = yamlFactory.createParser(content);
-            while (parser.nextToken() != null) {
-                RoutingRule routingRule = yamlReader.readValue(parser, RoutingRule.class);
-                routingRulesBuilder.add(routingRule);
-            }
-            return routingRulesBuilder.build();
+        return store.getRoutingRules();
+    }
+
+    /**
+     * All stored rules for the admin view, each marked with whether it is applied.
+     * Uses the same check as routing, so a rule the router skips is shown as not applied, with the reason.
+     * A rule that failed when evaluated on this pod since it last changed is shown as active with the error.
+     */
+    public List<RoutingRuleStatus> getRoutingRulesWithStatus()
+    {
+        Map<String, String> evaluationErrors = rulesEngine.getRuleEvaluationErrors();
+        StoredRoutingRules storedRules = store.readRoutingRules();
+        return storedRules.rules().stream()
+                .map(rule -> statusOf(rule, storedRules.readErrors().get(rule.name()), evaluationErrors.get(rule.name())))
+                .toList();
+    }
+
+    private static RoutingRuleStatus statusOf(RoutingRule rule, @Nullable String readError, @Nullable String evaluationError)
+    {
+        if (readError != null) {
+            return RoutingRuleStatus.notApplied(rule, "Routing rule '%s' cannot be read: %s".formatted(rule.name(), readError));
         }
-        catch (IOException e) {
-            throw new UncheckedIOException("Failed to read or parse routing rules configuration from path : " + rulesConfigPath, e);
+        try {
+            MVELRoutingRule.fromRoutingRule(rule);
+        }
+        catch (IllegalArgumentException e) {
+            return RoutingRuleStatus.notApplied(rule, e.getMessage());
+        }
+        return evaluationError == null
+                ? RoutingRuleStatus.active(rule)
+                : RoutingRuleStatus.activeWithError(rule, "Fails for some requests: " + evaluationError);
+    }
+
+    public List<RoutingRule> updateRoutingRule(RoutingRule routingRule)
+    {
+        validate(routingRule);
+        store.updateRoutingRule(routingRule);
+        return refreshAndReadRules(routingRule.name());
+    }
+
+    public List<RoutingRule> createRoutingRule(RoutingRule routingRule)
+    {
+        validate(routingRule);
+        store.createRoutingRule(routingRule);
+        return refreshAndReadRules(routingRule.name());
+    }
+
+    public List<RoutingRule> deleteRoutingRule(String name)
+    {
+        validateName(name);
+        store.deleteRoutingRule(name);
+        return refreshAndReadRules(name);
+    }
+
+    private List<RoutingRule> refreshAndReadRules(String changedRuleName)
+    {
+        refreshAndWait();
+        try {
+            return store.getRoutingRules();
+        }
+        catch (RuntimeException e) {
+            throw new RoutingRulesReloadException(changedRuleName, e);
         }
     }
 
-    public synchronized List<RoutingRule> updateRoutingRule(RoutingRule routingRule)
+    private void refreshAndWait()
     {
-        ImmutableList.Builder<RoutingRule> updatedRoutingRulesBuilder = ImmutableList.builder();
-        List<RoutingRule> currentRoutingRulesList = getRoutingRules();
-        Path path = Path.of(rulesConfigPath);
-        try (FileChannel fileChannel = FileChannel.open(path, WRITE, READ);
-                FileLock lock = fileChannel.lock()) {
-            ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
-            StringBuilder yamlContent = new StringBuilder();
-            for (RoutingRule rule : currentRoutingRulesList) {
-                if (rule.name().equals(routingRule.name())) {
-                    yamlContent.append(yamlWriter.writeValueAsString(routingRule));
-                    updatedRoutingRulesBuilder.add(routingRule);
-                }
-                else {
-                    yamlContent.append(yamlWriter.writeValueAsString(rule));
-                    updatedRoutingRulesBuilder.add(rule);
-                }
-            }
-            Files.writeString(path, yamlContent.toString(), UTF_8);
-            lock.release();
+        // Waiting clears evaluation errors from the previous version of the rule before the UI reads the status again
+        try {
+            rulesEngine.triggerRefresh().get(REFRESH_WAIT_SECONDS, SECONDS);
         }
-        catch (IOException e) {
-            throw new UncheckedIOException("Failed to parse or update routing rules configuration form path : " + rulesConfigPath, e);
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        return updatedRoutingRulesBuilder.build();
+        catch (ExecutionException | TimeoutException e) {
+            // The change is saved; the scheduled refresh will pick it up
+            log.warn(e, "Routing rules were saved, but the immediate reload did not complete within %s seconds", REFRESH_WAIT_SECONDS);
+        }
+    }
+
+    private static void validate(RoutingRule routingRule)
+    {
+        if (routingRule == null) {
+            throw new IllegalArgumentException("Routing rule is required");
+        }
+        validateName(routingRule.name());
+        MVELRoutingRule.fromRoutingRule(routingRule);
+    }
+
+    private static void validateName(String name)
+    {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Routing rule name is required");
+        }
+        // Oracle's VARCHAR2(256) counts bytes, so limit the encoded length rather than the character count
+        if (name.getBytes(UTF_8).length > MAX_NAME_BYTES) {
+            throw new IllegalArgumentException("Routing rule name is too long: maximum is %s bytes".formatted(MAX_NAME_BYTES));
+        }
     }
 }

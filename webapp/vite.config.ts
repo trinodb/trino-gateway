@@ -1,4 +1,5 @@
-import { ConfigEnv, defineConfig, loadEnv } from 'vite'
+import { ConfigEnv, loadEnv } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr';
 
@@ -12,11 +13,10 @@ export default defineConfig((mode: ConfigEnv) => {
   return {
     base: `/trino-gateway/`,
     plugins: [react(), svgr()],
-    build: {
-      // The webapp JAR serves this directory from /static on the classpath. Vite empties it on
-      // every build, so bundles from earlier builds do not end up in the JAR.
-      outDir: 'target/classes/static',
-      emptyOutDir: true,
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: './src/test/setup.ts',
     },
     css: {
       preprocessorOptions: {
