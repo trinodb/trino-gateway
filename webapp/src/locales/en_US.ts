@@ -86,8 +86,14 @@ const en_US = {
   },
   RoutingRules: {
       Update: "Routing rule updated successfully",
-      ErrorUpdate: "Failed to update routing rule",
-      ErrorFetch: "Failed to fetch routing rules"
+      ErrorFetch: "Failed to fetch routing rules",
+      Add: "Add rule",
+      Create: "Routing rule created successfully",
+      Delete: "Routing rule deleted successfully",
+      DeleteConfirm: "Delete this routing rule?",
+      ActionsHint: "One MVEL action per line",
+      NotApplied: "Not applied",
+      Errors: "Errors",
   },
 };
 
