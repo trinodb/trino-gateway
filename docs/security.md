@@ -291,6 +291,11 @@ authentication:
 
 Set the `privilegesField` to retrieve privileges from an OAuth claim.
 
+After an OAuth login, Trino Gateway hands the token to the web UI in the
+`token` cookie. Logging out deletes the cookie in the browser, but does not
+revoke the token. A copy of the token stays valid until it expires, as set by
+the `exp` claim from the identity provider.
+
 ### Note
 
 - For OAuth Trino Gateway uses `oidc/callback` where as Trino uses `oauth2` path
@@ -338,6 +343,8 @@ authentication:
 
 A login session expires `sessionTimeout` after login, regardless of activity.
 It defaults to `30m`, must be at least `1m`, and the user has to log in again.
+Logging out removes the session token from the browser, but does not revoke it.
+A copy of the token stays valid until the session expires.
 
 ```yaml
 authentication:
