@@ -43,19 +43,19 @@ public final class ProxyUtils
     public static final String AUTHORIZATION = "Authorization";
 
     private static final Logger log = Logger.get(ProxyUtils.class);
-    /**
-     * This regular expression matches query ids as they appear in the path of a URL. The query id must be preceded
-     * by a "/". A query id is defined as three groups of digits separated by underscores, with a final group
-     * consisting of any alphanumeric characters.
-     */
-    private static final Pattern QUERY_ID_PATH_PATTERN = Pattern.compile(".*/(\\d+_\\d+_\\d+_\\w+).*");
-    /**
-     * This regular expression matches query ids as they appear in the query parameters of a URL. The query id is
-     * defined as in QUERY_TEXT_LENGTH_FOR_HISTORY. The query id must either be at the beginning of the query parameter
-     * string, or be preceded by %2F (a URL-encoded "/"), or  "query_id=", with or without the underscore and any
-     * capitalization.
-     */
-    private static final Pattern QUERY_ID_PARAM_PATTERN = Pattern.compile(".*(?:%2F|(?i)query_?id(?-i)=|^)(\\d+_\\d+_\\d+_\\w+).*");
+    /// A Trino query ID of the form `YYYYMMDD_hhmmss_index_coordinatorId`, as created by
+    /// [`QueryIdGenerator`](https://github.com/trinodb/trino/blob/master/core/trino-main/src/main/java/io/trino/execution/QueryIdGenerator.java)
+    /// in Trino. The coordinator ID is random lowercase base32, and Trino rejects query IDs with other
+    /// characters than lowercase letters, digits, and underscores.
+    private static final String QUERY_ID_REGEX = "\\d+_\\d+_\\d+_[a-z0-9]+";
+    private static final Pattern QUERY_ID_PATTERN = Pattern.compile(QUERY_ID_REGEX);
+    /// Matches query IDs as they appear in the path of a URL. The query ID must be preceded by a `/`,
+    /// and must not be followed by another letter, digit, or underscore.
+    private static final Pattern QUERY_ID_PATH_PATTERN = Pattern.compile(".*/(" + QUERY_ID_REGEX + ")(?![A-Za-z0-9_]).*");
+    /// Matches query IDs as they appear in the query parameters of a URL. The query ID must be at the beginning
+    /// of the query string, or be preceded by `%2F` (a URL-encoded `/`) or `query_id=`, with or without the
+    /// underscore and in any capitalization. It must not be followed by another letter, digit, or underscore.
+    private static final Pattern QUERY_ID_PARAM_PATTERN = Pattern.compile(".*(?:%2F|(?i)query_?id(?-i)=|^)(" + QUERY_ID_REGEX + ")(?![A-Za-z0-9_]).*");
     private static final Set<String> QUERY_STATE_PATH = ImmutableSet.of("queued", "scheduled", "executing");
     private static final String PARTIAL_CANCEL_PATH = "partialCancel";
 
@@ -80,13 +80,28 @@ public final class ProxyUtils
             throw new RuntimeException("Error reading request body", e);
         }
         if (!isNullOrEmpty(queryText) && queryText.toLowerCase(ENGLISH).contains("kill_query")) {
-            TrinoQueryProperties trinoQueryProperties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
-            return trinoQueryProperties.getQueryId();
+            TrinoQueryProperties properties = (TrinoQueryProperties) request.getAttribute(TRINO_QUERY_PROPERTIES);
+            if (properties == null) {
+                log.debug("Cannot route kill_query to the cluster of the query, because requestAnalyzerConfig.analyzeRequest is false");
+                return Optional.empty();
+            }
+            return properties.getQueryId()
+                    .filter(ProxyUtils::isQueryId);
         }
         return Optional.empty();
     }
 
     public static Optional<String> extractQueryIdIfPresent(String path, String queryParams, List<String> statementPaths)
+    {
+        return extractQueryIdCandidate(path, queryParams, statementPaths).filter(ProxyUtils::isQueryId);
+    }
+
+    private static boolean isQueryId(String queryId)
+    {
+        return QUERY_ID_PATTERN.matcher(queryId).matches();
+    }
+
+    private static Optional<String> extractQueryIdCandidate(String path, String queryParams, List<String> statementPaths)
     {
         if (path == null) {
             return Optional.empty();
