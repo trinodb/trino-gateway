@@ -719,6 +719,52 @@ final class TestTrinoQueryProperties
         assertThat(properties.getTables()).containsExactly(QualifiedName.of("dc", "ds", "a"));
     }
 
+    @Test
+    void testNestingDepth()
+    {
+        int limit = TrinoQueryProperties.MAX_NESTING_DEPTH;
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(nestedParentheses(limit), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(nestedParentheses(limit + 1), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "ARRAY[".repeat(limit + 1) + "1" + "]".repeat(limit + 1), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "CASE WHEN true THEN ".repeat(limit + 1) + "1" + " END".repeat(limit + 1), limit)).isTrue();
+        // Sequential parentheses do not nest
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "(1) + ".repeat(limit * 2) + "1", limit)).isFalse();
+        // Parentheses in string literals, quoted identifiers, and comments are not counted
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT '%s' AS \"%s\" /* %s */".formatted("(".repeat(limit + 1), "(".repeat(limit + 1), "(".repeat(limit + 1)), limit)).isFalse();
+        // Closing tokens without an opening token do not lower the depth
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + ")".repeat(limit) + nestedParentheses(limit + 1), limit)).isTrue();
+    }
+
+    @Test
+    void testNestingDepthExceeded()
+            throws IOException
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest(nestedParentheses(TrinoQueryProperties.MAX_NESTING_DEPTH + 1));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+    }
+
+    @Test
+    void testNestingDepthExceededInExecuteImmediate()
+            throws IOException
+    {
+        String statement = nestedParentheses(TrinoQueryProperties.MAX_NESTING_DEPTH + 1).replace("'", "''");
+        ContainerRequestContext mockRequest = prepareMockRequest("EXECUTE IMMEDIATE '%s'".formatted(statement));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+    }
+
+    private static String nestedParentheses(int depth)
+    {
+        return "SELECT " + "(".repeat(depth) + "1" + ")".repeat(depth);
+    }
+
     private static boolean hasQualifiedNameGetter(Class<?> clazz)
     {
         return Arrays.stream(clazz.getMethods())

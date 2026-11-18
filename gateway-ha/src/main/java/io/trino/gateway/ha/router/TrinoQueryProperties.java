@@ -30,6 +30,7 @@ import io.airlift.compress.v3.MalformedInputException;
 import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
+import io.trino.grammar.sql.SqlBaseLexer;
 import io.trino.sql.parser.ParsingException;
 import io.trino.sql.parser.SqlParser;
 import io.trino.sql.tree.AddColumn;
@@ -88,6 +89,8 @@ import io.trino.sql.tree.WithQuery;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.Token;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -107,6 +110,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.io.BaseEncoding.base64Url;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static java.lang.Math.max;
 import static java.lang.Math.toIntExact;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -127,6 +131,10 @@ public class TrinoQueryProperties
     // join them with ", ", so entries and the name=value halves are trimmed and empty entries dropped.
     private static final Splitter HEADER_ENTRY_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
     private static final Splitter HEADER_NAME_VALUE_SPLITTER = Splitter.on('=').trimResults();
+
+    // Deeply nested statements make the SQL parser retain large amounts of memory,
+    // far below the limit at which it fails with a stack overflow
+    static final int MAX_NESTING_DEPTH = 1000;
 
     private final Logger log = Logger.get(TrinoQueryProperties.class);
     private final boolean isClientsUseV2Format;
@@ -211,6 +219,40 @@ public class TrinoQueryProperties
         }
     }
 
+    private boolean exceedsMaxNestingDepth(String sql)
+    {
+        if (nestingDepthExceeds(sql, MAX_NESTING_DEPTH)) {
+            log.warn("Query nesting depth greater than %s detected, skipping query analysis", MAX_NESTING_DEPTH);
+            errorMessage = Optional.of("Query nesting depth is greater than " + MAX_NESTING_DEPTH);
+            return true;
+        }
+        return false;
+    }
+
+    // Uses the lexer of the SQL parser, which works in linear time and memory
+    static boolean nestingDepthExceeds(String sql, int maxDepth)
+    {
+        SqlBaseLexer lexer = new SqlBaseLexer(CharStreams.fromString(sql));
+        lexer.removeErrorListeners();
+        int depth = 0;
+        for (Token token = lexer.nextToken(); token.getType() != Token.EOF; token = lexer.nextToken()) {
+            int change = switch (token.getType()) {
+                case SqlBaseLexer.CASE -> 1;
+                case SqlBaseLexer.END -> -1;
+                default -> switch (token.getText()) {
+                    case "(", "[" -> 1;
+                    case ")", "]" -> -1;
+                    default -> 0;
+                };
+            };
+            depth = max(0, depth + change);
+            if (depth > maxDepth) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void processRequestBody(BufferedReader reader, Map<String, String> preparedStatements)
     {
         try (reader) {
@@ -248,6 +290,9 @@ public class TrinoQueryProperties
                 }
             }
 
+            if (exceedsMaxNestingDepth(body)) {
+                return;
+            }
             Statement statement = parser.createStatement(body);
             if (statement.getClass() == Execute.class) {
                 String statementName = ((Execute) statement).getName().getValue();
@@ -257,10 +302,16 @@ public class TrinoQueryProperties
                     return;
                 }
                 body = preparedStatements.get(statementName);
+                if (exceedsMaxNestingDepth(body)) {
+                    return;
+                }
                 statement = parser.createStatement(body);
             }
             else if (statement instanceof ExecuteImmediate executeImmediate) {
                 body = executeImmediate.getStatement().getValue();
+                if (exceedsMaxNestingDepth(body)) {
+                    return;
+                }
                 statement = parser.createStatement(body);
             }
 

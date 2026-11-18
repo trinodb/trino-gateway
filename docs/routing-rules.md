@@ -363,6 +363,11 @@ limit, Trino Gateway does not process the query. A buffer of length
 excessive garbage collection at runtime. `maxBodySize` cannot be set to values
 larger than 2**31-1, the maximum size of a Java String.
 
+Trino Gateway also does not process queries that nest parentheses, brackets,
+or `CASE` expressions more than 1,000 levels deep. For these queries,
+`isQueryParsingSuccessful()` returns `false`, and `errorMessage()` names the
+nesting depth.
+
 `isClientsUseV2Format`:
 
 Some commercial extensions to Trino use the V2 Request Structure
