@@ -72,6 +72,23 @@ final class TestQueryIdCachingProxyHandler
     }
 
     @Test
+    void testInvalidQueryIdIgnored()
+    {
+        List<String> statementPaths = ImmutableList.of("/v1/statement");
+        for (String path : ImmutableList.of(
+                "/v1/query/myOtherThing",
+                "/v1/query/20200416_160256_03078_6B4YT",
+                "/v1/query/20200416_160256_03078_6b4yt.json",
+                "/v1/query/..%2Fv1%2Finfo",
+                "/v1/statement/executing/20200416_160256_03078_6b4yt%2F..%2Fv1/nonce/1",
+                "/v1/statement/queued/not-a-query-id/nonce/1")) {
+            assertThat(extractQueryIdIfPresent(path, null, statementPaths))
+                    .as(path)
+                    .isEmpty();
+        }
+    }
+
+    @Test
     void testQueryIdFromKill()
             throws IOException
     {
@@ -168,6 +185,8 @@ final class TestQueryIdCachingProxyHandler
                 "system",
                 "runtime"))).hasValue("20200416_160256_03078_6b4yt");
 
+        assertThat(extractQueryId(request("CALL system.runtime.kill_query('not_a_query_id', 'If he dies, he dies')"))).isEmpty();
+
         assertThat(extractQueryId(request("CALL notsystem.runtime.kill_query(query_id => '20200416_160256_03078_6b4yt', message => 'If he dies, he dies')"))).isEmpty();
 
         assertThat(extractQueryId(request("CALL runtime.kill_query(query_id => '20200416_160256_03078_6b4yt', message => 'If he dies, he dies')", "notsystem")))
@@ -181,6 +200,16 @@ final class TestQueryIdCachingProxyHandler
                 "system",
                 "notruntime")))
                 .isEmpty();
+    }
+
+    @Test
+    void testQueryIdFromKillWithoutRequestAnalyzer()
+            throws IOException
+    {
+        HttpServletRequest request = new QueryRequestMock()
+                .query("CALL system.runtime.kill_query('20200416_160256_03078_6b4yt')")
+                .getHttpServletRequest();
+        assertThat(extractQueryId(request)).isEmpty();
     }
 
     private static Optional<String> extractQueryId(HttpServletRequest request)
