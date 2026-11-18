@@ -32,7 +32,7 @@ final class TestSessionCookie
     @Test
     void testLogoutCookieMatchesTokenCookieAttributes()
     {
-        NewCookie cookie = SessionCookie.logOut().getCookies().get(SessionCookie.OAUTH_ID_TOKEN);
+        NewCookie cookie = SessionCookie.logOutCookie();
         assertThat(cookie.getMaxAge()).isZero();
         assertThat(cookie.isSecure()).isTrue();
         assertThat(cookie.getSameSite()).isEqualTo(LAX);
