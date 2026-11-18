@@ -6,6 +6,26 @@ the APIs. All Trino-related requests are passed through to the Trino cluster
 without any authentication or authorization check in Trino Gateway, unless the
 optional client-certificate JWT bridge is configured.
 
+## Trusted Trino clusters
+
+Trino Gateway trusts the Trino clusters it routes to. Anyone who operates a
+registered Trino cluster, or controls a proxy or load balancer in front of it,
+is trusted like an operator of Trino Gateway itself:
+
+- Trino Gateway forwards client requests to the Trino cluster, including the
+  SQL text and credentials such as the `Authorization` header.
+- Trino Gateway passes the responses of the Trino cluster through to the
+  client, including the status, the headers, and the content.
+- Trino Gateway uses the query IDs that a Trino cluster returns to route later
+  requests for the query.
+- Trino Gateway sends the credentials configured in `backendState` to every
+  registered Trino cluster when it checks the cluster health.
+
+Register only Trino clusters that you operate or trust. The `ADMIN` and `API`
+roles give the same control over Trino clusters, through the web UI and the
+[Gateway API](gateway-api.md), so grant both only to users you trust with this
+access, as described in [Authorization](#authorization).
+
 ## Client certificate JWT bridge
 
 For environments where clients authenticate to Trino with mTLS certificates,
@@ -382,14 +402,23 @@ Authorization: Bearer <jwt-token>
 
 ## Authorization
 
-Trino Gateway supports the following roles in regex string format:
+Trino Gateway supports the following roles, each configured as a regex under
+the matching lowercase key in `authorization`. Trino Gateway matches each role
+independently:
 
-- admin : Allows access to the Editor tab, which can be used to configure the
-  clusters
-
-- user : Allows access to the rest of the website
-
-- api : Allows access to rest apis to configure the clusters
+- `ADMIN`: manage Trino clusters and routing rules in the web UI, and view the
+  query history of all users. The web UI also requires the `USER` role, so
+  grant `ADMIN` together with `USER`. `ADMIN` alone still allows changing Trino
+  clusters and routing rules through the web UI endpoints, so it needs the same
+  trust in any combination. Authoring routing rules is equivalent to running
+  code in the Trino Gateway process, as described in
+  [Routing rules](routing-rules.md).
+- `API`: add, update, delete, activate, and deactivate Trino clusters with the
+  [Gateway API](gateway-api.md), for example from deployment automation. This
+  is the same control over Trino clusters that the `ADMIN` role has in the web
+  UI, and needs the same trust.
+- `USER`: log in to the web UI, and view the dashboard, the Trino clusters, and
+  their own query history. Every user of the web UI needs this role.
 
 Users with attributes next to the role will be giving those privileges the
 users. You can use the preset users defined in the yaml file. 
