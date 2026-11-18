@@ -24,21 +24,12 @@ import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.annotation.Nullable;
-import jakarta.annotation.PreDestroy;
-import jakarta.ws.rs.HttpMethod;
 
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -49,7 +40,6 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
-    private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
@@ -171,10 +161,8 @@ public abstract class BaseRoutingManager
         return url.toLowerCase(Locale.ROOT);
     }
 
-    /**
-     * Performs cache look up, if a backend not found, it checks with all backends and tries to find
-     * out which backend has info about given query id.
-     */
+    /// Looks up the backend for the query ID in the cache, and on a cache miss in the query history.
+    /// Falls back to the first active backend of the default routing group.
     @Nullable
     @Override
     public String findBackendForQueryId(String queryId)
@@ -261,56 +249,13 @@ public abstract class BaseRoutingManager
         String backend;
         backend = queryHistoryManager.getBackendForQueryId(queryId);
         if (Strings.isNullOrEmpty(backend)) {
-            log.debug("Unable to find backend mapping for [%s]. Searching for suitable backend", queryId);
-            backend = searchAllBackendForQuery(queryId);
+            log.debug("Unable to find backend mapping for [%s]. Using the first active backend of the default routing group", queryId);
+            backend = gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
+                    .findFirst()
+                    .map(ProxyBackendConfiguration::getProxyTo)
+                    .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
         }
         return backend;
-    }
-
-    /**
-     * This tries to find out which backend may have info about given query id. If not found returns
-     * the first healthy backend.
-     */
-    private String searchAllBackendForQuery(String queryId)
-    {
-        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getAllBackends();
-
-        Map<String, Future<Integer>> responseCodes = new HashMap<>();
-        try {
-            for (ProxyBackendConfiguration backend : backends) {
-                String target = backend.getProxyTo() + "/v1/query/" + queryId;
-
-                Future<Integer> call =
-                        executorService.submit(
-                                () -> {
-                                    URL url = URI.create(target).toURL();
-                                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                                    conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(5));
-                                    conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
-                                    conn.setRequestMethod(HttpMethod.HEAD);
-                                    return conn.getResponseCode();
-                                });
-                responseCodes.put(backend.getProxyTo(), call);
-            }
-            for (Map.Entry<String, Future<Integer>> entry : responseCodes.entrySet()) {
-                if (entry.getValue().isDone()) {
-                    int responseCode = entry.getValue().get();
-                    if (responseCode == 200) {
-                        log.info("Found query [%s] on backend [%s]", queryId, entry.getKey());
-                        setBackendForQueryId(queryId, entry.getKey());
-                        return entry.getKey();
-                    }
-                }
-            }
-        }
-        catch (Exception e) {
-            log.warn("Query id [%s] not found", queryId);
-        }
-        // Fallback on first active backend if queryId mapping not found.
-        return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
-                .findFirst()
-                .map(ProxyBackendConfiguration::getProxyTo)
-                .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
     }
 
     /**
@@ -345,11 +290,5 @@ public abstract class BaseRoutingManager
             return false;
         }
         return status == TrinoStatus.HEALTHY;
-    }
-
-    @PreDestroy
-    public void shutdown()
-    {
-        executorService.shutdownNow();
     }
 }
