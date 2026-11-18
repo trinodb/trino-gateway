@@ -53,12 +53,16 @@ public interface RoutingManager
     void updateClusterStats(List<ClusterStats> stats);
 
     /**
-     * Associates a backend cluster with a specific query ID for sticky routing.
+     * Assigns a backend cluster to a query ID for sticky routing. The first backend assigned to a
+     * query ID keeps it; a later assignment to a different backend is refused and leaves the
+     * existing assignment in place.
      *
      * @param queryId the unique identifier of the query
-     * @param backend the backend cluster to associate with the query
+     * @param backend the backend cluster that created the query
+     * @return {@code true} if the query ID is now assigned to {@code backend}, {@code false} if it
+     *         is already assigned to a different backend
      */
-    void setBackendForQueryId(String queryId, String backend);
+    boolean assignBackendForQueryId(String queryId, String backend);
 
     /**
      * Associates a routing group with a specific query ID.

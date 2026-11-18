@@ -66,6 +66,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -87,6 +88,7 @@ final class TestProxyRequestHandler
     private static final String HEAD_ENDPOINT = "/v1/query";
     private static final String COMPRESSION_ENDPOINT = "/v1/custom/compression";
     private static final String RECEIVED_ACCEPT_ENCODING = "X-Received-Accept-Encoding";
+    private static final String QUERY_ID = "20260101_000000_00000_abcde";
     private static final String COMPRESSIBLE_BODY = "{\"data\": \"%s\"}".formatted("trino".repeat(1000));
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
@@ -315,19 +317,75 @@ final class TestProxyRequestHandler
         RoutingManager routingManager = mock(RoutingManager.class);
         QueryHistoryManager queryHistoryManager = mock(QueryHistoryManager.class);
         doThrow(new IllegalStateException("database unavailable")).when(queryHistoryManager).submitQueryDetail(any());
+        when(queryHistoryManager.getBackendForQueryId(QUERY_ID)).thenThrow(new IllegalStateException("database unavailable"));
+        when(routingManager.assignBackendForQueryId(QUERY_ID, "http://trino-a:8080")).thenReturn(true);
 
-        io.airlift.http.client.Request request = preparePost()
-                .setUri(destination.clusterUri())
-                .setBodyGenerator(createStaticBodyGenerator("SELECT 1", UTF_8))
-                .build();
-        ProxyResponse response = new ProxyResponse(200, ImmutableListMultimap.of(), "{\"id\":\"20260101_000000_00000_abcde\"}");
-
+        ProxyResponse response = queryResponse();
         ProxyResponse result = handler(routingManager, queryHistoryManager)
-                .recordBackendForQueryId(request, response, Optional.of("test-user"), destination);
+                .recordBackendForQueryId(statementRequest(destination), response, Optional.of("test-user"), destination);
 
         assertThat(result).isSameAs(response);
         verify(queryHistoryManager).submitQueryDetail(any());
-        verify(routingManager).setBackendForQueryId("20260101_000000_00000_abcde", "http://trino-a:8080");
+        verify(routingManager).assignBackendForQueryId(QUERY_ID, "http://trino-a:8080");
+    }
+
+    @Test
+    void testQueryIdAssignedToOtherBackendIsRefused()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        when(routingManager.assignBackendForQueryId(QUERY_ID, "http://trino-a:8080")).thenReturn(false);
+
+        assertThatThrownBy(() -> handler(routingManager, mock(QueryHistoryManager.class))
+                .recordBackendForQueryId(statementRequest(destination), queryResponse(), Optional.of("test-user"), destination))
+                .isInstanceOf(ProxyException.class);
+        verify(routingManager, never()).setRoutingGroupForQueryId(any(), any());
+        verify(routingManager, never()).setExternalUrlForQueryId(any(), any());
+    }
+
+    @Test
+    void testQueryIdRecordedForOtherBackendIsRefused()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        QueryHistoryManager queryHistoryManager = mock(QueryHistoryManager.class);
+        doThrow(new IllegalStateException("duplicate key")).when(queryHistoryManager).submitQueryDetail(any());
+        when(queryHistoryManager.getBackendForQueryId(QUERY_ID)).thenReturn("http://trino-b:8080");
+
+        assertThatThrownBy(() -> handler(routingManager, queryHistoryManager)
+                .recordBackendForQueryId(statementRequest(destination), queryResponse(), Optional.of("test-user"), destination))
+                .isInstanceOf(ProxyException.class);
+        verify(routingManager, never()).assignBackendForQueryId(any(), any());
+    }
+
+    @Test
+    void testQueryIdRecordedForSameBackendIsAccepted()
+    {
+        RoutingDestination destination = destination();
+        RoutingManager routingManager = mock(RoutingManager.class);
+        QueryHistoryManager queryHistoryManager = mock(QueryHistoryManager.class);
+        doThrow(new IllegalStateException("duplicate key")).when(queryHistoryManager).submitQueryDetail(any());
+        when(queryHistoryManager.getBackendForQueryId(QUERY_ID)).thenReturn("http://trino-a:8080");
+        when(routingManager.assignBackendForQueryId(QUERY_ID, "http://trino-a:8080")).thenReturn(true);
+
+        handler(routingManager, queryHistoryManager)
+                .recordBackendForQueryId(statementRequest(destination), queryResponse(), Optional.of("test-user"), destination);
+
+        verify(routingManager).assignBackendForQueryId(QUERY_ID, "http://trino-a:8080");
+        verify(routingManager).setRoutingGroupForQueryId(QUERY_ID, "adhoc");
+    }
+
+    private static io.airlift.http.client.Request statementRequest(RoutingDestination destination)
+    {
+        return preparePost()
+                .setUri(destination.clusterUri())
+                .setBodyGenerator(createStaticBodyGenerator("SELECT 1", UTF_8))
+                .build();
+    }
+
+    private static ProxyResponse queryResponse()
+    {
+        return new ProxyResponse(200, ImmutableListMultimap.of(), "{\"id\":\"%s\"}".formatted(QUERY_ID));
     }
 
     private static RoutingDestination destination()

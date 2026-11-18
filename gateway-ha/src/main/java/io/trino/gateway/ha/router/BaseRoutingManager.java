@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -30,16 +31,19 @@ import jakarta.ws.rs.HttpMethod;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This class performs health check, stats counts for each backend and provides a backend given
@@ -49,12 +53,17 @@ public abstract class BaseRoutingManager
         implements RoutingManager
 {
     private static final Logger log = Logger.get(BaseRoutingManager.class);
+    // Time to wait for all backends together when searching them for an unknown query id
+    private static final long QUERY_SEARCH_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
     private final GatewayBackendManager gatewayBackendManager;
     private final ConcurrentHashMap<String, TrinoStatus> backendToStatus;
     private final String defaultRoutingGroup;
     private final boolean unavailableGroupFallbackEnabled;
     private final QueryHistoryManager queryHistoryManager;
+    // Query IDs assigned to the backend that created them. Only assignBackendForQueryId writes here.
+    private final Cache<String, String> assignedQueryIdBackendCache;
+    // Query IDs without an assignment, resolved from query history or by searching the backends.
     private final LoadingCache<String, String> queryIdBackendCache;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
     private final LoadingCache<String, String> queryIdExternalUrlCache;
@@ -65,6 +74,7 @@ public abstract class BaseRoutingManager
         this.defaultRoutingGroup = routingConfiguration.getDefaultRoutingGroup();
         this.unavailableGroupFallbackEnabled = routingConfiguration.isUnavailableGroupFallbackEnabled();
         this.queryHistoryManager = queryHistoryManager;
+        this.assignedQueryIdBackendCache = cacheBuilder().build();
         this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
         this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
         this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
@@ -77,9 +87,16 @@ public abstract class BaseRoutingManager
     protected abstract Optional<ProxyBackendConfiguration> selectBackend(List<ProxyBackendConfiguration> backends, String user);
 
     @Override
-    public void setBackendForQueryId(String queryId, String backend)
+    public boolean assignBackendForQueryId(String queryId, String backend)
     {
-        queryIdBackendCache.put(queryId, backend);
+        String assignedBackend = assignedQueryIdBackendCache.asMap().putIfAbsent(queryId, backend);
+        if (assignedBackend != null && !assignedBackend.equals(backend)) {
+            log.warn("Query id [%s] is already assigned to backend [%s], refusing to assign it to backend [%s]", queryId, assignedBackend, backend);
+            return false;
+        }
+        // Drop any earlier lookup result for this query id so it cannot shadow the assignment
+        queryIdBackendCache.invalidate(queryId);
+        return true;
     }
 
     @Override
@@ -179,7 +196,10 @@ public abstract class BaseRoutingManager
     @Override
     public String findBackendForQueryId(String queryId)
     {
-        String backendAddress = null;
+        String backendAddress = assignedQueryIdBackendCache.getIfPresent(queryId);
+        if (backendAddress != null) {
+            return backendAddress;
+        }
         try {
             backendAddress = queryIdBackendCache.get(queryId);
         }
@@ -292,15 +312,28 @@ public abstract class BaseRoutingManager
                                 });
                 responseCodes.put(backend.getProxyTo(), call);
             }
+            List<String> matchingBackends = new ArrayList<>();
+            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(QUERY_SEARCH_TIMEOUT_MILLIS);
             for (Map.Entry<String, Future<Integer>> entry : responseCodes.entrySet()) {
-                if (entry.getValue().isDone()) {
-                    int responseCode = entry.getValue().get();
-                    if (responseCode == 200) {
-                        log.info("Found query [%s] on backend [%s]", queryId, entry.getKey());
-                        setBackendForQueryId(queryId, entry.getKey());
-                        return entry.getKey();
+                try {
+                    if (entry.getValue().get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS) == 200) {
+                        matchingBackends.add(entry.getKey());
                     }
                 }
+                catch (ExecutionException e) {
+                    log.debug("Backend [%s] did not answer the lookup for query [%s]: %s", entry.getKey(), queryId, e.getCause());
+                }
+                catch (TimeoutException e) {
+                    log.debug("Backend [%s] did not answer the lookup for query [%s] in time", entry.getKey(), queryId);
+                    entry.getValue().cancel(true);
+                }
+            }
+            if (matchingBackends.size() == 1) {
+                log.info("Found query [%s] on backend [%s]", queryId, matchingBackends.getFirst());
+                return matchingBackends.getFirst();
+            }
+            if (matchingBackends.size() > 1) {
+                log.warn("Query [%s] reported by more than one backend %s, not routing to any of them", queryId, matchingBackends);
             }
         }
         catch (Exception e) {
@@ -329,12 +362,16 @@ public abstract class BaseRoutingManager
         return queryHistoryManager.getExternalUrlForQueryId(queryId);
     }
 
-    private LoadingCache<String, String> buildCache(Function<String, String> loader)
+    private static LoadingCache<String, String> buildCache(Function<String, String> loader)
+    {
+        return cacheBuilder().build(loader::apply);
+    }
+
+    private static Caffeine<Object, Object> cacheBuilder()
     {
         return Caffeine.newBuilder()
                 .maximumSize(10000)
-                .expireAfterAccess(30, TimeUnit.MINUTES)
-                .build(loader::apply);
+                .expireAfterAccess(30, TimeUnit.MINUTES);
     }
 
     private boolean isBackendHealthy(String backendId)

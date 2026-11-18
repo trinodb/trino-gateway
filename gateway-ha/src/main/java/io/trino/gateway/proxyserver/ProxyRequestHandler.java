@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.net.HttpHeaders.WWW_AUTHENTICATE;
 import static io.airlift.concurrent.Threads.daemonThreadsNamed;
@@ -334,10 +335,6 @@ public class ProxyRequestHandler
             try {
                 HashMap<String, String> results = OBJECT_MAPPER.readValue(response.body(), HashMap.class);
                 queryDetail.setQueryId(results.get("id"));
-                routingManager.setBackendForQueryId(queryDetail.getQueryId(), queryDetail.getBackendUrl());
-                routingManager.setRoutingGroupForQueryId(queryDetail.getQueryId(), routingDestination.routingGroup());
-                routingManager.setExternalUrlForQueryId(queryDetail.getQueryId(), routingDestination.externalUrl());
-                log.debug("QueryId [%s] mapped with proxy [%s]", queryDetail.getQueryId(), queryDetail.getBackendUrl());
             }
             catch (IOException e) {
                 log.error("Failed to get QueryId from response [%s] , Status code [%s]", response.body(), response.statusCode());
@@ -348,15 +345,53 @@ public class ProxyRequestHandler
         }
         queryDetail.setRoutingGroup(routingDestination.routingGroup());
         queryDetail.setExternalUrl(routingDestination.externalUrl());
+        String queryId = queryDetail.getQueryId();
+        // Record the query in the history first, so that a query id the history already knows for
+        // another backend is refused before the routing caches change
+        submitQueryDetail(queryDetail);
+        if (isNullOrEmpty(queryId)) {
+            return response;
+        }
+        if (!routingManager.assignBackendForQueryId(queryId, queryDetail.getBackendUrl())) {
+            throw queryIdAlreadyAssigned(queryId);
+        }
+        routingManager.setRoutingGroupForQueryId(queryId, routingDestination.routingGroup());
+        routingManager.setExternalUrlForQueryId(queryId, routingDestination.externalUrl());
+        log.debug("QueryId [%s] mapped with proxy [%s]", queryId, queryDetail.getBackendUrl());
+        return response;
+    }
+
+    private void submitQueryDetail(QueryHistoryManager.QueryDetail queryDetail)
+    {
         try {
             queryHistoryManager.submitQueryDetail(queryDetail);
+            return;
         }
         catch (RuntimeException e) {
             // Query history is best effort. The backend has already accepted the query, so failing
             // here would hide a running query from the client and invite a duplicate resubmission.
             log.warn(e, "Failed to record query history for query [%s]", queryDetail.getQueryId());
         }
-        return response;
+        if (isNullOrEmpty(queryDetail.getQueryId())) {
+            return;
+        }
+        String recordedBackend;
+        try {
+            recordedBackend = queryHistoryManager.getBackendForQueryId(queryDetail.getQueryId());
+        }
+        catch (RuntimeException e) {
+            log.warn(e, "Failed to look up query history for query [%s]", queryDetail.getQueryId());
+            return;
+        }
+        if (recordedBackend != null && !recordedBackend.equals(queryDetail.getBackendUrl())) {
+            log.warn("Query id [%s] is already recorded for backend [%s], refusing it from backend [%s]", queryDetail.getQueryId(), recordedBackend, queryDetail.getBackendUrl());
+            throw queryIdAlreadyAssigned(queryDetail.getQueryId());
+        }
+    }
+
+    private static ProxyException queryIdAlreadyAssigned(String queryId)
+    {
+        return new ProxyException("Query id [%s] is already assigned to another backend".formatted(queryId));
     }
 
     /**
