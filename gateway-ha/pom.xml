@@ -20,6 +20,8 @@
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
 
         <!-- dependency versions -->
+        <!-- Keep in sync with dep.antlr.version of Trino in dep.trino.version, since the Trino SQL parser is generated with it -->
+        <dep.antlr.version>4.13.2</dep.antlr.version>
         <dep.bouncycastle.version>1.87</dep.bouncycastle.version>
         <dep.flyway.version>13.12.2</dep.flyway.version>
         <dep.mockito.version>5.24.0</dep.mockito.version>
@@ -208,6 +210,12 @@
 
         <dependency>
             <groupId>io.trino</groupId>
+            <artifactId>trino-grammar</artifactId>
+            <version>${dep.trino.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.trino</groupId>
             <artifactId>trino-parser</artifactId>
             <version>${dep.trino.version}</version>
         </dependency>
@@ -230,6 +238,12 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>${dep.antlr.version}</version>
         </dependency>
 
         <dependency>

@@ -44,6 +44,7 @@ public class HaGatewayConfiguration
     private GatewayCookieConfiguration gatewayCookieConfiguration = new GatewayCookieConfiguration();
     private List<String> statementPaths = ImmutableList.of(V1_STATEMENT_PATH);
     private boolean includeClusterHostInResponse;
+    private ProxyRequestConfiguration proxyRequestConfiguration = new ProxyRequestConfiguration();
     private ProxyResponseConfiguration proxyResponseConfiguration = new ProxyResponseConfiguration();
     private WriteBufferConfiguration writeBuffer = new WriteBufferConfiguration();
     private RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
@@ -271,6 +272,16 @@ public class HaGatewayConfiguration
     public void setWriteBuffer(WriteBufferConfiguration writeBuffer)
     {
         this.writeBuffer = writeBuffer;
+    }
+
+    public ProxyRequestConfiguration getProxyRequestConfiguration()
+    {
+        return this.proxyRequestConfiguration;
+    }
+
+    public void setProxyRequestConfiguration(ProxyRequestConfiguration proxyRequestConfiguration)
+    {
+        this.proxyRequestConfiguration = proxyRequestConfiguration;
     }
 
     public ProxyResponseConfiguration getProxyResponseConfiguration()

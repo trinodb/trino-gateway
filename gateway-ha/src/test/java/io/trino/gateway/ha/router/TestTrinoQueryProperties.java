@@ -726,6 +726,85 @@ final class TestTrinoQueryProperties
         assertThat(properties.getTables()).containsExactly(QualifiedName.of("dc", "ds", "a"));
     }
 
+    @Test
+    void testNestingDepth()
+    {
+        int limit = TrinoQueryProperties.MAX_NESTING_DEPTH;
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(nestedParentheses(limit), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(nestedParentheses(limit + 1), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "ARRAY[".repeat(limit + 1) + "1" + "]".repeat(limit + 1), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "CASE WHEN true THEN ".repeat(limit + 1) + "1" + " END".repeat(limit + 1), limit)).isTrue();
+        // Sequential parentheses do not nest
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "(1) + ".repeat(limit * 2) + "1", limit)).isFalse();
+        // Parentheses in string literals, quoted identifiers, and comments are not counted
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT '%s' AS \"%s\" /* %s */".formatted("(".repeat(limit + 1), "(".repeat(limit + 1), "(".repeat(limit + 1)), limit)).isFalse();
+        // Closing tokens without an opening token do not lower the depth
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + ")".repeat(limit) + nestedParentheses(limit + 1), limit)).isTrue();
+    }
+
+    @Test
+    void testNestingDepthOfRoutines()
+    {
+        int limit = TrinoQueryProperties.MAX_NESTING_DEPTH;
+        String function = "CREATE FUNCTION f(x bigint) RETURNS bigint BEGIN %s RETURN x; END";
+        // Nested blocks of all kinds are counted
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("BEGIN ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("IF x > 0 THEN ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("IF (x > 0) THEN ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("WHILE x > 0 DO ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("LOOP ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("REPEAT ".repeat(limit + 1)), limit)).isTrue();
+        // END IF closes only an IF block, so a block inside each BEGIN does not hide the nesting of the BEGIN blocks
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("BEGIN IF x > 0 THEN SET x = 1; END IF; ".repeat(limit + 1)), limit)).isTrue();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("BEGIN IF (x > 0) THEN SET x = 1; END IF; ".repeat(limit + 1)), limit)).isTrue();
+        // Sequential blocks do not nest, and END CASE does not open a CASE
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("CASE x WHEN 1 THEN SET x = 2; END CASE; ".repeat(limit * 2)), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("IF x > 0 THEN SET x = 1; END IF; ".repeat(limit * 2)), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("IF (x > 0) THEN SET x = 1; END IF; ".repeat(limit * 2)), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("WHILE x > 0 DO SET x = x - 1; END WHILE; ".repeat(limit * 2)), limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds(function.formatted("REPEAT SET x = x - 1; UNTIL x = 0 END REPEAT; ".repeat(limit * 2)), limit)).isFalse();
+        // The if and repeat functions open no block
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "if(a > 0, 1, 2) + ".repeat(limit * 2) + "1", limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "cardinality(repeat(a, 2)) + ".repeat(limit * 2) + "1", limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT CASE WHEN if(a > 0, true, false) THEN 1 END + ".repeat(limit * 2) + "1", limit)).isFalse();
+        // Nested if functions count once for each level
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "if(a, ".repeat(limit) + "1" + ", 2)".repeat(limit), limit)).isFalse();
+        // Outside of a routine, the keywords of routine blocks are column names and open no block
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT * FROM t WHERE " + "begin = 1 OR if = 1 OR loop = 1 OR repeat = 1 OR while = 1 OR ".repeat(limit * 2) + "true", limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "CASE WHEN begin > 0 THEN 1 END + ".repeat(limit * 2) + "1", limit)).isFalse();
+        assertThat(TrinoQueryProperties.nestingDepthExceeds("SELECT " + "CASE WHEN begin > 0 THEN ".repeat(limit + 1) + "1" + " END".repeat(limit + 1), limit)).isTrue();
+    }
+
+    @Test
+    void testNestingDepthExceeded()
+            throws IOException
+    {
+        ContainerRequestContext mockRequest = prepareMockRequest(nestedParentheses(TrinoQueryProperties.MAX_NESTING_DEPTH + 1));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+    }
+
+    @Test
+    void testNestingDepthExceededInExecuteImmediate()
+            throws IOException
+    {
+        String statement = nestedParentheses(TrinoQueryProperties.MAX_NESTING_DEPTH + 1).replace("'", "''");
+        ContainerRequestContext mockRequest = prepareMockRequest("EXECUTE IMMEDIATE '%s'".formatted(statement));
+
+        TrinoQueryProperties trinoQueryProperties = new TrinoQueryProperties(mockRequest, false, 1024 * 1024);
+
+        assertThat(trinoQueryProperties.isQueryParsingSuccessful()).isFalse();
+        assertThat(trinoQueryProperties.getQueryType()).isEmpty();
+    }
+
+    private static String nestedParentheses(int depth)
+    {
+        return "SELECT " + "(".repeat(depth) + "1" + ")".repeat(depth);
+    }
+
     private static boolean hasQualifiedNameGetter(Class<?> clazz)
     {
         return Arrays.stream(clazz.getMethods())
