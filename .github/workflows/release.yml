@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-java@v6.2.0
         with:
           java-version: 25
-          distribution: 'temurin'
+          distribution: 'corretto'
           gpg-private-key: ${{ secrets.RELEASE_GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
           cache: 'maven'

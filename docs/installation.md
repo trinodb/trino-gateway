@@ -23,7 +23,11 @@ Consider the following requirements for your Trino Gateway installation.
 
 Trino Gateway requires a Java 25 runtime. Lower versions of Java can not be
 used. Higher versions are verified in our CI pipelines, but you may run into
-unexpected issues. 
+unexpected issues.
+
+We recommend using the [Amazon Corretto](https://aws.amazon.com/corretto/)
+OpenJDK distribution, as Trino Gateway is tested against that distribution.
+Amazon Corretto is also the JDK used by the Trino Gateway Docker image.
 
 Verify the Java version on your system with `java -version`.
 

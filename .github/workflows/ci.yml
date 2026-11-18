@@ -47,9 +47,9 @@ jobs:
       fail-fast: false
       matrix:
         include: 
-          - { java-version: 25 }
-          - { java-version: 27 }
-          - { java-version: 28-ea }
+          - { java-distribution: corretto, java-version: 25 }
+          - { java-distribution: corretto, java-version: 27 }
+          - { java-distribution: temurin, java-version: 28-ea }
     timeout-minutes: 30
     steps:
       - name: Checkout source
@@ -59,7 +59,7 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-          distribution: 'temurin'
+          distribution: ${{ matrix.java-distribution }}
       - name: Build with Maven
         run: $MAVEN clean verify
 
@@ -74,7 +74,7 @@ jobs:
         with:
           java-version: 25
           cache: 'maven'
-          distribution: 'temurin'
+          distribution: 'corretto'
       # Maven installs the pinned Node.js and pnpm versions into
       # webapp/target/node and builds the web UI, so the tests use the same
       # toolchain as the build.
@@ -104,7 +104,7 @@ jobs:
         uses: actions/setup-java@v6.2.0
         with:
           java-version: 25
-          distribution: 'temurin'
+          distribution: 'corretto'
       - name: Maven Build
         run: $MAVEN install ${MAVEN_FAST_INSTALL}
       - uses: docker/setup-qemu-action@v4.4.0

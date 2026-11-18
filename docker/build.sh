@@ -10,7 +10,7 @@ Builds the Trino Gateway Docker image
 -h       Display help
 -a       Build the specified comma-separated architectures, defaults to amd64,arm64
 -r       Build the specified Trino Gateway release version, downloads all required artifacts
--j       Build the Trino Gateway release with specified Temurin JDK release, for example: jdk-25.0.4+7
+-j       Build the Trino Gateway release with specified Corretto JDK release, for example: 25.0.5.1.2
 EOF
 }
 
@@ -24,7 +24,7 @@ ARCHITECTURES=(amd64 arm64)
 TRINO_GATEWAY_VERSION=
 # necessary to allow version parsing from the pom file
 MVNW_VERBOSE=false
-TEMURIN_RELEASE=$("${SOURCE_DIR}/mvnw" -f "${SOURCE_DIR}/pom.xml" --quiet help:evaluate -Dexpression=temurin.release -DforceStdout --raw-streams)
+CORRETTO_RELEASE=$("${SOURCE_DIR}/mvnw" -f "${SOURCE_DIR}/pom.xml" --quiet help:evaluate -Dexpression=corretto.release -DforceStdout --raw-streams)
 
 while getopts ":a:h:r:j:" o; do
     case "${o}" in
@@ -39,7 +39,7 @@ while getopts ":a:h:r:j:" o; do
             exit 0
             ;;
         j)
-            TEMURIN_RELEASE="${OPTARG}"
+            CORRETTO_RELEASE="${OPTARG}"
             ;;
         *)
             usage
@@ -60,22 +60,20 @@ function check_environment() {
     fi
 }
 
-function temurin_jdk_link() {
-  local RELEASE_NAME="${1}"
-  local ARCH="${2}"
+function corretto_jdk_link() {
+    local release="${1}"
+    local arch
 
-  case "${ARCH}" in
-    arm64)
-      echo "https://api.adoptium.net/v3/binary/version/${RELEASE_NAME}/linux/aarch64/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-    amd64)
-      echo "https://api.adoptium.net/v3/binary/version/${RELEASE_NAME}/linux/x64/jdk/hotspot/normal/eclipse?project=jdk"
-    ;;
-  *)
-    echo "${ARCH} is not supported for Docker image"
-    exit 1
-    ;;
-  esac
+    case "${2}" in
+        arm64) arch=aarch64 ;;
+        amd64) arch=x64 ;;
+        *)
+            echo "${2} is not supported for Docker image" >&2
+            exit 1
+            ;;
+    esac
+
+    echo "https://corretto.aws/downloads/resources/${release}/amazon-corretto-${release}-linux-${arch}.tar.gz"
 }
 
 check_environment
@@ -108,13 +106,14 @@ TRINO_GATEWAY_BASE_IMAGE=${TRINO_GATEWAY_BASE_IMAGE:-'redhat/ubi10-micro:latest'
 TRINO_GATEWAY_BUILD_IMAGE=${TRINO_GATEWAY_BUILD_IMAGE:-'redhat/ubi10:latest'}
 
 for arch in "${ARCHITECTURES[@]}"; do
-    echo "🫙  Building the image for $arch with Temurin JDK release ${TEMURIN_RELEASE}"
+    echo "🫙  Building the image for $arch with Corretto JDK release ${CORRETTO_RELEASE}"
+    jdk_download_link=$(corretto_jdk_link "${CORRETTO_RELEASE}" "${arch}")
     DOCKER_BUILDKIT=1 \
     docker build \
         "${WORK_DIR}" \
         --pull \
-        --build-arg JDK_VERSION="${TEMURIN_RELEASE}" \
-        --build-arg JDK_DOWNLOAD_LINK="$(temurin_jdk_link "${TEMURIN_RELEASE}" "${arch}")" \
+        --build-arg JDK_VERSION="${CORRETTO_RELEASE}" \
+        --build-arg JDK_DOWNLOAD_LINK="${jdk_download_link}" \
         --build-arg TRINO_GATEWAY_BASE_IMAGE="${TRINO_GATEWAY_BASE_IMAGE}" \
         --build-arg TRINO_GATEWAY_BUILD_IMAGE="${TRINO_GATEWAY_BUILD_IMAGE}" \
         --platform "linux/$arch" \
