@@ -320,6 +320,8 @@ authentication:
 
 A login session expires `sessionTimeout` after login, regardless of activity.
 It defaults to `30m`, must be at least `1m`, and the user has to log in again.
+Logging out deletes the session cookie in the browser, but does not revoke the
+session token. A copy of the token stays valid until the session expires.
 
 ```yaml
 authentication:

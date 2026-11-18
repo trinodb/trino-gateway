@@ -14,7 +14,6 @@
 package io.trino.gateway.ha.security;
 
 import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.Response;
 
 import static jakarta.ws.rs.core.NewCookie.SameSite.LAX;
 
@@ -38,9 +37,11 @@ public final class SessionCookie
                 .build();
     }
 
-    public static Response logOut()
+    /// Returns a cookie that replaces the session cookie with an expired one, which makes the
+    /// browser delete it.
+    public static NewCookie logOutCookie()
     {
-        NewCookie cookie = new NewCookie.Builder(OAUTH_ID_TOKEN)
+        return new NewCookie.Builder(OAUTH_ID_TOKEN)
                 .value("logout")
                 .path("/")
                 .domain("")
@@ -48,9 +49,6 @@ public final class SessionCookie
                 .maxAge(0)
                 .secure(true)
                 .sameSite(LAX)
-                .build();
-        return Response.ok("You are logged out successfully.")
-                .cookie(cookie)
                 .build();
     }
 }
