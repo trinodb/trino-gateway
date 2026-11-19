@@ -23,6 +23,7 @@ const en_US = {
   History: {
     RoutedToTip: "Default all",
     QueryIdTip: "Default all",
+    UserTip: "The user as sent by the client. Trino Gateway does not verify it.",
   },
   Menu: {
     Header: {

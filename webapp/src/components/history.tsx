@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import styles from './history.module.scss';
 import Locale from "../locales";
-import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight } from "@douyinfe/semi-ui";
+import { Button, Card, Form, Table, Tag, Modal, Typography, CodeHighlight, Tooltip } from "@douyinfe/semi-ui";
+import { IconHelpCircle } from "@douyinfe/semi-icons";
 import Column from "@douyinfe/semi-ui/lib/es/table/Column";
 import { queryHistoryApi } from "../api/webapp/history";
 import { HistoryData, HistoryDetail, QueryLinkType } from "../types/history";
@@ -170,7 +171,17 @@ export function History() {
             render={routingGroupRender} />
           <Column title="Name" dataIndex="backendUrl" key="backendUrlName" render={(text: string) => <Text>{backendMapping[text]}</Text>} />
           <Column title="RoutedTo" dataIndex="externalUrl" key="externalUrl" render={linkRender} />
-          <Column title="User" dataIndex="user" key="user" />
+          <Column
+            title={
+              <span>
+                User{" "}
+                <Tooltip content={Locale.History.UserTip}>
+                  <IconHelpCircle size="small" />
+                </Tooltip>
+              </span>
+            }
+            dataIndex="user"
+            key="user" />
           <Column title="Source" dataIndex="source" key="source" />
           <Column title="QueryText" dataIndex="queryText" key="queryText" width={300} render={queryTextRender} />
           <Column title="SubmissionTime" dataIndex="captureTime" key="captureTime" render={timeRender} sorter={(a, b) => {

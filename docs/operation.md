@@ -9,6 +9,28 @@ Trino Gateway records history of recent queries and displays links to check quer
 details page in respective trino cluster.
 ![trino.gateway.io](./assets/trinogateway_query_history.png)
 
+The user shown for each query is the user that Trino Gateway extracts from the
+client request. It takes the mapped identity of a client certificate if the
+client certificate JWT bridge is configured, the `X-Trino-User` header, the user
+name of Basic authentication or the configured claim of a JWT or a Trino OAuth2
+refresh token in the `Authorization` header, the subject that
+`oauthTokenInfoUrl` returns for other bearer tokens, or the Trino UI token
+cookie, in that order. Trino Gateway does not verify the
+password or the signature of a JWT. Trino Gateway only authenticates queries
+itself with the optional [client certificate JWT
+bridge](security.md#client-certificate-jwt-bridge). If authentication is
+configured, the Trino cluster authenticates the request before it returns a
+query ID, but checks whether the authenticated user can run queries as the user
+in `X-Trino-User` only when the query runs. A query that fails that check still
+appears in the query history under the user it named. With a client certificate,
+the query history shows the certificate identity even when the cluster runs the
+query as a different user, unless `overrideTrinoUser` is set to `true`. See
+[Impersonation](security.md#impersonation).
+
+Use the query history as an overview of the queries that Trino Gateway routed,
+not as an audit log. The query details and event listeners of the Trino cluster
+record the user that the cluster accepted.
+
 ## Cluster UI - add and modify cluster information
 
 The cluster page is used to configure Trino Gateway for multiple Trino clusters.
