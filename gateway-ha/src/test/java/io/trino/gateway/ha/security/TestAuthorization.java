@@ -92,6 +92,43 @@ final class TestAuthorization
         assertThat(userRoleList).containsAll(ImmutableList.of("USER", "API"));
     }
 
+    @Test
+    void testManagementResourcesRequireAdminOrApiRole()
+            throws IOException
+    {
+        for (String path : ImmutableList.of("/metrics", "/v1/jmx/mbean")) {
+            assertThat(getStatusCode(path, Optional.empty())).isEqualTo(403);
+            assertThat(getStatusCode(path, Optional.of("unknown:unknown"))).isEqualTo(403);
+            assertThat(getStatusCode(path, Optional.of("user2:password_user2"))).isEqualTo(403);
+            assertThat(getStatusCode(path, Optional.of("admin1:admin1_password"))).isEqualTo(200);
+            assertThat(getStatusCode(path, Optional.of("user1:password_user1"))).isEqualTo(200);
+        }
+    }
+
+    @Test
+    void testPublicResourcesNeedNoAuthentication()
+            throws IOException
+    {
+        assertThat(getStatusCode("/trino-gateway/livez", Optional.empty())).isEqualTo(200);
+    }
+
+    private int getStatusCode(String path, Optional<String> credentials)
+            throws IOException
+    {
+        Request.Builder builder = new Request.Builder()
+                .url("http://localhost:" + routerPort + path)
+                .get();
+        credentials.ifPresent(value -> builder.addHeader("Authorization", basicAuthorization(value)));
+        try (Response response = httpClient.newCall(builder.build()).execute()) {
+            return response.code();
+        }
+    }
+
+    private static String basicAuthorization(String credentials)
+    {
+        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.ISO_8859_1));
+    }
+
     private List<String> getRoles(String credentials)
             throws IOException
     {

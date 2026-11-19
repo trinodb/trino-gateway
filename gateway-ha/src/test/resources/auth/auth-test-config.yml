@@ -23,6 +23,9 @@ presetUsers:
   user1:
     password: password_user1
     privileges: BAR_BAZ
+  user2:
+    password: password_user2
+    privileges: BAR
 
 authentication:
   defaultType: ["form"]
