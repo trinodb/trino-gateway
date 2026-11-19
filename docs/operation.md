@@ -159,6 +159,39 @@ scrape_configs:
         - gateway1.example.com:8080
 ```
 
+With [authentication](security.md) configured, the metrics endpoint requires a
+user with the `ADMIN` or `API` role, as do the JMX endpoints under `/v1/jmx`.
+This follows Trino, which requires authentication for its metrics endpoint.
+Add the credentials of such a user to the Prometheus configuration. For
+example, with form authentication, a preset user with the `API` role:
+
+```yaml
+authorization:
+  api: (.*_)?API(_.*)?
+presetUsers:
+  prometheus:
+    password: <password>
+    privileges: API
+```
+
+And the matching Prometheus configuration:
+
+```yaml
+scrape_configs:
+- job_name: trino_gateway
+  basic_auth:
+    username: prometheus
+    password: <password>
+  static_configs:
+    - targets:
+        - gateway1.example.com:8080
+```
+
+With JWT authentication, use the `authorization` section of the Prometheus
+configuration to send a bearer token instead. With only OAuth authentication,
+Prometheus needs a token from the identity provider, such as a token from the
+client credentials flow, with a claim that maps to the `API` role.
+
 ## Trino Gateway health endpoints
 
 Trino Gateway provides two API endpoints to indicate the current status of the server:
