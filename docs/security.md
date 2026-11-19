@@ -406,19 +406,28 @@ Trino Gateway supports the following roles, each configured as a regex under
 the matching lowercase key in `authorization`. Trino Gateway matches each role
 independently:
 
-- `ADMIN`: manage Trino clusters and routing rules in the web UI, and view the
-  query history of all users. The web UI also requires the `USER` role, so
-  grant `ADMIN` together with `USER`. `ADMIN` alone still allows changing Trino
-  clusters and routing rules through the web UI endpoints, so it needs the same
-  trust in any combination. Authoring routing rules is equivalent to running
-  code in the Trino Gateway process, as described in
-  [Routing rules](routing-rules.md).
+- `ADMIN`: manage Trino clusters and routing rules in the web UI, view the
+  query history of all users, and read the
+  [metrics and JMX endpoints](operation.md#monitoring). The web UI also
+  requires the `USER` role, so grant `ADMIN` together with `USER`. `ADMIN`
+  alone still allows changing Trino clusters and routing rules through the web
+  UI endpoints, so it needs the same trust in any combination. Authoring
+  routing rules is equivalent to running code in the Trino Gateway process, as
+  described in [Routing rules](routing-rules.md).
 - `API`: add, update, delete, activate, and deactivate Trino clusters with the
-  [Gateway API](gateway-api.md), for example from deployment automation. This
-  is the same control over Trino clusters that the `ADMIN` role has in the web
-  UI, and needs the same trust.
+  [Gateway API](gateway-api.md), for example from deployment automation, and
+  read the [metrics and JMX endpoints](operation.md#monitoring), for example
+  from Prometheus. This is the same control over Trino clusters that the
+  `ADMIN` role has in the web UI, and needs the same trust.
 - `USER`: log in to the web UI, and view the dashboard, the Trino clusters, and
   their own query history. Every user of the web UI needs this role.
+
+Like Trino, Trino Gateway requires the `ADMIN` or `API` role for every resource
+that does not belong to Trino Gateway and has no `@RolesAllowed` annotation.
+This covers the metrics and JMX endpoints, and the resources of custom modules
+listed under `modules` in the configuration. A custom resource can set its own
+roles with `@RolesAllowed`, for example `@RolesAllowed("USER")`. It cannot be
+made accessible without authentication.
 
 Users with attributes next to the role will be giving those privileges the
 users. You can use the preset users defined in the yaml file. 
