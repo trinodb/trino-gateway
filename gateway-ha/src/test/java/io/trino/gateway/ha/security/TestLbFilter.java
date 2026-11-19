@@ -28,9 +28,11 @@ import org.junit.jupiter.api.TestInstance;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -151,6 +153,105 @@ final class TestLbFilter
         // Checks authorization for authenticated principal
         assertThat(secContextCaptor.getValue().isUserInRole("USER")).isTrue();
         assertThat(secContextCaptor.getValue().isUserInRole("ADMIN")).isTrue();
+    }
+
+    @Test
+    void testHeaderTakesPrecedenceOverCookie()
+            throws Exception
+    {
+        String headerUser = "header_user";
+        String headerToken = "HEADER_TOKEN";
+        Claim headerClaim = Mockito.mock(Claim.class);
+        Mockito
+                .when(headerClaim.toString())
+                .thenReturn(headerUser);
+        Mockito
+                .when(oauthManager.getClaimsFromIdToken(headerToken))
+                .thenReturn(Optional.of(Map.of("sub", headerClaim)));
+        Mockito
+                .when(authorizationManager.getPrivileges(headerUser))
+                .thenReturn(Optional.of("OTHER_MEMBER"));
+
+        AuthorizationConfiguration configuration = new AuthorizationConfiguration();
+        configuration.setAdmin(MEMBER_OF.orElseThrow());
+        configuration.setUser(MEMBER_OF.orElseThrow());
+
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addFirst(HttpHeaders.AUTHORIZATION, "Bearer " + headerToken);
+
+        Mockito
+                .when(requestContext.getCookies())
+                .thenReturn(
+                        Map.of(
+                                SessionCookie.OAUTH_ID_TOKEN, new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
+        Mockito
+                .when(requestContext.getHeaders())
+                .thenReturn(headers);
+        LbFilter lbFilter = new LbFilter(
+                new LbAuthenticator(oauthManager, authorizationManager),
+                new LbAuthorizer(configuration),
+                "Bearer",
+                new LbUnauthorizedHandler(AuthenticationType.FORM));
+        ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
+                .forClass(SecurityContext.class);
+
+        lbFilter.filter(requestContext);
+
+        Mockito.verify(requestContext, Mockito.times(1))
+                .setSecurityContext(secContextCaptor.capture());
+
+        // The user from the Authorization header is authenticated, not the user from the cookie
+        assertThat(secContextCaptor.getValue().getUserPrincipal().getName()).isEqualTo(headerUser);
+        assertThat(secContextCaptor.getValue().isUserInRole("ADMIN")).isFalse();
+    }
+
+    @Test
+    void testInvalidBearerTokenWithValidCookie()
+    {
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addFirst(HttpHeaders.AUTHORIZATION, "Bearer INVALID_TOKEN");
+
+        // The cookie does not authenticate a request with an invalid token in the Authorization header
+        assertThatThrownBy(() -> createFilter().filter(requestWithCookie(headers)))
+                .isInstanceOf(WebApplicationException.class);
+        Mockito.verify(requestContext, Mockito.never()).setSecurityContext(Mockito.any());
+    }
+
+    @Test
+    void testOtherAuthorizationSchemeWithValidCookie()
+    {
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addFirst(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString("basic_user:password".getBytes(UTF_8)));
+
+        // The cookie does not authenticate the request, so that the next filter in the chain handles the Basic credentials
+        assertThatThrownBy(() -> createFilter().filter(requestWithCookie(headers)))
+                .isInstanceOf(WebApplicationException.class);
+        Mockito.verify(requestContext, Mockito.never()).setSecurityContext(Mockito.any());
+    }
+
+    private LbFilter createFilter()
+    {
+        AuthorizationConfiguration configuration = new AuthorizationConfiguration();
+        configuration.setAdmin(MEMBER_OF.orElseThrow());
+        configuration.setUser(MEMBER_OF.orElseThrow());
+        return new LbFilter(
+                new LbAuthenticator(oauthManager, authorizationManager),
+                new LbAuthorizer(configuration),
+                "Bearer",
+                new LbUnauthorizedHandler(AuthenticationType.FORM));
+    }
+
+    private ContainerRequestContext requestWithCookie(MultivaluedHashMap<String, String> headers)
+    {
+        Mockito
+                .when(requestContext.getCookies())
+                .thenReturn(
+                        Map.of(
+                                SessionCookie.OAUTH_ID_TOKEN, new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
+        Mockito
+                .when(requestContext.getHeaders())
+                .thenReturn(headers);
+        return requestContext;
     }
 
     @Test

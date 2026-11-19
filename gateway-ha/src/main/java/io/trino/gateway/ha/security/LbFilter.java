@@ -49,19 +49,25 @@ public class LbFilter
     }
 
     /**
-     * Filters requests by checking for the token cookie and authorization header,
+     * Filters requests by checking the Authorization header, falling back to the token cookie,
      * and authenticates the user using the filter's authenticator.
      */
     @Override
     public void filter(final ContainerRequestContext requestContext)
             throws WebApplicationException
     {
-        // Checks for cookie, if not find then search for authorization header
         try {
-            String idToken = Optional
-                    .ofNullable(requestContext.getCookies().get(SessionCookie.OAUTH_ID_TOKEN))
-                    .map(Cookie::getValue)
-                    .orElse(getToken(requestContext.getHeaders().getFirst(HttpHeaders.AUTHORIZATION)));
+            String authorizationHeader = requestContext.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            String idToken;
+            if (authorizationHeader != null) {
+                // Do not fall back to the cookie, so that another filter in the chain can handle other schemes
+                idToken = getToken(authorizationHeader);
+            }
+            else {
+                idToken = Optional.ofNullable(requestContext.getCookies().get(SessionCookie.OAUTH_ID_TOKEN))
+                        .map(Cookie::getValue)
+                        .orElse(null);
+            }
 
             LbPrincipal principal = idTokenAuthenticator.authenticate(idToken)
                     .orElseThrow(() -> new AuthenticationException("Authentication error"));
