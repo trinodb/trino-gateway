@@ -88,7 +88,7 @@ final class TestLbLdapClient
         assertThat(lbLdapClient.authenticate(user, password)).isTrue();
 
         when(ldapConnectionTemplate.authenticate(eq(searchRequest), any(char[].class)))
-                .thenThrow(PasswordException.class);
+                .thenThrow(new PasswordException());
         assertThat(lbLdapClient.authenticate(user, password)).isFalse();
     }
 
@@ -154,7 +154,7 @@ final class TestLbLdapClient
 
         Mockito
                 .when(ldapConnectionTemplate.authenticate(expectedDn, password.toCharArray()))
-                .thenThrow(PasswordException.class);
+                .thenThrow(new PasswordException());
 
         // Failure case
         assertThat(lbLdapClient.authenticate(user, password)).isFalse();
