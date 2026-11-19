@@ -20,7 +20,7 @@
         <app.main.class>io.trino.gateway.ha.HaGatewayLauncher</app.main.class>
 
         <!-- dependency versions -->
-        <dep.bouncycastle.version>1.86</dep.bouncycastle.version>
+        <dep.bouncycastle.version>1.87</dep.bouncycastle.version>
         <dep.flyway.version>13.12.1</dep.flyway.version>
         <dep.mockito.version>5.24.0</dep.mockito.version>
         <dep.okhttp3.version>5.5.1</dep.okhttp3.version>
