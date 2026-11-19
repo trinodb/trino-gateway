@@ -15,6 +15,7 @@ package io.trino.gateway.ha.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.Claim;
 import io.trino.gateway.ha.config.OAuthConfiguration;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -27,7 +28,9 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +38,41 @@ final class TestLbOAuthManager
 {
     @Test
     void testGetClaimsFromEcIdToken()
+            throws Exception
+    {
+        assertThat(getClaims(new OAuthConfiguration(), "test-issuer", "trino-gateway")).isPresent();
+    }
+
+    @Test
+    void testIssuerMatchesConfiguredIssuer()
+            throws Exception
+    {
+        OAuthConfiguration config = new OAuthConfiguration();
+        config.setIssuer("test-issuer");
+        assertThat(getClaims(config, "test-issuer", "trino-gateway")).isPresent();
+    }
+
+    @Test
+    void testIssuerDiffersFromConfiguredIssuer()
+            throws Exception
+    {
+        OAuthConfiguration config = new OAuthConfiguration();
+        config.setIssuer("test-issuer");
+        assertThat(getClaims(config, "other-issuer", "trino-gateway")).isEmpty();
+    }
+
+    @Test
+    void testAudienceDiffersFromConfiguredAudiences()
+            throws Exception
+    {
+        OAuthConfiguration config = new OAuthConfiguration();
+        config.setIssuer("test-issuer");
+        config.setAudiences(List.of("trino-gateway"));
+        assertThat(getClaims(config, "test-issuer", "trino-gateway")).isPresent();
+        assertThat(getClaims(config, "test-issuer", "other-application")).isEmpty();
+    }
+
+    private static Optional<Map<String, Claim>> getClaims(OAuthConfiguration config, String issuer, String audience)
             throws Exception
     {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
@@ -48,16 +86,16 @@ final class TestLbOAuthManager
                             """
                             {"keys": [{"kty": "EC", "kid": "test-key", "crv": "P-256", "x": "%s", "y": "%s"}]}
                             """.formatted(coordinate(publicKey.getW().getAffineX().toByteArray()), coordinate(publicKey.getW().getAffineY().toByteArray()))));
-            OAuthConfiguration config = new OAuthConfiguration();
             config.setJwkEndpoint(server.url("/jwks").toString());
             LbOAuthManager manager = new LbOAuthManager(config, Map.of());
 
             String idToken = JWT.create()
                     .withKeyId("test-key")
-                    .withIssuer("test-issuer")
+                    .withIssuer(issuer)
+                    .withAudience(audience)
                     .sign(Algorithm.ECDSA256(publicKey, (ECPrivateKey) keyPair.getPrivate()));
 
-            assertThat(manager.getClaimsFromIdToken(idToken)).isPresent();
+            return manager.getClaimsFromIdToken(idToken);
         }
     }
 
