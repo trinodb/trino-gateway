@@ -59,6 +59,9 @@ Use the following steps to create a new router:
 - To get the cluster stats set the parameter
   `clusterStatsConfiguration=>monitorType` to `UI_API` or `JDBC` which in turn
   needs the setup of `backendState` section in the config file.
+- Set `monitorType` to `PING` for a lightweight HTTP liveness check that, like
+  `INFO_API`, does not require the `backendState` section. See
+  [PING](installation.md#ping) for details.
 
 ### Configuration file reference
     
