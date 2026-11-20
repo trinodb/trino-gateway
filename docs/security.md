@@ -44,6 +44,34 @@ Use only an external routing service that you operate or trust. Add the
 headers that the external routing service does not need, such as
 `Authorization`, to `excludeHeaders`.
 
+## Separate hostname for the web UI
+
+Trino Gateway serves its own web UI and proxies the web UI of the Trino
+clusters under `/ui`, on the same host and port. The browser treats both as one
+origin, so a script that runs in the Trino web UI, for example through a
+cross-site scripting bug, can read the login session of the Trino Gateway web
+UI.
+
+To keep them apart, point two hostnames at the same Trino Gateway, for example
+in DNS or in the load balancer:
+
+- `gateway-admin.example.net` for the Trino Gateway web UI and the
+  [Gateway API](gateway-api.md).
+- `trino.example.com` for clients and the Trino web UI.
+
+The browser keeps the login session of the Trino Gateway web UI separately for
+each hostname, so the Trino web UI on the other hostname cannot read it.
+Hostnames under the same parent domain, such as `gateway-admin.example.com` and
+`trino.example.com`, can still set cookies for each other, so for full
+separation use different registrable domains as in the example. With
+[OAuth authentication](#oauthopenidconnect), use the hostname of the Trino
+Gateway web UI in `redirectUrl` and `redirectWebUrl`.
+
+Trino Gateway still serves all paths on both hostnames. Block the Trino web UI
+paths, such as `/ui`, on the hostname for the Trino Gateway web UI, and block
+the Trino Gateway web UI on the hostname for clients, for example in the load
+balancer. Otherwise a link can still open both web UIs on one hostname.
+
 ## Client certificate JWT bridge
 
 For environments where clients authenticate to Trino with mTLS certificates,
