@@ -26,6 +26,28 @@ roles give the same control over Trino clusters, through the web UI and the
 [Gateway API](gateway-api.md), so grant both only to users you trust with this
 access, as described in [Authorization](#authorization).
 
+## Separate hostname for the web UI
+
+Trino Gateway serves its own web UI and proxies the web UI of the Trino
+clusters under `/ui`, on the same host and port. The browser treats both as one
+origin, so a script that runs in the Trino web UI, for example through a
+cross-site scripting bug, can read the login session of the Trino Gateway web
+UI.
+
+To keep them apart, point two hostnames at the same Trino Gateway, for example
+in DNS or in the load balancer:
+
+- `gateway-admin.example.com` for the Trino Gateway web UI and the
+  [Gateway API](gateway-api.md).
+- `trino.example.com` for clients and the Trino web UI.
+
+The browser keeps the login session of the Trino Gateway web UI separately for
+each hostname, so the Trino web UI on the other hostname cannot read it. With
+[OAuth authentication](#oauthopenidconnect), use the hostname of the Trino
+Gateway web UI in `redirectUrl` and `redirectWebUrl`. Trino Gateway still
+serves all paths on both hostnames, so open the Trino web UI only through the
+hostname for clients.
+
 ## Client certificate JWT bridge
 
 For environments where clients authenticate to Trino with mTLS certificates,
