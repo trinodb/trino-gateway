@@ -18,6 +18,7 @@ import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
 import io.trino.gateway.ha.router.RoutingManager;
@@ -350,6 +351,7 @@ final class TestProxyRequestHandler
         return new ProxyRequestHandler(
                 mock(HttpClient.class),
                 routingManager,
+                mock(GatewayBackendManager.class),
                 queryHistoryManager,
                 mock(OAuth2RoutingStore.class),
                 new HaGatewayConfiguration());
