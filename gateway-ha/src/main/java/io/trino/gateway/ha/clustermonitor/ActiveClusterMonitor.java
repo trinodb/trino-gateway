@@ -25,12 +25,15 @@ import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class ActiveClusterMonitor
 {
@@ -73,10 +76,11 @@ public class ActiveClusterMonitor
                     Future<ClusterStats> call = executorService.submit(() -> clusterStatsMonitor.monitor(backend));
                     futures.add(call);
                 }
+                // Bound each round by the task delay, so that a slow cluster cannot hold up the others
+                long deadline = System.nanoTime() + taskDelay.roundTo(NANOSECONDS);
                 List<ClusterStats> stats = new ArrayList<>();
-                for (Future<ClusterStats> clusterStatsFuture : futures) {
-                    ClusterStats clusterStats = clusterStatsFuture.get();
-                    stats.add(clusterStats);
+                for (int i = 0; i < futures.size(); i++) {
+                    stats.add(getClusterStats(allClusters.get(i), futures.get(i), deadline));
                 }
 
                 if (clusterStatsObservers != null) {
@@ -90,6 +94,24 @@ public class ActiveClusterMonitor
                 log.error(e, "Error performing backend monitor tasks");
             }
         }, 0, (long) taskDelay.getValue(), taskDelay.getUnit());
+    }
+
+    private ClusterStats getClusterStats(ProxyBackendConfiguration backend, Future<ClusterStats> future, long deadline)
+            throws InterruptedException
+    {
+        try {
+            return future.get(Math.max(0, deadline - System.nanoTime()), NANOSECONDS);
+        }
+        catch (TimeoutException e) {
+            future.cancel(true);
+            log.warn("Monitoring cluster %s took longer than %s, marking it unhealthy", backend.getName(), taskDelay);
+        }
+        catch (ExecutionException e) {
+            log.error(e.getCause(), "Error monitoring cluster %s, marking it unhealthy", backend.getName());
+        }
+        return ClusterStatsMonitor.getClusterStatsBuilder(backend)
+                .trinoStatus(TrinoStatus.UNHEALTHY)
+                .build();
     }
 
     @PreDestroy
