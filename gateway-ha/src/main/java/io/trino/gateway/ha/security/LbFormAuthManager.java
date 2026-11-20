@@ -16,6 +16,7 @@ package io.trino.gateway.ha.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.airlift.log.Logger;
@@ -27,6 +28,7 @@ import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -35,6 +37,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -91,6 +94,9 @@ public class LbFormAuthManager
      */
     public Result<?> processRESTLogin(RestLoginRequest loginForm)
     {
+        if (loginForm == null || loginForm.username() == null || loginForm.password() == null) {
+            return Result.fail("Authentication failed.");
+        }
         if (authenticate(new BasicCredentials(loginForm.username(), loginForm.password()))) {
             String token = getSelfSignedToken(loginForm.username());
             return Result.ok(Map.of("token", token));
@@ -119,6 +125,10 @@ public class LbFormAuthManager
                 }
                 return Optional.of(jwt.getClaims());
             }
+        }
+        catch (JWTDecodeException exc) {
+            // A malformed token is an authentication failure, not an error of Trino Gateway
+            log.debug("Could not decode token: %s", exc.getMessage());
         }
         catch (Exception exc) {
             log.error(exc, "Could not validate token or get claims from it.");
@@ -165,10 +175,12 @@ public class LbFormAuthManager
 
         if (presetUsers != null) {
             UserConfiguration user = presetUsers.get(credentials.username());
-            return user != null
-                    && user.password().equals(credentials.password());
+            if (user != null && MessageDigest.isEqual(user.password().getBytes(UTF_8), credentials.password().getBytes(UTF_8))) {
+                return true;
+            }
         }
 
+        log.debug("Authentication failed for user [%s]", credentials.username());
         return false;
     }
 

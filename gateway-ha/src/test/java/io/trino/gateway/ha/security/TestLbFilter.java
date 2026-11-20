@@ -227,6 +227,8 @@ final class TestLbFilter
         assertThatThrownBy(() -> createFilter().filter(requestWithCookie(headers)))
                 .isInstanceOf(WebApplicationException.class);
         Mockito.verify(requestContext, Mockito.never()).setSecurityContext(Mockito.any());
+        // Without a bearer token, nothing is decoded, so no token error is logged for Basic requests
+        Mockito.verify(oauthManager, Mockito.never()).getClaimsFromIdToken(Mockito.any());
     }
 
     private LbFilter createFilter()
@@ -280,5 +282,6 @@ final class TestLbFilter
             // Exception is thrown when the authentication fails
             lbFilter.filter(requestContext);
         }).isInstanceOf(WebApplicationException.class);
+        Mockito.verify(oauthManager, Mockito.never()).getClaimsFromIdToken(Mockito.any());
     }
 }

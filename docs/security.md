@@ -349,6 +349,18 @@ authentication:
       publicKey: <public_key_path>
 ```
 
+A failed login with a user name and password, from the login form or with
+HTTP Basic authentication, returns HTTP status 403. Trino Gateway logs it at
+the `DEBUG` level with the user name, and the failed requests are recorded in
+the HTTP request log. Like Trino, Trino Gateway does not limit the number of
+login attempts. Use the lockout policies of your LDAP server, and rate limiting
+in a load balancer or reverse proxy in front of Trino Gateway, to protect
+against password guessing.
+
+Trino Gateway accepts these logins over HTTP as well, which sends the password
+in clear text. Use [HTTPS](#tls-configuration) whenever form or LDAP
+authentication is configured.
+
 ### Form/LDAP
 
 LDAP requires both random key pair and config path for LDAP
