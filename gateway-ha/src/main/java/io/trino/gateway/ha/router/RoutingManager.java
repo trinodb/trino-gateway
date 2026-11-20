@@ -80,7 +80,7 @@ public interface RoutingManager
      * Finds the backend cluster associated with a given query ID.
      *
      * @param queryId the unique identifier of the query
-     * @return the backend cluster ID, or null if not found
+     * @return the backend cluster ID, or null if not found or if the lookup failed
      */
     String findBackendForQueryId(String queryId);
 
