@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -353,7 +354,10 @@ class TestRoutingTargetHandler
         when(httpClient.execute(any(), any())).thenReturn(new ExternalRouterResponse(null, List.of(), ImmutableMap.of()));
 
         assertThatThrownBy(() -> handler.resolveRouting(prepareStatementSubmission()))
-                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(400));
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(400);
+                    assertThat(e.getResponse().getMediaType()).isEqualTo(TEXT_PLAIN_TYPE);
+                });
         verify(routingManager, never()).provideBackendConfiguration(any(), any());
     }
 
@@ -409,7 +413,11 @@ class TestRoutingTargetHandler
         when(routingManager.provideBackendConfiguration(any(), any())).thenThrow(new NoHealthyBackendException("No healthy backend"));
 
         assertThatThrownBy(() -> handler.resolveRouting(request))
-                .isInstanceOfSatisfying(WebApplicationException.class, e -> assertThat(e.getResponse().getStatus()).isEqualTo(503));
+                .isInstanceOfSatisfying(WebApplicationException.class, e -> {
+                    assertThat(e.getResponse().getStatus()).isEqualTo(503);
+                    // A plain text type keeps the message, which contains the routing group, from being rendered as HTML
+                    assertThat(e.getResponse().getMediaType()).isEqualTo(TEXT_PLAIN_TYPE);
+                });
     }
 
     private static HttpServletRequest prepareStatementSubmission()

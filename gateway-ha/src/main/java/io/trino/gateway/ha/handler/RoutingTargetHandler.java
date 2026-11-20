@@ -45,6 +45,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static java.util.Objects.requireNonNull;
 
 public class RoutingTargetHandler
@@ -109,6 +110,7 @@ public class RoutingTargetHandler
             if (!unmatchedRequestFallbackEnabled && isStatementSubmission(request)) {
                 log.debug("Rejecting query submission: it matched no routing rule or routing group header");
                 throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
+                        .type(TEXT_PLAIN_TYPE)
                         .entity("Request did not resolve to a routing group and fallback to the default routing group is disabled")
                         .build());
             }
@@ -121,6 +123,7 @@ public class RoutingTargetHandler
         catch (NoHealthyBackendException e) {
             log.debug("Rejecting request for routing group [%s]: %s", routingGroup, e.getMessage());
             throw new WebApplicationException(Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .type(TEXT_PLAIN_TYPE)
                     .entity(e.getMessage())
                     .build());
         }
