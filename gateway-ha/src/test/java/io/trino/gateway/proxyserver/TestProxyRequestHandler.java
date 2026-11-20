@@ -17,6 +17,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import io.airlift.http.client.HttpClient;
 import io.trino.gateway.ha.HaGatewayLauncher;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
+import io.trino.gateway.ha.handler.BlockedUserService;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.QueryHistoryManager;
@@ -352,6 +353,7 @@ final class TestProxyRequestHandler
                 routingManager,
                 queryHistoryManager,
                 mock(OAuth2RoutingStore.class),
+                mock(BlockedUserService.class),
                 new HaGatewayConfiguration());
     }
 }

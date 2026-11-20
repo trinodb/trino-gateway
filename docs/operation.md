@@ -16,6 +16,17 @@ Existing cluster information can also be modified using the edit button.
 
 ![trino.gateway.io/entity](./assets/trinogateway_cluster_page.png)
 
+## Blocked users UI - reject queries from specific users
+
+Administrators can block a user from submitting queries on the **Blocked users** page of the web UI.
+A block is either global, or limited to a single routing group. Blocked users receive an HTTP 403
+response when they submit a statement, and queries that were already submitted are not affected.
+
+Blocks are stored in the `blocked_users` table of the gateway database, and each Trino Gateway
+instance reloads them every few seconds, so a change applies to all instances without a restart.
+The check fails open: if the user name is missing or the database cannot be read, the request is
+passed through and the last known list of blocked users is kept.
+
 ## Cluster configuration and health status
 
 Trino Gateway tracks cluster state at two separate layers, each serving a
