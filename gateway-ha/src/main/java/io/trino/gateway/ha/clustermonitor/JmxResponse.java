@@ -13,8 +13,8 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
+import tools.jackson.databind.JsonNode;
 
 import java.util.List;
 import java.util.stream.StreamSupport;

@@ -13,14 +13,14 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public record JmxAttribute(String name, int value)
 {
     public static JmxAttribute fromJson(JsonNode json)
     {
         return new JmxAttribute(
-                json.get("name").asText(),
-                json.get("value").asInt());
+                json.get("name").asString(),
+                json.get("value").asInt(0));
     }
 }
