@@ -51,6 +51,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.trino.gateway.ha.security.LbOAuthManager.buildUnauthorizedResponse;
 import static io.trino.gateway.ha.security.OidcCookie.OIDC_COOKIE;
 import static io.trino.gateway.ha.security.util.AuthenticationTypeResolver.resolveEffectiveTypes;
+import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
@@ -131,8 +132,11 @@ public class LoginResource
             }
             throw new WebApplicationException("Form authentication is not setup");
         }
-        Result<?> r = formAuthManager.processRESTLogin(loginForm);
-        return Response.ok(r).build();
+        Result<?> result = formAuthManager.processRESTLogin(loginForm);
+        if (!Result.isSuccess(result)) {
+            return Response.status(FORBIDDEN).entity(result).build();
+        }
+        return Response.ok(result).build();
     }
 
     @POST

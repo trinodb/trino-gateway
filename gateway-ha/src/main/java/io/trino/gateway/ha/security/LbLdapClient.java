@@ -144,7 +144,7 @@ public class LbLdapClient
             }
         }
         catch (PasswordException exception) {
-            log.error("Failed to authenticate %s", exception.getResultCode());
+            log.debug("LDAP authentication failed for user [%s], %s", user, exception.getResultCode());
             return false;
         }
         catch (LdapInvalidDnException exception) {

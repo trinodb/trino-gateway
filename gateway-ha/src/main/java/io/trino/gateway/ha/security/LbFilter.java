@@ -69,6 +69,10 @@ public class LbFilter
                         .orElse(null);
             }
 
+            if (idToken == null) {
+                // No token for this scheme, so leave the request to the next filter in the chain without decoding anything
+                throw new AuthenticationException("No token");
+            }
             LbPrincipal principal = idTokenAuthenticator.authenticate(idToken)
                     .orElseThrow(() -> new AuthenticationException("Authentication error"));
             requestContext.setSecurityContext(new SecurityContext()

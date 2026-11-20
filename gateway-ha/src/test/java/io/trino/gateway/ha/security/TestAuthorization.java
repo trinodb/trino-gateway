@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
@@ -120,6 +121,36 @@ final class TestAuthorization
                 .get();
         credentials.ifPresent(value -> builder.addHeader("Authorization", basicAuthorization(value)));
         try (Response response = httpClient.newCall(builder.build()).execute()) {
+            return response.code();
+        }
+    }
+
+    @Test
+    void testFormLogin()
+            throws IOException
+    {
+        assertThat(login("admin1", "admin1_password")).isEqualTo(200);
+        assertThat(login("admin1", "wrong_password")).isEqualTo(403);
+        assertThat(login("unknown", "admin1_password")).isEqualTo(403);
+        assertThat(login("{\"username\":null,\"password\":\"admin1_password\"}")).isEqualTo(403);
+        assertThat(login("{\"username\":\"admin1\"}")).isEqualTo(403);
+        assertThat(login("null")).isEqualTo(403);
+    }
+
+    private int login(String username, String password)
+            throws IOException
+    {
+        return login(objectMapper.writeValueAsString(Map.of("username", username, "password", password)));
+    }
+
+    private int login(String body)
+            throws IOException
+    {
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/login")
+                .post(RequestBody.create(body, MediaType.parse("application/json; charset=utf-8")))
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
             return response.code();
         }
     }
