@@ -25,6 +25,36 @@ test.describe('login', () => {
     expect(api.callsTo('/login')).toHaveLength(0)
   })
 
+  test.describe('with wrong credentials', () => {
+    test.use({
+      mockOptions: {
+        overrides: {
+          '/login': (route) =>
+            route.fulfill({
+              status: 403,
+              contentType: 'application/json',
+              body: JSON.stringify({ code: 500, msg: 'Authentication failed.' }),
+            }),
+        },
+      },
+    })
+
+    test('shows the login error and stays on the login form', async ({ page, browserErrors }) => {
+      await page.goto('./')
+      await page.getByPlaceholder('Input username').fill('admin')
+      await page.getByPlaceholder('Input password').fill('wrong')
+      await page.getByRole('button', { name: 'Sign in' }).click()
+
+      await expect(page.getByText('Authentication failed.')).toBeVisible()
+      await expect(page.getByPlaceholder('Input username')).toBeVisible()
+
+      // The browser logs the 403 response of the failed login as a console error
+      const expectedError = browserErrors.findIndex((error) => error.includes('status of 403'))
+      expect(expectedError).toBeGreaterThanOrEqual(0)
+      browserErrors.splice(expectedError, 1)
+    })
+  })
+
   test('logs out and returns to the login form', async ({ page, api }) => {
     await login(page)
     await page.locator('header').getByRole('button').last().hover()
