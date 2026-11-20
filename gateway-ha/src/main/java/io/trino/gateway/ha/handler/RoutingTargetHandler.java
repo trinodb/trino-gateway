@@ -28,18 +28,13 @@ import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
 import io.trino.gateway.ha.router.schema.RoutingSelectorResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
@@ -129,7 +124,7 @@ public class RoutingTargetHandler
         // Apply headers from RoutingDestination if there are any
         HttpServletRequest modifiedRequest = request;
         if (!routingDestination.externalHeaders().isEmpty()) {
-            modifiedRequest = new HeaderModifyingRequestWrapper(request, routingDestination.externalHeaders());
+            modifiedRequest = new HeaderOverrideRequestWrapper(request, routingDestination.externalHeaders());
         }
         return new RoutingTargetResponse(
                 new RoutingDestination(routingGroup, clusterHost, buildUriWithNewCluster(clusterHost, request), externalUrl),
@@ -140,48 +135,6 @@ public class RoutingTargetHandler
     {
         return HttpMethod.POST.equalsIgnoreCase(request.getMethod())
                 && statementPaths.stream().anyMatch(request.getRequestURI()::startsWith);
-    }
-
-    /**
-     * A wrapper for HttpServletRequest that allows modifying multiple headers.
-     */
-    private static class HeaderModifyingRequestWrapper
-            extends HttpServletRequestWrapper
-    {
-        private final Map<String, String> customHeaders;
-
-        private HeaderModifyingRequestWrapper(HttpServletRequest request, Map<String, String> customHeaders)
-        {
-            super(request);
-            this.customHeaders = customHeaders;
-        }
-
-        @Override
-        public String getHeader(String name)
-        {
-            if (customHeaders.containsKey(name)) {
-                return customHeaders.get(name);
-            }
-            return super.getHeader(name);
-        }
-
-        @Override
-        public Enumeration<String> getHeaders(String name)
-        {
-            if (customHeaders.containsKey(name)) {
-                return Collections.enumeration(List.of(customHeaders.get(name)));
-            }
-            return super.getHeaders(name);
-        }
-
-        @Override
-        public Enumeration<String> getHeaderNames()
-        {
-            return Collections.enumeration(
-                    Stream.concat(Collections.list(super.getHeaderNames()).stream(), customHeaders.keySet().stream())
-                            .distinct()
-                            .toList());
-        }
     }
 
     private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
