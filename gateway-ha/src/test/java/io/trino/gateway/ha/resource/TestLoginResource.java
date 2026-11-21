@@ -19,6 +19,7 @@ import io.trino.gateway.ha.config.JwtConfiguration;
 import io.trino.gateway.ha.domain.Result;
 import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbPrincipal;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static jakarta.ws.rs.core.NewCookie.SameSite.LAX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -34,13 +36,23 @@ import static org.mockito.Mockito.when;
 final class TestLoginResource
 {
     @Test
+    void testLogoutClearsSessionCookie()
+    {
+        LoginResource resource = new LoginResource(jwtConfiguration(), null, null, mock(LbJwtManager.class));
+        try (Response response = resource.processRESTLogout()) {
+            assertThat(response.getStatus()).isEqualTo(200);
+            assertThat(response.getEntity()).isInstanceOf(Result.class);
+            NewCookie cookie = response.getCookies().get("token");
+            assertThat(cookie.getMaxAge()).isZero();
+            assertThat(cookie.isSecure()).isTrue();
+            assertThat(cookie.getSameSite()).isEqualTo(LAX);
+        }
+    }
+
+    @Test
     void testJwtPagePermissionsAreReturnedFromUserinfo()
     {
-        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
-        AuthenticationConfiguration authentication = new AuthenticationConfiguration();
-        authentication.setDefaultType(List.of("jwt"));
-        authentication.setJwt(new JwtConfiguration());
-        configuration.setAuthentication(authentication);
+        HaGatewayConfiguration configuration = jwtConfiguration();
 
         LbJwtManager jwtManager = mock(LbJwtManager.class);
         when(jwtManager.processPagePermissions(List.of("USER"))).thenReturn(List.of("dashboard", "history"));
@@ -56,5 +68,15 @@ final class TestLoginResource
                     .isInstanceOfSatisfying(Map.class, data -> assertThat(data.get("permissions"))
                             .isEqualTo(List.of("dashboard", "history")));
         }
+    }
+
+    private static HaGatewayConfiguration jwtConfiguration()
+    {
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        AuthenticationConfiguration authentication = new AuthenticationConfiguration();
+        authentication.setDefaultType(List.of("jwt"));
+        authentication.setJwt(new JwtConfiguration());
+        configuration.setAuthentication(authentication);
+        return configuration;
     }
 }

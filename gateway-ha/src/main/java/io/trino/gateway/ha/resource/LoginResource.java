@@ -25,6 +25,7 @@ import io.trino.gateway.ha.security.LbJwtManager;
 import io.trino.gateway.ha.security.LbOAuthManager;
 import io.trino.gateway.ha.security.LbPrincipal;
 import io.trino.gateway.ha.security.OidcCookie;
+import io.trino.gateway.ha.security.SessionCookie;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
@@ -139,9 +140,11 @@ public class LoginResource
     @Path("logout")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response processRESTLogin()
+    public Response processRESTLogout()
     {
-        return Response.ok(Result.ok()).build();
+        return Response.ok(Result.ok())
+                .cookie(SessionCookie.logOutCookie())
+                .build();
     }
 
     @POST

@@ -26,7 +26,6 @@ import io.trino.gateway.ha.domain.request.RestLoginRequest;
 import io.trino.gateway.ha.security.util.AuthenticationException;
 import io.trino.gateway.ha.security.util.BasicCredentials;
 import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -36,8 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.trino.gateway.ha.security.SessionCookie.OAUTH_ID_TOKEN;
-import static io.trino.gateway.ha.security.SessionCookie.logOut;
+import static io.trino.gateway.ha.security.SessionCookie.logOutCookie;
 import static java.util.Collections.unmodifiableMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -248,8 +246,7 @@ final class TestLbAuthenticator
     void testLogout()
             throws Exception
     {
-        Response response = logOut();
-        NewCookie cookie = response.getCookies().get(OAUTH_ID_TOKEN);
+        NewCookie cookie = logOutCookie();
         log.info("value %s", cookie.getValue());
         assertThat(cookie.getValue()).isEqualTo("logout");
     }
