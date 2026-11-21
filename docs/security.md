@@ -265,11 +265,21 @@ authentication:
     redirectUrl:
     redirectWebUrl: 
     userIdField:
+    audiences:
+      - <client_id>
     scopes:
       - s1
       - s2
       - s3
 ```
+
+Set `issuer` to the issuer of the identity provider. Trino Gateway rejects ID
+tokens with a different issuer. The value must match the `iss` claim of the
+tokens exactly, including any trailing slash.
+
+Set `audiences` to the client ID of Trino Gateway. Trino Gateway then rejects ID
+tokens that the identity provider issues for other applications. Without
+`audiences`, Trino Gateway accepts any ID token from the identity provider.
 
 Set the `privilegesField` to retrieve privileges from an OAuth claim.
 
