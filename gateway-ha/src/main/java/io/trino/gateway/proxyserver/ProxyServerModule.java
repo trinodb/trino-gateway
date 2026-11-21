@@ -32,6 +32,7 @@ public class ProxyServerModule
     {
         jaxrsBinder(binder()).bind(RouteToBackendResource.class);
         jaxrsBinder(binder()).bind(RouterPreMatchContainerRequestFilter.class);
+        jaxrsBinder(binder()).bind(RequestSizeLimitFilter.class);
         jaxrsBinder(binder()).bind(ProxyRequestHandler.class);
         // The proxy client advertises gzip to the backend and decodes the response, so Trino Gateway can read
         // the query id from it. The Trino Gateway HTTP server compresses the response again for the client.

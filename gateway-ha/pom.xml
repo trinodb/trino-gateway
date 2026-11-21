@@ -208,6 +208,12 @@
 
         <dependency>
             <groupId>io.trino</groupId>
+            <artifactId>trino-grammar</artifactId>
+            <version>${dep.trino.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.trino</groupId>
             <artifactId>trino-parser</artifactId>
             <version>${dep.trino.version}</version>
         </dependency>
@@ -230,6 +236,12 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.13.2</version>
         </dependency>
 
         <dependency>
