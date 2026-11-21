@@ -28,6 +28,8 @@ import static java.util.Objects.requireNonNull;
 public class ResourceSecurityDynamicFeature
         implements DynamicFeature
 {
+    private static final String TRINO_GATEWAY_PACKAGE = "io.trino.gateway.";
+
     private final ContainerRequestFilter filter;
 
     @Inject
@@ -42,6 +44,13 @@ public class ResourceSecurityDynamicFeature
         if (resourceInfo.getResourceClass().getAnnotation(RolesAllowed.class) != null
                 || resourceInfo.getResourceMethod().getAnnotation(RolesAllowed.class) != null) {
             context.register(filter);
+            return;
+        }
+        // Like Trino, require management access for resources from libraries, such as the JMX
+        // and metrics resources of Airlift
+        if (!resourceInfo.getResourceClass().getPackageName().startsWith(TRINO_GATEWAY_PACKAGE)) {
+            context.register(filter);
+            context.register(new ManagementAuthorizationFilter());
         }
     }
 }
