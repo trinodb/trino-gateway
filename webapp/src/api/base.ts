@@ -61,6 +61,11 @@ export class ClientApi {
         },
         method: "POST"
       });
+    if ((res.status === 401 || res.status === 403) && url === '/login') {
+      // A failed login is not an expired session, so show the message from the server
+      const resJson = await res.json().catch(() => ({}));
+      this.serverErrorHandler(resJson.msg || Locale.Error.Network);
+    }
     if (res.status === 401 || res.status === 403) {
       this.authErrorHandler()
     }
