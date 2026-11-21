@@ -154,6 +154,56 @@ final class TestLbFilter
     }
 
     @Test
+    void testHeaderTakesPrecedenceOverCookie()
+            throws Exception
+    {
+        String headerUser = "header_user";
+        String headerToken = "HEADER_TOKEN";
+        Claim headerClaim = Mockito.mock(Claim.class);
+        Mockito
+                .when(headerClaim.toString())
+                .thenReturn(headerUser);
+        Mockito
+                .when(oauthManager.getClaimsFromIdToken(headerToken))
+                .thenReturn(Optional.of(Map.of("sub", headerClaim)));
+        Mockito
+                .when(authorizationManager.getPrivileges(headerUser))
+                .thenReturn(Optional.of("OTHER_MEMBER"));
+
+        AuthorizationConfiguration configuration = new AuthorizationConfiguration();
+        configuration.setAdmin(MEMBER_OF.orElseThrow());
+        configuration.setUser(MEMBER_OF.orElseThrow());
+
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+        headers.addFirst(HttpHeaders.AUTHORIZATION, "Bearer " + headerToken);
+
+        Mockito
+                .when(requestContext.getCookies())
+                .thenReturn(
+                        Map.of(
+                                SessionCookie.OAUTH_ID_TOKEN, new Cookie.Builder(SessionCookie.OAUTH_ID_TOKEN).value(ID_TOKEN).build()));
+        Mockito
+                .when(requestContext.getHeaders())
+                .thenReturn(headers);
+        LbFilter lbFilter = new LbFilter(
+                new LbAuthenticator(oauthManager, authorizationManager),
+                new LbAuthorizer(configuration),
+                "Bearer",
+                new LbUnauthorizedHandler(AuthenticationType.FORM));
+        ArgumentCaptor<SecurityContext> secContextCaptor = ArgumentCaptor
+                .forClass(SecurityContext.class);
+
+        lbFilter.filter(requestContext);
+
+        Mockito.verify(requestContext, Mockito.times(1))
+                .setSecurityContext(secContextCaptor.capture());
+
+        // The user from the Authorization header is authenticated, not the user from the cookie
+        assertThat(secContextCaptor.getValue().getUserPrincipal().getName()).isEqualTo(headerUser);
+        assertThat(secContextCaptor.getValue().isUserInRole("ADMIN")).isFalse();
+    }
+
+    @Test
     void testMissingAuthenticationToken()
             throws WebApplicationException
     {
