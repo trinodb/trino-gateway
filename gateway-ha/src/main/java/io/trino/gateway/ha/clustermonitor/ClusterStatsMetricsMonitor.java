@@ -160,6 +160,7 @@ public class ClusterStatsMetricsMonitor
 
         Request.Builder requestBuilder = prepareGet()
                 .setUri(uri.build())
+                .setFollowRedirects(false)
                 .addHeader(HeaderName.of(identityHeader.name), identityHeader.value)
                 .addHeader(CONTENT_TYPE, "application/openmetrics-text; version=1.0.0; charset=utf-8");
         if (xForwardedProtoHeader) {

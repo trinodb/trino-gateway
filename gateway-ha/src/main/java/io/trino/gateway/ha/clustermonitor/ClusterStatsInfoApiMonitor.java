@@ -62,6 +62,7 @@ public class ClusterStatsInfoApiMonitor
     {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(baseUrl)).appendPath("/v1/info").build())
+                .setFollowRedirects(false)
                 .build();
         try {
             ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
