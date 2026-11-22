@@ -125,4 +125,25 @@ final class TestGatewayWebAppResource
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(((Result<?>) response.getEntity()).getMsg()).isEqualTo("Routing rules are managed by an external service");
     }
+
+    @Test
+    void testGetRoutingRulesWithExternalRules()
+            throws IOException
+    {
+        RoutingRulesConfiguration routingRules = new RoutingRulesConfiguration();
+        routingRules.setRulesEngineEnabled(true);
+        routingRules.setRulesType(RulesType.EXTERNAL);
+        HaGatewayConfiguration configuration = new HaGatewayConfiguration();
+        configuration.setRoutingRules(routingRules);
+        GatewayWebAppResource resource = new GatewayWebAppResource(
+                mock(GatewayBackendManager.class),
+                mock(QueryHistoryManager.class),
+                mock(BackendStateManager.class),
+                mock(RoutingRulesManager.class),
+                configuration);
+
+        jakarta.ws.rs.core.Response response = resource.getRoutingRules();
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(((Result<?>) response.getEntity()).getMsg()).isEqualTo("Routing rules are managed by an external service");
+    }
 }
