@@ -233,7 +233,7 @@ public class GatewayWebAppResource
             return Response.ok(Result.ok(ImmutableList.of())).build();
         }
         if (ruleType == RulesType.EXTERNAL) {
-            return Response.status(Response.Status.NO_CONTENT)
+            return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Result.fail("Routing rules are managed by an external service")).build();
         }
         List<RoutingRule> routingRulesList = routingRulesManager.getRoutingRules();
