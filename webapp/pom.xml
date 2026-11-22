@@ -97,8 +97,8 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <nodeVersion>v24.21.0</nodeVersion>
-                            <pnpmVersion>11.28.5</pnpmVersion>
+                            <nodeVersion>v24.22.3</nodeVersion>
+                            <pnpmVersion>11.28.13</pnpmVersion>
                         </configuration>
                     </execution>
                     <execution>
