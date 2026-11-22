@@ -47,13 +47,11 @@ import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlConta
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration test for LbJwtManager that tests JWT authentication
- * in a running gateway instance.
- * <p>
- * This test creates a real JWT token and tests it against a running gateway
- * to ensure end-to-end JWT authentication works properly.
- */
+/// Integration test for LbJwtManager that tests JWT authentication
+/// in a running gateway instance.
+///
+/// This test creates a real JWT token and tests it against a running gateway
+/// to ensure end-to-end JWT authentication works properly.
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestLbJwtManagerIntegration
 {

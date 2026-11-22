@@ -38,20 +38,16 @@ import java.util.Base64;
 import static io.trino.gateway.ha.util.TestcontainersUtils.createPostgreSqlContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Verifies that a configured authentication method is always accepted even when it is not
- * listed in {@code authentication.defaultType}. The config here uses the single-value (scalar)
- * form {@code defaultType: "oauth"} (bound as a one-element list) alongside a configured
- * {@code form} block, mirroring an existing deployment that upgrades to multi-auth:
- *
- * <ul>
- *   <li>{@code /loginType} advertises only {@code oauth} — the login page shows SSO as the
- *       primary method and does not surface the unlisted form.</li>
- *   <li>the {@code ChainedAuthFilter} still accepts form/basic, so automation using Basic
- *       auth keeps working. Before the membership fix this request would 403, since the chain
- *       was built solely from the {@code defaultType} list.</li>
- * </ul>
- */
+/// Verifies that a configured authentication method is always accepted even when it is not
+/// listed in `authentication.defaultType`. The config here uses the single-value (scalar)
+/// form `defaultType: "oauth"` (bound as a one-element list) alongside a configured
+/// `form` block, mirroring an existing deployment that upgrades to multi-auth:
+///
+/// - `/loginType` advertises only `oauth` — the login page shows SSO as the
+///   primary method and does not surface the unlisted form.
+/// - the `ChainedAuthFilter` still accepts form/basic, so automation using Basic
+///   auth keeps working. Before the membership fix this request would 403, since the chain
+///   was built solely from the `defaultType` list.
 @Testcontainers
 @TestInstance(Lifecycle.PER_CLASS)
 final class TestConfiguredMethodAlwaysAccepted
