@@ -14,7 +14,7 @@
     "sync:check": "node scripts/check-webui-sync.mjs"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "2.104.0",
+    "@douyinfe/semi-icons": "2.105.0",
     "@douyinfe/semi-icons-lab": "2.104.0",
     "@douyinfe/semi-illustrations": "2.104.0",
     "@douyinfe/semi-ui": "2.104.0",
