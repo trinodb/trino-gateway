@@ -19,9 +19,18 @@ export class ClientApi {
     if (res.status === 401 || res.status === 403) {
       this.authErrorHandler()
     }
-    else if (res.status === 204) {
-      // handle the case of Response.Status.NO_CONTENT when External Routing Service is used
-      return { isExternalRouting: true };
+    else if (res.status === 400) {
+      // handle the case of Response.Status.BAD_REQUEST when External Routing Service is used
+      const resJson = await res.json().catch(() => null);
+      if (resJson?.msg === 'Routing rules are managed by an external service') {
+        return { isExternalRouting: true };
+      }
+      Toast.error({
+        content: Locale.Error.Network,
+        duration: 5,
+        theme: "light"
+      });
+      throw new Error(Locale.Error.Network);
     }
     else if (res.status >= 500) {
       const resJson = await res.json();
