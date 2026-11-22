@@ -12,8 +12,8 @@ importers:
         specifier: 2.104.0
         version: 2.104.0(react@19.3.1)
       '@douyinfe/semi-icons-lab':
-        specifier: 2.104.0
-        version: 2.104.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 2.105.0
+        version: 2.105.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@douyinfe/semi-illustrations':
         specifier: 2.104.0
         version: 2.104.0(react@19.3.1)
@@ -221,8 +221,8 @@ packages:
   '@douyinfe/semi-foundation@2.104.0':
     resolution: {integrity: sha512-EyGrklNxEDuyLH68wfgktE5GpUSjr7pkwcaAhlptx7GWRSSBERbMfdHwgkR1/hB299lHnu2cIQ5k99kQEpLyxg==}
 
-  '@douyinfe/semi-icons-lab@2.104.0':
-    resolution: {integrity: sha512-mEWl9TKSMDHHtAs1nrIB9sdtl5p0KhDEiYI4lmvvBZHHHcLinX25oQi6pii+HRGxjtFxALXnbZuu1kVSqOmqAA==}
+  '@douyinfe/semi-icons-lab@2.105.0':
+    resolution: {integrity: sha512-x5g5WkrJiwXXwFwwjiFbfwvpzZCZPg/fcz1mPh6dYUMf4SDD4RrHqR56sf/J7kNo3zt5n/1jkaoAXszSXMRaJw==}
     peerDependencies:
       react: '>=16.0.0'
       react-dom: '>=16.0.0'
@@ -2420,7 +2420,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@douyinfe/semi-icons-lab@2.104.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@douyinfe/semi-icons-lab@2.105.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
