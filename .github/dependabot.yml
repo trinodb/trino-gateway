@@ -34,14 +34,15 @@ updates:
     # package.json on every update rather than only touching the lockfile.
     versioning-strategy: increase
     # Updates are deliberately not grouped. A grouped pull request fails as a
-    # whole when a single update breaks, and cannot be merged in parts. The
-    # exceptions are React, which requires react and react-dom at the exact same
-    # version and fails on every page otherwise, and the Semi Design packages,
-    # which are released together at the same version.
+    # whole when a single update breaks, and cannot be merged in parts. Each
+    # group is an exception with its own reason.
     groups:
+      # The Semi Design packages are released together at the same version.
       semi:
         patterns:
           - "@douyinfe/semi-*"
+      # React requires react and react-dom at the exact same version and fails
+      # on every page otherwise.
       react:
         patterns:
           - "react"
