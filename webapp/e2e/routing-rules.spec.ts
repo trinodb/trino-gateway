@@ -50,7 +50,11 @@ test.describe('routing rules', () => {
     test.use({
       mockOptions: {
         overrides: {
-          '/webapp/getRoutingRules': (route) => route.fulfill({ status: 204 }),
+          '/webapp/getRoutingRules': (route) => route.fulfill({
+            status: 400,
+            contentType: 'application/json',
+            body: JSON.stringify({ code: 500, msg: 'Routing rules are managed by an external service', data: null }),
+          }),
         },
       },
     })
