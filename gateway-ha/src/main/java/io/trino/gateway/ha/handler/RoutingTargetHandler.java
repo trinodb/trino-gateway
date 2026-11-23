@@ -145,9 +145,7 @@ public class RoutingTargetHandler
                 && statementPaths.stream().anyMatch(request.getRequestURI()::startsWith);
     }
 
-    /**
-     * A wrapper for HttpServletRequest that allows modifying multiple headers.
-     */
+    /// A wrapper for HttpServletRequest that allows modifying multiple headers.
     private static class HeaderModifyingRequestWrapper
             extends HttpServletRequestWrapper
     {
@@ -214,21 +212,18 @@ public class RoutingTargetHandler
         return Optional.empty();
     }
 
-    /**
-     * Pins an in-flight Trino OAuth2 token-exchange request to the coordinator that minted its
-     * {@code authId}. Covers all three gateway legs of the handshake — the driver poll, the browser
-     * initiate, and the browser callback (keyed by the {@code authIdHash} inside its {@code state}).
-     * Returns:
-     * <ul>
-     *   <li>a present backend: route the request there (the pinned coordinator is active, whatever
-     *       its health status in this instance's view);</li>
-     *   <li>empty: not a pinnable token-exchange request, or no pin recorded yet on this gateway
-     *       (fall through to normal routing; the 401 challenge handler records the pin).</li>
-     * </ul>
-     * If the pinned coordinator is deactivated or removed from the fleet (see
-     * {@link RoutingManager#isBackendActive}), the pin is dropped and the client is forced to
-     * re-authenticate, since only the minting coordinator holds the exchange state.
-     */
+    /// Pins an in-flight Trino OAuth2 token-exchange request to the coordinator that minted its
+    /// `authId`. Covers all three gateway legs of the handshake — the driver poll, the browser
+    /// initiate, and the browser callback (keyed by the `authIdHash` inside its `state`).
+    /// Returns:
+    /// - a present backend: route the request there (the pinned coordinator is active, whatever
+    ///   its health status in this instance's view);
+    /// - empty: not a pinnable token-exchange request, or no pin recorded yet on this gateway
+    ///   (fall through to normal routing; the 401 challenge handler records the pin).
+    ///
+    /// If the pinned coordinator is deactivated or removed from the fleet (see
+    /// [RoutingManager#isBackendActive]), the pin is dropped and the client is forced to
+    /// re-authenticate, since only the minting coordinator holds the exchange state.
     private Optional<String> getOAuth2StickyBackend(HttpServletRequest request)
     {
         String pinKey = oauth2PinKey(request).orElse(null);
@@ -251,12 +246,10 @@ public class RoutingTargetHandler
         throw new WebApplicationException(OAuth2RoutingUtils.forceReAuthResponse(request.getRequestURI()));
     }
 
-    /**
-     * The pin-store lookup key for an in-flight token-exchange request: from the path for the driver
-     * poll ({@code /oauth2/token/{authId}}) and the browser initiate
-     * ({@code /oauth2/token/initiate/{authIdHash}}), or from the {@code state} parameter for the
-     * browser callback ({@code /oauth2/callback}). Empty for anything else.
-     */
+    /// The pin-store lookup key for an in-flight token-exchange request: from the path for the driver
+    /// poll (`/oauth2/token/{authId}`) and the browser initiate
+    /// (`/oauth2/token/initiate/{authIdHash}`), or from the `state` parameter for the
+    /// browser callback (`/oauth2/callback`). Empty for anything else.
     private Optional<String> oauth2PinKey(HttpServletRequest request)
     {
         String path = request.getRequestURI();
@@ -277,11 +270,9 @@ public class RoutingTargetHandler
                 redactedRewriteTarget(newBackend, request));
     }
 
-    /**
-     * The rewrite target for the reroute log line: {@code newBackend} plus the redacted path/query.
-     * Unlike {@link ProxyUtils#buildUriWithNewCluster}, it must not carry the real {@code authId},
-     * {@code authIdHash} or {@code state}, because a log reader could lift the handshake id from it.
-     */
+    /// The rewrite target for the reroute log line: `newBackend` plus the redacted path/query.
+    /// Unlike [ProxyUtils#buildUriWithNewCluster], it must not carry the real `authId`,
+    /// `authIdHash` or `state`, because a log reader could lift the handshake id from it.
     static String redactedRewriteTarget(String newBackend, HttpServletRequest request)
     {
         return newBackend + OAuth2RoutingUtils.redactForLog(request.getRequestURI(), request.getQueryString());

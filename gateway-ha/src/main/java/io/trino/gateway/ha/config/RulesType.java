@@ -13,28 +13,20 @@
  */
 package io.trino.gateway.ha.config;
 
-/**
- * Specifies the sources of routing rules in the Trino Gateway's routing rules engine.
- *
- * <p>By default, requests are routed based on the `X-Trino-Routing-Group` header,
- * or to the default routing group (adhoc) if the header is absent.</p>
- *
- * <p>Routing rules can be defined in two ways:</p>
- * <ul>
- *   <li><strong>FILE:</strong> Rules are specified in a configuration file.</li>
- *   <li><strong>EXTERNAL:</strong> Rules are fetched from an external service via an HTTP POST request.</li>
- * </ul>
- */
+/// Specifies the sources of routing rules in the Trino Gateway's routing rules engine.
+///
+/// By default, requests are routed based on the `X-Trino-Routing-Group` header,
+/// or to the default routing group (adhoc) if the header is absent.
+///
+/// Routing rules can be defined in two ways:
+/// - **FILE:** Rules are specified in a configuration file.
+/// - **EXTERNAL:** Rules are fetched from an external service via an HTTP POST request.
 public enum RulesType
 {
-    /**
-     * Routing rules defined in a configuration file.
-     */
+    /// Routing rules defined in a configuration file.
     FILE,
 
-    /**
-     * Routing rules obtained from an external service.
-     * The service URL can implement dynamic rule changes.
-     */
+    /// Routing rules obtained from an external service.
+    /// The service URL can implement dynamic rule changes.
     EXTERNAL,
 }

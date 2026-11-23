@@ -28,18 +28,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Shared, cross-pod {@link OAuth2RoutingStore} backed by the {@code oauth2_routing} table.
- * <p>
- * The DB is the single source of truth — there is no cache. Pins are written once per handshake and
- * read only a handful of times, so the DB load is negligible and a cache would only add staleness.
- * Every DB call is wrapped so that if the DB is unreadable for any reason, {@link #findBackend}
- * returns empty and the request falls back to normal (non-pinned) routing.
- * <p>
- * Pin writes are rate-limited per instance, because they are triggered by {@code 401} responses to
- * unauthenticated requests. Over the limit the pin is not written, and the rest of that handshake is
- * routed normally.
- */
+/// Shared, cross-pod [OAuth2RoutingStore] backed by the `oauth2_routing` table.
+///
+/// The DB is the single source of truth — there is no cache. Pins are written once per handshake and
+/// read only a handful of times, so the DB load is negligible and a cache would only add staleness.
+/// Every DB call is wrapped so that if the DB is unreadable for any reason, [#findBackend]
+/// returns empty and the request falls back to normal (non-pinned) routing.
+///
+/// Pin writes are rate-limited per instance, because they are triggered by `401` responses to
+/// unauthenticated requests. Over the limit the pin is not written, and the rest of that handshake is
+/// routed normally.
 public class HaOAuth2RoutingStore
         implements OAuth2RoutingStore
 {
@@ -111,11 +109,9 @@ public class HaOAuth2RoutingStore
         }
     }
 
-    /**
-     * Describes a failure by exception class and SQL state only. Jdbi renders bound arguments,
-     * which here include the pin key, into exception messages and stack traces, so the exception is
-     * not logged, even though that also hides the cause of connection failures.
-     */
+    /// Describes a failure by exception class and SQL state only. Jdbi renders bound arguments,
+    /// which here include the pin key, into exception messages and stack traces, so the exception is
+    /// not logged, even though that also hides the cause of connection failures.
     @VisibleForTesting
     static String describeForLog(RuntimeException e)
     {

@@ -26,25 +26,23 @@ public final class AuthenticationTypeResolver
 
     private AuthenticationTypeResolver() {}
 
-    /**
-     * Resolves the ordered list of authentication types the {@code ChainedAuthFilter}
-     * accepts. Membership follows which managers are actually configured, not the
-     * {@code authentication.defaultType} list: every configured method is accepted so that
-     * listing a subset can never silently drop a credential type (for example, keeping
-     * Basic auth for automation while {@code oauth} is the primary browser login).
-     *
-     * <p>The {@code defaultType} order is honored first — it sets the fallback priority and
-     * the login page's primary method — and any configured method that isn't listed is
-     * appended afterwards with a warning. Every listed value is validated against
-     * {@link AuthenticationType}, so an unknown or misspelled entry throws at startup, and
-     * duplicates are collapsed while preserving order. Throws when no manager is configured
-     * at all, since an empty chain would reject every request.
-     *
-     * @param defaultTypes the configured {@code authentication.defaultType} value
-     * @param oauthConfigured whether an oauth manager is configured (i.e. an {@code oauth} block exists)
-     * @param formConfigured whether a form manager is configured (i.e. a {@code form} block exists)
-     * @return the ordered, non-empty list of authentication types the filter chain accepts
-     */
+    /// Resolves the ordered list of authentication types the `ChainedAuthFilter`
+    /// accepts. Membership follows which managers are actually configured, not the
+    /// `authentication.defaultType` list: every configured method is accepted so that
+    /// listing a subset can never silently drop a credential type (for example, keeping
+    /// Basic auth for automation while `oauth` is the primary browser login).
+    ///
+    /// The `defaultType` order is honored first — it sets the fallback priority and
+    /// the login page's primary method — and any configured method that isn't listed is
+    /// appended afterwards with a warning. Every listed value is validated against
+    /// [AuthenticationType], so an unknown or misspelled entry throws at startup, and
+    /// duplicates are collapsed while preserving order. Throws when no manager is configured
+    /// at all, since an empty chain would reject every request.
+    ///
+    /// @param defaultTypes the configured `authentication.defaultType` value
+    /// @param oauthConfigured whether an oauth manager is configured (i.e. an `oauth` block exists)
+    /// @param formConfigured whether a form manager is configured (i.e. a `form` block exists)
+    /// @return the ordered, non-empty list of authentication types the filter chain accepts
     public static List<AuthenticationType> resolveChainTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured)
     {
         return resolveChainTypes(defaultTypes, oauthConfigured, formConfigured, false);
@@ -69,25 +67,23 @@ public final class AuthenticationTypeResolver
         return ImmutableList.copyOf(chainTypes);
     }
 
-    /**
-     * Resolves the ordered list of authentication methods the login page advertises via
-     * {@code /loginType}: the {@code authentication.defaultType} entries that also have a
-     * configured manager, validated and deduplicated while preserving order. Unlike
-     * {@link #resolveChainTypes}, a configured method that isn't listed is normally not
-     * advertised (the API still accepts it).
-     *
-     * <p>When none of the listed methods has a configured manager, the login page falls back
-     * to the accepted chain ({@link #resolveChainTypes}) so it is never emptier than the set
-     * of methods the API accepts: the gateway still boots and browser users can still sign in
-     * (for example {@code defaultType: "oauth"} with only a {@code form} block shows the form).
-     * It fails fast only on the same conditions {@link #resolveChainTypes} does — an unknown or
-     * misspelled type, a null/empty {@code defaultType}, or no configured manager at all.
-     *
-     * @param defaultTypes the configured {@code authentication.defaultType} value
-     * @param oauthConfigured whether an oauth manager is configured (i.e. an {@code oauth} block exists)
-     * @param formConfigured whether a form manager is configured (i.e. a {@code form} block exists)
-     * @return the ordered, non-empty list of authentication types shown on the login page
-     */
+    /// Resolves the ordered list of authentication methods the login page advertises via
+    /// `/loginType`: the `authentication.defaultType` entries that also have a
+    /// configured manager, validated and deduplicated while preserving order. Unlike
+    /// [#resolveChainTypes], a configured method that isn't listed is normally not
+    /// advertised (the API still accepts it).
+    ///
+    /// When none of the listed methods has a configured manager, the login page falls back
+    /// to the accepted chain ([#resolveChainTypes]) so it is never emptier than the set
+    /// of methods the API accepts: the gateway still boots and browser users can still sign in
+    /// (for example `defaultType: "oauth"` with only a `form` block shows the form).
+    /// It fails fast only on the same conditions [#resolveChainTypes] does — an unknown or
+    /// misspelled type, a null/empty `defaultType`, or no configured manager at all.
+    ///
+    /// @param defaultTypes the configured `authentication.defaultType` value
+    /// @param oauthConfigured whether an oauth manager is configured (i.e. an `oauth` block exists)
+    /// @param formConfigured whether a form manager is configured (i.e. a `form` block exists)
+    /// @return the ordered, non-empty list of authentication types shown on the login page
     public static List<AuthenticationType> resolveEffectiveTypes(List<String> defaultTypes, boolean oauthConfigured, boolean formConfigured)
     {
         return resolveEffectiveTypes(defaultTypes, oauthConfigured, formConfigured, false);
