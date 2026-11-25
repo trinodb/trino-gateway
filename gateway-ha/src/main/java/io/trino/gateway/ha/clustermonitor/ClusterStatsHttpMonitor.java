@@ -166,7 +166,13 @@ public class ClusterStatsHttpMonitor
     {
         String loginUrl = proxyTo + loginType.path();
         UiApiCookieJar cookieJar = new UiApiCookieJar();
-        OkHttpClient client = new OkHttpClient.Builder().cookieJar(cookieJar).build();
+        // A Trino cluster answers the status requests without a redirect. The form login of older Web
+        // UIs answers with a redirect that sets the session cookie, which the cookie jar keeps
+        // without following it.
+        OkHttpClient client = new OkHttpClient.Builder()
+                .cookieJar(cookieJar)
+                .followRedirects(false)
+                .build();
         Request.Builder loginRequest = new Request.Builder()
                 .url(HttpUrl.parse(loginUrl))
                 .post(loginBody(loginType));
