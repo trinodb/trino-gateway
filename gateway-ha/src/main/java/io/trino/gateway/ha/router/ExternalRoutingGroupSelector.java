@@ -127,9 +127,9 @@ public class ExternalRoutingGroupSelector
                         filteredHeaders.put(key, value);
                     }
                 });
-                // Log the headers that will be applied
+                // Log only the names of the headers that will be applied, since values can contain credentials
                 if (!filteredHeaders.isEmpty()) {
-                    log.info("External routing service modified headers to: %s", filteredHeaders);
+                    log.info("External routing service modified headers: %s", filteredHeaders.keySet());
                 }
             }
             return new RoutingSelectorResponse(response.routingGroup(), filteredHeaders);
