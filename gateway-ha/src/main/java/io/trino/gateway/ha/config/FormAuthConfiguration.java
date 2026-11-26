@@ -25,6 +25,8 @@ public class FormAuthConfiguration
     private String ldapConfigPath;
     // Absolute lifetime of a login session, counted from login; activity does not extend it
     private Duration sessionTimeout = new Duration(30, MINUTES);
+    // Accept the form credentials in an Authorization: Basic header as well
+    private boolean basicAuthEnabled = true;
 
     public FormAuthConfiguration(SelfSignKeyPairConfiguration selfSignKeyPair, String ldapConfigPath)
     {
@@ -65,5 +67,15 @@ public class FormAuthConfiguration
         requireNonNull(sessionTimeout, "sessionTimeout is null");
         checkArgument(sessionTimeout.compareTo(new Duration(1, MINUTES)) >= 0, "sessionTimeout must be at least 1m");
         this.sessionTimeout = sessionTimeout;
+    }
+
+    public boolean isBasicAuthEnabled()
+    {
+        return basicAuthEnabled;
+    }
+
+    public void setBasicAuthEnabled(boolean basicAuthEnabled)
+    {
+        this.basicAuthEnabled = basicAuthEnabled;
     }
 }
