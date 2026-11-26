@@ -39,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.HttpHeaders.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpStatus.fromStatusCode;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckWarning;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_QUEUED_LIST_PATH;
 import static io.trino.gateway.ha.handler.HttpUtils.UI_API_STATS_PATH;
 import static java.util.Objects.requireNonNull;
@@ -72,7 +74,7 @@ public class ClusterStatsHttpMonitor
     {
         ClusterStats.Builder clusterStats = ClusterStatsMonitor.getClusterStatsBuilder(backend);
         // Log in once for both requests
-        OkHttpClient client = acquireClientWithCookie(backend.getProxyTo());
+        OkHttpClient client = acquireClientWithCookie(backend);
         if (client == null) {
             return clusterStats.build();
         }
@@ -80,7 +82,7 @@ public class ClusterStatsHttpMonitor
         // Fetch Cluster level Stats.
         String response = queryCluster(client, backend, UI_API_STATS_PATH);
         if (isNullOrEmpty(response)) {
-            log.error("Received null/empty response for %s", UI_API_STATS_PATH);
+            logHealthCheckError(log, backend, "Received null/empty response for %s".formatted(UI_API_STATS_PATH));
             return clusterStats.build();
         }
 
@@ -104,7 +106,7 @@ public class ClusterStatsHttpMonitor
         Map<String, Integer> clusterUserStats = new HashMap<>();
         response = queryCluster(client, backend, UI_API_QUEUED_LIST_PATH);
         if (isNullOrEmpty(response)) {
-            log.error("Received null/empty response for %s", UI_API_QUEUED_LIST_PATH);
+            logHealthCheckError(log, backend, "Received null/empty response for %s".formatted(UI_API_QUEUED_LIST_PATH));
             return clusterStats.build();
         }
         try {
@@ -120,8 +122,9 @@ public class ClusterStatsHttpMonitor
         return clusterStats.userQueuedCount(clusterUserStats).build();
     }
 
-    private OkHttpClient acquireClientWithCookie(String proxyTo)
+    private OkHttpClient acquireClientWithCookie(ProxyBackendConfiguration backend)
     {
+        String proxyTo = backend.getProxyTo();
         List<String> attempts = new ArrayList<>();
         LoginType knownLoginType = loginTypes.get(proxyTo);
         try {
@@ -146,13 +149,15 @@ public class ClusterStatsHttpMonitor
         }
         catch (IOException e) {
             // A failed request says nothing about the login type, so a known login type stays cached
-            log.warn(e, "Login request to %s failed", proxyTo);
+            logHealthCheckWarning(log, backend, e, "Login request to %s failed".formatted(proxyTo));
             return null;
         }
-        log.error(
-                "Login to %s failed: %s. Verify the backendState username and password, and that the cluster uses web-ui.authentication.type=FORM",
-                proxyTo,
-                String.join(", ", attempts));
+        logHealthCheckError(
+                log,
+                backend,
+                "Login to %s failed: %s. Verify the backendState username and password, and that the cluster uses web-ui.authentication.type=FORM".formatted(
+                        proxyTo,
+                        String.join(", ", attempts)));
         return null;
     }
 
@@ -225,7 +230,7 @@ public class ClusterStatsHttpMonitor
             };
         }
         catch (IOException e) {
-            log.warn(e, "Failed to fetch cluster stats");
+            logHealthCheckWarning(log, backend, e, "Failed to fetch cluster stats");
         }
         return null;
     }

@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.gateway.ha.clustermonitor.ClusterStatsMonitor.getClusterStatsBuilder;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -54,6 +55,7 @@ public class ActiveClusterMonitor
     private final GatewayBackendManager gatewayBackendManager;
 
     private final Duration taskDelay;
+    private final boolean checkInactiveBackends;
     private final ClusterStatsMonitor clusterStatsMonitor;
     private final ExecutorService executorService;
     private final Consumer<List<ProxyBackendConfiguration>> checkOrder;
@@ -87,6 +89,7 @@ public class ActiveClusterMonitor
         this.clusterStatsObservers = requireNonNull(clusterStatsObservers, "clusterStatsObservers is null");
         this.gatewayBackendManager = requireNonNull(gatewayBackendManager, "gatewayBackendManager is null");
         this.taskDelay = monitorConfiguration.getTaskDelay();
+        this.checkInactiveBackends = monitorConfiguration.isCheckInactiveBackends();
         this.executorService = Executors.newFixedThreadPool(monitorConfiguration.getThreadPoolSize());
         this.checkOrder = requireNonNull(checkOrder, "checkOrder is null");
     }
@@ -121,6 +124,8 @@ public class ActiveClusterMonitor
     /// - A check that did not start before the deadline, because all monitor threads were busy, is
     ///   cancelled, and the status of the backend is left unchanged, since the backend was not checked.
     /// - A check that completes after the deadline, before it is cancelled, is still published.
+    /// - Unless `checkInactiveBackends` is set, inactive backends are not checked, and are reported
+    ///   with an `UNKNOWN` status.
     ///
     /// Cancelling a check frees its monitor thread, which then starts one of the waiting checks.
     /// A real check takes longer than the cleanup, so it is cancelled again before it completes.
@@ -132,7 +137,17 @@ public class ActiveClusterMonitor
             throws InterruptedException
     {
         log.info("Getting stats for all clusters");
-        List<ProxyBackendConfiguration> allClusters = new ArrayList<>(gatewayBackendManager.getAllBackends());
+        List<ProxyBackendConfiguration> allClusters = new ArrayList<>();
+        for (ProxyBackendConfiguration backend : gatewayBackendManager.getAllBackends()) {
+            if (checkInactiveBackends || backend.isActive()) {
+                allClusters.add(backend);
+            }
+            else {
+                // The status is held in memory by each Trino Gateway server, so a cluster deactivated
+                // through another server, or directly in the database, would otherwise keep its last status
+                publish(unknownClusterStats(backend));
+            }
+        }
         checkOrder.accept(allClusters);
         CompletionService<ClusterStats> completionService = new ExecutorCompletionService<>(executorService);
         // Keyed by backend name, which is the cluster ID of the stats
@@ -193,7 +208,7 @@ public class ActiveClusterMonitor
             return clusterStatsMonitor.monitor(backend);
         }
         catch (RuntimeException e) {
-            log.error(e, "Error checking health of backend %s", backend.getName());
+            logHealthCheckError(log, backend, e, "Error checking health of backend %s".formatted(backend.getName()));
             return unhealthyClusterStats(backend);
         }
     }
@@ -201,6 +216,11 @@ public class ActiveClusterMonitor
     private static ClusterStats unhealthyClusterStats(ProxyBackendConfiguration backend)
     {
         return getClusterStatsBuilder(backend).trinoStatus(TrinoStatus.UNHEALTHY).build();
+    }
+
+    private static ClusterStats unknownClusterStats(ProxyBackendConfiguration backend)
+    {
+        return getClusterStatsBuilder(backend).trinoStatus(TrinoStatus.UNKNOWN).build();
     }
 
     private void publish(ClusterStats stats)

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,6 +39,33 @@ import static org.mockito.Mockito.when;
 final class TestActiveClusterMonitor
 {
     private static final int THREAD_POOL_SIZE = new MonitorConfiguration().getThreadPoolSize();
+
+    @Test
+    void testInactiveBackendsReportedAsUnknownByDefault()
+            throws Exception
+    {
+        assertThat(new MonitorConfiguration().isCheckInactiveBackends()).isFalse();
+        Set<String> checkedBackends = ConcurrentHashMap.newKeySet();
+        Map<String, TrinoStatus> statuses = firstCycleStatuses(new MonitorConfiguration(), checkedBackends);
+
+        // The inactive backend is not checked, but its status is reset, as it can be stale when
+        // the backend was deactivated through another Trino Gateway server or in the database
+        assertThat(checkedBackends).containsExactly("active");
+        assertThat(statuses).isEqualTo(Map.of("active", TrinoStatus.HEALTHY, "inactive", TrinoStatus.UNKNOWN));
+    }
+
+    @Test
+    void testInactiveBackendsCheckedWhenEnabled()
+            throws Exception
+    {
+        MonitorConfiguration monitorConfiguration = new MonitorConfiguration();
+        monitorConfiguration.setCheckInactiveBackends(true);
+        Set<String> checkedBackends = ConcurrentHashMap.newKeySet();
+        Map<String, TrinoStatus> statuses = firstCycleStatuses(monitorConfiguration, checkedBackends);
+
+        assertThat(checkedBackends).containsExactlyInAnyOrder("active", "inactive");
+        assertThat(statuses).isEqualTo(Map.of("active", TrinoStatus.HEALTHY, "inactive", TrinoStatus.HEALTHY));
+    }
 
     @Test
     void testPublishStatsAsEachCheckCompletes()
@@ -320,6 +348,39 @@ final class TestActiveClusterMonitor
             }
             assertThat(queued).isNotNull();
             assertThat(queued.trinoStatus()).isEqualTo(TrinoStatus.HEALTHY);
+        }
+        finally {
+            monitor.stop();
+        }
+    }
+
+    // Statuses published in the first cycle for an active and an inactive backend, which both respond as healthy
+    private static Map<String, TrinoStatus> firstCycleStatuses(MonitorConfiguration monitorConfiguration, Set<String> checkedBackends)
+            throws Exception
+    {
+        ProxyBackendConfiguration inactiveBackend = createBackend("inactive");
+        inactiveBackend.setActive(false);
+        ClusterStatsMonitor statsMonitor = backend -> {
+            checkedBackends.add(backend.getName());
+            return healthyClusterStats(backend);
+        };
+        BlockingQueue<ClusterStats> observed = new LinkedBlockingQueue<>();
+        ActiveClusterMonitor monitor = createMonitor(List.of(createBackend("active"), inactiveBackend), statsMonitor, observed, monitorConfiguration);
+        monitor.start();
+        try {
+            // The monitor is initialized once the first cycle has published the stats of every backend
+            long end = System.nanoTime() + SECONDS.toNanos(10);
+            while (!monitor.isInitialized() && System.nanoTime() < end) {
+                sleep(10);
+            }
+            assertThat(monitor.isInitialized()).isTrue();
+            List<ClusterStats> stats = new ArrayList<>();
+            observed.drainTo(stats);
+            Map<String, TrinoStatus> statuses = new HashMap<>();
+            for (ClusterStats clusterStats : stats) {
+                statuses.put(clusterStats.clusterId(), clusterStats.trinoStatus());
+            }
+            return statuses;
         }
         finally {
             monitor.stop();
