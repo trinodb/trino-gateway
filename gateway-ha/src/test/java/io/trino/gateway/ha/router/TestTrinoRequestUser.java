@@ -43,6 +43,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.auth0.jwt.algorithms.Algorithm.HMAC256;
@@ -108,6 +109,50 @@ final class TestTrinoRequestUser
         TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
 
         assertThat(trinoRequestUser.getUser()).hasValue(claimUserValue);
+    }
+
+    @Test
+    void testJwtWithUnusableUserClaim()
+    {
+        // The default tokenUserField is email
+        Map<String, String> tokens = Map.of(
+                "number", JWT.create().withClaim("email", 42).sign(HMAC256("random")),
+                "array", JWT.create().withArrayClaim("email", new String[] {"user@example.com"}).sign(HMAC256("random")),
+                "object", JWT.create().withClaim("email", Map.of("address", "user@example.com")).sign(HMAC256("random")),
+                "empty", JWT.create().withClaim("email", "").sign(HMAC256("random")),
+                "blank", JWT.create().withClaim("email", " ").sign(HMAC256("random")));
+        tokens.forEach((claimType, token) -> {
+            HttpServletRequest mockRequest = new QueryRequestMock()
+                    .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                    .httpHeader(USER_HEADER, null)
+                    .httpHeader(AUTHORIZATION, "Bearer " + token)
+                    .getHttpServletRequest();
+
+            TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+            assertThat(trinoRequestUser.getUser()).as(claimType).isEmpty();
+        });
+    }
+
+    @Test
+    void testJwtWithNonStringUserClaimFallsBackToUserInfo()
+            throws Exception
+    {
+        String token = JWT.create()
+                .withClaim("email", 42)
+                .sign(HMAC256("random"));
+
+        try (MockWebServer userInfoServer = new MockWebServer()) {
+            userInfoServer.enqueue(userInfoResponse(
+                    """
+                    {
+                      "sub": "123456789"
+                    }
+                    """));
+            userInfoServer.start();
+
+            assertThat(userFromUserInfo(userInfoServer, new RequestAnalyzerConfig(), token)).hasValue("123456789");
+        }
     }
 
     @Test
