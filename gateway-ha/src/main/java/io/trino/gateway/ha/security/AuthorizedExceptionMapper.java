@@ -20,6 +20,9 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.internal.LocalizationMessages;
 
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
+import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
+
 @Provider
 public class AuthorizedExceptionMapper
         implements ExceptionMapper<ForbiddenException>
@@ -28,7 +31,11 @@ public class AuthorizedExceptionMapper
     public Response toResponse(ForbiddenException exception)
     {
         if (exception.getMessage().equals(LocalizationMessages.USER_NOT_AUTHORIZED())) {
-            return Response.ok(Result.fail(Response.Status.UNAUTHORIZED)).build();
+            // The user is authenticated, but lacks the role that the resource requires
+            return Response.status(FORBIDDEN)
+                    .entity(Result.fail(FORBIDDEN))
+                    .type(APPLICATION_JSON_TYPE)
+                    .build();
         }
         return exception.getResponse();
     }
