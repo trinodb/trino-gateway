@@ -58,6 +58,7 @@ const en_US = {
     NoneAuthTip: "Password not allowed",
     LoginSuccess: "Login success",
     Expiration: "Login has expired, please log in again",
+    Forbidden: "You do not have permission for this action",
     LogoutSuccess: "Logout success",
   },
   Copy: {
