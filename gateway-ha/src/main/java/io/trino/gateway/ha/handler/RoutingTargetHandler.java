@@ -75,38 +75,34 @@ public class RoutingTargetHandler
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
         Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
-        Optional<String> previousCluster;
-        Optional<RoutingTargetResponse> routingTargetResponse;
         // OAuth2 token-exchange pinning comes first, since its redirects can carry a query ID in a parameter
-        Optional<String> oauth2Cluster = oauth2RoutingEnabled ? getOAuth2StickyBackend(request) : Optional.empty();
-        if (oauth2Cluster.isPresent()) {
-            routingTargetResponse = oauth2Cluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination(defaultRoutingGroup, cluster, buildUriWithNewCluster(cluster, request), cluster),
-                    request));
-        }
-        else if (queryId.isPresent()) {
-            // Query ID based routing
-            previousCluster = queryId.map(routingManager::findBackendForQueryId);
-            // Setting routingGroup to empty because the info is not being used.
-            // This should be refactored in the future to include routingGroup info if needed instead of leaving it empty.
-            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
-                    request));
-        }
-        else {
-            // Cookie based routing
-            previousCluster = getPreviousCluster(request);
-            routingTargetResponse = previousCluster.map(cluster -> new RoutingTargetResponse(
-                    new RoutingDestination("", cluster, buildUriWithNewCluster(cluster, request), cluster),
-                    request));
-        }
+        Optional<String> knownCluster = (oauth2RoutingEnabled ? getOAuth2StickyBackend(request) : Optional.<String>empty())
+                .or(() -> queryId.isPresent() ? queryId.map(routingManager::findBackendForQueryId) : getPreviousCluster(request));
+        RoutingTargetResponse response = knownCluster
+                .map(cluster -> knownClusterResponse(cluster, request))
+                .orElseGet(() -> getRoutingTargetResponse(request));
+        logRewrite(response.routingDestination().clusterHost(), request);
+        return response;
+    }
 
-        if (routingTargetResponse.isEmpty()) {
-            routingTargetResponse = Optional.of(getRoutingTargetResponse(request));
+    /// Routes to a Trino cluster that is already known for the request. A statement submission, such
+    /// as a `kill_query` call, gets the routing group and external URL from the configuration of that
+    /// Trino cluster, so its query history row and query link in the web UI match it. Only statement
+    /// submissions record these values, so other requests, such as the polls of a running query, skip
+    /// the lookup. Falls back to the default routing group and the cluster URL for a Trino cluster
+    /// that is no longer configured.
+    private RoutingTargetResponse knownClusterResponse(String cluster, HttpServletRequest request)
+    {
+        String routingGroup = defaultRoutingGroup;
+        String externalUrl = cluster;
+        if (isStatementSubmission(request)) {
+            Optional<ProxyBackendConfiguration> configuration = routingManager.findBackendConfiguration(cluster);
+            routingGroup = configuration.map(ProxyBackendConfiguration::getRoutingGroup).orElse(defaultRoutingGroup);
+            externalUrl = configuration.map(ProxyBackendConfiguration::getExternalUrl).orElse(cluster);
         }
-
-        logRewrite(routingTargetResponse.orElseThrow().routingDestination().clusterHost(), request);
-        return routingTargetResponse.orElseThrow();
+        return new RoutingTargetResponse(
+                new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
+                request);
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)

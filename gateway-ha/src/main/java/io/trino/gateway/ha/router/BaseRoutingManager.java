@@ -26,6 +26,7 @@ import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.annotation.Nullable;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -117,6 +118,27 @@ public abstract class BaseRoutingManager
         String target = schemeAndAuthority(backendUrl);
         return gatewayBackendManager.getAllActiveBackends().stream()
                 .anyMatch(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target));
+    }
+
+    @Override
+    public Optional<ProxyBackendConfiguration> findBackendConfiguration(String backendUrl)
+    {
+        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getAllBackends();
+        // Several Trino clusters can share a proxyTo, so prefer an active one rather than fail the
+        // routing of a running query
+        Comparator<ProxyBackendConfiguration> activeFirst = Comparator.comparing(backend -> !backend.isActive());
+        // An exact proxyTo wins, so Trino clusters behind one host with different base paths stay apart
+        Optional<ProxyBackendConfiguration> exact = backends.stream()
+                .filter(backend -> backend.getProxyTo().equals(backendUrl))
+                .min(activeFirst);
+        if (exact.isPresent()) {
+            return exact;
+        }
+        // Matched like isBackendActive, since the OAuth2 pin carries no path
+        String target = schemeAndAuthority(backendUrl);
+        return backends.stream()
+                .filter(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target))
+                .min(activeFirst);
     }
 
     @Override

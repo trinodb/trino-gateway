@@ -90,6 +90,12 @@ public interface RoutingManager
      */
     boolean isBackendActive(String backendUrl);
 
+    /// Finds the configuration of the Trino cluster with the `proxyTo` URL, whether it is active
+    /// or not, so requests for running queries keep the routing group and external URL of their
+    /// Trino cluster. An exact match of `proxyTo` wins, otherwise the scheme and authority are
+    /// matched like [#isBackendActive], and an active Trino cluster wins over an inactive one.
+    Optional<ProxyBackendConfiguration> findBackendConfiguration(String backendUrl);
+
     /**
      * Finds a configured backend matching {@code backendUrl} that is intentionally out of service: no
      * matching backend is active, and no matching backend is healthy. Matching is by scheme and
