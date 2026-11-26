@@ -160,6 +160,22 @@ final class TestAuthorization
         return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.ISO_8859_1));
     }
 
+    @Test
+    void testMissingRole()
+            throws IOException
+    {
+        // user1 has the USER and API roles, but saving a Trino cluster in the web UI requires ADMIN
+        Request request = new Request.Builder()
+                .url("http://localhost:" + routerPort + "/webapp/saveBackend")
+                .post(RequestBody.create("{}", MediaType.parse("application/json; charset=utf-8")))
+                .addHeader("Authorization", basicAuthorization("user1:password_user1"))
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(403);
+            assertThat(objectMapper.readTree(response.body().string()).get("code").asInt()).isEqualTo(403);
+        }
+    }
+
     private List<String> getRoles(String credentials)
             throws IOException
     {

@@ -459,6 +459,9 @@ listed under `modules` in the configuration. A custom resource can set its own
 roles with `@RolesAllowed`, for example `@RolesAllowed("USER")`. It cannot be
 made accessible without authentication.
 
+A request from an authenticated user who lacks the role it requires fails with
+HTTP status `403`, and the `code` in the response body is `403` as well.
+
 Users with attributes next to the role will be giving those privileges the
 users. You can use the preset users defined in the yaml file. 
 LDAP Authorization is also supported by adding user attribute configs in file.
