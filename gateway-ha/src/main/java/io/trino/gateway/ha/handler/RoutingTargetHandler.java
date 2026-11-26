@@ -89,10 +89,38 @@ public class RoutingTargetHandler
             return new RoutingTargetResponse(
                     new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
                     request);
-        }).orElseGet(() -> getRoutingTargetResponse(request));
+        }).orElseGet(() -> resolveNonStickyRouting(queryId, request));
 
         logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
         return routingTargetResponse;
+    }
+
+    /**
+     * Resolves the routing target when no sticky backend was found for the request.
+     *
+     * <p>A request that carries a query id targets an already-submitted query rather than creating a new one.
+     * {@link RoutingManager#findBackendForQueryId} returns null when it cannot resolve a backend for that id, for
+     * example when the query is not in the query history and the default routing group has no active cluster to
+     * fall back to. Routing such a request as a new query would send the poll to an unrelated backend or reject it
+     * as if it were a new submission, so it gets a clean {@code 404 Not Found} instead.
+     *
+     * <p>{@link RoutingManager#findBackendForQueryId} also returns null when the lookup itself fails, for example
+     * on a query history database error. That failure is only logged there, so the client gets the same 404.
+     *
+     * <p>A {@code kill_query} statement carries the id of another query in its body, but it is itself a new
+     * statement submission. It keeps routing as a new query, so the backend returns a regular Trino error when
+     * the id is unknown.
+     */
+    private RoutingTargetResponse resolveNonStickyRouting(Optional<String> queryId, HttpServletRequest request)
+    {
+        if (queryId.isPresent() && !isStatementSubmission(request)) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.NOT_FOUND)
+                            .type(TEXT_PLAIN_TYPE)
+                            .entity("Could not find any backend for query id: " + queryId.get())
+                            .build());
+        }
+        return getRoutingTargetResponse(request);
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
