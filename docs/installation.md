@@ -663,7 +663,10 @@ to one of the following values.
 #### INFO_API (default)
 
 By default Trino Gateway uses the `v1/info` REST endpoint. A successful check is
-defined as a 200 response with `starting: false`. The check uses the `monitor`
+defined as a 200 response with `starting: false`. For Trino 477 and later, the
+check also reads the coordinator ID, which Trino Gateway uses to
+[route requests for unknown query IDs](routing-logic.md#routing-based-on-query-identifier-default).
+The check uses the `monitor`
 HTTP client, so its timeouts are set with the `monitor.http-client` properties
 in `serverConfig`. The `METRICS` and `JMX` monitors use the same HTTP client,
 so these properties apply to them too. How often the checks run is set with

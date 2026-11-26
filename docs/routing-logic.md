@@ -32,6 +32,17 @@ polls a URI of the form
 `v1/statement/executing/queryid/nonce/counter`. The Trino Gateway will extract
 the queryid from this URI.
 
+Trino Gateway keeps the mapping in memory and in the query history in the
+database. A request can carry a query ID that is in neither, for example when
+it reaches another Trino Gateway server while the database is unavailable. With
+the default [`INFO_API` health check](installation.md#info_api-default) and
+Trino 477 or later, Trino Gateway then routes the request by the coordinator ID
+at the end of the query ID, such as `97vpz` in `20261126_004513_00000_97vpz`.
+The health check reads the coordinator ID of each Trino cluster from
+`/v1/info`. The coordinator draws a new ID on every start, so the mapping is at
+most one monitor `taskDelay` old. Otherwise, the request goes to the default
+routing group.
+
 ### Routing based on cookies
 
 OAuth2 authentication requires that the same cluster is used for each step of 

@@ -48,6 +48,9 @@ public abstract class BaseRoutingManager
     private final LoadingCache<String, String> queryIdBackendCache;
     private final LoadingCache<String, String> queryIdRoutingGroupCache;
     private final LoadingCache<String, String> queryIdExternalUrlCache;
+    // Stats of each Trino cluster by the coordinator ID that the INFO_API health check reports
+    private final ConcurrentHashMap<String, ClusterStats> coordinatorIdToClusterStats = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> clusterToCoordinatorId = new ConcurrentHashMap<>();
 
     public BaseRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, RoutingConfiguration routingConfiguration)
     {
@@ -161,20 +164,29 @@ public abstract class BaseRoutingManager
         return url.toLowerCase(Locale.ROOT);
     }
 
-    /// Looks up the backend for the query ID in the cache, and on a cache miss in the query history.
-    /// Falls back to the first active backend of the default routing group.
+    /// Looks up the backend for the query ID in the cache, and on a cache miss in the query history
+    /// and by the coordinator ID. Falls back to the first active backend of the default routing group.
+    /// The fallback is not cached, so a later request for the same query ID still finds its Trino
+    /// cluster once the health check reports the coordinator ID, such as right after a restart.
     @Nullable
     @Override
     public String findBackendForQueryId(String queryId)
     {
-        String backendAddress = null;
         try {
-            backendAddress = queryIdBackendCache.get(queryId);
+            String backend = queryIdBackendCache.get(queryId);
+            if (backend != null) {
+                return backend;
+            }
+            log.debug("Unable to find backend mapping for [%s]. Using the first active backend of the default routing group", queryId);
+            return gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
+                    .findFirst()
+                    .map(ProxyBackendConfiguration::getProxyTo)
+                    .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
         }
         catch (RuntimeException e) {
             log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
+            return null;
         }
-        return backendAddress;
     }
 
     @Nullable
@@ -227,6 +239,10 @@ public abstract class BaseRoutingManager
     {
         log.info("Removing backend %s from health tracking", backendId);
         backendToStatus.remove(backendId);
+        String coordinatorId = clusterToCoordinatorId.remove(backendId);
+        if (coordinatorId != null) {
+            coordinatorIdToClusterStats.remove(coordinatorId);
+        }
     }
 
     @Override
@@ -234,7 +250,22 @@ public abstract class BaseRoutingManager
     {
         for (ClusterStats clusterStats : stats) {
             updateBackEndHealth(clusterStats.clusterId(), clusterStats.trinoStatus());
+            updateCoordinatorId(clusterStats);
         }
+    }
+
+    private void updateCoordinatorId(ClusterStats clusterStats)
+    {
+        String coordinatorId = clusterStats.coordinatorId();
+        if (coordinatorId == null) {
+            return;
+        }
+        // The coordinator draws a new ID on every start, and queries do not survive a restart
+        String previousCoordinatorId = clusterToCoordinatorId.put(clusterStats.clusterId(), coordinatorId);
+        if (previousCoordinatorId != null && !previousCoordinatorId.equals(coordinatorId)) {
+            coordinatorIdToClusterStats.remove(previousCoordinatorId);
+        }
+        coordinatorIdToClusterStats.put(coordinatorId, clusterStats);
     }
 
     @Override
@@ -243,17 +274,15 @@ public abstract class BaseRoutingManager
         queryIdExternalUrlCache.put(queryId, externalUrl);
     }
 
+    /// Returns `null` when neither the query history nor the coordinator ID knows the query, which
+    /// the cache does not store.
+    @Nullable
     @VisibleForTesting
     String findBackendForUnknownQueryId(String queryId)
     {
-        String backend;
-        backend = queryHistoryManager.getBackendForQueryId(queryId);
+        String backend = queryHistoryManager.getBackendForQueryId(queryId);
         if (Strings.isNullOrEmpty(backend)) {
-            log.debug("Unable to find backend mapping for [%s]. Using the first active backend of the default routing group", queryId);
-            backend = gatewayBackendManager.getActiveBackends(defaultRoutingGroup).stream()
-                    .findFirst()
-                    .map(ProxyBackendConfiguration::getProxyTo)
-                    .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
+            return findClusterStatsForCoordinatorId(queryId).map(ClusterStats::proxyTo).orElse(null);
         }
         return backend;
     }
@@ -263,7 +292,11 @@ public abstract class BaseRoutingManager
      */
     private String findRoutingGroupForUnknownQueryId(String queryId)
     {
-        return queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        String routingGroup = queryHistoryManager.getRoutingGroupForQueryId(queryId);
+        if (Strings.isNullOrEmpty(routingGroup)) {
+            return findClusterStatsForCoordinatorId(queryId).map(ClusterStats::routingGroup).orElse(null);
+        }
+        return routingGroup;
     }
 
     /**
@@ -271,7 +304,25 @@ public abstract class BaseRoutingManager
      */
     private String findExternalUrlForUnknownQueryId(String queryId)
     {
-        return queryHistoryManager.getExternalUrlForQueryId(queryId);
+        String externalUrl = queryHistoryManager.getExternalUrlForQueryId(queryId);
+        if (Strings.isNullOrEmpty(externalUrl)) {
+            return findClusterStatsForCoordinatorId(queryId).map(ClusterStats::externalUrl).orElse(null);
+        }
+        return externalUrl;
+    }
+
+    /// Finds the Trino cluster that runs a query by the coordinator ID at the end of the query ID. The
+    /// map is filled by the `INFO_API` health check for Trino 477 and later, so it is at most one
+    /// monitor `taskDelay` old.
+    private Optional<ClusterStats> findClusterStatsForCoordinatorId(String queryId)
+    {
+        int separator = queryId.lastIndexOf('_');
+        if (separator < 0) {
+            return Optional.empty();
+        }
+        Optional<ClusterStats> clusterStats = Optional.ofNullable(coordinatorIdToClusterStats.get(queryId.substring(separator + 1)));
+        clusterStats.ifPresent(stats -> log.debug("Routing query [%s] to Trino cluster [%s] by its coordinator ID", queryId, stats.clusterId()));
+        return clusterStats;
     }
 
     private LoadingCache<String, String> buildCache(Function<String, String> loader)

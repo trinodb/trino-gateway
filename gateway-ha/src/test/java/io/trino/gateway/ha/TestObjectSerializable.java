@@ -41,8 +41,8 @@ final class TestObjectSerializable
     void testServerInfo()
             throws JsonProcessingException
     {
-        assertThat(jsonMapper.writeValueAsString(new ServerInfo(true)))
-                .contains("starting");
+        assertThat(jsonMapper.writeValueAsString(new ServerInfo(true, "krphu")))
+                .contains("starting", "coordinatorId");
     }
 
     @Test

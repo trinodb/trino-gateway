@@ -22,6 +22,7 @@ import io.trino.gateway.ha.config.MonitorConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 
 import java.net.URI;
+import java.util.Optional;
 
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
@@ -49,25 +50,27 @@ public class ClusterStatsInfoApiMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        return ClusterStats.builder(backend.getName()).trinoStatus(checkStatus(backend))
+        Optional<ServerInfo> serverInfo = checkStatus(backend);
+        return ClusterStats.builder(backend.getName())
+                .trinoStatus(serverInfo.map(info -> info.starting() ? TrinoStatus.PENDING : TrinoStatus.HEALTHY).orElse(TrinoStatus.UNHEALTHY))
+                .coordinatorId(serverInfo.map(ServerInfo::coordinatorId).orElse(null))
                 .proxyTo(backend.getProxyTo())
                 .externalUrl(backend.getExternalUrl())
                 .routingGroup(backend.getRoutingGroup()).build();
     }
 
-    private TrinoStatus checkStatus(ProxyBackendConfiguration backend)
+    private Optional<ServerInfo> checkStatus(ProxyBackendConfiguration backend)
     {
         return checkStatus(backend, retries);
     }
 
-    private TrinoStatus checkStatus(ProxyBackendConfiguration backend, int retriesRemaining)
+    private Optional<ServerInfo> checkStatus(ProxyBackendConfiguration backend, int retriesRemaining)
     {
         Request request = prepareGet()
                 .setUri(uriBuilderFrom(URI.create(backend.getProxyTo())).appendPath("/v1/info").build())
                 .build();
         try {
-            ServerInfo serverInfo = client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER);
-            return serverInfo.starting() ? TrinoStatus.PENDING : TrinoStatus.HEALTHY;
+            return Optional.of(client.execute(request, SERVER_INFO_JSON_RESPONSE_HANDLER));
         }
         catch (UnexpectedResponseException e) {
             if (shouldRetry(e.getStatusCode())) {
@@ -86,6 +89,6 @@ public class ClusterStatsInfoApiMonitor
         catch (Exception e) {
             logHealthCheckError(log, backend, e, "Exception checking %s for health".formatted(request.getUri()));
         }
-        return TrinoStatus.UNHEALTHY;
+        return Optional.empty();
     }
 }
