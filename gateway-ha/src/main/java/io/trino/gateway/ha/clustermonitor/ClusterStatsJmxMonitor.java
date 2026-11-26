@@ -35,6 +35,7 @@ import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.JsonResponseHandler.createJsonResponseHandler;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.json.JsonCodec.jsonCodec;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
 import static java.util.Objects.requireNonNull;
 
 public class ClusterStatsJmxMonitor
@@ -154,11 +155,11 @@ public class ClusterStatsJmxMonitor
             return Optional.of(response).map(JmxResponse::fromJson);
         }
         catch (UnexpectedResponseException e) {
-            log.error(e, "Failed to fetch JMX data for %s, response code: %d", mbeanName, e.getStatusCode());
+            logHealthCheckError(log, backend, e, "Failed to fetch JMX data for %s, response code: %d".formatted(mbeanName, e.getStatusCode()));
             return Optional.empty();
         }
         catch (Exception e) {
-            log.error(e, "Exception while querying JMX at %s", jmxUrl);
+            logHealthCheckError(log, backend, e, "Exception while querying JMX at %s".formatted(jmxUrl));
             return Optional.empty();
         }
     }

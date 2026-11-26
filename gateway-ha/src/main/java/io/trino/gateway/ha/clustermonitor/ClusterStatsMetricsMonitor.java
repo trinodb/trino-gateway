@@ -42,6 +42,8 @@ import static io.airlift.http.client.HeaderNames.X_FORWARDED_PROTO;
 import static io.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
 import static io.airlift.http.client.Request.Builder.prepareGet;
 import static io.airlift.http.client.ResponseHandlerUtils.propagate;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckError;
+import static io.trino.gateway.ha.clustermonitor.MonitorUtils.logHealthCheckWarning;
 import static io.trino.gateway.ha.clustermonitor.MonitorUtils.shouldRetry;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -120,16 +122,16 @@ public class ClusterStatsMetricsMonitor
     @Override
     public ClusterStats monitor(ProxyBackendConfiguration backend)
     {
-        Map<String, String> metrics = getMetrics(backend.getProxyTo(), retries);
+        Map<String, String> metrics = getMetrics(backend, retries);
         if (metrics.isEmpty()) {
-            log.error("No metrics available for %s!", backend.getName());
+            logHealthCheckError(log, backend, "No metrics available for %s!".formatted(backend.getName()));
             return getUnhealthyStats(backend);
         }
 
         for (Map.Entry<String, Float> entry : metricMinimumValues.entrySet()) {
             if (!metrics.containsKey(entry.getKey())
                     || Float.parseFloat(metrics.get(entry.getKey())) < entry.getValue()) {
-                log.warn("Health metric value below min for cluster %s: %s=%s", backend.getName(), entry.getKey(), metrics.get(entry.getKey()));
+                logHealthCheckWarning(log, backend, "Health metric value below min for cluster %s: %s=%s".formatted(backend.getName(), entry.getKey(), metrics.get(entry.getKey())));
                 return getUnhealthyStats(backend);
             }
         }
@@ -137,7 +139,7 @@ public class ClusterStatsMetricsMonitor
         for (Map.Entry<String, Float> entry : metricMaximumValues.entrySet()) {
             if (!metrics.containsKey(entry.getKey())
                     || Float.parseFloat(metrics.get(entry.getKey())) > entry.getValue()) {
-                log.warn("Health metric value over max for cluster %s: %s=%s", backend.getName(), entry.getKey(), metrics.get(entry.getKey()));
+                logHealthCheckWarning(log, backend, "Health metric value over max for cluster %s: %s=%s".formatted(backend.getName(), entry.getKey(), metrics.get(entry.getKey())));
                 return getUnhealthyStats(backend);
             }
         }
@@ -151,9 +153,9 @@ public class ClusterStatsMetricsMonitor
                 .build();
     }
 
-    private Map<String, String> getMetrics(String baseUrl, int retriesRemaining)
+    private Map<String, String> getMetrics(ProxyBackendConfiguration backend, int retriesRemaining)
     {
-        HttpUriBuilder uri = uriBuilderFrom(URI.create(baseUrl)).appendPath(metricsEndpoint);
+        HttpUriBuilder uri = uriBuilderFrom(URI.create(backend.getProxyTo())).appendPath(metricsEndpoint);
         for (String metric : requestedMetricNames) {
             uri.addParameter("name[]", metric);
         }
@@ -173,15 +175,15 @@ public class ClusterStatsMetricsMonitor
         catch (UnexpectedResponseException e) {
             if (shouldRetry(e.getStatusCode())) {
                 if (retriesRemaining > 0) {
-                    log.warn("Retrying health check on error: %s, ", e.toString());
-                    return getMetrics(baseUrl, retriesRemaining - 1);
+                    logHealthCheckWarning(log, backend, "Retrying health check on error: %s, ".formatted(e.toString()));
+                    return getMetrics(backend, retriesRemaining - 1);
                 }
-                log.error("Encountered error %s, no retries remaining", e.toString());
+                logHealthCheckError(log, backend, "Encountered error %s, no retries remaining".formatted(e.toString()));
             }
-            log.error(e, "Health check failed with non-retryable response.\n%s", e.toString());
+            logHealthCheckError(log, backend, e, "Health check failed with non-retryable response.\n%s".formatted(e.toString()));
         }
         catch (Exception e) {
-            log.error(e, "Exception checking %s for health", request.getUri());
+            logHealthCheckError(log, backend, e, "Exception checking %s for health".formatted(request.getUri()));
         }
         return ImmutableMap.of();
     }
