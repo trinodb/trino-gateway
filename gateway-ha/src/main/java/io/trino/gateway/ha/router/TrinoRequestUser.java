@@ -217,8 +217,11 @@ public class TrinoRequestUser
             log.debug("Trying to extract from JWS");
             try {
                 DecodedJWT jwt = JWT.decode(token);
-                if (jwt.getClaims().containsKey(userField)) {
-                    return Optional.of(jwt.getClaim(userField).asString());
+                // A claim that is blank or not a string, such as a number, is treated like a missing claim
+                Optional<String> user = Optional.ofNullable(jwt.getClaim(userField).asString())
+                        .filter(value -> !value.isBlank());
+                if (user.isPresent()) {
+                    return user;
                 }
             }
             catch (JWTDecodeException e) {
