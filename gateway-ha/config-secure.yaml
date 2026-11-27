@@ -44,9 +44,9 @@ authentication:
       publicKey: gateway-ha/target/secure-runner/jwt-public.pem
 
 authorization:
-  admin: (.*)ADMIN(.*)
-  user: (.*)USER(.*)
-  api: (.*)API(.*)
+  admin: (.*_)?ADMIN(_.*)?
+  user: (.*_)?USER(_.*)?
+  api: (.*_)?API(_.*)?
 
 presetUsers:
   admin:

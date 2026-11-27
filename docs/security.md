@@ -475,14 +475,33 @@ LDAP Authorization is also supported by adding user attribute configs in file.
 An OAuth claim can be used by setting the `privilegesField` in the OAuth
 configuration.
 
+Trino Gateway matches each regex against the whole privilege string of a user:
+
+- For a preset user, the `privileges` value, such as `ADMIN_USER`.
+- For OAuth, the groups from the `privilegesField` claim, joined with `_`.
+- For LDAP, one line per value of the group member attribute, in the form
+  `<attribute>: <value>`, such as
+  `memberOf: CN=gateway-admins,OU=groups,DC=example,DC=com`.
+
+Write each regex so that it matches only complete names. For example,
+`(.*_)?ADMIN(_.*)?` matches `ADMIN` and `ADMIN_USER`, but not
+`ADMINISTRATORS` or `NOTADMIN`, which a regex such as `(.*)ADMIN(.*)` matches
+as well. Because Trino Gateway joins OAuth groups with `_`, avoid `_` in the
+names of the groups that grant a role. For LDAP, include the delimiters of the
+group name, such as `(?s).*CN=gateway-admins,.*`, which does not match
+`CN=gateway-admins-readonly`. The `(?s)` flag lets `.*` span the lines of
+users that belong to several groups. The match is case-sensitive, so use
+`(?si)` instead when the LDAP server returns the names in another case, such
+as `cn=gateway-admins`.
+
 - Check out [LDAPTestConfig.yml](https://github.com/trinodb/trino-gateway/blob/main/gateway-ha/src/test/resources/auth/ldapTestConfig.yml) file for config details
 
 ```yaml
-# Roles should be in regex format
+# Each role is a regex that must match the whole privilege string
 authorization:
-  admin: (.*)ADMIN(.*)
-  user: (.*)USER(.*)
-  api: (.*)API(.*)
+  admin: (?s).*CN=gateway-admins,.*
+  user: (?s).*CN=gateway-users,.*
+  api: (?s).*CN=gateway-api,.*
   ldapConfigPath: '<ldap_config_path>'
 ```
 
@@ -556,9 +575,9 @@ still get at least `USER` access after logging in.
 
 ```yaml
 authorization:
-  admin: (.*)ADMIN(.*)
-  user: (.*)USER(.*)
-  api: (.*)API(.*)
+  admin: (.*_)?ADMIN(_.*)?
+  user: (.*_)?USER(_.*)?
+  api: (.*_)?API(_.*)?
   enableDefaultPrivilege: true
   defaultPrivilege: "USER"
 ```
@@ -582,9 +601,9 @@ unmatched users get no privileges:
 
 ```yaml
 authorization:
-  admin: (.*)ADMIN(.*)
-  user: (.*)USER(.*)
-  api: (.*)API(.*)
+  admin: (.*_)?ADMIN(_.*)?
+  user: (.*_)?USER(_.*)?
+  api: (.*_)?API(_.*)?
   enableDefaultPrivilege: false   # the default; unmatched users are denied
 ```
 
