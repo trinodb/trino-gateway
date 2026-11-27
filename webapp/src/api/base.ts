@@ -16,8 +16,19 @@ export class ClientApi {
         headers: getHeaders(),
         method: "GET"
       });
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       this.authErrorHandler()
+    }
+    else if (res.status === 403) {
+      // Only a user who lacks the role gets a body with code 403. A failed
+      // authentication also returns 403, without the body, and logs out.
+      const resJson = await res.json().catch(() => ({}));
+      if (resJson.code === 403) {
+        this.forbiddenErrorHandler()
+      }
+      else {
+        this.authErrorHandler()
+      }
     }
     else if (res.status === 204) {
       // handle the case of Response.Status.NO_CONTENT when External Routing Service is used
@@ -36,8 +47,10 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401 || resJson.code === 403) {
+    if (resJson.code === 401) {
       this.authErrorHandler()
+    } else if (resJson.code === 403) {
+      this.forbiddenErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
         content: resJson.msg,
@@ -66,8 +79,17 @@ export class ClientApi {
       const resJson = await res.json().catch(() => ({}));
       this.serverErrorHandler(resJson.msg || Locale.Error.Network);
     }
-    else if (res.status === 401 || res.status === 403) {
+    else if (res.status === 401) {
       this.authErrorHandler()
+    }
+    else if (res.status === 403) {
+      const resJson = await res.json().catch(() => ({}));
+      if (resJson.code === 403) {
+        this.forbiddenErrorHandler()
+      }
+      else {
+        this.authErrorHandler()
+      }
     }
     else if (res.status !== 200) {
       Toast.error({
@@ -78,8 +100,10 @@ export class ClientApi {
       throw new Error(Locale.Error.Network);
     }
     const resJson = await res.json();
-    if (resJson.code === 401 || resJson.code === 403) {
+    if (resJson.code === 401) {
       this.authErrorHandler()
+    } else if (resJson.code === 403) {
+      this.forbiddenErrorHandler()
     } else if (resJson.code !== 200) {
       Toast.error({
         content: resJson.msg,
@@ -146,6 +170,15 @@ export class ClientApi {
     const accessStore = useAccessStore.getState();
     accessStore.updateToken("");
     throw new Error(Locale.Auth.Expiration);
+  }
+  // The user is logged in, but lacks the role for the request, so the session is kept
+  forbiddenErrorHandler(): void {
+    Toast.error({
+      content: Locale.Auth.Forbidden,
+      duration: 5,
+      theme: "light"
+    });
+    throw new Error(Locale.Auth.Forbidden);
   }
   serverErrorHandler(msg: string): void {
     Toast.error({
