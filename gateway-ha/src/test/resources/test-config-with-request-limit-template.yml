@@ -1,0 +1,21 @@
+serverConfig:
+  node.environment: test
+  http-server.http.port: ${ENV:REQUEST_ROUTER_PORT}
+
+dataStore:
+  jdbcUrl: ${ENV:POSTGRESQL_JDBC_URL}
+  user: ${ENV:POSTGRESQL_USER}
+  password: ${ENV:POSTGRESQL_PASSWORD}
+  driver: org.postgresql.Driver
+
+clusterStatsConfiguration:
+  monitorType: INFO_API
+
+monitor:
+  taskDelay: 1s
+
+requestAnalyzerConfig:
+  analyzeRequest: true
+
+proxyRequestConfiguration:
+  requestSize: 1MB

@@ -445,6 +445,28 @@ proxyResponseConfiguration:
   responseSize: 50MB
 ```
 
+## Configure the maximum request size
+
+Trino Gateway reads the body of each request into memory, up to 4MB by default.
+The limit covers the default
+[maximum query length](https://trino.io/docs/current/admin/properties-query-management.html#query-max-length)
+of 1,000,000 characters in Trino. It applies to the body after decompression,
+and to all requests, including the requests to the web UI and the
+[Gateway API](gateway-api.md). Trino Gateway rejects requests with a larger
+body with HTTP status 413.
+
+If you increase `query.max-length` in Trino, increase the limit in Trino
+Gateway to match. If routing rules use the request analyzer, also increase
+`requestAnalyzerConfig.maxBodySize`, which limits the number of characters
+that are analyzed:
+
+```yaml
+proxyRequestConfiguration:
+  requestSize: 16MB
+requestAnalyzerConfig:
+  maxBodySize: 4000000
+```
+
 ## Configure HTTP compression
 
 Trino Gateway requests gzip compressed responses from the Trino clusters and
@@ -453,7 +475,8 @@ compresses the responses for clients that send an `Accept-Encoding` header,
 with gzip, brotli, or zstd.
 
 The response size limits apply to the decompressed response, so compression
-does not raise them. Responses larger than
+does not raise them. The same applies to the request size limit in
+`proxyRequestConfiguration`. Responses larger than
 `proxy.http-client.max-response-content-length` in `serverConfig`, 16MB by
 default, fail with a `Buffering capacity exceeded` error. Increase it together
 with `responseSize` in `proxyResponseConfiguration` to allow larger responses.

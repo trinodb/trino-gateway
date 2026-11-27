@@ -17,6 +17,7 @@ public final class GatewayFilterPriorities
 {
     private GatewayFilterPriorities() {}
 
+    public static final int REQUEST_SIZE_LIMIT = 100;
     public static final int PRE_AUTHENTICATION = 500;
     public static final int PRE_AUTHORIZATION = 1500;
 }

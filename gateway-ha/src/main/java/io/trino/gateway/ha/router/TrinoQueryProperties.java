@@ -30,6 +30,7 @@ import io.airlift.compress.v3.MalformedInputException;
 import io.airlift.compress.v3.zstd.ZstdDecompressor;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
+import io.trino.grammar.sql.SqlBaseLexer;
 import io.trino.sql.ExpressionFormatter;
 import io.trino.sql.SqlFormatter;
 import io.trino.sql.parser.ParsingException;
@@ -97,15 +98,21 @@ import io.trino.sql.tree.WithQuery;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.Token;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -138,6 +145,10 @@ public class TrinoQueryProperties
     // join them with ", ", so entries and the name=value halves are trimmed and empty entries dropped.
     private static final Splitter HEADER_ENTRY_SPLITTER = Splitter.on(',').trimResults().omitEmptyStrings();
     private static final Splitter HEADER_NAME_VALUE_SPLITTER = Splitter.on('=').trimResults();
+
+    // Deeply nested statements make the SQL parser retain large amounts of memory,
+    // far below the limit at which it fails with a stack overflow
+    static final int MAX_NESTING_DEPTH = 1000;
 
     private final Logger log = Logger.get(TrinoQueryProperties.class);
     private final boolean isClientsUseV2Format;
@@ -226,6 +237,172 @@ public class TrinoQueryProperties
         }
     }
 
+    private boolean exceedsMaxNestingDepth(String sql)
+    {
+        if (nestingDepthExceeds(sql, MAX_NESTING_DEPTH)) {
+            log.warn("Query nesting depth greater than %s detected, skipping query analysis", MAX_NESTING_DEPTH);
+            errorMessage = Optional.of("Query nesting depth is greater than " + MAX_NESTING_DEPTH);
+            return true;
+        }
+        return false;
+    }
+
+    /// Counts the nesting of parentheses, brackets, `CASE`, and the blocks of SQL routines with the
+    /// lexer of the SQL parser, which works in linear time and constant memory. A closing token only
+    /// closes the nearest open block of its own kind, so a closing token without a match never lowers
+    /// the depth: `END` closes `CASE` and `BEGIN`, and `END CASE`, `END IF`, `END WHILE`, `END LOOP`,
+    /// and `END REPEAT` close their own kind. The blocks of SQL routines are only counted after
+    /// `FUNCTION`, because `BEGIN`, `IF`, `WHILE`, `LOOP`, and `REPEAT` are also valid column names.
+    /// The `if` and `repeat` functions are told apart from the blocks by the parenthesis that follows
+    /// them, and `IF (...)` is a block when `THEN` follows.
+    static boolean nestingDepthExceeds(String sql, int maxDepth)
+    {
+        SqlBaseLexer lexer = new SqlBaseLexer(CharStreams.fromString(sql));
+        lexer.removeErrorListeners();
+        NestingBlocks blocks = new NestingBlocks();
+        boolean routine = false;
+        Token token = nextToken(lexer);
+        while (token.getType() != Token.EOF) {
+            Token next = nextToken(lexer);
+            if (token.getType() == SqlBaseLexer.FUNCTION) {
+                routine = true;
+            }
+            boolean parenthesisFollows = next.getText().equals("(");
+            Optional<NestingBlock> opened = switch (token.getType()) {
+                case SqlBaseLexer.CASE -> Optional.of(NestingBlock.CASE);
+                case SqlBaseLexer.BEGIN -> routineBlock(routine, NestingBlock.BEGIN);
+                case SqlBaseLexer.IF -> routineBlock(routine, parenthesisFollows ? NestingBlock.IF_OR_FUNCTION : NestingBlock.IF);
+                case SqlBaseLexer.WHILE -> routineBlock(routine, NestingBlock.WHILE);
+                case SqlBaseLexer.LOOP -> routineBlock(routine, NestingBlock.LOOP);
+                case SqlBaseLexer.REPEAT -> parenthesisFollows ? Optional.empty() : routineBlock(routine, NestingBlock.REPEAT);
+                default -> switch (token.getText()) {
+                    case "(" -> Optional.of(NestingBlock.PARENTHESIS);
+                    case "[" -> Optional.of(NestingBlock.BRACKET);
+                    default -> Optional.empty();
+                };
+            };
+            if (opened.isPresent()) {
+                blocks.push(opened.get());
+                if (blocks.depth() > maxDepth) {
+                    return true;
+                }
+            }
+            else if (token.getType() == SqlBaseLexer.END) {
+                Optional<NestingBlock> closed = switch (next.getType()) {
+                    case SqlBaseLexer.CASE -> Optional.of(NestingBlock.CASE);
+                    case SqlBaseLexer.IF -> Optional.of(NestingBlock.IF);
+                    case SqlBaseLexer.WHILE -> Optional.of(NestingBlock.WHILE);
+                    case SqlBaseLexer.LOOP -> Optional.of(NestingBlock.LOOP);
+                    case SqlBaseLexer.REPEAT -> Optional.of(NestingBlock.REPEAT);
+                    default -> Optional.empty();
+                };
+                if (closed.isPresent()) {
+                    // The keyword after END names the block it closes, and opens nothing
+                    next = nextToken(lexer);
+                    blocks.close(EnumSet.of(closed.get()));
+                }
+                else {
+                    blocks.close(EnumSet.of(NestingBlock.CASE, NestingBlock.BEGIN));
+                }
+            }
+            else if (token.getText().equals(")")) {
+                blocks.close(EnumSet.of(NestingBlock.PARENTHESIS));
+                if (blocks.peek() == NestingBlock.IF_OR_FUNCTION) {
+                    blocks.pop();
+                    if (next.getType() == SqlBaseLexer.THEN) {
+                        blocks.push(NestingBlock.IF);
+                    }
+                }
+            }
+            else if (token.getText().equals("]")) {
+                blocks.close(EnumSet.of(NestingBlock.BRACKET));
+            }
+            token = next;
+        }
+        return false;
+    }
+
+    private static Optional<NestingBlock> routineBlock(boolean routine, NestingBlock block)
+    {
+        return routine ? Optional.of(block) : Optional.empty();
+    }
+
+    private static Token nextToken(SqlBaseLexer lexer)
+    {
+        Token token = lexer.nextToken();
+        while (token.getChannel() != Token.DEFAULT_CHANNEL) {
+            token = lexer.nextToken();
+        }
+        return token;
+    }
+
+    /// The open blocks, with a count for each kind, so that finding the nearest open block of a kind
+    /// takes constant time
+    private static final class NestingBlocks
+    {
+        private final Deque<NestingBlock> blocks = new ArrayDeque<>();
+        private final Map<NestingBlock, Integer> counts = new EnumMap<>(NestingBlock.class);
+        private int depth;
+
+        void push(NestingBlock block)
+        {
+            blocks.push(block);
+            counts.merge(block, 1, Integer::sum);
+            if (block != NestingBlock.IF_OR_FUNCTION) {
+                depth++;
+            }
+        }
+
+        NestingBlock pop()
+        {
+            NestingBlock block = blocks.pop();
+            counts.merge(block, -1, Integer::sum);
+            if (block != NestingBlock.IF_OR_FUNCTION) {
+                depth--;
+            }
+            return block;
+        }
+
+        NestingBlock peek()
+        {
+            return blocks.peek();
+        }
+
+        /// The depth without the IF_OR_FUNCTION blocks, which are always followed by a parenthesis
+        int depth()
+        {
+            return depth;
+        }
+
+        /// Closes the nearest open block of one of the kinds, together with any block opened inside
+        /// it that was not closed, which happens only for a statement that does not parse. Does
+        /// nothing if no block of these kinds is open.
+        void close(Set<NestingBlock> kinds)
+        {
+            if (kinds.stream().allMatch(kind -> counts.getOrDefault(kind, 0) == 0)) {
+                return;
+            }
+            while (!kinds.contains(pop())) {
+                // Discard the blocks opened inside the closed block
+            }
+        }
+    }
+
+    private enum NestingBlock
+    {
+        PARENTHESIS,
+        BRACKET,
+        CASE,
+        BEGIN,
+        IF,
+        // IF followed by a parenthesis, which is a block if THEN follows the closing parenthesis, and
+        // the if function otherwise
+        IF_OR_FUNCTION,
+        WHILE,
+        LOOP,
+        REPEAT,
+    }
+
     private void processRequestBody(BufferedReader reader, Map<String, String> preparedStatements)
     {
         try (reader) {
@@ -263,6 +440,9 @@ public class TrinoQueryProperties
                 }
             }
 
+            if (exceedsMaxNestingDepth(body)) {
+                return;
+            }
             Statement statement = parser.createStatement(body);
             if (statement.getClass() == Execute.class) {
                 Execute execute = (Execute) statement;
@@ -273,11 +453,17 @@ public class TrinoQueryProperties
                     return;
                 }
                 body = preparedStatements.get(statementName);
+                if (exceedsMaxNestingDepth(body)) {
+                    return;
+                }
                 statement = parser.createStatement(body);
                 boundBody = bindParameters(parser, statement, execute.getParameters());
             }
             else if (statement instanceof ExecuteImmediate executeImmediate) {
                 body = executeImmediate.getStatement().getValue();
+                if (exceedsMaxNestingDepth(body)) {
+                    return;
+                }
                 statement = parser.createStatement(body);
                 boundBody = bindParameters(parser, statement, executeImmediate.getParameters());
             }
