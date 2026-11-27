@@ -26,6 +26,7 @@ import io.trino.gateway.ha.config.RoutingConfiguration;
 import jakarta.annotation.Nullable;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -46,8 +47,6 @@ public abstract class BaseRoutingManager
     private final boolean unavailableGroupFallbackEnabled;
     private final QueryHistoryManager queryHistoryManager;
     private final LoadingCache<String, String> queryIdBackendCache;
-    private final LoadingCache<String, String> queryIdRoutingGroupCache;
-    private final LoadingCache<String, String> queryIdExternalUrlCache;
 
     public BaseRoutingManager(GatewayBackendManager gatewayBackendManager, QueryHistoryManager queryHistoryManager, RoutingConfiguration routingConfiguration)
     {
@@ -56,8 +55,6 @@ public abstract class BaseRoutingManager
         this.unavailableGroupFallbackEnabled = routingConfiguration.isUnavailableGroupFallbackEnabled();
         this.queryHistoryManager = queryHistoryManager;
         this.queryIdBackendCache = buildCache(this::findBackendForUnknownQueryId);
-        this.queryIdRoutingGroupCache = buildCache(this::findRoutingGroupForUnknownQueryId);
-        this.queryIdExternalUrlCache = buildCache(this::findExternalUrlForUnknownQueryId);
         this.backendToStatus = new ConcurrentHashMap<>();
     }
 
@@ -70,12 +67,6 @@ public abstract class BaseRoutingManager
     public void setBackendForQueryId(String queryId, String backend)
     {
         queryIdBackendCache.put(queryId, backend);
-    }
-
-    @Override
-    public void setRoutingGroupForQueryId(String queryId, String routingGroup)
-    {
-        queryIdRoutingGroupCache.put(queryId, routingGroup);
     }
 
     /**
@@ -130,6 +121,27 @@ public abstract class BaseRoutingManager
     }
 
     @Override
+    public Optional<ProxyBackendConfiguration> findBackendConfiguration(String backendUrl)
+    {
+        List<ProxyBackendConfiguration> backends = gatewayBackendManager.getAllBackends();
+        // Several Trino clusters can share a proxyTo, so prefer an active one rather than fail the
+        // routing of a running query
+        Comparator<ProxyBackendConfiguration> activeFirst = Comparator.comparing(backend -> !backend.isActive());
+        // An exact proxyTo wins, so Trino clusters behind one host with different base paths stay apart
+        Optional<ProxyBackendConfiguration> exact = backends.stream()
+                .filter(backend -> backend.getProxyTo().equals(backendUrl))
+                .min(activeFirst);
+        if (exact.isPresent()) {
+            return exact;
+        }
+        // Matched like isBackendActive, since the OAuth2 pin carries no path
+        String target = schemeAndAuthority(backendUrl);
+        return backends.stream()
+                .filter(backend -> schemeAndAuthority(backend.getProxyTo()).equals(target))
+                .min(activeFirst);
+    }
+
+    @Override
     public Optional<String> findInactiveUnhealthyBackendName(String backendUrl)
     {
         String target = schemeAndAuthority(backendUrl);
@@ -177,38 +189,6 @@ public abstract class BaseRoutingManager
         return backendAddress;
     }
 
-    @Nullable
-    @Override
-    public String findExternalUrlForQueryId(String queryId)
-    {
-        String externalUrl = null;
-        try {
-            externalUrl = queryIdExternalUrlCache.get(queryId);
-        }
-        catch (RuntimeException e) {
-            log.warn("Exception while loading queryId from cache %s", e.getLocalizedMessage());
-        }
-        return externalUrl;
-    }
-
-    /**
-     * Looks up the routing group associated with the queryId in the cache.
-     * If it's not in the cache, look up in query history
-     */
-    @Nullable
-    @Override
-    public String findRoutingGroupForQueryId(String queryId)
-    {
-        String routingGroup = null;
-        try {
-            routingGroup = queryIdRoutingGroupCache.get(queryId);
-        }
-        catch (RuntimeException e) {
-            log.warn("Exception while loading queryId from routing group cache %s", e.getLocalizedMessage());
-        }
-        return routingGroup;
-    }
-
     @Override
     public Optional<TrinoStatus> getBackEndHealth(String backendId)
     {
@@ -237,12 +217,6 @@ public abstract class BaseRoutingManager
         }
     }
 
-    @Override
-    public void setExternalUrlForQueryId(String queryId, String externalUrl)
-    {
-        queryIdExternalUrlCache.put(queryId, externalUrl);
-    }
-
     @VisibleForTesting
     String findBackendForUnknownQueryId(String queryId)
     {
@@ -256,22 +230,6 @@ public abstract class BaseRoutingManager
                     .orElseThrow(() -> new IllegalStateException("No active backends available for default routing group: " + defaultRoutingGroup));
         }
         return backend;
-    }
-
-    /**
-     * Attempts to look up the routing group associated with the query id from query history table
-     */
-    private String findRoutingGroupForUnknownQueryId(String queryId)
-    {
-        return queryHistoryManager.getRoutingGroupForQueryId(queryId);
-    }
-
-    /**
-     * Attempts to look up the external url associated with the query id from query history table
-     */
-    private String findExternalUrlForUnknownQueryId(String queryId)
-    {
-        return queryHistoryManager.getExternalUrlForQueryId(queryId);
     }
 
     private LoadingCache<String, String> buildCache(Function<String, String> loader)

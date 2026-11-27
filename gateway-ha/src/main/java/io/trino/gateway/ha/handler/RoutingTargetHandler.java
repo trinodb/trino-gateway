@@ -52,8 +52,6 @@ public class RoutingTargetHandler
     private final String defaultRoutingGroup;
     private final boolean unmatchedRequestFallbackEnabled;
     private final List<String> statementPaths;
-    private final boolean requestAnalyserClientsUseV2Format;
-    private final int requestAnalyserMaxBodySize;
     private final boolean cookiesEnabled;
     private final boolean oauth2RoutingEnabled;
 
@@ -70,29 +68,41 @@ public class RoutingTargetHandler
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         this.unmatchedRequestFallbackEnabled = haGatewayConfiguration.getRouting().isUnmatchedRequestFallbackEnabled();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
-        requestAnalyserClientsUseV2Format = haGatewayConfiguration.getRequestAnalyzerConfig().isClientsUseV2Format();
-        requestAnalyserMaxBodySize = haGatewayConfiguration.getRequestAnalyzerConfig().getMaxBodySize();
         cookiesEnabled = GatewayCookieConfigurationPropertiesProvider.getInstance().isEnabled();
         oauth2RoutingEnabled = haGatewayConfiguration.getRouting().isOauth2RoutingEnabled();
     }
 
     public RoutingTargetResponse resolveRouting(HttpServletRequest request)
     {
-        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths, requestAnalyserClientsUseV2Format, requestAnalyserMaxBodySize);
-        Optional<String> previousCluster = getPreviousCluster(queryId, request);
+        Optional<String> queryId = extractQueryIdIfPresent(request, statementPaths);
+        // OAuth2 token-exchange pinning comes first, since its redirects can carry a query ID in a parameter
+        Optional<String> knownCluster = (oauth2RoutingEnabled ? getOAuth2StickyBackend(request) : Optional.<String>empty())
+                .or(() -> queryId.isPresent() ? queryId.map(routingManager::findBackendForQueryId) : getPreviousCluster(request));
+        RoutingTargetResponse response = knownCluster
+                .map(cluster -> knownClusterResponse(cluster, request))
+                .orElseGet(() -> getRoutingTargetResponse(request));
+        logRewrite(response.routingDestination().clusterHost(), request);
+        return response;
+    }
 
-        RoutingTargetResponse routingTargetResponse = previousCluster.map(cluster -> {
-            String routingGroup = queryId.map(routingManager::findRoutingGroupForQueryId)
-                    .orElse(defaultRoutingGroup);
-            String externalUrl = queryId.map(routingManager::findExternalUrlForQueryId)
-                    .orElse(cluster);
-            return new RoutingTargetResponse(
-                    new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
-                    request);
-        }).orElseGet(() -> getRoutingTargetResponse(request));
-
-        logRewrite(routingTargetResponse.routingDestination().clusterHost(), request);
-        return routingTargetResponse;
+    /// Routes to a Trino cluster that is already known for the request. A statement submission, such
+    /// as a `kill_query` call, gets the routing group and external URL from the configuration of that
+    /// Trino cluster, so its query history row and query link in the web UI match it. Only statement
+    /// submissions record these values, so other requests, such as the polls of a running query, skip
+    /// the lookup. Falls back to the default routing group and the cluster URL for a Trino cluster
+    /// that is no longer configured.
+    private RoutingTargetResponse knownClusterResponse(String cluster, HttpServletRequest request)
+    {
+        String routingGroup = defaultRoutingGroup;
+        String externalUrl = cluster;
+        if (isStatementSubmission(request)) {
+            Optional<ProxyBackendConfiguration> configuration = routingManager.findBackendConfiguration(cluster);
+            routingGroup = configuration.map(ProxyBackendConfiguration::getRoutingGroup).orElse(defaultRoutingGroup);
+            externalUrl = configuration.map(ProxyBackendConfiguration::getExternalUrl).orElse(cluster);
+        }
+        return new RoutingTargetResponse(
+                new RoutingDestination(routingGroup, cluster, buildUriWithNewCluster(cluster, request), externalUrl),
+                request);
     }
 
     private RoutingTargetResponse getRoutingTargetResponse(HttpServletRequest request)
@@ -140,17 +150,8 @@ public class RoutingTargetHandler
                 && statementPaths.stream().anyMatch(request.getRequestURI()::startsWith);
     }
 
-    private Optional<String> getPreviousCluster(Optional<String> queryId, HttpServletRequest request)
+    private Optional<String> getPreviousCluster(HttpServletRequest request)
     {
-        if (oauth2RoutingEnabled) {
-            Optional<String> oauthBackend = getOAuth2StickyBackend(request);
-            if (oauthBackend.isPresent()) {
-                return oauthBackend;
-            }
-        }
-        if (queryId.isPresent()) {
-            return queryId.map(routingManager::findBackendForQueryId);
-        }
         if (cookiesEnabled && request.getCookies() != null) {
             List<GatewayCookie> cookies = Arrays.stream(request.getCookies())
                     .filter(c -> c.getName().startsWith(GatewayCookie.PREFIX))

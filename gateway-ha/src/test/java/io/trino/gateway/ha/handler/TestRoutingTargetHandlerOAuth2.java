@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -135,6 +136,8 @@ final class TestRoutingTargetHandlerOAuth2
 
         assertThat(response.routingDestination().clusterHost()).isEqualTo("http://live:8080");
         verify(store, never()).removeBackend(POLL_PIN_KEY);
+        // The token exchange is no statement submission, so it records no query history row
+        verify(routingManager, never()).findBackendConfiguration(anyString());
     }
 
     @Test

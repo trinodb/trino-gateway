@@ -175,6 +175,46 @@ final class TestStochasticRoutingManager
         assertThat(haRoutingManager.isBackendActive("http://oauth-shared:8080")).isTrue();
     }
 
+    @Test
+    void testFindBackendConfiguration()
+    {
+        addBackend("config-active", "http://config-active:8080", true);
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-active:8080"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-active");
+
+        // Running queries on a deactivated Trino cluster keep its configuration
+        addBackend("config-deactivated", "http://config-deactivated:8080", false);
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-deactivated:8080"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-deactivated");
+
+        // A proxyTo carrying a base path, and a mixed-case host, still match
+        addBackend("config-path", "http://Config-Path:8080/gateway", true);
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-path:8080"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-path");
+
+        // An active Trino cluster wins over an inactive one with the same proxyTo
+        addBackend("config-shared-inactive", "http://config-shared:8080", false);
+        addBackend("config-shared-active", "http://config-shared:8080", true);
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-shared:8080"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-shared-active");
+
+        // Trino clusters behind one host with different base paths match by the exact proxyTo
+        addBackend("config-base-path-etl", "http://config-base-path:8080/etl", true);
+        addBackend("config-base-path-adhoc", "http://config-base-path:8080/adhoc", true);
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-base-path:8080/adhoc"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-base-path-adhoc");
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-base-path:8080/etl"))
+                .map(ProxyBackendConfiguration::getName)
+                .contains("config-base-path-etl");
+
+        assertThat(haRoutingManager.findBackendConfiguration("http://config-does-not-exist:8080")).isEmpty();
+    }
+
     private ProxyBackendConfiguration addBackend(String name, String proxyTo, boolean active)
     {
         ProxyBackendConfiguration backend = new ProxyBackendConfiguration();

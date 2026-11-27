@@ -15,6 +15,7 @@ package io.trino.gateway.ha.handler;
 
 import com.google.common.collect.ImmutableMap;
 import io.airlift.http.client.HttpClient;
+import io.airlift.units.Duration;
 import io.trino.gateway.ha.config.GatewayCookieConfiguration;
 import io.trino.gateway.ha.config.GatewayCookieConfigurationPropertiesProvider;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
@@ -22,12 +23,17 @@ import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.config.RulesExternalConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.NoHealthyBackendException;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
 import io.trino.gateway.ha.router.RoutingGroupSelector;
 import io.trino.gateway.ha.router.RoutingManager;
+import io.trino.gateway.ha.router.TrinoQueryProperties;
 import io.trino.gateway.ha.router.schema.ExternalRouterResponse;
 import io.trino.gateway.proxyserver.MultiReadHttpServletRequest;
+import jakarta.servlet.ReadListener;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.WebApplicationException;
@@ -39,11 +45,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static io.trino.gateway.ha.handler.HttpUtils.TRINO_QUERY_PROPERTIES;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_STATEMENT_PATH;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -416,8 +429,6 @@ class TestRoutingTargetHandler
 
         // Query ID is known — cache returns the backend
         when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
-        when(routingManager.findRoutingGroupForQueryId(queryId)).thenReturn("test-group");
-        when(routingManager.findExternalUrlForQueryId(queryId)).thenReturn(backendUrl);
 
         // Fallback routing would throw (no backends for the routing group)
         when(routingManager.provideBackendConfiguration(any(), any()))
@@ -425,6 +436,133 @@ class TestRoutingTargetHandler
 
         RoutingTargetResponse response = handler.resolveRouting(uiRequest);
         assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+    }
+
+    @Test
+    void testKillQueryUsesClusterConfiguration()
+            throws IOException
+    {
+        String queryId = "20240101_000000_00001_aaaaa";
+        String backendUrl = "http://trino-etl.internal:8080";
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
+        when(routingManager.findBackendConfiguration(backendUrl)).thenReturn(Optional.of(clusterConfiguration(backendUrl)));
+
+        RoutingTargetResponse response = handler.resolveRouting(killQueryRequest(queryId));
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+        assertThat(response.routingDestination().routingGroup()).isEqualTo("etl");
+        assertThat(response.routingDestination().externalUrl()).isEqualTo("https://trino-etl.example.com");
+    }
+
+    @Test
+    void testKillQueryForRemovedCluster()
+            throws IOException
+    {
+        String queryId = "20240101_000000_00001_aaaaa";
+        String backendUrl = "http://trino-removed.internal:8080";
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
+
+        RoutingTargetResponse response = handler.resolveRouting(killQueryRequest(queryId));
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+        assertThat(response.routingDestination().routingGroup()).isEqualTo("default-group");
+        assertThat(response.routingDestination().externalUrl()).isEqualTo(backendUrl);
+    }
+
+    @Test
+    void testKnownQueryIdWithoutStatementSubmissionSkipsClusterConfiguration()
+    {
+        String queryId = "20240101_000000_00001_aaaaa";
+        String backendUrl = "http://trino-etl.internal:8080";
+        when(routingManager.findBackendForQueryId(queryId)).thenReturn(backendUrl);
+
+        RoutingTargetResponse response = handler.resolveRouting(queryIdRequest(queryId));
+        assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+        verify(routingManager, never()).findBackendConfiguration(anyString());
+    }
+
+    @Test
+    void testCookieStatementSubmissionUsesClusterConfiguration()
+            throws IOException
+    {
+        String backendUrl = "http://trino-etl.internal:8080";
+        when(routingManager.findBackendConfiguration(backendUrl)).thenReturn(Optional.of(clusterConfiguration(backendUrl)));
+        GatewayCookieConfiguration cookieConfig = new GatewayCookieConfiguration();
+        cookieConfig.setEnabled(true);
+        cookieConfig.setCookieSigningSecret("test-secret");
+        GatewayCookieConfigurationPropertiesProvider.getInstance().initialize(cookieConfig);
+        try {
+            RoutingTargetHandler cookieHandler = new RoutingTargetHandler(routingManager, Mockito.mock(OAuth2RoutingStore.class), Mockito.mock(RoutingGroupSelector.class), config);
+            Cookie cookie = new GatewayCookie("test", "payload", backendUrl, List.of(V1_STATEMENT_PATH), List.of(), new Duration(1, MINUTES), 1).toCookie();
+            HttpServletRequest statementRequest = statementRequest("SELECT 1");
+            when(statementRequest.getCookies()).thenReturn(new Cookie[] {cookie});
+
+            RoutingTargetResponse response = cookieHandler.resolveRouting(statementRequest);
+            assertThat(response.routingDestination().clusterHost()).isEqualTo(backendUrl);
+            assertThat(response.routingDestination().routingGroup()).isEqualTo("etl");
+            assertThat(response.routingDestination().externalUrl()).isEqualTo("https://trino-etl.example.com");
+        }
+        finally {
+            GatewayCookieConfigurationPropertiesProvider.getInstance().initialize(new GatewayCookieConfiguration());
+        }
+    }
+
+    private static ProxyBackendConfiguration clusterConfiguration(String proxyTo)
+    {
+        ProxyBackendConfiguration configuration = new ProxyBackendConfiguration();
+        configuration.setProxyTo(proxyTo);
+        configuration.setRoutingGroup("etl");
+        configuration.setExternalUrl("https://trino-etl.example.com");
+        return configuration;
+    }
+
+    private static HttpServletRequest killQueryRequest(String queryId)
+            throws IOException
+    {
+        HttpServletRequest request = statementRequest("CALL system.runtime.kill_query(query_id => '%s')".formatted(queryId));
+        TrinoQueryProperties properties = Mockito.mock(TrinoQueryProperties.class);
+        when(properties.getQueryId()).thenReturn(Optional.of(queryId));
+        when(request.getAttribute(TRINO_QUERY_PROPERTIES)).thenReturn(properties);
+        return request;
+    }
+
+    private static HttpServletRequest statementRequest(String query)
+            throws IOException
+    {
+        ByteArrayInputStream body = new ByteArrayInputStream(query.getBytes(UTF_8));
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.POST);
+        when(request.getRequestURI()).thenReturn(V1_STATEMENT_PATH);
+        when(request.getInputStream()).thenReturn(new ServletInputStream()
+        {
+            @Override
+            public boolean isFinished()
+            {
+                return body.available() == 0;
+            }
+
+            @Override
+            public boolean isReady()
+            {
+                return true;
+            }
+
+            @Override
+            public void setReadListener(ReadListener readListener) {}
+
+            @Override
+            public int read()
+            {
+                return body.read();
+            }
+        });
+        return request;
+    }
+
+    private static HttpServletRequest queryIdRequest(String queryId)
+    {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        when(request.getMethod()).thenReturn(HttpMethod.GET);
+        when(request.getRequestURI()).thenReturn("/v1/query/" + queryId);
+        return request;
     }
 
     @Test

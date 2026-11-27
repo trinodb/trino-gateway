@@ -61,44 +61,12 @@ public interface RoutingManager
     void setBackendForQueryId(String queryId, String backend);
 
     /**
-     * Associates a routing group with a specific query ID.
-     *
-     * @param queryId the unique identifier of the query
-     * @param routingGroup the routing group to associate with the query
-     */
-    void setRoutingGroupForQueryId(String queryId, String routingGroup);
-
-    /**
-     * Associates an external URL with a specific query ID for routing.
-     *
-     * @param queryId the unique identifier of the query
-     * @param externalUrl the external URL to associate with the query
-     */
-    void setExternalUrlForQueryId(String queryId, String externalUrl);
-
-    /**
      * Finds the backend cluster associated with a given query ID.
      *
      * @param queryId the unique identifier of the query
      * @return the backend cluster ID, or null if not found
      */
     String findBackendForQueryId(String queryId);
-
-    /**
-     * Finds the external URL for the backend cluster associated with a given query ID.
-     *
-     * @param queryId the unique identifier of the query
-     * @return the external URL, or null if not found
-     */
-    String findExternalUrlForQueryId(String queryId);
-
-    /**
-     * Finds the routing group associated with a given query ID.
-     *
-     * @param queryId the unique identifier of the query
-     * @return the routing group, or null if not found
-     */
-    String findRoutingGroupForQueryId(String queryId);
 
     /**
      * Provides the backend configuration for a given routing group and user.
@@ -121,6 +89,12 @@ public interface RoutingManager
      * @return true if an active backend has the same scheme and authority
      */
     boolean isBackendActive(String backendUrl);
+
+    /// Finds the configuration of the Trino cluster with the `proxyTo` URL, whether it is active
+    /// or not, so requests for running queries keep the routing group and external URL of their
+    /// Trino cluster. An exact match of `proxyTo` wins, otherwise the scheme and authority are
+    /// matched like [#isBackendActive], and an active Trino cluster wins over an inactive one.
+    Optional<ProxyBackendConfiguration> findBackendConfiguration(String backendUrl);
 
     /**
      * Finds a configured backend matching {@code backendUrl} that is intentionally out of service: no
