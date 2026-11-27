@@ -13,7 +13,6 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.airlift.http.client.BasicAuthRequestFilter;
 import io.airlift.http.client.HeaderName;
 import io.airlift.http.client.HttpClient;
@@ -24,6 +23,7 @@ import io.airlift.http.client.UnexpectedResponseException;
 import io.airlift.log.Logger;
 import io.trino.gateway.ha.config.BackendStateConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
+import tools.jackson.databind.JsonNode;
 
 import java.net.URI;
 import java.util.Map;
