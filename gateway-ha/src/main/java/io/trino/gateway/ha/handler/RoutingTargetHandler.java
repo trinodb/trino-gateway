@@ -20,6 +20,7 @@ import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.ProxyBackendConfiguration;
 import io.trino.gateway.ha.handler.schema.RoutingDestination;
 import io.trino.gateway.ha.handler.schema.RoutingTargetResponse;
+import io.trino.gateway.ha.router.GatewayBackendManager;
 import io.trino.gateway.ha.router.GatewayCookie;
 import io.trino.gateway.ha.router.NoHealthyBackendException;
 import io.trino.gateway.ha.router.OAuth2RoutingStore;
@@ -37,7 +38,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static io.trino.gateway.ha.handler.HttpUtils.SPOOLED_BACKEND_PARAMETER;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
+import static io.trino.gateway.ha.handler.HttpUtils.V1_SPOOLED_PATH;
 import static io.trino.gateway.ha.handler.ProxyUtils.buildUriWithNewCluster;
 import static io.trino.gateway.ha.handler.ProxyUtils.extractQueryIdIfPresent;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
@@ -49,6 +52,7 @@ public class RoutingTargetHandler
     private final RoutingManager routingManager;
     private final OAuth2RoutingStore oauth2RoutingStore;
     private final RoutingGroupSelector routingGroupSelector;
+    private final GatewayBackendManager gatewayBackendManager;
     private final String defaultRoutingGroup;
     private final boolean unmatchedRequestFallbackEnabled;
     private final List<String> statementPaths;
@@ -62,11 +66,13 @@ public class RoutingTargetHandler
             RoutingManager routingManager,
             OAuth2RoutingStore oauth2RoutingStore,
             RoutingGroupSelector routingGroupSelector,
+            GatewayBackendManager gatewayBackendManager,
             HaGatewayConfiguration haGatewayConfiguration)
     {
         this.routingManager = requireNonNull(routingManager);
         this.oauth2RoutingStore = requireNonNull(oauth2RoutingStore);
         this.routingGroupSelector = requireNonNull(routingGroupSelector);
+        this.gatewayBackendManager = requireNonNull(gatewayBackendManager);
         this.defaultRoutingGroup = haGatewayConfiguration.getRouting().getDefaultRoutingGroup();
         this.unmatchedRequestFallbackEnabled = haGatewayConfiguration.getRouting().isUnmatchedRequestFallbackEnabled();
         statementPaths = requireNonNull(haGatewayConfiguration.getStatementPaths());
@@ -148,6 +154,13 @@ public class RoutingTargetHandler
                 return oauthBackend;
             }
         }
+        // Spooled segment URIs carry the producing backend directly (see
+        // ProxyRequestHandler.rewriteSpooledSegmentUris). Prefer it over queryId lookups, which
+        // fail once the query ages out of the query history and the coordinators.
+        Optional<String> spooledBackend = getValidatedSpooledBackend(request);
+        if (spooledBackend.isPresent()) {
+            return spooledBackend;
+        }
         if (queryId.isPresent()) {
             return queryId.map(routingManager::findBackendForQueryId);
         }
@@ -165,6 +178,21 @@ public class RoutingTargetHandler
             }
         }
         return Optional.empty();
+    }
+
+    private Optional<String> getValidatedSpooledBackend(HttpServletRequest request)
+    {
+        if (request.getRequestURI() == null || !request.getRequestURI().startsWith(V1_SPOOLED_PATH)) {
+            return Optional.empty();
+        }
+        String backendName = request.getParameter(SPOOLED_BACKEND_PARAMETER);
+        if (isNullOrEmpty(backendName)) {
+            return Optional.empty();
+        }
+        // Only route to configured backends so the parameter cannot be abused as an open proxy.
+        // Deactivated backends are included so in-flight result collection drains cleanly.
+        return gatewayBackendManager.getBackendByName(backendName)
+                .map(ProxyBackendConfiguration::getProxyTo);
     }
 
     /**
