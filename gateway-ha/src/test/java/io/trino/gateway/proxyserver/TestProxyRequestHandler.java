@@ -44,6 +44,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import java.io.File;
 import java.net.URI;
 import java.util.Optional;
+import java.util.Random;
+import java.util.zip.CRC32;
 import java.util.zip.GZIPInputStream;
 
 import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
@@ -97,6 +99,12 @@ final class TestProxyRequestHandler
     private static final String HOP_BY_HOP_OPTION = "X-Hop-By-Hop";
     // zstd frame magic followed by byte sequences that are not valid UTF-8
     private static final byte[] BINARY_BODY = {(byte) 0x28, (byte) 0xB5, (byte) 0x2F, (byte) 0xFD, (byte) 0x00, (byte) 0xFF, (byte) 0x80, (byte) 0xC3, (byte) 0x28};
+    private static final String SPOOLED_SEGMENT_ENDPOINT = "/v1/spooled/download/segment-1";
+    // Larger than the 16 MiB default max response content length of the airlift HTTP client
+    private static final String SPOOLED_SEGMENT = randomAscii(17 * 1024 * 1024);
+    private static final String GZIP_SPOOLED_SEGMENT_ENDPOINT = "/v1/spooled/download/segment-gzip";
+    private static final String MISSING_SPOOLED_SEGMENT_ENDPOINT = "/v1/spooled/download/segment-missing";
+    private static final String MISSING_SEGMENT_BODY = "Segment not found";
 
     private final String customPutEndpoint = "/v1/custom"; // this is enabled in test-config-template.yml
     private final String customBinaryEndpoint = "/v1/custom/binary";
@@ -149,6 +157,38 @@ final class TestProxyRequestHandler
                         return response.setHeader(CONTENT_ENCODING, "gzip").setBody(gzip(COMPRESSIBLE_BODY));
                     }
                     return response.setBody(COMPRESSIBLE_BODY);
+                }
+
+                if (request.getMethod().equals("GET") && request.getPath().equals(SPOOLED_SEGMENT_ENDPOINT)) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, "application/octet-stream")
+                            .setHeader(KEEP_ALIVE, "timeout=5")
+                            .setHeader(CONNECTION, HOP_BY_HOP_OPTION)
+                            .setHeader(HOP_BY_HOP_OPTION, "1")
+                            .setBody(SPOOLED_SEGMENT);
+                }
+
+                if (request.getMethod().equals("HEAD") && request.getPath().equals(SPOOLED_SEGMENT_ENDPOINT)) {
+                    return new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, "application/octet-stream")
+                            .setHeader(CONTENT_LENGTH, SPOOLED_SEGMENT.length());
+                }
+
+                if (request.getPath().equals(GZIP_SPOOLED_SEGMENT_ENDPOINT)) {
+                    String acceptEncoding = request.getHeader(ACCEPT_ENCODING);
+                    MockResponse response = new MockResponse().setResponseCode(200)
+                            .setHeader(CONTENT_TYPE, "application/octet-stream")
+                            .setHeader(RECEIVED_ACCEPT_ENCODING, String.valueOf(acceptEncoding));
+                    if (acceptEncoding != null && acceptEncoding.contains("gzip")) {
+                        return response.setHeader(CONTENT_ENCODING, "gzip").setBody(gzip(COMPRESSIBLE_BODY));
+                    }
+                    return response.setBody(COMPRESSIBLE_BODY);
+                }
+
+                if (request.getPath().equals(MISSING_SPOOLED_SEGMENT_ENDPOINT)) {
+                    return new MockResponse().setResponseCode(NOT_FOUND)
+                            .setHeader(CONTENT_TYPE, "text/plain")
+                            .setBody(MISSING_SEGMENT_BODY);
                 }
 
                 return new MockResponse().setResponseCode(NOT_FOUND);
@@ -227,6 +267,28 @@ final class TestProxyRequestHandler
     }
 
     @Test
+    void testSpooledSegmentDownloadIsStreamedIntact()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + SPOOLED_SEGMENT_ENDPOINT;
+
+        // Without an explicit Accept-Encoding, OkHttp asks for gzip and removes Content-Length after it decodes the body
+        Request getRequest = new Request.Builder().url(url).get().header(ACCEPT_ENCODING, "identity").build();
+        try (Response response = httpClient.newCall(getRequest).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            // The backend's Content-Length is kept, so the client can detect a short body
+            assertThat(response.header(CONTENT_LENGTH)).isEqualTo(String.valueOf(SPOOLED_SEGMENT.length()));
+            // Hop-by-hop headers of the backend connection, including those named in Connection, must not be forwarded
+            assertThat(response.header(KEEP_ALIVE)).isNull();
+            assertThat(response.header(HOP_BY_HOP_OPTION)).isNull();
+            assertThat(response.body()).isNotNull();
+            byte[] body = response.body().bytes();
+            assertThat(body).hasSize(SPOOLED_SEGMENT.length());
+            assertThat(crc32(body)).isEqualTo(crc32(SPOOLED_SEGMENT.getBytes(UTF_8)));
+        }
+    }
+
+    @Test
     void testClientResponseCompression()
             throws Exception
     {
@@ -261,6 +323,74 @@ final class TestProxyRequestHandler
             assertThat(response.header(HOP_BY_HOP_OPTION)).isNull();
             assertThat(response.body()).isNotNull();
             assertThat(response.body().bytes()).isEqualTo(BINARY_BODY);
+        }
+    }
+
+    @Test
+    void testSpooledSegmentHeadKeepsContentLength()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + SPOOLED_SEGMENT_ENDPOINT;
+
+        Request headRequest = new Request.Builder().url(url).head().build();
+        try (Response response = httpClient.newCall(headRequest).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            // HEAD has no body, so the backend's Content-Length is the only size information
+            assertThat(response.header(CONTENT_LENGTH)).isEqualTo(String.valueOf(SPOOLED_SEGMENT.length()));
+        }
+    }
+
+    @Test
+    void testSpooledSegmentClientCompression()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + SPOOLED_SEGMENT_ENDPOINT;
+
+        // Setting Accept-Encoding explicitly disables the transparent decompression of OkHttp
+        Request request = new Request.Builder().url(url).get().header(ACCEPT_ENCODING, "gzip").build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.body()).isNotNull();
+            // The gateway compresses the response again, so the backend's Content-Length must not be sent
+            assertThat(response.header(CONTENT_ENCODING)).isEqualTo("gzip");
+            assertThat(response.header(CONTENT_LENGTH)).isNull();
+            byte[] body;
+            try (GZIPInputStream inputStream = new GZIPInputStream(response.body().byteStream())) {
+                body = inputStream.readAllBytes();
+            }
+            assertThat(body).hasSize(SPOOLED_SEGMENT.length());
+            assertThat(crc32(body)).isEqualTo(crc32(SPOOLED_SEGMENT.getBytes(UTF_8)));
+        }
+    }
+
+    @Test
+    void testGzipSpooledSegmentIsDecoded()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + GZIP_SPOOLED_SEGMENT_ENDPOINT;
+
+        // The backend sends a gzip body, which the proxy HTTP client decodes, so the backend's length does not apply
+        Request request = new Request.Builder().url(url).get().header(ACCEPT_ENCODING, "identity").build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(200);
+            assertThat(response.header(RECEIVED_ACCEPT_ENCODING)).contains("gzip");
+            assertThat(response.header(CONTENT_ENCODING)).isNull();
+            assertThat(response.body()).isNotNull();
+            assertThat(response.body().string()).isEqualTo(COMPRESSIBLE_BODY);
+        }
+    }
+
+    @Test
+    void testSpooledSegmentErrorIsPassedThrough()
+            throws Exception
+    {
+        String url = "http://localhost:" + routerPort + MISSING_SPOOLED_SEGMENT_ENDPOINT;
+
+        Request request = new Request.Builder().url(url).get().build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            assertThat(response.code()).isEqualTo(NOT_FOUND);
+            assertThat(response.body()).isNotNull();
+            assertThat(response.body().string()).isEqualTo(MISSING_SEGMENT_BODY);
         }
     }
 
@@ -396,5 +526,22 @@ final class TestProxyRequestHandler
                 queryHistoryManager,
                 mock(OAuth2RoutingStore.class),
                 new HaGatewayConfiguration());
+    }
+
+    private static String randomAscii(int size)
+    {
+        Random random = new Random(42);
+        StringBuilder builder = new StringBuilder(size);
+        for (int i = 0; i < size; i++) {
+            builder.append((char) ('a' + random.nextInt(26)));
+        }
+        return builder.toString();
+    }
+
+    private static long crc32(byte[] bytes)
+    {
+        CRC32 crc32 = new CRC32();
+        crc32.update(bytes);
+        return crc32.getValue();
     }
 }
