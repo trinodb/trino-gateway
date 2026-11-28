@@ -13,7 +13,9 @@
  */
 package io.trino.gateway.ha.clustermonitor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableMap;
+import jakarta.annotation.Nullable;
 
 import java.util.Map;
 
@@ -28,7 +30,9 @@ public record ClusterStats(
         String proxyTo,
         String externalUrl,
         String routingGroup,
-        Map<String, Integer> userQueuedCount)
+        Map<String, Integer> userQueuedCount,
+        // Used only for routing unknown query IDs, and not published by the backend state endpoints
+        @JsonIgnore @Nullable String coordinatorId)
 {
     public static Builder builder(String clusterId)
     {
@@ -46,6 +50,7 @@ public record ClusterStats(
         private String externalUrl;
         private String routingGroup;
         private Map<String, Integer> userQueuedCount;
+        private String coordinatorId;
 
         private Builder(String clusterId)
         {
@@ -100,6 +105,12 @@ public record ClusterStats(
             return this;
         }
 
+        public Builder coordinatorId(@Nullable String coordinatorId)
+        {
+            this.coordinatorId = coordinatorId;
+            return this;
+        }
+
         public ClusterStats build()
         {
             return new ClusterStats(
@@ -111,7 +122,8 @@ public record ClusterStats(
                     proxyTo,
                     externalUrl,
                     routingGroup,
-                    userQueuedCount);
+                    userQueuedCount,
+                    coordinatorId);
         }
     }
 }

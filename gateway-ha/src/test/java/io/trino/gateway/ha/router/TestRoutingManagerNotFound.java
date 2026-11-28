@@ -13,6 +13,8 @@
  */
 package io.trino.gateway.ha.router;
 
+import com.google.common.collect.ImmutableList;
+import io.trino.gateway.ha.clustermonitor.ClusterStats;
 import io.trino.gateway.ha.clustermonitor.TrinoStatus;
 import io.trino.gateway.ha.config.DataStoreConfiguration;
 import io.trino.gateway.ha.config.DatabaseCacheConfiguration;
@@ -100,6 +102,53 @@ final class TestRoutingManagerNotFound
         assertThat(unknownQueryIdRoutingManager.findBackendForQueryId("20261118_000000_00000_abcde")).isEqualTo(backendUrl);
         // The Trino clusters are not asked about the unknown query id
         assertThat(backend.getRequestCount()).isZero();
+    }
+
+    @Test
+    void testDefaultRoutingGroupFallbackIsNotCached()
+    {
+        // A poll before the first health check reports the coordinator ID goes to the default routing group
+        String queryId = "20261126_120000_00000_x7k2m";
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId(queryId)).isEqualTo(backendUrl);
+
+        unknownQueryIdRoutingManager.updateClusterStats(ImmutableList.of(ClusterStats.builder("etl-cluster")
+                .trinoStatus(TrinoStatus.HEALTHY)
+                .proxyTo("http://etl.example.com:8080")
+                .routingGroup("etl")
+                .coordinatorId("x7k2m")
+                .build()));
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId(queryId)).isEqualTo("http://etl.example.com:8080");
+        unknownQueryIdRoutingManager.removeBackEndHealth("etl-cluster");
+    }
+
+    @Test
+    void testUnknownQueryIdUsesCoordinatorId()
+    {
+        ClusterStats adhocCluster = ClusterStats.builder("adhoc-cluster")
+                .trinoStatus(TrinoStatus.HEALTHY)
+                .proxyTo("http://adhoc.example.com:8080")
+                .externalUrl("https://adhoc.example.com")
+                .routingGroup("adhoc")
+                .coordinatorId("krphu")
+                .build();
+        unknownQueryIdRoutingManager.updateClusterStats(ImmutableList.of(adhocCluster));
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId("20261120_174428_00000_krphu")).isEqualTo("http://adhoc.example.com:8080");
+        assertThat(unknownQueryIdRoutingManager.findRoutingGroupForQueryId("20261120_174428_00000_krphu")).isEqualTo("adhoc");
+        assertThat(unknownQueryIdRoutingManager.findExternalUrlForQueryId("20261120_174428_00000_krphu")).isEqualTo("https://adhoc.example.com");
+
+        // After a restart, the coordinator reports a new ID, and the old one no longer maps to the Trino cluster
+        unknownQueryIdRoutingManager.updateClusterStats(ImmutableList.of(ClusterStats.builder("adhoc-cluster")
+                .trinoStatus(TrinoStatus.HEALTHY)
+                .proxyTo("http://adhoc.example.com:8080")
+                .routingGroup("adhoc")
+                .coordinatorId("ahtd2")
+                .build()));
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId("20261120_174429_00000_krphu")).isEqualTo(backendUrl);
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId("20261120_174429_00000_ahtd2")).isEqualTo("http://adhoc.example.com:8080");
+
+        // A removed Trino cluster no longer receives unknown query IDs
+        unknownQueryIdRoutingManager.removeBackEndHealth("adhoc-cluster");
+        assertThat(unknownQueryIdRoutingManager.findBackendForQueryId("20261120_174430_00000_ahtd2")).isEqualTo(backendUrl);
     }
 
     private static RoutingManager createRoutingManager(Jdbi jdbi, DataStoreConfiguration dataStoreConfig, String defaultRoutingGroup)
