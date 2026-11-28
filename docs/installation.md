@@ -615,6 +615,14 @@ thread in every cycle. The `threadPoolSize` in the `monitor` node sets the numbe
 of monitor threads, 20 by default. Set it to at least the number of backends, so
 that every health check can start in each cycle.
 
+Health checks do not follow redirects. A Trino coordinator answers the health
+check requests without a redirect, so a redirect counts as a failed health
+check, and the Trino cluster is marked as UNHEALTHY. Set `proxyTo` to a URL
+that serves Trino without a redirect, for example the `https://` URL when a load
+balancer in front of the Trino cluster redirects HTTP to HTTPS. A load balancer
+that forwards the requests, including one that terminates TLS and connects to
+the coordinator over HTTP, works without a change.
+
 It is important to distinguish TrinoStatus from the active/inactive
 state of a backend. The active/inactive state indicates whether a backend is
 manually turned on or off, whereas TrinoStatus is programmatically determined

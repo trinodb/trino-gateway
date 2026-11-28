@@ -135,6 +135,7 @@ public class ClusterStatsJmxMonitor
                         .appendPath(JMX_PATH)
                         .appendPath(mbeanName)
                         .build())
+                .setFollowRedirects(false)
                 .addHeader(HeaderName.of("X-Trino-User"), username);
         if (xForwardedProtoHeader) {
             requestBuilder.addHeader(X_FORWARDED_PROTO, "https");
