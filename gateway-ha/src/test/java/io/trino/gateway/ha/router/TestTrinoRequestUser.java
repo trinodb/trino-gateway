@@ -49,6 +49,7 @@ import java.util.Optional;
 import static com.auth0.jwt.algorithms.Algorithm.HMAC256;
 import static io.trino.gateway.ha.handler.HttpUtils.TRINO_REQUEST_USER;
 import static io.trino.gateway.ha.handler.HttpUtils.USER_HEADER;
+import static io.trino.gateway.ha.router.TrinoRequestUser.TRINO_UI_TOKEN_NAME;
 import static jakarta.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -228,6 +229,100 @@ final class TestTrinoRequestUser
         JWEObject jwe = new JWEObject(new JWEHeader(JWEAlgorithm.A256GCMKW, EncryptionMethod.A256GCM), new Payload(innerJwt));
         jwe.encrypt(new AESEncrypter(new SecretKeySpec(key, "AES")));
         return jwe.serialize();
+    }
+
+    @Test
+    void testMalformedBasicAuthHeaderDoesNotThrow()
+    {
+        RequestAnalyzerConfig requestAnalyzerConfig = new RequestAnalyzerConfig();
+
+        // "Basic" with no space and no credentials
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(requestAnalyzerConfig)
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic")
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).isEmpty();
+    }
+
+    @Test
+    void testBasicAuthHeaderWithEmptyCredentials()
+    {
+        for (String header : new String[] {"Basic ", "Basic Og=="}) {
+            HttpServletRequest mockRequest = new QueryRequestMock()
+                    .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                    .httpHeader(USER_HEADER, null)
+                    .httpHeader(AUTHORIZATION, header)
+                    .getHttpServletRequest();
+
+            TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+            assertThat(trinoRequestUser.getUser()).isEmpty();
+        }
+    }
+
+    @Test
+    void testBasicAuthHeaderWithEmptyCredentialsFallsBackToCookie()
+    {
+        String uiToken = JWT.create()
+                .withClaim("email", "alice@example.com")
+                .sign(HMAC256("random"));
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic Og==")
+                .cookie(TRINO_UI_TOKEN_NAME, uiToken)
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).hasValue("alice@example.com");
+    }
+
+    @Test
+    void testBasicAuthHeaderWithInvalidBase64()
+    {
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Basic not*base64")
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).isEmpty();
+    }
+
+    @Test
+    void testBearerTokenContainingBasicIsNotDecodedAsBasic()
+    {
+        String encoded = Base64.getEncoder().encodeToString("alice:secret".getBytes(UTF_8));
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "Bearer Basic " + encoded)
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).isEmpty();
+    }
+
+    @Test
+    void testBasicAuthSchemeIsCaseInsensitive()
+    {
+        HttpServletRequest mockRequest = new QueryRequestMock()
+                .requestAnalyzerConfig(new RequestAnalyzerConfig())
+                .httpHeader(USER_HEADER, null)
+                .httpHeader(AUTHORIZATION, "basic " + Base64.getEncoder().encodeToString("alice:secret".getBytes(UTF_8)))
+                .getHttpServletRequest();
+
+        TrinoRequestUser trinoRequestUser = (TrinoRequestUser) mockRequest.getAttribute(TRINO_REQUEST_USER);
+
+        assertThat(trinoRequestUser.getUser()).hasValue("alice");
     }
 
     @Test

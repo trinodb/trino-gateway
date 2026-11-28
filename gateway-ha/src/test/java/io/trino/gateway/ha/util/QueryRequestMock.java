@@ -13,6 +13,7 @@
  */
 package io.trino.gateway.ha.util;
 
+import com.google.common.collect.ImmutableMap;
 import io.trino.gateway.ha.config.HaGatewayConfiguration;
 import io.trino.gateway.ha.config.RequestAnalyzerConfig;
 import io.trino.gateway.ha.handler.HttpUtils;
@@ -26,6 +27,7 @@ import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
@@ -126,6 +128,12 @@ public class QueryRequestMock
     {
         when(requestContext.getHeaderString(name)).thenReturn(value);
         when(mockRequest.getHeader(name)).thenReturn(value);
+        return this;
+    }
+
+    public QueryRequestMock cookie(String name, String value)
+    {
+        when(requestContext.getCookies()).thenReturn(ImmutableMap.of(name, new Cookie.Builder(name).value(value).build()));
         return this;
     }
 
