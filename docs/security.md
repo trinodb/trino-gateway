@@ -356,6 +356,23 @@ authentication:
       publicKey: <public_key_path>
 ```
 
+With a `form` block, Trino Gateway also accepts the same credentials in an
+`Authorization: Basic` header on the web UI and the Trino Gateway API, for
+example for automation. This applies to preset users and to
+[LDAP](#formldap), and regardless of the methods listed in `defaultType`. Set
+`basicAuthEnabled` to `false` to accept these credentials only through the
+login form:
+
+```yaml
+authentication:
+  defaultType: ["form"]
+  form:
+    basicAuthEnabled: false
+    selfSignKeyPair:
+      privateKey: <private_key_path>
+      publicKey: <public_key_path>
+```
+
 A failed login with a user name and password, from the login form or with
 HTTP Basic authentication, returns HTTP status 403. Trino Gateway logs it at
 the `DEBUG` level with the user name, and the failed requests are recorded in

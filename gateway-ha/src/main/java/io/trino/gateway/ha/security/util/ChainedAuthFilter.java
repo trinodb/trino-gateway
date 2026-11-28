@@ -82,10 +82,12 @@ public class ChainedAuthFilter
                             "Bearer",
                             new LbUnauthorizedHandler(AuthenticationType.FORM)));
 
-                    authFilters.add(new BasicAuthFilter(
-                            new ApiAuthenticator(requireNonNull(formAuthManager), authorizationManager),
-                            authorizer,
-                            new LbUnauthorizedHandler(AuthenticationType.FORM)));
+                    if (config.getAuthentication().getForm().isBasicAuthEnabled()) {
+                        authFilters.add(new BasicAuthFilter(
+                                new ApiAuthenticator(requireNonNull(formAuthManager), authorizationManager),
+                                authorizer,
+                                new LbUnauthorizedHandler(AuthenticationType.FORM)));
+                    }
                 }
                 case JWT -> authFilters.add(new LbFilter(
                         new LbJwtAuthenticator(requireNonNull(jwtManager), authorizationManager),
