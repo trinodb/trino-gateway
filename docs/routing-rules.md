@@ -254,24 +254,35 @@ every healthcheck:
 The  `TrinoRequestUser` class attempts to extract user information from a
 request, in the following order:
 
-1. `X-Trino-User` header.
-2. `Authorization: Basic` header.
-3. `Authorization: Bearer` header. Requires configuring an OAuth2 User Info URL.
-4. `Trino-UI-Token` or `__Secure-Trino-ID-Token` cookie.
+1. Mapped identity of a client certificate, if the
+   [client certificate JWT bridge](security.md#client-certificate-jwt-bridge) is
+   configured.
+2. `X-Trino-User` header.
+3. `Authorization: Basic` header.
+4. `Authorization: Bearer` header, as described in the following paragraph.
+5. `Trino-UI-Token` or `__Secure-Trino-ID-Token` cookie. The Trino web UI sets
+   `Trino-UI-Token` when a user logs in to it through Trino Gateway with a
+   password, and `__Secure-Trino-ID-Token` when the user logs in with OAuth 2.0.
+   The browser stores them for the Trino Gateway host, and sends them with the
+   following requests to the Trino web UI under `/ui`. Trino Gateway reads the
+   `tokenUserField` claim from them without verifying the token. If both
+   cookies are present, only `Trino-UI-Token` is read. `Trino-UI-Token` has the
+   user name only in the `sub` claim, so no user is extracted from it with the
+   default `tokenUserField` of `email`.
 
-Kerberos and Certificate authentication are not currently supported. If the
-request contains the `Authorization: Bearer` header, an attempt is made to treat
-the token as a JWT and deserialize it. If this is successful, the value of the
-claim named in `requestAnalyzerConfig.tokenUserField` is used as the username.
+Kerberos authentication is not supported. If the request contains the
+`Authorization: Bearer` header, an attempt is made to treat the token as a JWT
+and deserialize it. Trino Gateway does not verify the signature of the JWT. If
+this is successful, the value of the claim named in
+`requestAnalyzerConfig.tokenUserField` is used as the username.
 By default, this is the `email` claim. If the token is a JWE issued by Trino,
 and `requestAnalyzerConfig.oauthRefreshTokensSecretKey` is configured, then the
-token is decrypted and the same claim is used. If the token is not a valid JWT,
-or has no such claim, and `requestAnalyzerConfig.oauthTokenInfoUrl` is
-configured, then the token is exchanged with the Info URL, and the value of the
-claim named in `requestAnalyzerConfig.oauthTokenInfoUserField` is used as the
-username. By default, this is the `sub` claim. Responses are cached for 10
-minutes to avoid
-triggering rate limits.
+token is decrypted and the same claim is used. If no user is found this way,
+and `requestAnalyzerConfig.oauthTokenInfoUrl` is configured, then the token is
+exchanged with the Info URL, and the value of the claim named in
+`requestAnalyzerConfig.oauthTokenInfoUserField` is used as the username. By
+default, and when the response has no such claim, this is the `sub` claim.
+Responses are cached for 10 minutes to avoid triggering rate limits.
 
 You may call `trinoRequestUser.getUser()` and `trinoRequestUser.getUserInfo()`
 in your routing rules. If user information was not successfully extracted,
@@ -286,7 +297,7 @@ username against the extracted user. It returns `false` if a user has not been
 extracted.
 
 User extraction is only available if enabled by configuring
-`requestAnalyzerConfig.analyzeRequest = True`
+`requestAnalyzerConfig.analyzeRequest = true`
 
 ### TrinoQueryProperties
 
@@ -366,12 +377,12 @@ object:
 
 ### Configuration
 
-The `trinoQueryProperties`  are configured under the `requestAnalyzerConfig`
-configuration node.
+The `trinoQueryProperties` and the `trinoRequestUser` are configured under the
+`requestAnalyzerConfig` configuration node.
 
 `analyzeRequest`:
 
-Set to `True` to make `trinoQueryProperties` and `trinoRequestUser` available.
+Set to `true` to make `trinoQueryProperties` and `trinoRequestUser` available.
 
 `maxBodySize`:
 
@@ -420,7 +431,8 @@ username.
 
 Use the same key as
 `http-server.authentication.oauth2.refresh-tokens.secret-key` on the Trino
-coordinators. All coordinators must set this key to the same value. Set
+coordinators, a base64-encoded key with 128, 192, or 256 bits. All
+coordinators must set this key to the same value. Set
 `tokenUserField` to the same claim as
 `http-server.authentication.oauth2.principal-field`. The key decrypts the
 tokens of all users. Keep it secret, for example in an environment variable.
