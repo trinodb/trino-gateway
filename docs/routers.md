@@ -59,6 +59,10 @@ Use the following steps to create a new router:
 - To get the cluster stats set the parameter
   `clusterStatsConfiguration=>monitorType` to `UI_API` or `JDBC` which in turn
   needs the setup of `backendState` section in the config file.
+- Set `monitorType` to `PING` for a lightweight HTTP liveness check of
+  backends that are not Trino clusters, such as the Kyuubi Trino frontend.
+  Like `INFO_API`, it does not require the `backendState` section. See
+  [PING](installation.md#ping) for details.
 
 ### Configuration file reference
     

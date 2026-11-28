@@ -851,6 +851,81 @@ during an upgrade of one cluster at a time.
 The monitor does not use `/ui/legacy/login`, which belongs to the previous Web
 UI in Trino 483 and later.
 
+#### PING
+
+This is a lightweight liveness check for backends that speak the Trino client
+protocol but do not implement the endpoints used by the other monitors, such
+as `v1/info` or `ui/api/stats`. The monitor sends a plain `GET` request to
+`pingPath` on each backend, and marks the backend healthy on a `200` response
+and unhealthy otherwise. Responses with status `502`, `503`, or `504` are
+retried up to `retries` times.
+
+The check does not open a session or run a query, so it does not create idle
+sessions on the backend, and it does not require the `backendState` section.
+It does not report running or queued query counts, so it cannot be used with
+the `QueryCountBasedRouter`.
+
+```yaml
+clusterStatsConfiguration:
+  monitorType: PING
+
+monitor:
+  pingPath: /v1/ping
+  retries: 1
+```
+
+`pingPath` is optional and defaults to `/v1/ping`.
+
+The monitor configuration applies to all backends, and every backend must
+return `200` for `pingPath`. Trino does not serve `/v1/ping`, so with the
+default `pingPath` Trino clusters are marked unhealthy and receive no queries.
+Do not use `PING` in a deployment that also routes to Trino clusters, unless
+every backend, including the Trino clusters, returns `200` for the configured
+`pingPath`, for example through a proxy in front of them.
+
+The request is sent without credentials. If the backend requires
+authentication for `pingPath` and returns `401`, the backend is marked
+unhealthy.
+
+##### Use with Apache Kyuubi
+
+[Apache Kyuubi](https://kyuubi.apache.org/) can expose a Trino frontend that
+accepts requests from Trino clients and delegates the queries to an engine
+such as Spark, Flink, Hive, or Trino. The Kyuubi Trino frontend implements the
+statement endpoints used for query submission, polling, and cancellation, and
+it serves `/v1/ping`, but it does not implement the endpoints that the
+`INFO_API`, `UI_API`, and `JDBC` monitors rely on. With those monitor types a
+Kyuubi backend is always marked unhealthy and never receives queries. Use
+`PING` for a Trino Gateway deployment whose backends are all Kyuubi Trino
+frontends:
+
+```text
+Trino client -> Trino Gateway -> Kyuubi (Trino frontend) -> Spark, Flink, ...
+                              \-> Kyuubi (Trino frontend) -> Trino, ...
+```
+
+Register each Kyuubi Trino frontend address, for example
+`http://kyuubi.example.com:10999`, as the `proxyTo` URL of a backend. Because
+the monitor configuration applies to all backends, run Trino clusters behind a
+separate Trino Gateway deployment that uses another monitor type.
+
+Keep the following behavior in mind:
+
+- A healthy `PING` result only means that the Kyuubi frontend is up. Kyuubi
+  launches an engine when a session for that engine type is opened, so an
+  engine that cannot start, for example because of missing engine
+  configuration, still passes the health check.
+- Kyuubi selects the engine per session through `kyuubi.engine.type`, not per
+  statement. To send different statements to different engines, for example
+  `INSERT` to Spark and `SELECT` to Trino, route them to different Kyuubi
+  backends, each configured for one engine, with
+  [routing rules](routing-rules.md) before the session is opened.
+- Queries for engines other than Trino may use SQL syntax that the Trino
+  parser rejects. Leave `requestAnalyzerConfig.analyzeRequest` disabled for
+  this traffic, and use an
+  [external routing service](routing-rules.md#use-an-external-service-for-routing-rules)
+  if routing decisions depend on the SQL text.
+
 #### NOOP
 
 This option disables health checks.
@@ -868,6 +943,7 @@ which monitor types work against which Trino versions.
 | `METRICS` | Yes | Yes | Yes | Yes |
 | `JMX` | Yes | No | No | No |
 | `UI_API` | Yes | Yes | Yes | Yes |
+| `PING` | No | No | No | No |
 | `NOOP` | Not applicable | Not applicable | Not applicable | Not applicable |
 
 The causes are:
@@ -880,6 +956,9 @@ The causes are:
 - Trino 483 replaced the previous Web UI with the preview Web UI, which changed
   the login resource that the `UI_API` monitor uses. The monitor detects the
   login resource of each cluster.
+- Trino does not serve the default `/v1/ping` path of the `PING` monitor, in
+  any version. `PING` is meant for backends that are not Trino clusters, such
+  as the Kyuubi Trino frontend.
 
 `INFO_API`, `JDBC`, `METRICS`, and `UI_API` work with clusters on any of these
 Trino versions in the same deployment. `INFO_API` and `JDBC` use stable, documented
